@@ -16,7 +16,7 @@ static func build(parent: Node3D, site: Dictionary) -> Node3D:
 	var core := outline.duplicate()
 	var mouth_count := outline.size()-4
 	var rim_width := .42 if str(site.region)=="mountain" else .14
-	# Finish only the outer perimeter; the whole mouth remains open asphalt.
+	# Arremata só o perímetro externo; a boca inteira continua asfalto aberto.
 	for index in range(mouth_count,outline.size()):
 		var previous := outline[index-1]
 		var next := outline[(index+1)%outline.size()]
@@ -38,12 +38,12 @@ static func build(parent: Node3D, site: Dictionary) -> Node3D:
 		if (triangle[1]-triangle[0]).cross(triangle[2]-triangle[0]).y>0: triangle.reverse()
 		for vertex in triangle:
 			tool.set_normal(Vector3.UP)
-			# Match the road's world-space UV phase and four-metre texture repeat.
+			# Casa a fase de UV em espaço do mundo da rua e a repetição de textura de quatro metros.
 			tool.set_uv(Vector2(vertex.x+site.edge.x,vertex.z+site.edge.z)/4.0)
 			tool.add_vertex(vertex)
-	# The visual paving sits millimetres above the road's .026 overlay. Physical
-	# support stays on the same y=0 plane as its terrain/road collider: a raised
-	# single-sided triangle edge otherwise blocks the native chassis like a wall.
+	# O calçamento visual fica milímetros acima da sobreposição de .026 da rua. O apoio
+	# físico fica no mesmo plano y=0 do colisor de terreno/rua: uma borda elevada de
+	# triângulo de um lado só senão bloqueia o chassi nativo como uma parede.
 	indices = Geometry2D.triangulate_polygon(outline)
 	for index in range(0,indices.size(),3):
 		var triangle: Array[Vector3] = []

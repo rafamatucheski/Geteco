@@ -1,14 +1,14 @@
 extends RefCounted
-## Small authored pull-offs, resolved against the effective (edited) geography.
-## No road edges are added to the through-traffic graph and no map is rewritten.
+## Pequenos recuos autorados, resolvidos contra a geografia efetiva (editada).
+## Nenhuma aresta de rua é somada ao grafo do trânsito de passagem e nenhum mapa é reescrito.
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const SLOT_LENGTH := 6.8
 const DEPTH := 6.2
 const SURFACE_Y := 0.045
 const META := &"roadside_parking_sites"
-# The terminal plaza is an authored composite: its benches, ramps and bus
-# disembarking corridor have no individual NativeRegion obstacle records.
+# A praça do terminal é um composto autorado: os bancos, rampas e o corredor de
+# desembarque de ônibus não têm registros individuais de obstáculo no NativeRegion.
 const HARBOR_RESERVED := [Rect2(91.0,59.0,30.0,16.5)]
 const CANDIDATES := {
 	"harbor": [
@@ -39,8 +39,8 @@ static func sites(region: Node) -> Array[Dictionary]:
 	for candidate in CANDIDATES.get(str(region.region_id), []):
 		for road: Dictionary in region.roads:
 			if str(road.id).trim_prefix("road/") != candidate[1]: continue
-			# Nearby alternatives preserve the selected street while avoiding a tree
-			# or an edited building. They are deterministic across streaming visits.
+			# Alternativas próximas preservam a rua escolhida evitando uma árvore
+			# ou um prédio editado. São determinísticas entre visitas de streaming.
 			for shift in [0.0, -4.0, 4.0, -8.0, 8.0]:
 				var site := _resolve(region, road, candidate, shift)
 				if site.is_empty() or not rejection_reason(region, site).is_empty(): continue
@@ -67,7 +67,7 @@ static func _resolve(region: Node, road: Dictionary, row: Array, shift: float) -
 		tangent = delta.normalized()
 	if best > 12.0*12.0: return {}
 	nearest += tangent*shift
-	# A positive side is the right-hand driving lane of the source polyline.
+	# Um lado positivo é a faixa de rolamento da direita da polilinha fonte.
 	var forward := tangent*float(row[3])
 	var outward := forward.cross(Vector3.UP).normalized()
 	var edge := nearest+outward*float(road.width)*.5
@@ -104,8 +104,8 @@ static func is_reserved(point: Vector2, source_sites: Array, margin := .5) -> bo
 	return false
 
 static func rejection_reason(region: Node, site: Dictionary) -> String:
-	# Full footprint samples include the open mouth, all spaces and pedestrian
-	# shoulder. No arbitrary roadside extension is allowed over a river or slope.
+	# As amostras da área inteira incluem a boca aberta, todas as vagas e o acostamento
+	# de pedestres. Nenhuma extensão arbitrária de beira de estrada é permitida sobre um rio ou ladeira.
 	var samples: Array[Vector3] = []
 	for along in [-1.0,-.5,0.0,.5,1.0]:
 		for across in [0.0,2.25,4.25,DEPTH]:
@@ -117,8 +117,8 @@ static func rejection_reason(region: Node, site: Dictionary) -> String:
 			if reserved.grow(.6).intersects(bounds): return "terminal_access"
 		for reserved: Rect2 in _transit_footprints(region):
 			if reserved.grow(1.0).intersects(bounds): return "transit_station"
-	# Shared connection geometry is built by ProductionWorld, outside regional
-	# records. Its tunnel walls/portal and bridge railings must remain untouched.
+	# A geometria de conexão compartilhada é montada pelo ProductionWorld, fora dos registros
+	# regionais. As paredes/portal do túnel e os guarda-corpos da ponte precisam ficar intocados.
 	var crossing := Rect2(CONNECTION.HARBOR_ABUTMENT_X,CONNECTION.CENTER_Z-16.0,
 		CONNECTION.TUNNEL_END_X+6.0-CONNECTION.HARBOR_ABUTMENT_X,32.0)
 	if crossing.intersects(bounds): return "shared_connection"
@@ -139,7 +139,7 @@ static func rejection_reason(region: Node, site: Dictionary) -> String:
 		for entry: Dictionary in region.entries:
 			var origin: Vector3 = entry.get("exterior_position",entry.get("position",Vector3.INF))
 			if point.distance_to(origin) < 10.0: return "entrance"
-	# Protect footprints even when their centre falls between the sample grid.
+	# Protege as áreas mesmo quando o centro delas cai entre a grade de amostras.
 	for building: Dictionary in region.buildings:
 		if contains(site,building.position,(building.size as Vector2).length()*.5+1.0): return "building"
 	for lamp: Vector3 in _generated_lamps(region):
@@ -173,14 +173,14 @@ static func _transit_footprints(region: Node) -> Array[Rect2]:
 	const TRANSIT_META := &"roadside_parking_transit_footprints"
 	if region.has_meta(TRANSIT_META): return region.get_meta(TRANSIT_META)
 	var result: Array[Rect2] = []
-	# Read the same effective edited definitions as the live station owner. No
-	# meshes, lights, physics bodies or service controllers are instantiated.
+	# Lê as mesmas definições editadas efetivas do dono vivo da estação. Nenhuma
+	# malha, luz, corpo físico ou controlador de serviço é instanciado.
 	var transit = load("res://runtime/UrbanTransitPresentation.gd").new()
 	transit.configure(null)
 	for definition: Dictionary in transit.definitions:
 		if definition.get("deleted",false) or int(definition.type)==2: continue
-		# UrbanStationModel3D platform + ramp, and ticket office at Terminal Sul.
-		# FLOOR_CALIBRATION cancels that model's /18 and floor projection to /16.
+		# Plataforma + rampa do UrbanStationModel3D e bilheteria no Terminal Sul.
+		# FLOOR_CALIBRATION cancela o /18 desse modelo e a projeção do piso para /16.
 		var source := Rect2(-157,-106 if int(definition.type)==1 else -32,351,141 if int(definition.type)==1 else 67)
 		var edit: Dictionary = definition.get("edit",{})
 		var stretch: Array = edit.get("stretch",[1,1])
@@ -199,8 +199,8 @@ static func _transit_footprints(region: Node) -> Array[Rect2]:
 	return result
 
 static func _generated_lamps(region: Node) -> Array[Vector3]:
-	# Match the existing lamp placement; choose bays between lights instead of
-	# deleting or moving the light that already serves the street.
+	# Acompanha a posição existente dos postes; escolhe vagas entre as luzes em vez de
+	# apagar ou mover a luz que já atende a rua.
 	const LAMP_META := &"roadside_parking_lamp_points"
 	if region.has_meta(LAMP_META): return region.get_meta(LAMP_META)
 	var result: Array[Vector3] = []
