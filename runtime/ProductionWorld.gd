@@ -1374,6 +1374,7 @@ func _is_persistent_vehicle(car: Node) -> bool:
 ## restaurada a 200 m na serra, acordou quando o chão apareceu e caiu sem fim (até y≈-1300) quando o
 ## chunk saiu da memória; o caminho exato dependia do save e não foi reproduzido. Qualquer persistente
 ## que despencar bem abaixo do mundo volta ao último ponto apoiado e espera o chão de novo.
+const BENCHMARK_AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")
 const FALL_RESCUE_DEPTH := 30.0
 const FALL_RESCUE_BELOW_Y := -60.0
 
@@ -1387,11 +1388,27 @@ func _rescue_fallen_vehicles() -> void:
 		if not car.is_physics_processing() or not car.has_meta("last_supported_position"): continue
 		var anchor: Vector3 = car.get_meta("last_supported_position")
 		if car.global_position.y > FALL_RESCUE_BELOW_Y or car.global_position.y > anchor.y - FALL_RESCUE_DEPTH: continue
-		if world.driving.occupied and car == world.driving.car: continue
+		var driven: bool = world.driving.occupied and car == world.driving.car
+		# O piloto do benchmark conta as próprias quedas (8 m abaixo da rota) e recoloca o carro
+		# sozinho; resgatar aqui apagaria a queda do relatório que mede justamente isso.
+		if driven and BENCHMARK_AUTOPILOT.requested(): continue
 		car.place(anchor, car.rotation.y)
 		car.set_meta("awaiting_ground", true)
 		car.set_physics_process(false)
+		if driven: _rescue_driver(car)
 		push_warning("Veículo %s caiu abaixo do mundo; devolvido a %s até o chão carregar." % [car.vehicle_id, anchor])
+
+## Antes o carro dirigido ficava de fora e o jogador caía junto sem fim. O motorista continua
+## sentado: Driving copia car.position para o jogador a cada passo de física, então basta
+## alinhar agora (sem esperar o próximo passo) e pedir à câmera que recentre, como o teleporte.
+func _rescue_driver(car: Node) -> void:
+	world.player.position = car.position
+	world.player.velocity = Vector3.ZERO
+	world.player.reset_physics_interpolation()
+	world.driving.set("_last_vehicle_position", car.global_position)
+	if is_instance_valid(world.camera): world.camera.initialized = false
+	if is_instance_valid(world.session) and world.session.has_method("show_message"):
+		world.session.show_message("O carro caiu do mapa e voltou para a estrada.")
 
 func _active_dispatch_support() -> Dictionary:
 	var support := {"harbor":[],"mountain":[],"desert":[]}

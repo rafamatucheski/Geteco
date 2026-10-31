@@ -108,7 +108,7 @@ func run() -> void:
 	check(not hud.stars_label.visible and hud.stars_label.text.is_empty(), "clearing pursuit removes all stars immediately")
 	state.economy.grant_reward("compact_hud_fixture", 200)
 	hud.refresh_from_state()
-	check(hud.money_label.visible and hud.money_label.text == "$ "+preload("res://ui/GameStyle.gd").amount(state.economy.balance), "wallet displays actual formatted balance")
+	check(hud.money_label.visible and hud.money_label.text == "R$ "+preload("res://ui/GameStyle.gd").amount(state.economy.balance), "wallet displays actual formatted balance")
 	hud.refresh_from_state()
 	check(hud.money_label.visible, "wallet remains visible after transaction")
 	gameplay.health = 20

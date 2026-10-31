@@ -85,7 +85,7 @@ func _run() -> void:
 		check(wallet.cheat_infinite_money,"Real keyboard input activates money cheat")
 		await create_timer(.12).timeout
 		var hud = world.find_child("MoneyHUD",true,false)
-		check(hud != null and hud.amount.text == "$ ∞","Production HUD displays infinity")
+		check(hud != null and hud.amount.text == "R$ ∞","Production HUD displays infinity")
 		var actual: int = wallet.snapshot().balance
 		check(wallet.spend(ECONOMY.LIMIT,"production_service"),"Production wallet supports unlimited charge")
 		check(wallet.snapshot().balance == actual,"Production service preserves actual funds")
