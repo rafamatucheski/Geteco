@@ -1,5 +1,5 @@
 extends RefCounted
-## All geometry belongs to the streamed chunk. No timers, physics, or scene-wide scans.
+## Toda a geometria pertence ao chunk em streaming. Sem timers, física ou varreduras da cena inteira.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const SURFACE := preload("res://world/desert/desert_surface.gdshader")
 const GRASS := preload("res://world/desert/desert_dry_grass.gdshader")
@@ -180,7 +180,7 @@ static func _batch(parent: Node3D, label: String, mesh: Mesh, material: Material
 	parent.add_child(node)
 
 static func _floor_height(point: Vector2) -> float:
-	# Same 8m piecewise bridge ramp used by the region's collision mesh.
+	# Mesma rampa de ponte por partes de 8m usada pela malha de colisão da região.
 	if point.y<=-448: return 0.0
 	var low := floorf(point.y/8.0)*8.0
 	var high := minf(low+8,LAYOUT.BOUNDS.end.y)

@@ -10,7 +10,7 @@ static func building(data: Dictionary) -> Node3D:
 	var kind: String=data.kind
 	var front := size.z*.5
 	var half := size.x*.5
-	# Continuous plinth, cornice and corner piers articulate wall thickness at human scale.
+	# Plinto contínuo, cornija e pilares de canto articulam a espessura da parede em escala humana.
 	for side in [-1.0,1.0]:
 		_piece(root,"StonePlinth",Vector3(side*half,.29,0),Vector3(.46,.58,size.z+.2),"stone")
 		_piece(root,"CornerPier",Vector3(side*(half-.28),size.y*.5,front+.23),Vector3(.46,size.y,.2),"cream")
@@ -20,7 +20,7 @@ static func building(data: Dictionary) -> Node3D:
 		_piece(root,"FrontPlinth",Vector3(side*(portal_half+segment*.5),.29,front+.23),Vector3(segment,.58,.25),"stone")
 		if kind!="workshop": _window(root,Vector3(side*size.x*.30,1.65,front+.34),2.1)
 	_piece(root,"FrontCornice",Vector3(0,size.y-.13,front+.33),Vector3(size.x,.22,.25),"cream")
-	# A real narrow pedestrian threshold, not an empty paved city block.
+	# Uma soleira estreita de pedestres de verdade, não um quarteirão pavimentado vazio.
 	for x in range(-floori(half)+1,floori(half),2):
 		var slab := _piece(root,"WalkSlab",Vector3(x,.04,front+1.25),Vector3(1.93,.08,2.15),"stone")
 		slab.rotation.y=sin(float(x)*2.3)*.006
@@ -72,7 +72,7 @@ static func _door(root: Node3D,at: Vector3,width: float) -> void:
 
 static func _rooftop(root: Node3D,size: Vector3) -> void:
 	var at := Vector3(size.x*.28,size.y+.61,-size.z*.24)
-	# AC has louvres, supply duct, service curb and visible drainpipe rather than an anonymous cube.
+	# O ar-condicionado tem venezianas, duto de insuflamento, meio-fio de serviço e cano de drenagem visível em vez de um cubo anônimo.
 	_piece(root,"ACServiceCurb",at+Vector3(0,-.42,0),Vector3(1.7,.12,1.65),"steel")
 	for i in 6: _piece(root,"ACLouvre",at+Vector3(0,-.27+float(i)*.105,.665),Vector3(1.25,.035,.07),"rubber")
 	_piece(root,"ACDuct",at+Vector3(-1.1,-.23,0),Vector3(.9,.42,.6),"steel")
@@ -109,12 +109,12 @@ static func _workshop(root: Node3D,size: Vector3) -> void:
 	_barrel(root,at+Vector3(.25,0,1.3),"steel")
 	_pallet(root,at+Vector3(.65,0,-3.5))
 	_bin(root,Vector3(size.x*.5+1.6,0,-size.z*.5+1))
-	# The roadside car delivery and Bia's front-left waiting area remain clear.
+	# A entrega de carro na beira da estrada e a área de espera da Bia na frente à esquerda ficam livres.
 	for side in [-1.0,1.0]:
 		var at_front := Vector3(side*8,0,size.z*.5+.38)
 		_piece(root,"WorkshopBayFrame",at_front+Vector3(-2.33,1.6,0),Vector3(.13,3.3,.18),"rust")
 		_piece(root,"WorkshopBayFrame",at_front+Vector3(2.33,1.6,0),Vector3(.13,3.3,.18),"rust")
-	# The normal southeast camera sees this service cart against a pier, clear of all three doors.
+	# A câmera sudeste normal vê este carrinho de serviço encostado num pilar, longe das três portas.
 	var cart := Vector3(3.9,0,size.z*.5+1.25)
 	_piece(root,"RollingToolCabinet",cart+Vector3(0,.60,0),Vector3(1.14,.88,.66),"rust",true)
 	_piece(root,"ToolCabinetTop",cart+Vector3(0,1.06,0),Vector3(1.2,.055,.72),"steel")
@@ -146,7 +146,7 @@ static func _motel(root: Node3D,size: Vector3) -> void:
 		_chair(root,Vector3(x+1.6,0,front+1.25))
 		_piece(root,"RoomAC",Vector3(x+2.65,.92,front+.45),Vector3(.7,.52,.48),"steel")
 		for y in 4: _piece(root,"RoomACLouvre",Vector3(x+2.65,.75+float(y)*.1,front+.71),Vector3(.57,.025,.025),"rubber")
-	# Vicente x=-327,z=-913 and the existing rest bench x=-315,z=-914.2 remain outside this porch.
+	# Vicente x=-327,z=-913 e o banco de descanso existente x=-315,z=-914.2 ficam fora desta varanda.
 	_bin(root,Vector3(-size.x*.5-1,0,front))
 
 static func _fuel_shop(root: Node3D,size: Vector3) -> void:
@@ -164,7 +164,7 @@ static func _shopfront(root: Node3D,size: Vector3,diner: bool) -> void:
 			for side in [-1.0,1.0]:
 				var brace := _piece(root,"AwningBracket",Vector3(x+side*1.8,2.54,front+.58),Vector3(.07,.08,1.1),"steel")
 				brace.rotation.x=-.48
-		# Side terrace remains readable from the fixed gameplay camera while the entrance faces its street.
+		# O terraço lateral continua legível na câmera fixa do jogo enquanto a entrada dá para a rua dela.
 		var patio := Vector3(-size.x*.5-3.1,0,0)
 		for x in [-.98,.98]:
 			for z in [-2.7,-.9,.9,2.7]: _piece(root,"TerracePaving",patio+Vector3(x,.035,z),Vector3(1.92,.07,1.73),"stone")

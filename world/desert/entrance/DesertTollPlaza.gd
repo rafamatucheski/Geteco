@@ -1,5 +1,5 @@
 extends Node3D
-## A closed exterior booth. Static details are batched; only moving arms tick.
+## Uma cabine externa fechada. Detalhes estáticos vão em lote; só os braços móveis têm tick.
 const BATCH := preload("res://world/mining/MiningBatch.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")
 const POSITION := Vector3(342.5,0,-474)
@@ -13,7 +13,7 @@ func _ready() -> void:
 	position=POSITION
 	add_to_group(GROUP)
 	var art:=BATCH.new(self,"TollArchitecture")
-	# A narrow protected island leaves 4.2m of clear road on each side.
+	# Uma ilha protegida estreita deixa 4.2m de pista livre de cada lado.
 	art.box("Island",Vector3(0,.11,0),Vector3(1.4,.22,12),"concrete",true)
 	art.box("BoothBase",Vector3(0,.65,0),Vector3(1.3,1.1,3.4),"cream",true)
 	art.box("Booth",Vector3(0,1.8,0),Vector3(1.22,1.3,3.25),"glass",true)
@@ -27,7 +27,7 @@ func _ready() -> void:
 			art.box("Footing",Vector3(x,.22,z),Vector3(.85,.44,.85),"concrete",true)
 			art.box("CanopyColumn",Vector3(x,2.75,z),Vector3(.24,5.5,.24),"steel",true)
 			art.box("Reflector",Vector3(x,.9,z+.15),Vector3(.18,.28,.025),"yellow")
-	# Thin, raised canopy; the vehicle clears beneath it even in a coach.
+	# Cobertura fina e elevada; o veículo passa embaixo mesmo sendo um ônibus.
 	art.box("Canopy",Vector3(0,5.65,0),Vector3(13.2,.24,6.4),"blue",true)
 	for z in [-3.25,3.25]:
 		art.box("CanopyFascia",Vector3(0,5.46,z),Vector3(13.4,.46,.16),"cream")
@@ -43,7 +43,7 @@ func _ready() -> void:
 		art.box("DirectionShaft",Vector3(x,.032,z+side*5),Vector3(.2,.018,2.0),"white")
 		for wing in [-1,1]:
 			art.box("DirectionChevron",Vector3(x+wing*.30,.032,z+side*4.35),Vector3(.16,.018,.95),"white",false,Vector3(0,wing*side*-.7,0))
-	# Sparse approach chevrons and side rails lead into the lanes without widening.
+	# Setas esparsas de aproximação e guarda-corpos laterais levam às faixas sem alargar.
 	for z in [-18.0,-14.0,14.0,18.0]:
 		for x in [-6.5,6.5]:
 			art.box("GuidePost",Vector3(x,.65,z),Vector3(.14,1.3,.14),"white",true)

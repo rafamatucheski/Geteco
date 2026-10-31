@@ -18,7 +18,7 @@ func _build() -> void:
 	for at in [Vector3(-12,.65,-14),Vector3(12,.65,-14),Vector3(-17,.65,0),Vector3(17,.65,0)]:
 		G.box(self,"FortifiedCover",at,Vector3(5.0,1.3,1.0),Color("8e8067"),true)
 		for x in [-1.8,-.6,.6,1.8]: G.box(self,"Sandbag",at+Vector3(x,.76,0),Vector3(1.06,.25,.8),Color("aaa181"),true)
-	# Stacked military cases and sealed narcotics bales communicate the depot.
+	# Caixas militares empilhadas e fardos lacrados de narcóticos comunicam o depósito.
 	for offset in [Vector3(-25,0,-2),Vector3(25,0,-2),Vector3(16,0,12),Vector3(-14,0,17)]:
 		for i in 3:
 			var at: Vector3=offset+Vector3(float(i%2)*1.35,.43+float(floori(i/2.0))*.86,0)
@@ -48,16 +48,16 @@ func _build() -> void:
 	G.batch_repeated_meshes(self)
 
 func _build_hideout() -> void:
-	# An open-air working hideout, not a new room: no overhead roof, doors,
-	# camera override or streaming owner. The centre remains a firing/flank lane.
+	# Um esconderijo de trabalho ao ar livre, não um cômodo novo: sem teto, portas,
+	# troca de câmera nem dono de streaming. O centro continua uma faixa de tiro/flanco.
 	var shelter := Node3D.new()
 	shelter.name="OpenSmugglerHideout"
 	add_child(shelter)
 	for x in [-4.0,2.0,8.0]:
 		G.box(shelter,"SalvagedSteelUpright",Vector3(float(x),1.05,9),Vector3(.15,2.1,.15),Color("5b4e40"),true)
 		G.box(shelter,"PostFoot",Vector3(float(x),.1,9),Vector3(.48,.2,.5),Color("827159"),true)
-	# Thin vertical canvas and rusty corrugated panels break up the silhouette
-	# while leaving the player's head and the canyon beyond readable.
+	# Lona vertical fina e chapas onduladas enferrujadas quebram a silhueta
+	# e deixam a cabeça do jogador e o desfiladeiro além legíveis.
 	for i in 6:
 		var x := -3.0+float(i)*2.0
 		var panel := G.box(shelter,"SalvagedWindbreak",Vector3(x,.72,9),Vector3(1.96,1.44,.12),Color("6a6150") if i%2==0 else Color("80644c"),true)
@@ -66,12 +66,12 @@ func _build_hideout() -> void:
 	for x in [-4.0,8.0]:
 		G.box(shelter,"SideWindbreak",Vector3(float(x),.62,7),Vector3(.14,1.24,3.8),Color("75664c"),true)
 		G.box(shelter,"SideBrace",Vector3(float(x),.68,7),Vector3(.20,.10,3.8),Color("504937"))
-	# Waist-height cases define the back edge; each visible stack has real cover.
+	# Caixas na altura da cintura definem a borda do fundo; cada pilha visível dá cobertura real.
 	for x in [-2.7,-1.35,0.0,1.35,2.7]:
 		var crate := G.box(shelter,"ReserveAmmunitionCase",Vector3(float(x),.47,8.05),Vector3(1.2,.94,1.0),Color("505843"),true)
 		for strap in [-.39,.39]: G.box(crate,"AmmoCaseBand",Vector3(float(strap),0,0),Vector3(.06,.97,1.035),Color("30392e"))
-	# The workbench reserves its complete footprint, including the space below
-	# its top. Walking may not put either player or guards inside the furniture.
+	# A bancada reserva a área completa, incluindo o espaço abaixo
+	# do tampo. Andar não pode pôr o jogador nem os guardas dentro do móvel.
 	var bench := Node3D.new()
 	bench.name="SmugglerWeaponsBench"
 	bench.position=Vector3(2,.45,3)
@@ -85,8 +85,8 @@ func _build_hideout() -> void:
 	_weapon_prop(bench,"m4a1",Vector3(.8,.47,0),-0.20)
 	for x in [-1.7,1.55]:
 		G.box(bench,"LooseMagazine",Vector3(float(x),.51,.27),Vector3(.10,.12,.29),Color("343b30"))
-	# A low rifle rack leans against the solid reserve cases. Guns are visual
-	# cargo; the two established armory caches remain the only unique rewards.
+	# Um suporte baixo de fuzis encosta nas caixas de reserva sólidas. As armas são carga
+	# visual; os dois esconderijos estabelecidos do arsenal continuam as únicas recompensas únicas.
 	for i in 3:
 		_weapon_prop(shelter,"ak47" if i!=1 else "m4a1",Vector3(3.7+float(i)*.48,.92,8.0),PI*.5)
 	G.box(shelter,"RifleRackFoot",Vector3(4.18,.2,8.0),Vector3(1.8,.4,1.0),Color("554939"),true)

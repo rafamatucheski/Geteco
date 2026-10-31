@@ -1,6 +1,6 @@
 extends RefCounted
-## Two continuous outdoor ruins: no room transfer, invisible walls or roof fade.
-## The region owns streaming and reserves these footprints before dressing sand.
+## Duas ruínas externas contínuas: sem troca de cômodo, paredes invisíveis ou fade de teto.
+## A região é dona do streaming e reserva estas áreas antes de espalhar a areia.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
 const POSITION := Vector3(-1160,0.0,-1080)
@@ -35,8 +35,8 @@ static func build() -> Node3D:
 	var cabin := _cabin()
 	cabin.position = CABIN_POSITION - POSITION
 	site.add_child(cabin)
-	# Flattened sand marks an old route, but the continuous regional floor owns
-	# physical support. No raised slab or collision seam crosses the entrance.
+	# Areia achatada marca uma rota antiga, mas o chão regional contínuo é dono do
+	# apoio físico. Nenhuma laje elevada ou emenda de colisão cruza a entrada.
 	for i in range(1, PATH.size()):
 		var a: Vector2 = PATH[i-1] - Vector2(POSITION.x, POSITION.z)
 		var b: Vector2 = PATH[i] - Vector2(POSITION.x, POSITION.z)
@@ -56,8 +56,8 @@ static func _house() -> Node3D:
 	room.name = "House"
 	room.set_meta("desert_place_id",HOUSE_ID)
 	_floor(room,Vector2(9,7))
-	# Adobe shell: rear and west remain tall; broken front/east preserve a clear
-	# overhead sightline without hiding physical walls from the player.
+	# Casca de adobe: fundo e oeste continuam altos; frente/leste quebrados mantêm uma
+	# linha de visão de cima livre sem esconder paredes físicas do jogador.
 	_part(room,"RearAdobe",Vector3(0,1.4,-3.5),Vector3(9,2.8,.36),"adobe")
 	_part(room,"WestAdobe",Vector3(-4.5,1.3,0),Vector3(.36,2.6,7),"adobe")
 	_part(room,"EastRearAdobe",Vector3(4.5,1.15,-2.25),Vector3(.36,2.3,2.5),"adobe")
@@ -66,8 +66,8 @@ static func _house() -> Node3D:
 		_part(room,"FrontBrokenAdobe",Vector3(side*2.9,.57,3.5),Vector3(3.2,1.14,.4),"adobe")
 		_part(room,"DoorJamb",Vector3(side*1.25,1.2,3.5),Vector3(.24,2.4,.48),"wood")
 	_part(room,"DoorLintel",Vector3(0,2.5,3.5),Vector3(2.8,.24,.48),"wood")
-	# Surviving roof covers only the rear-left corner. Rafters are overhead solids
-	# at their real heights, not floor-wide blockers or presentation-only cutouts.
+	# O teto que sobrou cobre só o canto traseiro esquerdo. Os caibros são sólidos no alto
+	# nas alturas reais, não bloqueios do piso inteiro nem recortes só de apresentação.
 	_part(room,"RoofCorner",Vector3(-2.8,2.76,-2.5),Vector3(3.7,.16,2.0),"roof")
 	for x in [-4.2,-3.3,-2.4,-1.5]:
 		_part(room,"BrokenRafter",Vector3(x,2.62,-1.9),Vector3(.13,.18,3.0),"wood")

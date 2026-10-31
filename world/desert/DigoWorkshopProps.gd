@@ -1,6 +1,6 @@
 extends RefCounted
-## Digo-only static furniture. Existing tagged proxy meshes remain the physics
-## authority; these visible details never extend into the vehicle bay or routes.
+## Móveis estáticos só do Digo. As malhas proxy marcadas existentes continuam sendo a
+## autoridade de física; estes detalhes visíveis nunca entram na baia de veículos nem nas rotas.
 const MATERIALS := ["steel","steel_dark","enamel_red","enamel_green","wood","rubber","plastic","screen"]
 const LEGACY_PREFIXES := ["Workbench","ToolChest","Drawer","TuningDesk","Computer","DeskChair","LiftPost","LiftFoot","PartsShelf","PartsCrate","SocketTool","TuningKeyboard","PartsNotebook","SeatCushion","SeatBack","SeatLeg"]
 static var _cached_mesh: ArrayMesh
@@ -10,8 +10,8 @@ var _cylinder_mesh: CylinderMesh
 var _tire_mesh: TorusMesh
 
 static func install(room: Node3D) -> MeshInstance3D:
-	# Hide the coarse visual only. NativePlace still reads its original AABB and
-	# interior_solid_id, including the chair and lift's full reserved footprint.
+	# Esconde só o visual grosseiro. O NativePlace ainda lê o AABB original e
+	# interior_solid_id, incluindo a área reservada inteira da cadeira e do elevador.
 	for child in room.get_children():
 		if not child is MeshInstance3D: continue
 		for prefix in LEGACY_PREFIXES:
@@ -80,11 +80,11 @@ func _workbench() -> void:
 			_box(at,Vector3(1.25,.25,.08),"enamel_green")
 			_box(at+Vector3(0,.045,.055),Vector3(.34,.026,.025),"steel")
 			_box(at+Vector3(.43,.035,.045),Vector3(.09,.045,.008),"plastic")
-	# A vise anchored on the worktop, wholly above the existing footprint.
+	# Uma morsa presa no tampo, toda acima da área existente.
 	_box(Vector3(-11.20,1.35,-5.56),Vector3(.31,.10,.25),"steel_dark")
 	_box(Vector3(-11.20,1.435,-5.56),Vector3(.32,.10,.10),"steel")
 	_cylinder(Vector3(-11.20,1.35,-5.39),.018,.25,"steel",Vector3(0,0,PI*.5))
-	# Familiar hand tools, proportioned in metres rather than giant silhouettes.
+	# Ferramentas manuais conhecidas, proporcionadas em metros em vez de silhuetas gigantes.
 	for index in 3:
 		var x := -10.45+float(index)*.27
 		_box(Vector3(x,1.322,-5.35),Vector3(.025,.018,.22),"steel",Vector3(0,.13*float(index),0))
@@ -97,7 +97,7 @@ func _workbench() -> void:
 	for index in 5: _cylinder(Vector3(-8.25+float(index)*.085,1.325,-5.6),.026,.05,"steel")
 
 func _tool_chest() -> void:
-	# Original chest footprint 1.8 x 1m; castors and handles stay inside it.
+	# Área original do baú 1.8 x 1m; rodízios e alças ficam dentro dela.
 	_box(Vector3(-10.4,.67,-2.12),Vector3(1.76,.92,.94),"enamel_red")
 	_box(Vector3(-10.4,1.16,-2.1),Vector3(1.8,.08,1.0),"steel_dark")
 	for row in 5:

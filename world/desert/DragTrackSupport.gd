@@ -1,7 +1,7 @@
 extends RefCounted
-## One physical surface for the authored straight. Separate coplanar chunk
-## triangles can report a horizontal edge contact at 96 m seams to a fast car.
-## Rendered asphalt, shoulders, obstacles and return road retain their geometry.
+## Uma superfície física para a reta autorada. Triângulos coplanares de chunks
+## separados podem dar contato de borda horizontal nas emendas de 96 m a um carro rápido.
+## Asfalto renderizado, acostamentos, obstáculos e a estrada de volta mantêm a geometria.
 const CUT := preload("res://world/urban_detail/GroundCut.gd")
 const BOUNDS := Rect2(-796,-805,1026,10)
 
@@ -16,9 +16,9 @@ static func install(region: Node3D) -> StaticBody3D:
 	var collider := CollisionShape3D.new()
 	var shape := ConcavePolygonShape3D.new()
 	var faces := PackedVector3Array()
-	# Connected faces in one body have internal edges, unlike separate chunk
-	# colliders. Short, centered triangles also avoid precision loss near the
-	# acute tip of a single kilometre-long triangle during floor snapping.
+	# Faces conectadas num corpo só têm bordas internas, ao contrário de colisores
+	# de chunks separados. Triângulos curtos e centrados também evitam perda de precisão perto
+	# da ponta aguda de um único triângulo de um quilômetro durante o encaixe no piso.
 	for segment in ceili(BOUNDS.size.x/32.0):
 		var left := BOUNDS.position.x+float(segment)*32.0-center.x
 		var right := minf(left+32.0,BOUNDS.end.x-center.x)
@@ -61,8 +61,8 @@ static func outside_faces(faces: PackedVector3Array, to_region := Transform3D.ID
 		var c := to_region*faces[index+2]
 		var polygon := PackedVector2Array([Vector2(a.x,a.z),Vector2(b.x,b.z),Vector2(c.x,c.z)])
 		var normal := (b-a).cross(c-a)
-		# The straight is at the common zero datum. Leave slopes, walls and
-		# geometry outside its footprint completely untouched.
+		# A reta fica na referência zero comum. Deixa rampas, paredes e
+		# geometria fora da área completamente intocadas.
 		if absf(a.y)>.001 or absf(b.y)>.001 or absf(c.y)>.001 or absf(normal.y)<.000001 or not CUT.bounds(polygon).intersects(BOUNDS):
 			output.append_array(faces.slice(index,index+3))
 			continue

@@ -1,5 +1,5 @@
 extends RefCounted
-## Sparse guidance on open highways, outside the existing 2.4 m gravel shoulder.
+## Orientação esparsa nas rodovias abertas, fora do acostamento de cascalho existente de 2.4 m.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const ROADSIDE := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
 const RELICS := preload("res://world/desert/expansion/DesertRelics.gd")

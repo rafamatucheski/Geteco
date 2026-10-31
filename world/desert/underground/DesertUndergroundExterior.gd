@@ -120,7 +120,7 @@ func _build_culvert() -> void:
 	var concrete := "#a69d88"
 	var dark := "#3a342b"
 	# Talude de terra batida atrás da boca e cabeceira de concreto com a abertura de 2,6 x 2,1 m.
-	# Recessed throat: the old solid embankment filled the doorway itself.
+	# Garganta rebaixada: o antigo aterro sólido preenchia a própria porta.
 	_box(self, Vector3(0, 1.5, -4.4), Vector3(14.0, 3.0, 2.0), "#8c7653", true)
 	for side in [-1.0, 1.0]:
 		_box(self, Vector3(side*2.5, 1.5, -2.0), Vector3(2.4, 3.0, 2.8), "#8c7653", true)
@@ -134,7 +134,7 @@ func _build_culvert() -> void:
 	for side in [-1.0, 1.0]:
 		var wing := _box(self, Vector3(side * 4.4, 0.9, 0.9), Vector3(0.6, 1.8, 3.4), concrete, true)
 		wing.rotation.y = side * -0.5
-		# Mesh and collider must share the authored wing rotation.
+		# Malha e colisor precisam dividir a rotação autorada da ala.
 		get_child(get_child_count()-1).rotation.y = wing.rotation.y
 	# Marca d'água das enchentes na cabeceira, rachaduras e lama seca na frente.
 	for side in [-1.0, 1.0]:

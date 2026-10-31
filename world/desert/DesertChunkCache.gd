@@ -1,7 +1,7 @@
 extends RefCounted
-## Recently completed cells retain the exact constructed nodes, including their
-## physical shapes and local state. Detached cells cannot process or collide.
-## A small LRU bounds retained cells independently of developer overview size.
+## Células concluídas há pouco retêm exatamente os nós construídos, incluindo as
+## formas físicas e o estado local. Células destacadas não processam nem colidem.
+## Um LRU pequeno limita as células retidas independentemente do tamanho da visão geral de desenvolvedor.
 const MAX_CELLS := 8
 var entries: Dictionary = {}
 var order: Array[Vector2i] = []

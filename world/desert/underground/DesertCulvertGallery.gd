@@ -32,7 +32,7 @@ func _build() -> void:
 	# Boca oeste: luz forte, a gente entra por ali (spawn em x = -17). Grade enferrujada e dunas entrando.
 	box(Vector3(-half.x + 0.1, 1.2, 0.0), Vector3(0.12, 2.4, 3.2), "#fff0c8", false, "", 2.2)
 	lamp(Vector3(-17.6, 1.6, 0.0), "#ffe0a0", 2.2, 6.5)
-	# Open gate parked along the west wall, with a clear central walking aisle.
+	# Portão aberto estacionado na parede oeste, com um corredor central livre para andar.
 	for side in [-1.0, 1.0]:
 		box(Vector3(-19.75, 1.25, side*1.7), Vector3(.3, 2.5, .3), "#8a8270", false, "DoorJamb")
 		for index in 5:
@@ -40,14 +40,14 @@ func _build() -> void:
 	box(Vector3(-19.75, 2.55, 0), Vector3(.35, .25, 3.7), "#8a8270")
 	box(Vector3(-18.9, .02, 0), Vector3(1.7, .025, 2.8), "#a8997b")
 	for dune in [Vector3(-18.0, 0.3, 2.6), Vector3(-16.4, 0.2, -2.2), Vector3(-14.0, 0.15, 3.2), Vector3(-19.0, 0.4, -1.0)]:
-		# Low banks stay outside the doorway and read as sand, not floating cubes.
+		# Margens baixas ficam fora da porta e parecem areia, não cubos flutuando.
 		if dune.x < -18.5: dune.z = -3.7
 		dune.y = .06
 		_sand_bank(Vector3(dune.x, .005, dune.z), Vector2(2.4,1.4))
 	# Grades da pista: quatro feixes de sol quente com manchas de luz no chão.
 	for x in [-8.0, 0.0, 8.0, 15.0]:
-		# Daylight through a grate is steady; the previous white emissive tiles
-		# looked like objects and their light pulsed like a broken lamp.
+		# A luz do dia por uma grade é constante; os antigos ladrilhos emissivos brancos
+		# pareciam objetos e a luz deles pulsava como lâmpada quebrada.
 		for slat in 5:
 			box(Vector3(x-.64+slat*.32, .019, .4), Vector3(.20, .006, 1.2), "#b9a47b")
 		lamp(Vector3(x, 2.4, .4), "#ffdca0", 1.7, 6.0)

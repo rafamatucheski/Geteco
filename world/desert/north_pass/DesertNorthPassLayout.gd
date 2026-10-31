@@ -23,14 +23,14 @@ static func restore_point(point: Vector3, world: Dictionary) -> Vector3:
 
 static func roads() -> Array[Dictionary]:
 	if not enabled(): return []
-	# -860 is the actual tangent vertex of the compact salt-highway
-	# corner. -900 alone would leave a graph gap.
+	# -860 é o vértice tangente real da esquina compacta da
+	# rodovia do sal. -900 sozinho deixaria um buraco no grafo.
 	return [{"id":"desert_north_continuation","points":PackedVector3Array([JUNCTION,Vector3(X,0,-900),Vector3(X,0,-1080),Vector3(X,0,-1140),GATE,Vector3(X,0,-1205),END]),"width":10.0,"traffic":false,"region":"desert","surface":"asphalt","one_way":false}]
 
 static func reservation_clear(point: Vector2, radius:=0.0) -> bool:
 	if not enabled(): return true
-	# Fast outer reject, then the actual road/work footprints. The former broad
-	# strip reserved empty ground west of the road and crossed the salt ponds.
+	# Rejeição externa rápida, depois as áreas reais de estrada/obra. A antiga faixa
+	# larga reservava chão vazio a oeste da estrada e cruzava as salinas.
 	var margin := maxf(radius,0.0)
 	if not Rect2(X-65,-1230,130,390).grow(margin+4.0).has_point(point): return true
 	var road := Rect2(X-12,END.z-12,24,JUNCTION.z-END.z+24)

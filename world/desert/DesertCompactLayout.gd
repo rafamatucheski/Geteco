@@ -1,6 +1,6 @@
 extends RefCounted
-## Compact desert revision. Only distances between authored places change; actors,
-## buildings, interiors and the 800 m strip retain their original dimensions.
+## Revisão compacta do deserto. Só mudam as distâncias entre os lugares autorados; atores,
+## prédios, interiores e a pista de 800 m mantêm as dimensões originais.
 const CANYON_DIMENSIONS := preload("res://world/desert/canyon/CanyonDimensions.gd")
 const VERSION := 2
 const ORIGINAL_BOUNDS := Rect2(-1500, -1950, 1940, 1576.5)
@@ -14,8 +14,8 @@ const WEST := Vector3(140, 0, 0)
 const TRUCK_STOP := Vector3(0, 0, 260)
 const NORTH_PASS := Vector3(0, 0, 640)
 const NORTH_RELICS := Vector3(140, 0, 120)
-## Explicit rigid moves for the small places whose new position cannot follow
-## a whole district. Also used when loading an old save next to those places.
+## Movimentos rígidos explícitos para os lugares pequenos cuja posição nova não pode seguir
+## um distrito inteiro. Também usado ao carregar um save antigo ao lado desses lugares.
 const SITE_MOVES := [
     [Vector2(-640,-1527),Vector2(-500,-887),18.0],
     [Vector2(-470,-800),Vector2(-470,-460),15.0],
@@ -80,8 +80,8 @@ static func map_legacy_xz(old: Vector2) -> Vector2:
 
 static func map_legacy_point(old: Vector3) -> Vector3:
     var p := Vector2(old.x,old.z)
-    # Interiors are instantiated beyond this envelope; their local/global poses
-    # must never be mistaken for outdoor coordinates.
+    # Interiores são instanciados além deste envelope; as poses locais/globais deles
+    # nunca podem ser confundidas com coordenadas externas.
     if not ORIGINAL_BOUNDS.grow(.1).has_point(p): return old
     var canyon := _legacy_canyon(old)
     if canyon.is_finite(): return canyon
@@ -98,8 +98,8 @@ static func map_legacy_point(old: Vector3) -> Vector3:
         moved.z = maxf(BOUNDS.position.y+8,moved.z)
         return moved
     if Rect2(-1480,-790,270,360).has_point(p): return old+WEST
-    # Keep saves beside relocated natural activities. The strip above takes
-    # precedence over the old salt-flat footprint, which bordered its return.
+    # Mantém saves ao lado das atividades naturais realocadas. A pista acima tem
+    # precedência sobre a área antiga da salina, que margeava o retorno dela.
     for move in LANDFORM_MOVES:
         if p.distance_to(move[0]) <= float(move[2]):
             var shift: Vector2 = move[1]-move[0]
@@ -110,8 +110,8 @@ static func map_legacy_point(old: Vector3) -> Vector3:
         var moved := old+NORTH_PASS
         if p.y < -1810: moved.z = lerpf(-1170,-1220,clampf((-p.y-1810)/135.0,0,1))
         return moved
-    # Empty distances were removed. Restore an outdoor save onto the corresponding
-    # road, keeping its signed lane/shoulder offset instead of leaving it in a pit.
+    # Distâncias vazias foram removidas. Restaura um save externo na estrada
+    # correspondente, mantendo o deslocamento com sinal de faixa/acostamento em vez de deixá-lo num buraco.
     var mapped := _road_point(p)
     return Vector3(mapped.x,old.y,mapped.y)
 
@@ -126,28 +126,28 @@ static func _legacy_canyon(old: Vector3) -> Vector3:
     if absf(lateral)<=2.8 and source.z>= -775.0 and source.z<=CANYON_DIMENSIONS.FIXED_END_Z and old.y>= -.5:
         var bridge_z := CANYON_DIMENSIONS.source_to_field(source_xz).y
         var gate_z := CANYON_DIMENSIONS.FIXED_END_Z-10.0
-        # Fixed bollards keep their human-scale spacing. Do not restore a point
-        # inside one when compression maps a formerly clear part of the deck there.
+        # Os frades fixos mantêm o espaçamento em escala humana. Não restaura um ponto
+        # dentro de um quando a compressão mapeia ali uma parte antes livre do tabuleiro.
         if source.z<=gate_z:
             for barrier_z in [gate_z,gate_z+3.0]:
                 if absf(bridge_z-float(barrier_z))>=.8: continue
                 for across in [-1.45,0.0,1.45]:
                     if absf(lateral-float(across))<.685: bridge_z=gate_z-.8
         return Vector3(source.x,old.y,bridge_z)
-    # The inhabited mesa, its armory and their immediate circulation do not scale.
+    # A mesa habitada, o arsenal e a circulação imediata deles não mudam de escala.
     if Rect2(CANYON_DIMENSIONS.CENTER_X-36.0,-524,72,64).grow(3.0).has_point(source_xz): return source
     var field := CANYON_DIMENSIONS.source_to_field(source_xz)
     var height := old.y*CANYON_DIMENSIONS.DEPTH_FACTOR if old.y<0.0 else old.y
-    # Load only while restoring an old outdoor gorge pose. Keeping this deferred
-    # avoids a preload cycle between terrain, layout and migration resources.
+    # Só carrega ao restaurar uma pose externa antiga do desfiladeiro. Manter isto adiado
+    # evita um ciclo de preload entre terreno, layout e recursos de migração.
     var terrain = load("res://world/desert/canyon/DesertSmugglerTerrain.gd")
     var surface: float = terrain.surface_height(field)
     if is_finite(surface): height=maxf(height,surface+.1)
     return Vector3(field.x,height,field.y)
 
 static func _legacy_access(p: Vector2) -> Vector2:
-    # The quarry itself moved rigidly, but its public approach was shortened and
-    # straightened. Preserve lane/shoulder offsets along corresponding segments.
+    # A pedreira em si se moveu rigidamente, mas o acesso público foi encurtado e
+    # endireitado. Preserva deslocamentos de faixa/acostamento ao longo dos segmentos correspondentes.
     var best := 81.000001
     var result := Vector2.INF
     for index in ORIGINAL_MINE_ACCESS.size()-1:

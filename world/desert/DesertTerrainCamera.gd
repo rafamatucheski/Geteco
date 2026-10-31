@@ -1,6 +1,6 @@
 extends RefCounted
-## Authored-terrain orthographic safety: canyon/quarry footprints and near plane.
-## Height queries occur in at most one batch per 0.1s (except a fresh camera/teleport).
+## Segurança ortográfica do terreno autorado: áreas de desfiladeiro/pedreira e plano próximo.
+## Consultas de altura acontecem em no máximo um lote a cada 0.1s (exceto câmera nova/teleporte).
 const TERRAIN := preload("res://world/desert/DesertTerrainMesh.gd")
 const MINING_LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const MINING_TERRAIN := preload("res://world/mining/MiningExterior.gd")
@@ -13,8 +13,8 @@ const CACHE_MARGIN := 8.0
 const MAX_VERTEX_SAMPLES := 4096
 ## Conservative authored field bound:17+29+2.4+3.5=51.9m, plateau22m; all blends convex.
 const FIELD_HEIGHT_CEILING := 60.0
-## Falling past successive quarry benches must not repeatedly lower/raise the
-## view between safety samples. Retain the raised view until clearance settles.
+## Cair por bancadas sucessivas da pedreira não pode baixar/subir a vista
+## repetidamente entre amostras de segurança. Retém a vista elevada até a folga assentar.
 const PITCH_RELEASE_DELAY := .85
 const PITCH_RELEASE_SPEED := deg_to_rad(8.0)
 var _retained_pitch := 0.0
@@ -63,7 +63,7 @@ func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled:
 		return nominal
 	if not local:
 		_active=false
-		# Outside the terrain's24m guard the nearby basin is flat. Restore the usual view gently.
+		# Fora da guarda de 24m do terreno a bacia próxima é plana. Restaura a vista comum com suavidade.
 		if _pitch<=0 or snap:
 			_pitch=base_pitch
 			_distance=nominal_length
@@ -85,15 +85,15 @@ func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled:
 		var candidate_pitch := clampf(_pitch,_minimum_pitch,MAX_PITCH) if _active else _desired_pitch
 		_near_height=0
 		var candidate_distance := maxf(nominal_length,_distance)
-		# Every footprint covers whole terrain cells, including an8m motion/heading guard.
-		# Retain the maximum across trials so an intermediate/smoothed distance is safe too.
+		# Toda área cobre células inteiras do terreno, incluindo uma guarda de 8m de movimento/direção.
+		# Retém o máximo entre as tentativas para que uma distância intermediária/suavizada também seja segura.
 		for iteration in 4:
 			_near_height=maxf(_near_height,_plane_height_bound(focus,direction,candidate_pitch,candidate_distance,view_size,near_clip))
 			var required := _required_distance(focus,candidate_pitch,nominal_length,view_size,near_clip)
 			if required<=candidate_distance+.01: break
 			candidate_distance=required
 			if iteration==3:
-				# Finite fallback is an authored elevation bound, not skipped safety work.
+				# O fallback finito é um limite de elevação autorado, não trabalho de segurança pulado.
 				_near_height=_field_height_ceiling()
 				_fallback_bound=true
 		_height_cache=_next_cache
@@ -112,8 +112,8 @@ func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled:
 			_retained_pitch=_desired_pitch
 			_pitch_release_clock=PITCH_RELEASE_DELAY
 		_active=true
-	# Safety still raises the lens immediately. Lowering waits for sustained
-	# clearance, then has a bounded rate, instead of chasing every bench edge.
+	# A segurança ainda sobe a lente na hora. Baixar espera uma folga
+	# sustentada e depois tem velocidade limitada, em vez de perseguir cada borda de bancada.
 	if falling: _retained_pitch=maxf(_retained_pitch,_pitch)
 	if _desired_pitch>=_retained_pitch-deg_to_rad(.25):
 		_retained_pitch=maxf(_retained_pitch,_desired_pitch)
@@ -133,7 +133,7 @@ func _solve_sight(target: Vector3,direction: Vector3,base_pitch: float,radius: f
 	var anticipation := Vector3(velocity.x,0,velocity.z)*.15
 	if anticipation.length()>6: anticipation=anticipation.normalized()*6
 	_needed_pitch=base_pitch
-	# Parallel orthographic rays start from centre and four footprint corners, now and ahead.
+	# Raios ortográficos paralelos partem do centro e dos quatro cantos da área, agora e adiante.
 	for future in [Vector3.ZERO,anticipation]:
 		for corner in [Vector2.ZERO,Vector2(-1,-1),Vector2(-1,1),Vector2(1,-1),Vector2(1,1)]:
 			var start: Vector3=target+future+(right*corner.x+direction*corner.y)*radius
@@ -147,7 +147,7 @@ func _solve_sight(target: Vector3,direction: Vector3,base_pitch: float,radius: f
 	_desired_pitch=minf(MAX_PITCH,_minimum_pitch+deg_to_rad(3.0)) if _minimum_pitch>base_pitch+.001 else base_pitch
 
 func _required_distance(focus: Vector3,pitch: float,nominal_length: float,view_size: Vector2,near_clip: float) -> float:
-	# Bottom of the entire near-plane rectangle, not only its centre, clears the highest sampled cell.
+	# A base do retângulo inteiro do plano próximo, e não só o centro, passa acima da célula amostrada mais alta.
 	return maxf(nominal_length,(_near_height+PLANE_MARGIN+view_size.y*.5*cos(pitch)-focus.y)/maxf(sin(pitch),.1)+near_clip)
 
 func _plane_height_bound(focus: Vector3,direction: Vector3,pitch: float,distance: float,view_size: Vector2,near_clip: float) -> float:
@@ -186,8 +186,8 @@ func _surface_height(point: Vector2) -> float:
 	return TERRAIN.surface_height(point)
 
 func _field_height_ceiling() -> float:
-	# Excavation only removes earth: the rim stays at datum. Keep the canyon's
-	# existing conservative 60 m bound; a quarry fallback need not invent a hill.
+	# A escavação só tira terra: a borda fica na altura de referência. Mantém o limite
+	# conservador existente de 60 m do desfiladeiro; um fallback de pedreira não precisa inventar morro.
 	return 0.0 if _query_bounds==MINING_LAYOUT.BOUNDS else FIELD_HEIGHT_CEILING
 
 func diagnostics() -> Dictionary:

@@ -1,13 +1,13 @@
 extends RefCounted
-## Exterior landmarks at human scale. The station is a roofless foundation;
-## the mine is visibly sealed. Neither creates an interior or changes cameras.
+## Marcos externos em escala humana. A estação é uma fundação sem teto;
+## a mina está visivelmente selada. Nenhum dos dois cria interior nem troca câmeras.
 const BATCH := preload("res://world/desert/expansion/DesertRelicsBatch.gd")
 const ROCKS := preload("res://world/desert/DesertSurfaceRocks.gd")
 const RAIL := preload("res://world/desert/expansion/DesertRelicsRail.gd")
 
 static func station_platform() -> Dictionary:
-	# The station anchor is (-960,-465); derive the apron from the actual track
-	# centre so a future railway adjustment cannot leave an isolated platform.
+	# A âncora da estação é (-960,-465); deriva o pátio do centro real do trilho
+	# para um ajuste futuro da ferrovia não deixar uma plataforma isolada.
 	var track: Vector2 = RAIL.center(-960.0)
 	var world_center := track + Vector2(0,-3.15)
 	return {"position":Vector3(0,.09,world_center.y+465.0), "size":Vector3(21,.18,3.2),
@@ -25,8 +25,8 @@ static func build(parent: Node3D, id: String, at: Vector3, world_seed: int) -> N
 	return batch.finish()
 
 static func _station(b: RefCounted) -> void:
-	# Open, broken foundations frame a former waiting room. The south and east
-	# faces are completely open, with broad access to the cache beside the wall.
+	# Fundações abertas e quebradas enquadram uma antiga sala de espera. As faces sul e leste
+	# são totalmente abertas, com acesso largo ao esconderijo ao lado da parede.
 	b.box("StationFoundation",Vector3(0,.007,0),Vector3(14,.014,9),"stone",false)
 	b.box("RearBrickWall",Vector3(0,.58,-4.2),Vector3(13.4,1.16,.48),"adobe")
 	b.box("WestBrokenWall",Vector3(-6.7,.34,-2.1),Vector3(.48,.68,4.3),"adobe")
@@ -37,8 +37,8 @@ static func _station(b: RefCounted) -> void:
 		b.box("ExposedBrickCourse",Vector3(-5.9+float(i)*.69,.16,-3.945),Vector3(.61,.21,.045),"rust",false)
 	for i in 4:
 		b.box("MissingPlasterPatch",Vector3(-5.2+float(i)*2.15,.52,-3.94),Vector3(.76,.16,.047),"rust",false)
-	# A freestanding chimney and skeletal veranda retain the silhouette of an
-	# old stop while no roof hides the player approaching from normal gameplay.
+	# Uma chaminé solta e uma varanda esquelética mantêm a silhueta de uma
+	# parada antiga sem que um teto esconda o jogador chegando no jogo normal.
 	b.box("StationChimney",Vector3(-4.4,1.85,-3.25),Vector3(1.02,3.7,.92),"adobe")
 	b.box("ChimneyRim",Vector3(-4.4,3.71,-3.25),Vector3(1.24,.18,1.14),"rust")
 	b.box("ChimneyOpening",Vector3(-4.4,3.807,-3.25),Vector3(.7,.014,.62),"rubber",false)
@@ -47,7 +47,7 @@ static func _station(b: RefCounted) -> void:
 	b.box("VerandaBeam",Vector3(-1.8,2.88,5.6),Vector3(8.1,.18,.2),"wood")
 	b.beam("VerandaBrace",Vector3(-5.7,2.13,5.6),Vector3(-4.9,2.8,5.6),.13,"wood")
 	b.beam("VerandaBrace",Vector3(2.1,2.13,5.6),Vector3(1.3,2.8,5.6),.13,"wood")
-	# The ticket case stands in open space, never behind a collision-only wall.
+	# A caixa de bilhetes fica em espaço aberto, nunca atrás de uma parede só de colisão.
 	b.box("TicketChest",Vector3(4.4,.28,2),Vector3(.95,.56,.62),"wood")
 	b.box("ChestHinge",Vector3(4.4,.78,1.72),Vector3(.98,.44,.055),"rust")
 	b.box("ChestCorner",Vector3(3.96,.29,2.326),Vector3(.055,.56,.026),"rust",false)
@@ -56,8 +56,8 @@ static func _station(b: RefCounted) -> void:
 	_bench(b,Vector3(-2.5,0,1.5))
 	b.box("AbandonedSuitcase",Vector3(-3.9,.18,.5),Vector3(.65,.36,.44),"rust")
 	b.box("SuitcaseHandle",Vector3(-3.9,.39,.5),Vector3(.23,.055,.065),"steel",false)
-	# Weathered water tower: clear space between real supports, no huge invisible
-	# cylinder projecting the elevated tank down to the ground.
+	# Caixa d'água gasta: espaço livre entre os apoios reais, sem um cilindro invisível
+	# enorme projetando o tanque elevado até o chão.
 	var tower := Vector3(-16,0,-7)
 	for x in [-1.65,1.65]:
 		for z in [-1.65,1.65]:
@@ -73,8 +73,8 @@ static func _station(b: RefCounted) -> void:
 	b.cylinder("TankHatch",tower+Vector3(.55,7.25,-.35),.43,.19,"steel")
 	b.beam("WaterPipe",tower+Vector3(2.25,4.9,0),tower+Vector3(3.5,4.9,0),.16,"rust")
 	b.beam("WaterPipeDrop",tower+Vector3(3.5,4.9,0),tower+Vector3(3.5,3.4,0),.16,"rust")
-	# A broad, worn yard continuously joins the veranda to the surviving apron.
-	# Its low ramp remains walkable without a forced step/teleport onto the slab.
+	# Um pátio largo e gasto liga continuamente a varanda ao pátio que sobrou.
+	# A rampa baixa continua caminhável sem degrau/teleporte forçado para a laje.
 	var platform := station_platform()
 	var platform_at: Vector3 = platform.position
 	var platform_start := platform_at.z-1.6
@@ -91,8 +91,8 @@ static func _station(b: RefCounted) -> void:
 	b.cylinder("BarrelRim",Vector3(10.5,.97,-6.0),.42,.06,"steel",false)
 
 static func _mine(b: RefCounted) -> void:
-	# A blocked adit set in an irregular stone headland. Both the rock hulls and
-	# timbers are solid; the black recess is behind the physical closure.
+	# Uma galeria bloqueada num promontório de pedra irregular. As carcaças de rocha e as
+	# madeiras são sólidas; o recesso preto fica atrás do fechamento físico.
 	for spec in [
 		[Vector3(-10,4.9,-8),Vector3(12,11,14),Color("82756b")],
 		[Vector3(1,6.0,-12),Vector3(19,13,15),Color("8b7967")],
@@ -114,7 +114,7 @@ static func _mine(b: RefCounted) -> void:
 		b.box("MineCartRail",Vector3(-5+side,.075,5),Vector3(.065,.1,11),"rust",false)
 		b.rail_collision("MineCartRail",Vector3(-5+side,.075,5),Vector3(.065,.1,11))
 	_cart(b,Vector3(-4.9,0,5.8))
-	# Hoist and pulley are visible from the highway approach, but no lit signs.
+	# Guincho e polia são visíveis da aproximação pela rodovia, mas sem placas iluminadas.
 	for x in [3.8,7.4]:
 		b.box("HoistSupport",Vector3(x,2.45,-2),Vector3(.3,4.9,.3),"wood")
 	b.box("HoistHeader",Vector3(5.6,5,-2),Vector3(4.3,.3,.35),"wood")
@@ -138,8 +138,8 @@ static func _mine(b: RefCounted) -> void:
 	b.cylinder("OreBarrel",Vector3(9,.46,6.7),.36,.92,"rust")
 
 static func _wagon(b: RefCounted) -> void:
-	# A tipped, open freight wagon, with cargo spilled on the south side. Its
-	# physical volumes follow the visible body instead of blocking the entire yard.
+	# Um vagão de carga aberto tombado, com carga derramada no lado sul. Os
+	# volumes físicos seguem o corpo visível em vez de bloquear o pátio inteiro.
 	b.box("WagonUnderframe",Vector3(0,.74,0),Vector3(10.7,.34,2.6),"steel",true,Vector3(.045,0,.035))
 	b.box("WagonBed",Vector3(0,1.01,0),Vector3(10.4,.16,2.55),"wood")
 	b.box("FarWagonSide",Vector3(0,1.77,-1.32),Vector3(10.7,1.6,.13),"rust")
@@ -166,8 +166,8 @@ static func _wagon(b: RefCounted) -> void:
 		b.box("FallenCargoBoard",Vector3(-4.4+float(i)*.43,.06,5.6+float(i%2)*.5),Vector3(1.7,.12,.15),"wood",false,Vector3(0,float(i)*.47,0))
 
 static func _wreck(b: RefCounted) -> void:
-	# Wheel hubs, a collapsed cabin, cracked glass and the tailgate give the
-	# silhouette of a full-size pickup whose lower body is swallowed by sand.
+	# Cubos de roda, uma cabine desabada, vidro rachado e a tampa traseira dão a
+	# silhueta de uma picape de tamanho real com a parte de baixo engolida pela areia.
 	b.box("PickupChassis",Vector3(0,.3,0),Vector3(1.92,.46,4.9),"rust")
 	b.box("PickupHood",Vector3(0,.78,-1.62),Vector3(1.98,.29,1.55),"rust",true,Vector3(.06,0,.02))
 	b.box("PickupCab",Vector3(0,.99,-.16),Vector3(1.94,1.22,1.7),"rust")
@@ -235,8 +235,8 @@ static func _loot(b: RefCounted, id: String, at: Vector3) -> void:
 static func _scatter(b: RefCounted, id: String, world_seed: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = world_seed + absi(id.hash())
-	# Rubble stays beside walls/outer yards; approaches and cash positions remain
-	# authored clear. Thin fragments are ground dressing, not waist-high blockers.
+	# O entulho fica ao lado de paredes/pátios externos; acessos e posições de dinheiro continuam
+	# livres como autorado. Fragmentos finos são mobiliário de chão, não bloqueios na altura da cintura.
 	for i in 10:
 		var at := Vector3(-9.0+rng.randf()*3.5,.035,8.0+rng.randf()*3.0)
 		if id == "wreck": at = Vector3(-3.2+rng.randf(),.035,-3+rng.randf()*5)

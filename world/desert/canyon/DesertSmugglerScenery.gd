@@ -56,9 +56,9 @@ static func _part(parent: Node3D,id: String,at: Vector3,size: Vector3,color: Col
 	if not physical:
 		G.box(parent,id,at,size,color)
 		return
-	# Clip the actual collider footprint to its owning cell. The bridge centre
-	# lies exactly on a cell boundary, so midpoint ownership loses half the deck
-	# during single-cell collision preparation on a restore/vehicle support query.
+	# Recorta a área real do colisor pela célula dona. O centro da ponte
+	# fica exatamente numa borda de célula, então a posse pelo ponto médio perde metade do tabuleiro
+	# na preparação de colisão de célula única numa consulta de apoio de restauração/veículo.
 	var footprint := Rect2(Vector2(at.x-size.x*.5,at.z-size.z*.5),Vector2(size.x,size.z)).intersection(clip)
 	if not footprint.has_area(): return
 	at.x=footprint.get_center().x
@@ -104,8 +104,8 @@ static func _bridge(parent: Node3D,rect: Rect2,physical: bool) -> void:
 				if i==0: top=lerpf(0,L.BRIDGE_DECK,(float(z)-from)/(to-from))
 				elif is_equal_approx(to,DECK_TO): top=lerpf(L.BRIDGE_DECK,0,(float(z)-from)/(to-from))
 				G.box(parent,"DeckJoint",Vector3(L.CENTER.x,top+.002,float(z)),Vector3(L.BRIDGE_WIDTH,.006,.035),Color("423e36"))
-	# Real .72 m pedestrian openings: Dante's .60 m capsule fits, while all
-	# current motorcycle hulls (.819 m minimum in FleetCatalog) and cars do not.
+	# Aberturas reais de pedestre de .72 m: a cápsula de .60 m do Dante cabe, e todas
+	# as carcaças de moto atuais (mínimo de .819 m no FleetCatalog) e carros não.
 	for z in [L.GATE_Z,L.GATE_Z+3.0]:
 		if not rect.intersects(Rect2(L.CENTER.x-2,float(z)-.225,4,.45)): continue
 		for x in [-1.45,0,1.45]:

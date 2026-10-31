@@ -1,9 +1,9 @@
 extends RefCounted
-## Additive, continuous relief south of the salt highway. One deterministic field
-## feeds render vertices, streamed collision and the placement of grounded props.
-## No scene nodes, noise resources, timers, random seed changes or per-frame work.
+## Relevo contínuo e aditivo ao sul da rodovia do sal. Um campo determinístico
+## alimenta vértices de render, colisão em streaming e a posição dos props apoiados no chão.
+## Sem nós de cena, recursos de ruído, timers, troca de semente aleatória ou trabalho por quadro.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
-## Trim empty lips; preserve the full-size plateau and driveable ramp.
+## Apara bordas vazias; preserva o platô de tamanho cheio e a rampa dirigível.
 const BOUNDS := Rect2(-1000,-1230,580.0,302.0)
 const GRID_STEP := 4.0
 const ROAD_FLAT_MARGIN := 22.0
@@ -29,8 +29,8 @@ static var _access_wide_buckets: Dictionary = {}
 static var _access_bounds := Rect2()
 
 static func height_at(point: Vector2) -> float:
-	# This is displacement, not absolute elevation: the caller adds its existing
-	# bridge/ramp height. Exactly zero outside this patch and inside road reserves.
+	# Isto é deslocamento, não elevação absoluta: quem chama soma a altura existente
+	# de ponte/rampa. Exatamente zero fora deste trecho e dentro das reservas de estrada.
 	if not BOUNDS.has_point(point): return 0.0
 	_prepare()
 	var boundary := minf(minf(point.x-BOUNDS.position.x,BOUNDS.end.x-point.x),minf(point.y-BOUNDS.position.y,BOUNDS.end.y-point.y))
@@ -39,8 +39,8 @@ static func height_at(point: Vector2) -> float:
 	var t := _depth(point.y)
 	var across := absf(point.x-_center_x(t))
 	var floor_width := _floor_half_width(t)
-	# Broad shoulders, a lower ledge and a tall upper shelf describe sandstone
-	# erosion. Ripples only modulate the authored mass; they never make spikes.
+	# Ombros largos, uma saliência baixa e uma prateleira alta descrevem a erosão
+	# do arenito. As ondulações só modulam a massa autorada; nunca fazem picos.
 	var lower := smoothstep(floor_width+2.5,floor_width+12.0,across)
 	var upper := smoothstep(floor_width+44.0,floor_width+88.0,across)
 	var height := 17.0*lower+29.0*upper
@@ -49,12 +49,12 @@ static func height_at(point: Vector2) -> float:
 	var envelope := smoothstep(0.0,.18,t)*(1.0-smoothstep(.82,1.0,t))
 	var outer := 1.0-smoothstep(180.0,276.0,across)
 	height = (height+_floor_height(t))*envelope*outer
-	# A real landing on the west flank, with room to stop/turn before returning.
+	# Um patamar de verdade no flanco oeste, com espaço para parar/virar antes de voltar.
 	var ellipse := (point-PLATEAU_CENTER)/PLATEAU_RADIUS
 	var landing := 1.0-smoothstep(.55,1.18,ellipse.length())
 	height = lerpf(height,PLATEAU_HEIGHT,landing)
-	# The ascending branch cuts a continuous 16 m driveable corridor into the
-	# flank. Segment heights meet exactly; 1.5 m samples make bends sub-grid.
+	# O ramo de subida corta um corredor dirigível contínuo de 16 m no
+	# flanco. As alturas dos segmentos se encontram exatamente; amostras de 1.5 m deixam as curvas abaixo da grade.
 	var access := _access_sample(point)
 	var ramp_weight := 1.0-smoothstep(ACCESS_HALF_WIDTH,ACCESS_HALF_WIDTH+ACCESS_BLEND,access.x)
 	height = lerpf(height,access.y,ramp_weight)
@@ -68,8 +68,8 @@ static func normal_at(point: Vector2, sample_radius := 2.0) -> Vector3:
 	return Vector3(-dx,2.0*radius,-dz).normalized()
 
 static func passage_clear(point: Vector2, radius := 0.0) -> bool:
-	# TRUE means reserved passage: decoration must reject this footprint.
-	# Include the approach from asphalt and enough margin for the whole vehicle.
+	# TRUE significa passagem reservada: a decoração precisa rejeitar esta área.
+	# Inclui o acesso a partir do asfalto e margem suficiente para o veículo inteiro.
 	var margin := maxf(radius,0.0)
 	if not BOUNDS.grow(40.0+margin).has_point(point): return false
 	if point.y>BOUNDS.end.y:
@@ -86,8 +86,8 @@ static func clear(point: Vector2, radius := 0.0) -> bool:
 	return not passage_clear(point,radius)
 
 static func canyon_centerline(step := GRID_STEP) -> PackedVector3Array:
-	# Includes the flat connection to the existing salt highway. This path is
-	# guidance/validation data; it does not add an ambient traffic road or barrier.
+	# Inclui a ligação plana com a rodovia do sal existente. Este caminho é
+	# dado de orientação/validação; não acrescenta estrada de trânsito ambiente nem barreira.
 	var result := PackedVector3Array()
 	result.append(Vector3(-720,0.0,-900))
 	var count := maxi(2,ceili(BOUNDS.size.y/maxf(step,1.0)))
@@ -99,8 +99,8 @@ static func canyon_centerline(step := GRID_STEP) -> PackedVector3Array:
 
 static func plateau_access(step := GRID_STEP) -> PackedVector3Array:
 	var result := PackedVector3Array()
-	# Bound sample length by the Bezier control polygon instead of assuming its
-	# endpoint separation equals its length. Positions use the actual heightfield.
+	# Limita o comprimento da amostra pelo polígono de controle da Bezier em vez de supor que
+	# a distância entre as pontas é o comprimento. As posições usam o campo de altura real.
 	var count := maxi(2,ceili(270.0/maxf(step,1.0)))
 	for i in range(count+1):
 		var p := _access_point(float(i)/float(count))
@@ -115,8 +115,8 @@ static func _center_x(t: float) -> float:
 	return -720.0+42.0*sin(TAU*phase)+12.0*sin(PI*t)
 
 static func _floor_half_width(t: float) -> float:
-	# Keep both flanks legible in the normal orthographic camera while retaining
-	# two vehicles' passing room. Only the approach opens to an 80 m mouth.
+	# Mantém os dois flancos legíveis na câmera ortográfica normal sem perder o
+	# espaço para dois veículos passarem. Só o acesso abre numa boca de 80 m.
 	return 12.0+2.0*pow(sin(PI*t),2.0)+28.0*(1.0-smoothstep(0.0,.24,t))+6.0*smoothstep(.8,1.0,t)
 
 static func _floor_height(t: float) -> float:
@@ -166,8 +166,8 @@ static func _reservation_weight(point: Vector2) -> float:
 static func _prepare() -> void:
 	if _prepared: return
 	_prepared=true
-	# Filter authored roads once. Height queries never resample road curves or
-	# scan city buildings; all five race lanes/accesses are included in this mask.
+	# Filtra as estradas autoradas uma vez. Consultas de altura nunca reamostram curvas de estrada nem
+	# varrem prédios da cidade; as cinco pistas/acessos da corrida estão nesta máscara.
 	for road in LAYOUT.roads():
 		var points: PackedVector3Array = road.points
 		var half_width: float = float(road.width)*.5
@@ -181,7 +181,7 @@ static func _prepare() -> void:
 		var size: Vector3 = building.size
 		var rect := Rect2(Vector2(at.x-size.x*.5,at.z-size.z*.5),Vector2(size.x,size.z)).grow(22.0)
 		if rect.grow(ROAD_BLEND).intersects(BOUNDS,true): _building_guards.append(rect)
-	# Flat forecourts follow the relocated roadside buildings at the relief lip.
+	# Pátios planos acompanham os prédios de beira de estrada realocados na borda do relevo.
 	var roadside := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
 	if roadside.enabled():
 		for site in roadside.SITES:

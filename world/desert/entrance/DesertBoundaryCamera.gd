@@ -1,6 +1,6 @@
 extends RefCounted
-## Keep the whole orthographic near plane outside solid perimeter rocks.
-## Extending the lens along its existing view preserves pitch and apparent size.
+## Mantém o plano próximo ortográfico inteiro fora das rochas sólidas do perímetro.
+## Estender a lente ao longo da vista existente preserva a inclinação e o tamanho aparente.
 const LAYOUT:=preload("res://world/desert/DesertLayout.gd")
 const INTERVAL:=.1
 var enabled:=true
@@ -36,8 +36,8 @@ func offset_for(focus: Vector3,nominal: Vector3,view_size: Vector2,near_clip: fl
 		_query.collision_mask=1
 		_query.collide_with_areas=false
 		var space:=tree.root.world_3d.direct_space_state
-		# Four bounded queries. The final distance clears the authored <=30m
-		# perimeter relief at the production pitch, without a per-triangle scan.
+		# Quatro consultas limitadas. A distância final passa acima do relevo autorado de <=30m
+		# do perímetro na inclinação de produção, sem varredura por triângulo.
 		for attempt in 4:
 			_query.transform=Transform3D(Basis.looking_at(-direction),focus+direction*(desired-near_clip))
 			last_queries+=1

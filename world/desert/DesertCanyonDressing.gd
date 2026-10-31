@@ -1,6 +1,6 @@
 extends RefCounted
-## Static fallen sandstone and exposed buttresses. Chunk ownership uses each centre;
-## all chunks must pass the same world seed. The supplied height is the final terrain surface.
+## Arenito caído estático e contrafortes expostos. O dono do chunk usa cada centro;
+## todos os chunks precisam passar a mesma semente do mundo. A altura dada é a superfície final do terreno.
 const FIELD := preload("res://world/desert/DesertTerrainRelief.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const FORMS := preload("res://world/desert/DesertHorizonRelief.gd")
@@ -27,7 +27,7 @@ static func build_chunk(parent: Node3D, rect: Rect2, world_seed: int, height_cal
 		else:
 			var size: Vector3=record.size
 			node=ROCKS.rock(parent,"CanyonFallenSandstone",Vector3(p.x,base+size.y*.40,p.y),size,record.color,true)
-			# Reuse the shared vertex-colour material; one new material per stone is unnecessary.
+			# Reaproveita o material compartilhado de cor de vértice; um material novo por pedra é desnecessário.
 			(node as MeshInstance3D).material_override=FORMS.material()
 			for child in node.get_children():
 				if child is StaticBody3D: child.set_meta("vehicle_surface","hard")
@@ -41,7 +41,7 @@ static func _placements(world_seed: int) -> Array[Dictionary]:
 	var centers := FIELD.canyon_centerline(28.0)
 	var rng := RandomNumberGenerator.new()
 	rng.seed=world_seed+17031
-	# Alternating gaps leave the route open and avoid two artificial rows of identical stones.
+	# Vãos alternados deixam a rota aberta e evitam duas fileiras artificiais de pedras idênticas.
 	for i in range(3,centers.size()-2):
 		for side in [-1.0,1.0]:
 			if (i+int(side))%4==0: continue
@@ -55,7 +55,7 @@ static func _placements(world_seed: int) -> Array[Dictionary]:
 				var radius := maxf(size.x,size.z)*.5
 				if not _clear(p,radius): continue
 				result.append({"position":p,"radius":radius,"size":size,"buttress":false,"color":Color("96744f").lerp(Color("b08c61"),rng.randf_range(.0,.48))})
-	# Three exposed ribs sit on the wall itself. The western ascent and its landing remain reserved.
+	# Três costelas expostas ficam na própria parede. A subida oeste e o patamar continuam reservados.
 	for index in 3:
 		var i := clampi(4+index*3,3,centers.size()-3)
 		var side := -1.0 if index==1 else 1.0
@@ -78,7 +78,7 @@ static func _clear(p: Vector2, radius: float) -> bool:
 	return LAYOUT.road_clear(p,radius+3.0)
 
 static func _base_height(p: Vector2, radius: float, height_callable: Callable) -> float:
-	# The convex footprints fit inside this circle. Embed downhill feet and all uphill faces.
+	# As áreas convexas cabem dentro deste círculo. Enterra os pés morro abaixo e todas as faces morro acima.
 	var base := float(height_callable.call(p))
 	for i in 12:
 		var angle := float(i)*TAU/12.0

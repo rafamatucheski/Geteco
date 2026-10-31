@@ -1,5 +1,5 @@
 extends "res://world/places/NativePlace.gd"
-## The visual cutaway never removes the enclosure seen by projectiles.
+## O corte visual nunca remove o invólucro visto pelos projéteis.
 func _ready() -> void:
 	super._ready()
 	for body in solid_bodies:
@@ -11,5 +11,5 @@ func _ready() -> void:
 		var bounds: AABB = body.get_meta("bounds")
 		bounds.size.y = 3.4
 		body.set_meta("bounds", bounds)
-	# Not a floor obstacle: actors walk below the slab; grenades hit its underside.
+	# Não é obstáculo de piso: atores andam abaixo da laje; granadas batem na face de baixo.
 	_box_solid("CulvertCeiling", AABB(Vector3(-20.5, 3.2, -5.5), Vector3(41, .3, 11)), false)

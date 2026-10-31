@@ -1,6 +1,6 @@
 extends RefCounted
-## Optional outdoor discoveries in the empty north and west of the desert.
-## The owning region streams each anchor once and reserves clear approaches.
+## Descobertas externas opcionais no norte e oeste vazios do deserto.
+## A região dona faz streaming de cada âncora uma vez e reserva acessos livres.
 const RAIL := preload("res://world/desert/expansion/DesertRelicsRail.gd")
 const SITES := preload("res://world/desert/expansion/DesertRelicsSites.gd")
 const BATCH := preload("res://world/desert/expansion/DesertRelicsBatch.gd")
@@ -81,8 +81,8 @@ static func secrets() -> Array[Dictionary]:
 	]
 
 static func locations() -> Array[Dictionary]:
-	# Local route/solid samples are deliberately authored independently of the
-	# placement builder so a fixture can detect obstructed accesses and clipping.
+	# As amostras locais de rota/sólido são autoradas de propósito independentes do
+	# construtor de posicionamento, para um teste detectar acessos obstruídos e interpenetração.
 	return [
 		{"id":"station", "position":Vector3(STATION.x,0,STATION.y), "camera_target":Vector3(-964,1,-450), "camera_size":62.0,
 		 "approach":[Vector3(0,0,10),Vector3(3,0,7),Vector3(3,0,2)],

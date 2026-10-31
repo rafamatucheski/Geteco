@@ -53,8 +53,8 @@ const CROSS_SECTION := [
 	Vector2(.46,.93),Vector2(.52,.98),Vector2(.57,1),Vector2(.66,.87),
 	Vector2(.77,.61),Vector2(.89,.27),Vector2(1,0),
 ]
-# The north escarpment is the drag camera's skyline. A retreating talus,
-# steep fractured wall and broad cap read as rock instead of rounded dunes.
+# A escarpa norte é o skyline da câmera da arrancada. Um tálus recuado,
+# parede íngreme fraturada e topo largo parecem rocha em vez de dunas arredondadas.
 const DRAG_SECTION := [
 	Vector2(0,0),Vector2(.07,.025),Vector2(.20,.13),Vector2(.29,.27),
 	Vector2(.34,.42),Vector2(.36,.63),Vector2(.39,.85),Vector2(.42,.96),
@@ -75,8 +75,8 @@ static func build() -> Node3D:
 	root.name="DesertErodedHorizon"
 	var near := _buffer()
 	var far := _buffer()
-	# Authored high points and asymmetric saddles prevent a regular row of identical mesas.
-	# Endpoint heights taper into buried feet; no vertical rectangular cut at the ends.
+	# Pontos altos autorados e selas assimétricas evitam uma fileira regular de mesas idênticas.
+	# As alturas das pontas afinam em pés enterrados; sem corte vertical retangular nas pontas.
 	var north := {"side":"north","from":L.BOUNDS.position.x-220.0,"to":L.BOUNDS.end.x+240.0,"width":360.0,"seed":73,"profile":[Vector2(0,.05),Vector2(.055,.30),Vector2(.10,.86),Vector2(.20,.89),Vector2(.24,.38),Vector2(.32,.31),Vector2(.36,.73),Vector2(.46,.77),Vector2(.50,.36),Vector2(.58,.40),Vector2(.62,.94),Vector2(.75,.91),Vector2(.80,.51),Vector2(.88,.56),Vector2(.94,.22),Vector2(1,.06)]}
 	var west := {"side":"west","from":L.BOUNDS.position.y-250.0,"to":L.BOUNDS.end.y+68.5,"width":310.0,"seed":29,"profile":[Vector2(0,.06),Vector2(.10,.44),Vector2(.21,.92),Vector2(.28,.72),Vector2(.42,.33),Vector2(.53,.67),Vector2(.65,.91),Vector2(.78,.36),Vector2(.90,.68),Vector2(1,.04)]}
 	var south := {"side":"south","from":L.BOUNDS.position.x-190.0,"to":90.0,"width":210.0,"seed":97,"profile":[Vector2(0,.03),Vector2(.10,.66),Vector2(.21,.38),Vector2(.35,.89),Vector2(.41,.76),Vector2(.55,.29),Vector2(.69,.68),Vector2(.82,.42),Vector2(.92,.30),Vector2(1,.02)]}
@@ -112,19 +112,19 @@ static func _ridge(data: Dictionary, definition: Dictionary, distant: bool) -> v
 		var fit := smoothstep(25.0,110.0,room-front_estimate)
 		end_blend*=fit
 		var height := (29.0+crest*(138.0 if distant else 102.0))*end_blend
-		# Unequal drainage cuts break the skyline and recess the wall all the way into the talus.
+		# Cortes de drenagem desiguais quebram o skyline e recuam a parede até dentro do tálus.
 		var gullies := 0.0
 		for g in 7:
 			var center := .075+float(g)*.137+sin(phase+float(g)*2.7)*.027
 			var width := .009+float(g%3)*.004
 			gullies=maxf(gullies,exp(-pow((t-center)/width,2)))
 		var broken_crest := sin(along*.039+phase)*4.5+sin(along*.017+phase*.8)*7.5
-		# Fracture blocks have unequal tops with straight geological breaks, not smooth dune humps.
+		# Blocos de fratura têm topos desiguais com quebras geológicas retas, não corcovas suaves de duna.
 		var fracture := _fracture(along,float(definition.seed))
 		broken_crest+=fracture*16.0
 		height=maxf(0.0,height*(1.0-gullies*.27)+broken_crest*end_blend)
 		var front := MARGIN+17.0+11.0*sin(t*15+phase)+8.0*sin(t*33+phase*.4)+gullies*29.0
-		# near minimum front=22 before this clamp; reserve every triangle, not merely its centre.
+		# frente mínima próxima=22 antes deste limite; reserva cada triângulo, não só o centro.
 		front=maxf(MARGIN,front)
 		if distant: front+=175.0
 		var depth := float(definition.width)*(1.0+.13*sin(t*8+phase))
@@ -151,9 +151,9 @@ static func _ridge(data: Dictionary, definition: Dictionary, distant: bool) -> v
 			d=maxf(MARGIN,d)
 			if room>MARGIN: d=minf(d,room)
 			if definition.side=="north":
-				# Keep a single visible rock face. Deep drainage displacement used
-				# to fold adjacent wall rows backwards, exposing triangular holes
-				# from the low race camera when back-face culling removed the fold.
+				# Mantém uma única face de rocha visível. O deslocamento fundo de drenagem
+				# dobrava fileiras vizinhas da parede para trás, expondo buracos triangulares
+				# à câmera baixa da corrida quando o culling de face traseira removia a dobra.
 				d=maxf(previous_depth+.5,d)
 				previous_depth=d
 				# A face única do norte não pode empurrar o pé para dentro da praia.
@@ -185,7 +185,7 @@ static func _ridge(data: Dictionary, definition: Dictionary, distant: bool) -> v
 			var b: Vector3=rows[i+1][j]
 			var c: Vector3=rows[i+1][j+1]
 			var d: Vector3=rows[i][j+1]
-			# Alternating diagonals avoid long repeated triangular highlights on the talus.
+			# Diagonais alternadas evitam brilhos triangulares longos e repetidos no tálus.
 			if (i+j)%2==0:
 				_triangle(data,a,b,c,colors[i][j],colors[i+1][j],colors[i+1][j+1],Vector3.UP,normals[i][j],normals[i+1][j],normals[i+1][j+1])
 				_triangle(data,a,c,d,colors[i][j],colors[i+1][j+1],colors[i][j+1],Vector3.UP,normals[i][j],normals[i+1][j+1],normals[i][j+1])
@@ -230,7 +230,7 @@ static func _stratum_color(row: int) -> Color:
 static func _triangle(data: Dictionary,a: Vector3,b: Vector3,c: Vector3,ca: Color,cb: Color,cc: Color,outward: Vector3,na: Vector3=Vector3.ZERO,nb: Vector3=Vector3.ZERO,nc: Vector3=Vector3.ZERO) -> void:
 	var normal := (c-a).cross(b-a)
 	if normal.length_squared()<.000001: return
-	# Godot front faces are clockwise. Keep normals consistent with the emitted winding.
+	# Faces da frente no Godot são horárias. Mantém as normais coerentes com o sentido emitido.
 	if normal.dot(outward)<0:
 		var swap := b
 		b=c
@@ -264,8 +264,8 @@ static func _mesh(id: String,data: Dictionary,shadows: bool) -> MeshInstance3D:
 	return node
 
 static func create_outcrop(parent: Node3D,at: Vector3,radius: float,height: float,seed_value: int,solid: bool,visual := true) -> Node3D:
-	# Three connected convex frusta share every seam; collision is made from the same vertices.
-	# Unlike a cylinder collider, it follows the irregular footprint and each retreating rock face.
+	# Três troncos convexos conectados dividem cada emenda; a colisão é feita dos mesmos vértices.
+	# Ao contrário de um colisor cilíndrico, ela segue a área irregular e cada face de rocha recuada.
 	var root := Node3D.new()
 	root.name="ErodedSandstoneOutcrop"
 	root.position=at
@@ -293,7 +293,7 @@ static func create_outcrop(parent: Node3D,at: Vector3,radius: float,height: floa
 			var y := float(levels[row])*height+(xz.x*.035+xz.y*.027)*float(levels[row])
 			ring.append(Vector3(xz.x,y,xz.y))
 		rings.append(ring)
-	# Mid-band rings lie exactly on each volume's ruled face, so colour bands add no collider bulge.
+	# Os anéis da faixa do meio ficam exatamente na face regrada de cada volume, então faixas de cor não estufam o colisor.
 	for row in [1,3,5]:
 		for i in outline.size(): rings[row][i]=rings[row-1][i].lerp(rings[row+1][i],.5)
 	for row in rings.size()-1:

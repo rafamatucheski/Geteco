@@ -1,6 +1,6 @@
 extends RefCounted
-## Continuous shallow railway support. Outer/end toes begin below the existing
-## ground, so vehicles never meet the vertical edge of a thin raised slab.
+## Apoio ferroviário raso e contínuo. As pontas externas/finais começam abaixo do
+## chão existente, então veículos nunca encontram a borda vertical de uma laje fina elevada.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const GRID := 4.0
 const TOE_HEIGHT := -.025

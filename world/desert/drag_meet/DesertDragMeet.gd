@@ -1,7 +1,7 @@
 extends RefCounted
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
-## Chunk-owned paddock. Parked cars admit a full driving controller on theft or
-## damage; untouched displays have no audio, lamps or per-frame work.
+## Paddock pertencente ao chunk. Carros estacionados admitem um controlador de direção completo em roubo ou
+## dano; exibições intocadas não têm áudio, faróis nem trabalho por quadro.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
@@ -13,8 +13,8 @@ static var _bay_paint_material: ShaderMaterial
 static var _bay_paint_mesh: ArrayMesh
 static var _detail_materials: Dictionary = {}
 static var _paint_materials: Dictionary = {}
-## The same 24 spectators and 12 display cars form more readable groups along
-## the whole course. Milestone groups stay outside both the strip and return.
+## Os mesmos 24 espectadores e 12 carros de exibição formam grupos mais legíveis ao longo
+## do percurso inteiro. Os grupos de marco ficam fora da pista e da volta.
 const STRIP_POCKETS := [-899.0,-790.0,-699.0,-598.0,-498.0,-380.0,-245.0,-102.0]
 
 static func records() -> Array[Dictionary]:
@@ -57,7 +57,7 @@ static func records() -> Array[Dictionary]:
 		{"position":Vector3(-759,0,-791),"type":"barrier"},
 	]:
 		result.append({"kind":"drag_meet","position":data.position,"type":data.type,"data":data})
-	# Independent barriers leave the access, staging point and braking runoff open.
+	# Barreiras independentes deixam abertos o acesso, o ponto de largada e a área de frenagem.
 	for x in range(-888,-759,9):
 		result.append({"kind":"drag_meet","position":Vector3((x)+140,0,-791),"type":"barrier","data":{}})
 	for x in range(-916,-759,9):
@@ -65,18 +65,18 @@ static func records() -> Array[Dictionary]:
 	result.append({"kind":"drag_workshop","position":LAYOUT.drag_workshop_point()})
 	return result
 
-## Eight finite spectator pockets follow the race, independently of the paddock's
-## proximity-controlled population. Streaming owns every car, person and barrier.
+## Oito bolsões finitos de espectadores acompanham a corrida, independentes da população
+## controlada por proximidade do paddock. O streaming é dono de todo carro, pessoa e barreira.
 static func strip_records() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var models := ["desert_mirage_gt","monaliza","desert_coyote_drag","ranch_pickup","station_wagon","metro_hatch"]
 	var paints := [Color("8d4936"),Color("acb3b9"),Color("314b62"),Color("727545")]
 	for pocket in STRIP_POCKETS.size():
 		var x: float=STRIP_POCKETS[pocket]
-		# The far shoulder remains readable above the HUD in the side camera.
-		# One 7.6 m solid barrier protects the three-person group without adding
-		# another row of scenery or blocking the service lane at z=-1350.
-		# The first two pockets already have the continuous starting barrier.
+		# O acostamento distante continua legível acima do HUD na câmera lateral.
+		# Uma barreira sólida de 7.6 m protege o grupo de três pessoas sem somar
+		# outra fileira de cenário nem bloquear a faixa de serviço em z=-1350.
+		# Os dois primeiros bolsões já têm a barreira contínua da largada.
 		if pocket>=2: result.append({"kind":"drag_meet","position":Vector3((x)+140,0,-808.3),"type":"barrier","data":{}})
 		for slot in 3:
 			var point := Vector3(x+140.0-2.4+float(slot)*2.4,.03,-811)
@@ -91,8 +91,8 @@ static func strip_records() -> Array[Dictionary]:
 	return result
 
 static func car_spots() -> Array[Dictionary]:
-	# The actual rival models are landmarks for their social islands. Digo's Gol
-	# stays inside his working garage; these four match DesertDrag.RIVALS exactly.
+	# Os modelos reais dos rivais são marcos das ilhas sociais deles. O Gol do Digo
+	# fica dentro da garagem de trabalho; estes quatro batem exatamente com DesertDrag.RIVALS.
 	var result: Array[Dictionary] = [
 		_car("livia_faisca",Vector3(-824,0,-776.8),"desert_faisca_rally",.04),
 		_car("raul_coyote",Vector3(-868,0,-778),"desert_coyote_drag",PI),
@@ -103,8 +103,8 @@ static func car_spots() -> Array[Dictionary]:
 		_car("gang_sedan",Vector3(-798,0,-733),"desert_siroco",PI),
 		_car("service_pickup",Vector3(-892,0,-748),"desert_bison",PI*.5),
 	]
-	# Closely parked rows leave the 8m access corridor and each conversational
-	# pocket intact. Slight offsets/yaws make separate arriving groups legible.
+	# Fileiras estacionadas bem juntas deixam intactos o corredor de acesso de 8m e cada
+	# bolsão de conversa. Pequenos desvios/giros deixam legíveis os grupos que chegam separados.
 	var rows := [
 		{"z":-1305.0,"x":[-1032,-1024,-1016,-1008,-1000,-984,-976,-968,-960,-952,-944]},
 		{"z":-1297.0,"x":[-1032,-1024,-1016,-992,-981,-974,-952,-944]},
@@ -147,8 +147,8 @@ static func build_ground(parent: Node3D, rect: Rect2) -> void:
 	for child in ground.get_children():
 		if not child is StaticBody3D: continue
 		child.set_meta("vehicle_surface","hard")
-		# The visual film stays above the sand, but its physical support shares
-		# the road datum. A 12 mm vertical face stopped arriving car hulls here.
+		# A película visual fica acima da areia, mas o apoio físico divide
+		# a referência da estrada. Uma face vertical de 12 mm parava as carcaças dos carros chegando aqui.
 		for collider in child.get_children():
 			if not collider is CollisionShape3D or not collider.shape is ConcavePolygonShape3D: continue
 			var faces: PackedVector3Array = collider.shape.get_faces()
@@ -157,8 +157,8 @@ static func build_ground(parent: Node3D, rect: Rect2) -> void:
 			collider.shape.set_faces(faces)
 	STALL_WORK.finish_slow("drag_meet.ground.faces", span, 2000)
 	span = STALL_WORK.begin()
-	# Concrete expansion joints and individual parking outlines read at driving
-	# scale without descriptive signs or a second surface over the access road.
+	# Juntas de dilatação do concreto e contornos individuais de vaga aparecem na escala de
+	# direção sem placas descritivas nem uma segunda superfície sobre a estrada de acesso.
 	for data in car_spots():
 		var point: Vector3=data.position
 		if not rect.has_point(Vector2(point.x,point.z)): continue
@@ -177,8 +177,8 @@ static func build_ground(parent: Node3D, rect: Rect2) -> void:
 
 static func _parking_mesh() -> ArrayMesh:
 	if _bay_paint_mesh!=null: return _bay_paint_mesh
-	# Paint is a flat film, not a shallow box whose vertical sides draw a dark
-	# outline after the paint fades. All three strokes share one static draw.
+	# A pintura é uma película plana, não uma caixa rasa cujos lados verticais desenham um contorno
+	# escuro depois que a pintura apaga. Os três traços dividem um draw estático.
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	for rect in [Rect2(-1.585,-2.95,.07,5.9),Rect2(1.515,-2.95,.07,5.9),Rect2(-1.55,2.865,3.1,.07)]:
@@ -203,9 +203,9 @@ static func _parking_paint() -> ShaderMaterial:
 
 static func _ground_material() -> ShaderMaterial:
 	if _paddock_material!=null: return _paddock_material
-	# The opaque surface keeps the same physical support. Its perimeter resolves
-	# to the surrounding world-anchored sand, including its fine normal, so neither
-	# rectangle boundaries nor streamed chunk boundaries need transparent decals.
+	# A superfície opaca mantém o mesmo apoio físico. O perímetro se resolve
+	# na areia ancorada no mundo em volta, incluindo a normal fina, então nem
+	# bordas de retângulo nem bordas de chunk em streaming precisam de decals transparentes.
 	_paddock_material=ShaderMaterial.new()
 	_paddock_material.shader=preload("res://world/desert/drag_meet/drag_meet_ground.gdshader")
 	var bounds := LAYOUT.DRAG_MEET_BOUNDS
@@ -226,7 +226,7 @@ static func build_record(parent: Node3D, record: Dictionary) -> void:
 	parent.add_child(node)
 	match str(record.type):
 		"car", "strip_car": _parked_car(node,record.data)
-		"strip_spectator": pass # The persistent slot owns admission and recovery.
+		"strip_spectator": pass # O slot persistente é dono da admissão e da recuperação.
 		"tent": _tent(node,record.data)
 		"tables": _tables(node)
 		"tires": _tires(node)
@@ -298,7 +298,7 @@ static func _tent(node: Node3D, data: Dictionary) -> void:
 		node.add_child(panel)
 		var edge := G.box(node,"CanvasValance",(a+b)*.5-Vector3(0,.14,0),Vector3(float(data.size),.28,.025),data.color)
 		if index%2==1: edge.rotation.y=PI*.5
-	# Corner feet, tension strips and roof seams replace the former plain cone.
+	# Pés de canto, faixas de tensão e emendas do teto substituem o antigo cone simples.
 	for x in [-half,half]:
 		for z in [-half,half]:
 			G.box(node,"CanopyFoot",Vector3(x,.05,z),Vector3(.38,.10,.38),Color("797f79"))
@@ -350,8 +350,8 @@ static func _barrier(node: Node3D) -> void:
 		G.box(node,"BarrierFoot",Vector3(side*2.8,.15,0),Vector3(.8,.3,.9),Color("8c8170"),true)
 
 static func _pit_tools(node: Node3D) -> void:
-	# Wheels, drawer fronts, a jack saddle and loose engine parts make the work
-	# islands readable at pedestrian scale without text or idle simulation.
+	# Rodas, frentes de gaveta, uma sela de macaco e peças de motor soltas deixam as ilhas
+	# de trabalho legíveis em escala de pedestre sem texto nem simulação ociosa.
 	G.box(node,"RollingToolCabinet",Vector3(-.7,.49,0),Vector3(.95,.84,.62),Color("a84736"),true)
 	for tier in 4:
 		G.box(node,"DrawerSeam",Vector3(-.7,.28+float(tier)*.16,-.325),Vector3(.84,.018,.026),Color("493c37"))

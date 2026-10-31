@@ -63,8 +63,8 @@ static func build_visuals_sliced(tree: SceneTree, budget_usec := 12000, token: D
 	LIFETIME.release(token,root)
 	return root
 
-## A cold cell can itself take hundreds of milliseconds. Yield inside its
-## tile generation; vertex order, normals and physical faces stay identical.
+## Uma célula fria sozinha pode levar centenas de milissegundos. Cede dentro da
+## geração dos ladrilhos; ordem dos vértices, normais e faces físicas ficam idênticas.
 static func mesh_for_sliced(key: Vector2i, tree: SceneTree, budget_usec: int, token: Dictionary = {}) -> ArrayMesh:
 	if LIFETIME.cancelled(token): return null
 	if _meshes.has(key): return _meshes[key]
@@ -94,8 +94,8 @@ static func mesh_for_sliced(key: Vector2i, tree: SceneTree, budget_usec: int, to
 	return mesh
 
 static func release_generation_scratch() -> bool:
-	# Only after EVERY visual cell and tile is cached: no later height/collision
-	# query needs the classification or analytic height/normal dictionaries.
+	# Só depois que TODA célula visual e ladrilho estão em cache: nenhuma consulta posterior de
+	# altura/colisão precisa da classificação nem dos dicionários analíticos de altura/normal.
 	for z in range(floori(FIELD.BOUNDS.position.y/CELL),ceili(FIELD.BOUNDS.end.y/CELL)):
 		for x in range(floori(FIELD.BOUNDS.position.x/CELL),ceili(FIELD.BOUNDS.end.x/CELL)):
 			if not _meshes.has(Vector2i(x,z)): return false
@@ -117,7 +117,7 @@ static func material() -> ShaderMaterial:
 
 static func _sample(p: Vector2) -> Dictionary:
 	if not _samples.has(p):
-		# Keep the ORIGINAL radius2 normal, including at new subdivision vertices.
+		# Mantém a normal ORIGINAL de radius2, inclusive nos vértices novos de subdivisão.
 		_samples[p]={"height":FIELD.height_at(p),"normal":FIELD.normal_at(p,2.0)}
 	return _samples[p]
 
@@ -260,7 +260,7 @@ static func surface_height(p: Vector2) -> float:
 		var column := mini(floori(t.x),1)
 		var row := mini(floori(t.y),1)
 		return _quad_height(faces,(row*2+column)*6,t-Vector2(column,row))
-	# Transition fans only: the exact cached triangles, at most8.
+	# Só leques de transição: exatamente os triângulos em cache, no máximo 8.
 	for i in range(0,faces.size(),3):
 		var a := Vector2(faces[i].x,faces[i].z)
 		var b := Vector2(faces[i+1].x,faces[i+1].z)

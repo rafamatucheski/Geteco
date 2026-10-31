@@ -38,7 +38,7 @@ static func build(paint: Color) -> Node3D:
 		mesh.material_override=part.material
 		mesh.transform=part.transform
 		root.add_child(mesh)
-	# Coarse solid envelopes are independent of the baked visual mesh and never discarded by batching.
+	# Envelopes sólidos grosseiros independem da malha visual embutida e nunca são descartados pelo lote.
 	_solid(root,"CabSolid",Vector3(0,1.94,-10.73),Vector3(2.46,3.22,3.42))
 	_solid(root,"TractorSolid",Vector3(0,.77,-7.55),Vector3(2.46,1.28,3.1))
 	for z in [-2.3,8.2]: _solid(root,"TrailerSolid",Vector3(0,2.04,z),Vector3(2.58,3.05,9.48))
@@ -69,7 +69,7 @@ static func _surface(root: Node3D, faces: Array, kind: String, tint := Color.WHI
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for face: PackedVector3Array in faces:
-		# Author faces with outward right-hand normals; reverse indices for Godot winding.
+		# Autora faces com normais para fora pela regra da mão direita; inverte índices para o sentido de giro do Godot.
 		var normal := (face[1]-face[0]).cross(face[2]-face[0]).normalized()
 		for i in [0,2,1,0,3,2]:
 			st.set_normal(normal)
@@ -91,12 +91,12 @@ static func _tractor(root: Node3D, paint: Color) -> void:
 		for i in 8:
 			var j := (i+1)%8
 			faces.append(PackedVector3Array([rings[level][i],rings[level+1][i],rings[level+1][j],rings[level][j]]))
-	# The chamfered top closes the silhouette without a floating sleeper box.
+	# O topo chanfrado fecha a silhueta sem uma caixa de cabine-leito flutuando.
 	for i in range(1,7): faces.append(PackedVector3Array([rings[3][0],rings[3][i+1],rings[3][i],rings[3][0]]))
 	_surface(root,faces,"paint",paint)
 	_box(root,Vector3(0,3.65,-10.5),Vector3(1.25,.065,1.05),"paint",paint.darkened(.16))
 	_box(root,Vector3(0,3.695,-10.5),Vector3(.72,.03,.55),"recess")
-	# Raked glazing is laid over the actual sloping cab face, with a visible rubber perimeter.
+	# A vidraça inclinada fica sobre a face inclinada real da cabine, com um perímetro de borracha visível.
 	for layer in 2:
 		var w := 1.06 if layer==0 else .98
 		var low := 2.32 if layer==0 else 2.40
@@ -118,7 +118,7 @@ static func _tractor(root: Node3D, paint: Color) -> void:
 		_box(root,Vector3(side*.94,1.07,-12.65),Vector3(.49,.25,.055),"seal")
 		for x in [.81,1.04]: _box(root,Vector3(side*x,1.08,-12.685),Vector3(.18,.16,.022),"lens")
 		_box(root,Vector3(side*1.18,1.12,-12.62),Vector3(.10,.16,.04),"amber")
-		# Door glazing with an angled A pillar, door seam, recessed handle and low stripe.
+		# Vidro da porta com coluna A angulada, emenda da porta, maçaneta embutida e faixa baixa.
 		var x: float = side*1.244
 		var window := PackedVector3Array([Vector3(x,2.35,-12.13),Vector3(side*1.21,3.17,-11.96),Vector3(side*1.21,3.17,-10.44),Vector3(x,2.35,-10.44)])
 		if side<0: window.reverse()
@@ -192,7 +192,7 @@ static func _trailer(root: Node3D, z: float, variant: int, index: int) -> void:
 		_box(root,Vector3(side*.85,.51,z-3.15),Vector3(.31,.065,.34),"chassis")
 		_box(root,Vector3(side*1.10,1.18,z+3.3),Vector3(.69,.07,2.75),"rubber")
 		_box(root,Vector3(side*1.10,.55,z+4.18),Vector3(.69,.86,.065),"rubber")
-	# Crown and small folds in the canvas break up the former perfectly flat boxes.
+	# Abaulamento e pequenas dobras na lona quebram as antigas caixas perfeitamente planas.
 	if not is_box:
 		var rings: Array[PackedVector3Array]=[]
 		for segment in 25:

@@ -1,6 +1,6 @@
 extends RefCounted
-## Visual ownership of the authored forecourts, plus physical road/soil ownership.
-## Visual clipping leaves collision intact; compose_collision handles that separately.
+## Posse visual dos pátios autorados, mais a posse física de estrada/solo.
+## O recorte visual deixa a colisão intacta; compose_collision cuida disso à parte.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const CUT := preload("res://world/urban_detail/GroundCut.gd")
 const DETAIL := preload("res://world/desert/DesertSurfaceDetail.gd")

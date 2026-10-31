@@ -1,10 +1,10 @@
 extends RefCounted
-## Small distant scale cues on the inaccessible gorge floor. One shared feeding
-## animation sleeps off screen; there are no actors, physics bodies or AI loops.
+## Pequenas pistas de escala distantes no fundo inacessível do desfiladeiro. Uma animação
+## compartilhada de alimentação dorme fora da tela; não há atores, corpos físicos nem laços de IA.
 const E := preload("res://world/desert/expansion/DesertEcologyGeometry.gd")
 const T := preload("res://world/desert/canyon/DesertSmugglerTerrain.gd")
-# Camera/terrain rays select exposed lower benches; the near rim must not hide
-# all scale cues. The last group stays in the deepest basin for later viewpoints.
+# Raios de câmera/terreno escolhem bancadas baixas expostas; a borda próxima não pode esconder
+# todas as pistas de escala. O último grupo fica na bacia mais funda para pontos de vista posteriores.
 const BODY_POINTS := [Vector2(-1211.8,-581.3),Vector2(-1216.6,-583.1),Vector2(-1220.2,-568.1),Vector2(-1199.2,-548)]
 const BIRD_OFFSETS := [Vector3(0,-.68,.25),Vector3(0,.76,-.12),Vector3(1,-.73,-.28),Vector3(2,.74,.16),Vector3(3,-.67,.3),Vector3(3,.69,-.21)]
 const OLD_BONE := Color("b9ae8d")
@@ -139,8 +139,8 @@ static func _skull(data: Dictionary,at: Vector3) -> void:
 		E.ellipsoid(data,Transform3D(Basis.IDENTITY,at+Vector3(side*.042,.112,-.022)),Vector3(.027,.009,.03),Color("544b3b"),6,3)
 
 static func _weathered_fragments(data: Dictionary,index: int) -> void:
-	# The low centres intentionally leave part of these dry bones buried by
-	# the same ground-conforming transform as the clothes and bodies.
+	# Os centros baixos deixam de propósito parte destes ossos secos enterrada pelo
+	# mesmo transform que acompanha o chão usado nas roupas e nos corpos.
 	for record in [[Vector3(.78,-.011,-.35),Vector3(1.05,-.004,-.14)],[Vector3(-.82,-.014,.42),Vector3(-.58,.004,.66)]]:
 		var a: Vector3=record[0]
 		var b: Vector3=record[1]

@@ -63,9 +63,9 @@ var harbor_road_geometry: RefCounted = null
 var vehicle_support_cells: Dictionary = {}
 var developer_view_cells: Dictionary = {}
 var _developer_bounds := Rect2()
-# The side camera sees the entire course's north shoulder. Warm this bounded
-# band on approach, then retain it through the return; ordinary city streaming
-# stays unchanged. Preparation uses the existing one-cell/frame build budget.
+# A câmera lateral vê o acostamento norte do percurso inteiro. Aquece esta faixa
+# limitada na aproximação e a retém durante a volta; o streaming comum da cidade
+# fica igual. A preparação usa o orçamento existente de uma célula por quadro.
 const DRAG_VIEW_BOUNDS := Rect2(-1056 + COMPACT.DRAG.x,-1440 + COMPACT.DRAG.z,1248,192)
 var drag_view_cells: Dictionary = {}
 var drag_view_pending: Array[Vector2i] = []
@@ -137,8 +137,8 @@ func _ready() -> void:
 	if not initial_prewarm_only: set_focus(initial_focus if initial_focus.is_finite() else spawn_position)
 	STALL_WORK.finish_slow("desert.ready.set_focus",began,2000)
 
-## Called while detached, under the loading curtain. The identical visual
-## terrain is generated in slices and _ready reuses the completed hierarchy.
+## Chamado enquanto destacado, sob a cortina de carregamento. O terreno visual
+## idêntico é gerado em fatias e _ready reaproveita a hierarquia concluída.
 func prepare_presentation_incremental(tree: SceneTree, lifetime: Node = null) -> void:
 	if is_instance_valid(_horizon): return
 	var token := {"cancelled":false,"roots":[]}
@@ -157,8 +157,8 @@ func prepare_data() -> void:
 	roads=LAYOUT.roads()
 	roads.append_array(preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").roads())
 	road_geometry.configure(roads)
-	# Private gravel geometry is authored by MiningExterior; route consumers and
-	# map still receive its same centre-line, excluded from ambient traffic.
+	# A geometria de cascalho privada é autorada por MiningExterior; consumidores de rota e
+	# o mapa ainda recebem a mesma linha central, fora do trânsito ambiente.
 	roads=roads+MINING_LAYOUT.roads()
 	if MINING_LAYOUT.enabled():
 		var mine_definition:=preload("res://world/mining/coal/CoalMinePlace.gd").definition_data()
@@ -172,7 +172,7 @@ func prepare_data() -> void:
 			if absf(sin(float(record.data.yaw)))>.5: village_planar=Vector2(village_size.z,village_size.x)
 			buildings.append({"id":record.data.id,"name":"Santa Lua" if record.data.kind=="store" else "","position":record.position,"size":village_planar,"height":village_size.y})
 	for building in LAYOUT.buildings():
-		# NativeRegion's public geography API uses a planar footprint; art keeps XYZ dimensions.
+		# A API pública de geografia do NativeRegion usa área plana; a arte mantém dimensões XYZ.
 		var dimensions: Vector3=building.size
 		var footprint: Dictionary=building.duplicate()
 		footprint.size=Vector2(dimensions.x,dimensions.z)
@@ -206,8 +206,8 @@ func prepare_data() -> void:
 	for x in range(-900,91,64):
 		var point := Vector3(x,0,-1330) + COMPACT.DRAG
 		_record(point,{"kind":"lamp","position":point})
-	# The workshop pole stands outside both working bays; the eastern pole sits
-	# between Jessica and her neighbouring visitors, clear of the access curve.
+	# O poste da oficina fica fora das duas baias de trabalho; o poste leste fica
+	# entre a Jessica e os visitantes vizinhos, longe da curva de acesso.
 	for point in [Vector3(-1034,0,-1297),Vector3(-978,0,-1288),Vector3(-911,0,-1271),Vector3(-1013,0,-1252),Vector3(-951,0,-1240),Vector3(-917,0,-1220)]:
 		_record(point + COMPACT.DRAG,{"kind":"lamp","position":point + COMPACT.DRAG})
 	for record in DRAG_MEET.records(): _record(record.position,record)
@@ -248,8 +248,8 @@ func set_focus(point: Vector3, complete_focus_chunk := false) -> void:
 	_trim_chunks()
 
 func _complete_focus_chunk(key: Vector2i) -> void:
-	# Match NativeRegion's startup contract: finish only the occupied cell;
-	# neighbours retain the ordinary streaming budget.
+	# Segue o contrato de início do NativeRegion: termina só a célula ocupada;
+	# as vizinhas mantêm o orçamento comum de streaming.
 	_ensure_chunk_surfaces(key)
 	for job in build_jobs.duplicate():
 		if job.key!=key: continue
@@ -307,8 +307,8 @@ func _ensure_chunk_surfaces(key: Vector2i) -> void:
 	if chunks.has(key): return
 	var began := STALL_WORK.begin()
 	_begin_surface_job(key)
-	# Urgent physical support (player, vehicles and restore) must be complete
-	# before admission. Finish any work already prepared by the neighbour queue.
+	# O apoio físico urgente (jogador, veículos e restauração) precisa estar completo
+	# antes da admissão. Termina qualquer trabalho já preparado pela fila de vizinhas.
 	while _surface_jobs.has(key): _advance_surface_job(key)
 	STALL_WORK.finish_slow("stream.desert.surfaces",began,2000)
 
@@ -322,8 +322,8 @@ func _begin_surface_job(key: Vector2i) -> void:
 		return
 	var chunk := Node3D.new()
 	chunk.name="Desert_%d_%d"%[key.x,key.y]
-	# Until every surface is ready, neighbours stay hidden and their physical
-	# objects are removed from the physics space by the inherited disabled mode.
+	# Até toda superfície ficar pronta, as vizinhas ficam escondidas e os objetos
+	# físicos saem do espaço de física pelo modo desabilitado herdado.
 	chunk.visible=false
 	chunk.process_mode=Node.PROCESS_MODE_DISABLED
 	add_child(chunk)
@@ -440,9 +440,9 @@ func _finish_chunk_for_reuse(chunk: Node3D) -> void:
 
 func _update_drag_residency(point: Vector3) -> void:
 	var planar := Vector2(point.x,point.z)
-	# The full panorama belongs to the race camera. In the compact map,
-	# growing its sky band also covered town and the mine; ordinary visits
-	# must retain their local chunks rather than preloading the entire strip.
+	# O panorama inteiro pertence à câmera da corrida. No mapa compacto,
+	# aumentar a faixa de céu também cobria a cidade e a mina; visitas comuns
+	# precisam manter os chunks locais em vez de pré-carregar a pista inteira.
 	var near_course := LAYOUT.DRAG_STRIP_BOUNDS.grow(80 if drag_view_cells.is_empty() else 140).has_point(planar)
 	if near_course == (not drag_view_cells.is_empty()): return
 	drag_view_pending.clear()
@@ -484,7 +484,7 @@ func surfaces_idle() -> bool: return pending.is_empty() and drag_view_pending.is
 ## fatia de chão povoado de até 5,4 ms e o quadro perdia o vsync de 60 Hz (34 ms, teste de 18/10).
 func yield_dressing_this_frame() -> void: _dressing_yield_frame=Engine.get_process_frames()
 func prewarm() -> void:
-	# Shared materials are generated once. Do not instantiate the entire 3km desert.
+	# Materiais compartilhados são gerados uma vez. Não instancia o deserto inteiro de 3km.
 	preload("res://world/desert/DesertTownMaterials.gd").prewarm()
 	G.material(Color("b9a079"),true)
 	G.material(Color("706d61"),false,true)
@@ -543,8 +543,8 @@ func _trim_chunks() -> void:
 			for i in range(build_jobs.size()-1,-1,-1):
 				if build_jobs[i].key==key: build_jobs.remove_at(i)
 			_lamp_cleanup_after_frame=Engine.get_process_frames()+1
-	# Speculative surfaces can become obsolete before completion after a fast
-	# turn/teleport. Never spend the following frames constructing abandoned cells.
+	# Superfícies especulativas podem ficar obsoletas antes de terminar depois de uma curva
+	# rápida/teleporte. Nunca gasta os quadros seguintes montando células abandonadas.
 	for key in _surface_jobs.keys():
 		if vehicle_support_cells.has(key) or developer_view_cells.has(key) or drag_view_cells.has(key): continue
 		if absi(key.x-current_cell.x)<=retention_radius and absi(key.y-current_cell.y)<=retention_radius: continue
@@ -564,9 +564,9 @@ func _retire_or_cache_chunk(key: Vector2i, chunk: Node3D) -> void:
 	if is_instance_valid(canyon_site) and chunk.is_ancestor_of(canyon_site):
 		entry.canyon_site=canyon_site
 		canyon_site=null
-	# Active actors, movable bodies or audio have their own owners/lifecycle;
-	# completed static cells alone enter this cache. Pending merge coroutines
-	# are excluded by the marker set only after finish_chunk_later returns.
+	# Atores ativos, corpos móveis ou áudio têm seus próprios donos/ciclo de vida;
+	# só células estáticas concluídas entram neste cache. Corrotinas de mesclagem pendentes
+	# ficam excluídas pelo conjunto de marcadores só depois que finish_chunk_later retorna.
 	var reusable := chunk.has_meta("desert_reuse_ready") and not is_instance_valid(entry.abandoned_site) and not chunk.has_meta("desert_canyon_site")
 	if reusable:
 		for node in chunk.find_children("*","Node",true,false):
@@ -658,7 +658,7 @@ func set_night_lights(level: float) -> void:
 
 func _surface(chunk: Node3D, id: String, rect: Rect2, offset: float, mat: Material, solid := false) -> void:
 	if not rect.has_area(): return
-	# Every layer follows the same piecewise-linear ramp, including paint and shoulders.
+	# Toda camada segue a mesma rampa linear por partes, incluindo pintura e acostamentos.
 	if rect.end.y>-448:
 		for z in range(floori(rect.position.y/8.0),ceili(rect.end.y/8.0)):
 			_surface_quad(chunk,id,rect.intersection(Rect2(rect.position.x,float(z)*8,rect.size.x,8)),offset,mat,solid)
@@ -678,7 +678,7 @@ func _surface_quad(chunk: Node3D, id: String, rect: Rect2, offset: float, mat: M
 		points.append(Vector3(p.x,_ramp_height(p)+offset,p.y))
 	var surface := G.quad(chunk,id,points,mat,solid)
 	if id=="DesertGround": surface.set_meta("desert_base_ground",true)
-	# Wheel contact drives tire dirt, skid audio and traction. Naming is not a surface contract.
+	# O contato da roda determina sujeira do pneu, som de derrapagem e tração. O nome não é contrato de superfície.
 	var vehicle_surface := "hard" if id=="WeatheredAsphalt" else "dirt"
 	surface.set_meta("vehicle_surface",vehicle_surface)
 	if solid:
@@ -743,23 +743,23 @@ func _boundary_ridge(chunk: Node3D, rect: Rect2) -> void:
 	for x in range(floori(rect.position.x/44),ceili(rect.end.x/44)):
 		for z in [bounds.position.y+12,bounds.end.y-12]:
 			var p := Vector2(float(x)*44+22,z)
-			# Reserve the complete irregular footprint around the independent bridge.
+			# Reserva a área irregular completa em volta da ponte independente.
 			if z>bounds.end.y-20 and absf(p.x-LAYOUT.BRIDGE_END.x)<78: continue
 			sites.append(p)
 	for point in sites:
 		if not rect.has_point(point): continue
 		var ridge_point: Vector2=point
 		if not preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").reservation_clear(point):
-			# Keep the boundary sealed outside the cut. Only the central outcrop
-			# conflicts with the road; move the eastern one beyond the cliff.
+			# Mantém o limite selado fora do corte. Só o afloramento central
+			# conflita com a estrada; move o do leste para além do penhasco.
 			if not is_equal_approx(point.y,bounds.position.y+12): continue
 			var offset: float=point.x-preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").X
 			if absf(offset)<20: continue
 			if offset>0 and offset<40: ridge_point.x=402.0
-		# Seal the new perimeter from outside. A 55 m rock centred 12 m inside
-		# the old basin would bury the places now bordering the smaller map.
-		# The irregular foot reaches at least 28 m in Z and 35 m in X;
-		# a 26 m setback keeps it touching the ground edge without a gap.
+		# Sela o perímetro novo por fora. Uma rocha de 55 m centrada 12 m dentro
+		# da bacia antiga enterraria os lugares que agora margeiam o mapa menor.
+		# O pé irregular alcança pelo menos 28 m em Z e 35 m em X;
+		# um recuo de 26 m o mantém encostando na borda do chão sem vão.
 		if is_equal_approx(point.x,bounds.position.x+12): ridge_point.x=bounds.position.x-26.0
 		if is_equal_approx(point.x,bounds.end.x-12): ridge_point.x=bounds.end.x+26.0
 		if is_equal_approx(point.y,bounds.position.y+12): ridge_point.y=bounds.position.y-26.0
@@ -912,7 +912,7 @@ func _decoration_clear(point: Vector2, radius: float) -> bool:
 	if preload("res://runtime/desert/wilds/DesertWilds.gd").reserved(point,radius): return false
 	if not EXPANSION.reservation_clear(point,radius): return false
 	if RELIEF.passage_clear(point,radius): return false
-	# Small props sit on gentle ground; escarpments are the rock formation itself.
+	# Props pequenos ficam em chão suave; as escarpas são a própria formação rochosa.
 	if RELIEF.BOUNDS.has_point(point) and RELIEF.normal_at(point).y<.93: return false
 	if not LAYOUT.road_clear(point,radius): return false
 	if Rect2(210,-797 + COMPACT.TRUCK_STOP.z,125,92).grow(radius).has_point(point): return false

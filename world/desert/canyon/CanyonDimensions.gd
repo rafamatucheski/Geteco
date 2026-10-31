@@ -1,6 +1,6 @@
 extends RefCounted
-## Geology-only reshaping. Human bodies, the camp and the bridge width never scale.
-## Source coordinates describe the gorge after the desert's rigid west relocation.
+## Remodelagem só da geologia. Corpos humanos, o acampamento e a largura da ponte nunca mudam de escala.
+## As coordenadas fonte descrevem o desfiladeiro depois da realocação rígida do deserto para oeste.
 const SOURCE_BOUNDS := Rect2(-1340,-790,270,360)
 const CENTER_X := -1204.0
 const FIXED_END_Z := -530.0
