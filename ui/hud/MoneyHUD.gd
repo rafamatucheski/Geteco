@@ -14,14 +14,14 @@ func _ready() -> void:
 	change=STYLE.label("",12,STYLE.MONEY); change.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; add_child(change); change.hide()
 func update_balance(balance: int, infinite: bool = false) -> void:
 	if infinite:
-		amount.text="$ ∞"
+		amount.text="R$ ∞"
 		if _tween: _tween.kill()
 		change.hide()
 		_balance = -1
 		return
-	amount.text="$ "+STYLE.amount(balance)
+	amount.text="R$ "+STYLE.amount(balance)
 	if _balance>=0 and _balance!=balance:
-		change.text=("+ $ " if balance>_balance else "− $ ")+STYLE.amount(absi(balance-_balance))
+		change.text=("+ R$ " if balance>_balance else "− R$ ")+STYLE.amount(absi(balance-_balance))
 		if _tween: _tween.kill()
 		change.show(); change.modulate.a=0
 		_tween=create_tween(); _tween.tween_property(change,"modulate:a",1.0,STYLE.FADE); _tween.tween_interval(1.5)
