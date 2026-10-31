@@ -1,5 +1,5 @@
 extends Node
-## Replace only the speech stem when all eleven validated takes fit the film.
+## Substitui só a trilha de fala quando as onze tomadas validadas cabem no filme.
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const DEADLINES := [15.82,20.82,24.82,28.82,36.82,41.82,48.82,51.82,61.82,64.82,67.32]

@@ -1,6 +1,6 @@
 extends Control
-## Prerendered native 3D film. Voice preference selects the embedded Portuguese
-## performance or synchronized English stem independently of subtitle language.
+## Filme 3D nativo pré-renderizado. A preferência de voz escolhe a atuação embutida em português
+## ou a trilha em inglês sincronizada, independentemente do idioma da legenda.
 signal finished(destination_beat: StringName)
 signal skipped(destination_beat: StringName)
 const DESTINATION := &"passenger_terminal_arrival"
@@ -100,8 +100,8 @@ func _ready() -> void:
 
 func _configure_voice_track() -> void:
 	var directed := voice_track.configure(lines, voice_language)
-	# Theora contains only dialogue/disconnect beeps. Ambience and score remain
-	# independent stems, so muting it does not remove the sea, engine or music.
+	# O Theora contém só diálogo/bipes de desconexão. Ambiente e trilha musical continuam
+	# trilhas independentes, então silenciá-lo não remove o mar, o motor nem a música.
 	video.volume_db = -80.0 if directed or voice_language == "en" else 0.0
 	_legacy_english.stop()
 	stems.erase(_legacy_english)
@@ -151,8 +151,8 @@ func _start_after_draw(generation: int) -> void:
 func _process(delta: float) -> void:
 	if not _started or _paused or _finishing: return
 	var time := video.stream_position
-	# The final 0.6 s is a baked fade to black, with no dialogue. Finish from the
-	# real media clock in that black tail: Theora's native EOF rewind can stall.
+	# Os 0.6 s finais são um fade para preto embutido, sem diálogo. Termine pelo
+	# relógio real da mídia nessa cauda preta: o rewind nativo de EOF do Theora pode travar.
 	if time >= duration-.15:
 		video.paused = true
 		_finish(false)

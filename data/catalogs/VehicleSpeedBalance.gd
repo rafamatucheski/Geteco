@@ -1,3 +1,3 @@
 extends RefCounted
-## Shared reduction for street vehicles and ambient traffic.
+## Redução compartilhada para veículos de rua e trânsito ambiente.
 const FACTOR := 0.75

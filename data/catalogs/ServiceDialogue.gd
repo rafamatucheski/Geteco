@@ -1,6 +1,6 @@
 extends RefCounted
-# Verbatim production dialogue: HarborHospitalInterior3D, HarborPoliceInterior,
-# HarborFireStationInterior; terminal text from the corresponding interior.
+# Diálogo de produção literal: HarborHospitalInterior3D, HarborPoliceInterior,
+# HarborFireStationInterior; texto do terminal vem do interior correspondente.
 const PEOPLE := {
 	"sewer_original_raul":{"speaker":"Raul","messages":["Baixa a mão. Eu não te conheço.","A Cida mora aqui comigo. Não encosta nela.","Quer passar? Passa quieto."]},
 	"sewer_original_cida":{"speaker":"Cida","messages":["Pode falar daí.","O Raul me ajudou quando eu cheguei. Aqui a gente não deixa ninguém sozinho.","Não arruma confusão com o Beto."]},

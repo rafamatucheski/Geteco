@@ -1,5 +1,5 @@
 extends "res://scripts/Actor.gd"
-## Close-up passenger: the production skinned rig, distinct older identity and clothes.
+## Passageiro em close: o rig skinned de produção, com identidade mais velha e roupas próprias.
 const DRESS := preload("res://assets/outfits/MeshyDanteAppearance.gd")
 const GEOMETRY := preload("res://assets/outfits/OutfitGeometry.gd")
 var head_bone := -1
@@ -26,7 +26,7 @@ func _ready() -> void:
 	patterns[DRESS.SKIN] = .9
 	patterns[DRESS.JACKET] = .04
 	cloth.set_shader_parameter("region_pattern",patterns)
-	# Replace the oversized stock collar with a fitted wool scarf.
+	# Troca a gola grande de fábrica por um cachecol de lã ajustado.
 	for attachment in skeleton.get_children():
 		if attachment.name == "MeshyOutfitneck": attachment.free()
 	var spaces := {}

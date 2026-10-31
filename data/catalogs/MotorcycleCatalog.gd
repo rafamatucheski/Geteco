@@ -1,4 +1,4 @@
-# Source: cars/motorcycles/MotorcycleCatalog.gd; original data, legacy coordinates are NOT V2 world positions.
+# Fonte: cars/motorcycles/MotorcycleCatalog.gd; dados originais, coordenadas legadas NÃO são posições do mundo V2.
 extends RefCounted
 
 const SPORT := {

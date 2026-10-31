@@ -1,4 +1,4 @@
-# Source: characters/OutfitCatalog.gd; original data, legacy coordinates are NOT V2 world positions.
+# Fonte: characters/OutfitCatalog.gd; dados originais, coordenadas legadas NÃO são posições do mundo V2.
 extends RefCounted
 
 const OUTFITS = {

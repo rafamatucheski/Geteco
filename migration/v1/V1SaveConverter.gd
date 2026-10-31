@@ -1,6 +1,6 @@
 extends RefCounted
-## Pure, deterministic adapter for the productive Geteco V1 save envelope.
-## It never reads files, chooses a slot or publishes a save.
+## Adaptador puro e determinístico para o envelope de save produtivo da Geteco V1.
+## Nunca lê arquivos, escolhe slot nem publica save.
 
 const GAME_STATE := preload("res://runtime/GameState.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")

@@ -1,4 +1,4 @@
-# Source: economy/CollectibleCatalog.gd; original data, legacy coordinates are NOT V2 world positions.
+# Fonte: economy/CollectibleCatalog.gd; dados originais, coordenadas legadas NÃO são posições do mundo V2.
 extends RefCounted
 
 ## Metadado de apresentação (nome + região) para a tela "Colecionáveis" do

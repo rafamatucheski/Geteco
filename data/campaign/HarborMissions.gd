@@ -1,6 +1,6 @@
 extends RefCounted
-## Original Harbor IDs/order/rewards. Events are V2 adapters to original actions.
-## Source: HarborFirstFavors, HarborStoryTow, CobraCampaignController/State.
+## IDs/ordem/recompensas originais do Harbor. Os eventos são adaptadores V2 para as ações originais.
+## Fonte: HarborFirstFavors, HarborStoryTow, CobraCampaignController/State.
 const LEGACY_ORDER := ["primeiro_giro", "cobra_contact", "cobra_race", "cobra_collection", "cobra_supply", "cobra_finale"]
 const ORDER := ["primeiro_giro", "cobra_contact", "cobra_race", "cobra_collection", "jessica_bank", "cobra_supply", "cobra_finale"]
 const MISSIONS := {

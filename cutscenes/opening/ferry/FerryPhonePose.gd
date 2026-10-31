@@ -16,7 +16,7 @@ static func apply(actor, prop: Node3D, weight: float, forearm_roll := 1.5, wrist
 	rig.set_bone_pose_rotation(upper,idle[0].slerp(raised[0],weight))
 	rig.set_bone_pose_rotation(fore,idle[1].slerp(raised[1],weight))
 	rig.set_bone_pose_rotation(hand,rig.get_bone_pose_rotation(hand)*Quaternion(Vector3.RIGHT,wrist_curl*weight))
-	# Curl the fingers around the thin handset, with the screen outside the palm.
+	# Curva os dedos em volta do aparelho fino, com a tela para fora da palma.
 	if actor._combat_skin.get_blend_shape_count() > 0:
 		actor._combat_skin.set_blend_shape_value(0,.45)
 	prop.global_transform = rig.global_transform * rig.get_bone_global_pose(hand) * Transform3D(Basis.IDENTITY,Vector3(0,.108,.034))

@@ -1,4 +1,4 @@
-# Source: economy/AchievementCatalog.gd; original data, legacy coordinates are NOT V2 world positions.
+# Fonte: economy/AchievementCatalog.gd; dados originais, coordenadas legadas NÃO são posições do mundo V2.
 extends RefCounted
 
 ## Conquistas estilo "achievement" (World of Warcraft / Xbox) — desbloqueadas
@@ -85,8 +85,8 @@ const ACHIEVEMENTS := {
 	},
 }
 
-## One-time rewards. Stored unlocked IDs also act as receipts; old saves
-## retain earned badges without receiving the same payout after restoration.
+## Recompensas únicas. Os IDs desbloqueados gravados também servem de recibo; saves antigos
+## mantêm as insígnias conquistadas sem receber o mesmo pagamento depois da restauração.
 const CASH_REWARDS := {
 	"first_lead": 50, "secret_lead": 100, "lead_hunter": 150, "map_explorer": 400,
 	"first_race": 100, "street_racer": 250, "personal_best": 100,

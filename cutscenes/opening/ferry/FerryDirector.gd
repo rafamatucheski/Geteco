@@ -1,5 +1,5 @@
 extends Node3D
-## Offline film direction over the actual Harbor set. Never instantiated by gameplay.
+## Direção de filme offline sobre o cenário real do Harbor. Nunca instanciado pelo gameplay.
 ## Segunda montagem (16/10): mesma trilha de vozes de 73 s, planos novos para o porto
 ## atual — descida pelo canal, passagem sob o viaduto, Vicente no cais na lembrança
 ## e Dante deixando o convés enquanto a câmera revela a cidade.
@@ -171,8 +171,8 @@ func configure(p_world) -> void:
 	sample(0.0,1.0/30.0)
 
 func _prepare_closeup_materials(model) -> void:
-	# The civilian's segmented wardrobe includes open cuffs and shoulder shells.
-	# Close cinematic cameras see their reverse faces; keep this override local.
+	# O figurino segmentado do civil inclui punhos abertos e cascas de ombro.
+	# Câmeras de cinema próximas veem as faces de trás; mantenha esta sobreposição local.
 	for joint in model._joints:
 		joint.material_override = model.KIT.material(true)
 	var cloth := StandardMaterial3D.new()

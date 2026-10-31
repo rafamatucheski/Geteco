@@ -1,4 +1,4 @@
-# Source: cars/VehicleCatalog.gd; original data, legacy coordinates are NOT V2 world positions.
+# Fonte: cars/VehicleCatalog.gd; dados originais, coordenadas legadas NÃO são posições do mundo V2.
 extends RefCounted
 
 # Catálogo Completo de Veículos por Zonas e Biomas
@@ -6,9 +6,9 @@ extends RefCounted
 
 const MOTORCYCLES = preload("res://data/catalogs/MotorcycleCatalog.gd")
 
-# Shared atlas data must not depend on the factory that instantiates vehicles.
+# Dados de atlas compartilhados não podem depender da fábrica que instancia os veículos.
 const VEHICLE_CROPS: Array[Rect2] = [
-	# The retired green panel van is intentionally excluded from the live city.
+	# A van de painel verde aposentada fica fora da cidade viva de propósito.
 	Rect2(350, 49, 235, 462),
 	Rect2(663, 48, 234, 475), Rect2(970, 35, 246, 499),
 	Rect2(29, 638, 264, 548), Rect2(340, 625, 256, 566),
@@ -459,7 +459,7 @@ const VEHICLES := {
 	}
 }
 
-# Legacy save/mission IDs keep their identity and physics while using the 3D fleet.
+# IDs legados de save/missão mantêm identidade e física enquanto usam a frota 3D.
 const LEGACY_MODELS := {
 	"sedan_classic": "res://prototypes/living_cast/models/UnionSedanModel.gd",
 	"taxi_yellow": "res://prototypes/living_cast/models/YellowCabModel.gd",

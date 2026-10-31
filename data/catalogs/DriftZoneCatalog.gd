@@ -1,4 +1,4 @@
-# Source: cars/DriftZoneCatalog.gd; original data, legacy coordinates are NOT V2 world positions.
+# Fonte: cars/DriftZoneCatalog.gd; dados originais, coordenadas legadas NÃO são posições do mundo V2.
 extends RefCounted
 
 ## Catálogo de zonas de desafio de derrapagem. Cada entrada vira uma

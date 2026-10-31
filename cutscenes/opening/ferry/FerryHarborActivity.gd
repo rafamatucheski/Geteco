@@ -1,6 +1,6 @@
 extends RefCounted
-## Bounded, seekable choreography for the offline film. Gameplay managers stay
-## suspended; every take uses the same clock, routes and native cargo machinery.
+## Coreografia limitada e posicionável para o filme offline. Os gerenciadores de gameplay ficam
+## suspensos; cada tomada usa o mesmo relógio, rotas e maquinário nativo de carga.
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const WORKER := preload("res://gameplay/urban_v1/PortWorker.gd")
 const VISITOR := preload("res://gameplay/urban_v1/PortVisitor.gd")
@@ -12,8 +12,8 @@ var cargo
 
 func configure(world) -> void:
 	cargo = world.session.urban_operations.cargo_handling
-	# One porter works between the existing boxes beside the passenger quay.
-	# His lane stays west of the stair landing and clear of the boarding ramp.
+	# Um carregador trabalha entre as caixas existentes ao lado do cais de passageiros.
+	# A faixa dele fica a oeste do patamar da escada e longe da rampa de embarque.
 	var porter := WORKER.new()
 	porter.configure({"id":"FilmQuayPorter","kind":"dock_worker","worker_index":23,
 		# 16/10: postes novos em x=220,5/222 (z=195,5) cortavam a volta diagonal;
@@ -28,13 +28,13 @@ func configure(world) -> void:
 		elif body is WORKER and not body.route.is_empty() and not body.dead:
 			var route: Array = body.route.duplicate()
 			if body.name == "south_port_worker_07":
-				# His long gameplay circuit meets the raised passenger platform.
-				# Keep this take in the level corridor beneath the footbridge.
-				# Pillars are at x=221.65/224.35; keep the full capsule clear.
+				# O circuito longo dele no gameplay encontra a plataforma elevada de passageiros.
+				# Mantenha esta tomada no corredor plano sob a passarela.
+				# Os pilares estão em x=221.65/224.35; mantenha a cápsula inteira livre.
 				route = [Vector3(222.3,0,182),Vector3(222.3,0,174),Vector3(222.3,0,166),Vector3(222.3,0,174)]
 			elif body.name == "south_port_worker_14":
-				# The live route continues onto streamed ship support. For this
-				# fixed take, work on the resident quay beside the same gantry.
+				# A rota viva continua sobre o suporte do navio em streaming. Para esta
+				# tomada fixa, trabalhe no cais residente ao lado do mesmo pórtico.
 				route = [Vector3(265.625,0,204.375),Vector3(267.625,0,204.375),Vector3(267.625,0,205.875),Vector3(265.625,0,205.875)]
 			workers.append({"actor":body, "route":route, "height":body.global_position.y,
 				"phase":float(workers.size())*3.7, "previous":Vector3.INF})
@@ -44,8 +44,8 @@ func configure(world) -> void:
 	for i in 2:
 		var boat := _moving_boat(terminal,i)
 		boats.append({"node":boat, "position":boat.position, "rotation":boat.rotation})
-	# Reuse the production gantries, container, trolley and hoist cable. The
-	# captured take owns their poses; no truck manager can freeze them at 3.9 s.
+	# Reaproveite os pórticos, contêiner, carrinho e cabo de içamento de produção. A
+	# tomada capturada é dona das poses; nenhum gerenciador de caminhão pode congelá-las em 3.9 s.
 	for i in cargo.cranes.size():
 		var crane: Dictionary = cargo.cranes[i]
 		if crane.visual.get_parent() != cargo: crane.visual.reparent(cargo, true)
@@ -56,9 +56,9 @@ func configure(world) -> void:
 		crane.cable.show()
 
 func _moving_boat(terminal, index: int) -> Node3D:
-	# Gameplay batches the moored boats with the quay. Rebuild just this native
-	# boat and remove its exact box instances from the batch, so seats, motor and
-	# hull rock together instead of leaving the fittings suspended in midair.
+	# O gameplay agrupa os barcos atracados com o cais. Reconstrua só este barco
+	# nativo e remova as instâncias exatas de caixa dele do lote, para que bancos, motor e
+	# casco balancem juntos em vez de deixar as peças suspensas no ar.
 	var original := terminal.get_node("FishingBoat%d"%index) as Node3D
 	var boat := ART.new()
 	boat.name = "FilmFishingBoat%d"%index
@@ -106,8 +106,8 @@ func sample(t: float, delta: float) -> void:
 		cargo._sync_crane(i)
 
 static func worker_pose(route: Array, time: float) -> Dictionary:
-	# Pick up at station 0, carry to station 2, put down, return empty. Dwell
-	# and eased starts/stops keep bodies and hand-held loads continuous at cuts.
+	# Pega na estação 0, leva à estação 2, larga, volta vazio. A pausa
+	# e as partidas/paradas suavizadas mantêm corpos e cargas de mão contínuos nos cortes.
 	const SPEED := 1.3
 	const DWELL := 1.8
 	var duration := DWELL*2.0
@@ -126,7 +126,7 @@ static func worker_pose(route: Array, time: float) -> Dictionary:
 		var distance := point.distance_to(next)
 		var seconds := distance/SPEED+.4
 		if clock < seconds:
-			# Integral of a trapezoid velocity profile, with .4 s ramps.
+			# Integral de um perfil de velocidade trapezoidal, com rampas de .4 s.
 			var travelled := SPEED*(clock*clock/.8 if clock<.4 else
 				(seconds-.4-pow(seconds-clock,2)/.8 if clock>seconds-.4 else clock-.2))
 			var speed := SPEED*minf(1.0,minf(clock,seconds-clock)/.4)

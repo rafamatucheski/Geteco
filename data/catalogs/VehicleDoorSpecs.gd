@@ -122,9 +122,9 @@ static func layout(spec: Dictionary, side: int, skin: float, angle: float, hull_
 	var lateral := maxf(skin + .42, hull_half_width + .36)
 	var reach := length + .34
 	var stand_z := front + sqrt(maxf(reach * reach - pow(lateral - hinge_x, 2.0), 0.0))
-	# Wide industrial decks can put the lateral point so far out that the arc
-	# calculation brings it forward of the open leaf. Their authored approach
-	# stays behind the door before crossing the deck toward the cabin.
+	# Plataformas industriais largas podem pôr o ponto lateral tão para fora que o cálculo
+	# do arco o traz para a frente da folha aberta. A aproximação autoral delas
+	# fica atrás da porta antes de atravessar a plataforma rumo à cabine.
 	stand_z = maxf(stand_z,float(spec.get("stand_z_min",stand_z)))
 	var stand := Vector3(s * lateral, 0.0, stand_z)
 	# Onde o corpo cruza o plano da lataria: dentro do vão, longe dos dois montantes.

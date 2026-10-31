@@ -1,4 +1,4 @@
-# Source: cars/RaceCatalog.gd; original data, legacy coordinates are NOT V2 world positions.
+# Fonte: cars/RaceCatalog.gd; dados originais, coordenadas legadas NÃO são posições do mundo V2.
 extends RefCounted
 
 ## Catálogo de corridas clandestinas noturnas. Cada entrada vira uma

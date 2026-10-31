@@ -1,5 +1,5 @@
 extends Node3D
-## Offline set extension and practical lighting, never instantiated by gameplay.
+## Extensão de cenário e iluminação prática offline, nunca instanciada pelo gameplay.
 const OCEAN := preload("res://world/regions/HarborOcean.gd")
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 var ferry: Node3D
@@ -10,22 +10,22 @@ var activity := preload("res://cutscenes/opening/ferry/FerryHarborActivity.gd").
 
 func configure(world, boat: Node3D) -> void:
 	ferry = boat
-	# Suspend both bodies and their route/spawn managers for this offline set.
-	# Pausing only the bodies leaves transit managers driving detached physics RIDs.
+	# Suspende os dois corpos e os gerenciadores de rota/spawn deles neste cenário offline.
+	# Pausar só os corpos deixa os gerenciadores de trânsito dirigindo RIDs de física soltos.
 	world.process_mode = Node.PROCESS_MODE_DISABLED
-	# Explicit ALWAYS/PAUSABLE modes override a disabled ancestor. Freeze those
-	# owners too, or the session keeps changing shifts and freeing our cast.
+	# Modos ALWAYS/PAUSABLE explícitos se sobrepõem a um ancestral desativado. Congele esses
+	# donos também, ou a sessão continua trocando turnos e liberando nosso elenco.
 	var director := get_parent()
 	for node in world.find_children("*", "Node", true, false):
 		if node == director or director.is_ancestor_of(node): continue
 		node.process_mode = Node.PROCESS_MODE_DISABLED
-	# The take supplies its own ferry passengers. Gameplay disembarkers would
-	# otherwise remain suspended over the water when this ferry leaves its berth.
+	# A tomada traz os próprios passageiros da balsa. Os desembarcantes do gameplay
+	# ficariam suspensos sobre a água quando esta balsa sai do atracadouro.
 	for actor in world.session.urban_operations.passenger_terminal.passengers:
 		if is_instance_valid(actor): actor.hide()
 	activity.configure(world)
-	# Only undirected extras hold a mark. Dock workers and machinery have an
-	# authored work cycle, without waking the gameplay spawn/traffic managers.
+	# Só figurantes sem direção ficam numa marca. Estivadores e maquinário têm um
+	# ciclo de trabalho autoral, sem acordar os gerenciadores de spawn/trânsito do gameplay.
 	for body in world.find_children("*","CharacterBody3D",true,false):
 		if body == world.player or body.is_queued_for_deletion(): continue
 		if activity.owns(body): continue
@@ -42,8 +42,8 @@ func configure(world, boat: Node3D) -> void:
 	weather.rain_intensity = .25
 	weather.atmosphere_step = 30.0
 	weather._update()
-	# Resolve the existing quay fixtures once at the authored night hour, before
-	# holding their assignments for the take (no camera-dependent light popping).
+	# Resolve as luminárias existentes do cais uma vez na hora noturna autoral, antes
+	# de segurar as atribuições delas durante a tomada (sem luz pipocando conforme a câmera).
 	for lighting in world.find_children("CityLocalLighting", "Node3D", true, false):
 		lighting.refresh()
 	weather.set_process(false)
@@ -83,8 +83,8 @@ func _extend_ocean(world) -> void:
 	material.set_shader_parameter("sky_color",Color("253d57"))
 	material.set_shader_parameter("shallow_color",Color("064052"))
 	material.set_shader_parameter("deep_color",Color("081d32"))
-	# Continuous 1024 m ocean, independent of the gameplay streaming radius.
-	# Tile UVs retain the production shader's periodic, low-coordinate precision.
+	# Oceano contínuo de 1024 m, independente do raio de streaming do gameplay.
+	# As UVs por ladrilho mantêm a precisão periódica e de coordenada baixa do shader de produção.
 	for tz in range(-2,2):
 		for tx in range(-1,3):
 			var vertices := PackedVector3Array()
@@ -137,7 +137,7 @@ func _hide_stray_skirts(world) -> void:
 				mesh.hide()
 
 func _wet_deck() -> void:
-	# Only this authoring instance: preserve the gameplay boat's shared materials.
+	# Só esta instância de autoria: preserva os materiais compartilhados do barco do gameplay.
 	for mesh in ferry.find_children("*","MeshInstance3D",true,false):
 		var original := mesh.material_override as StandardMaterial3D
 		if original == null or original.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED: continue

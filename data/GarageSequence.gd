@@ -10,14 +10,14 @@ const OBJECTIVES := {
 	"return_maciota": "Leve a peça para Maciota.",
 	"complete": "Serviço concluído. Explore o bairro.",
 }
-# The legacy bench task remains readable for saves already inside that sequence.
+# A tarefa legada da bancada continua legível para saves que já estão nessa sequência.
 const GREETING := "Olha só quem resolveu dar as caras na minha humilde garagem... Dante, meu consagrado. Sentiu o cheiro do dinheiro ou foi o meu perfume francês?"
 const REQUEST := "Fala com o mecânico. Ele separou uma peça pra mim."
 const MECHANIC_REQUEST := "A peça está ao lado da bancada. Pode levar pro Maciota."
 const THANKS := "É isso, Dante. Serviço feito. Depois a gente conversa sobre os próximos."
 
-# Current campaign: the conversation opens real favors instead of asking Dante
-# to carry a prop across the same room. Speaker / Portuguese / English.
+# Campanha atual: a conversa abre favores de verdade em vez de pedir ao Dante
+# que carregue um objeto pela mesma sala. Falante / português / inglês.
 const INTRO_LINES := [
 	["MACIOTA", "Entra, Dante. Vi o Vicente por aqui. Ele deixou muita gente com problema nesta região.", "Come in, Dante. I saw Vicente around here. He left a lot of people in trouble in this district."],
 	["DANTE", "Você sabe onde ele está?", "Do you know where he is?"],
