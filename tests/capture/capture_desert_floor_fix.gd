@@ -8,7 +8,7 @@ static func capture(tree: SceneTree, world) -> bool:
 	var folder := "res://evidence/desert-floor-fix-20261014/temporal-crossings"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	var previous_fps := Engine.max_fps
-	Engine.max_fps=30 # Capture only; all performance windows have already ended.
+	Engine.max_fps=30 # Só captura; todas as janelas de desempenho já terminaram.
 	var report: Array=[]
 	var crossings: Array=[]
 	var failed := false

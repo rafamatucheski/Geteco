@@ -1,6 +1,6 @@
 extends "res://tests/test_desert_drag_runtime.gd"
-## Paired rendered Main benchmark for this weather delta only; no frame capture.
-## Requires a preserved pre-change sky shader via --baseline-sky=absolute/path.
+## Benchmark pareado renderizado no Main só para esta diferença de clima; sem captura de quadros.
+## Exige um shader de céu de antes da mudança preservado via --baseline-sky=absolute/path.
 func begin_temporal(race) -> bool:
 	var source := ""
 	for arg in OS.get_cmdline_user_args():

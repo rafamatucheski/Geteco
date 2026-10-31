@@ -1,6 +1,6 @@
 extends SceneTree
-## Exercise the real room helper, imported track and radio ownership without
-## starting Main or any unrelated ambient/engine audio mixer.
+## Exercita o helper real da sala, a faixa importada e a posse do rádio sem
+## iniciar o Main nem nenhum mixer de áudio de ambiente/motor não relacionado.
 const MUSIC := preload("res://audio/workshop/DigoWorkshopMusic.gd")
 class RadioWorld extends Node:
 	var driving := {"occupied":true,"car":null}
@@ -27,7 +27,7 @@ func run() -> void:
 	var receiver := RadioOnly.new()
 	receiver.world = world
 	world.add_child(receiver)
-	# Use a real project vehicle for the receiver's controlled-driver contract.
+	# Usa um veículo real do projeto para o contrato de motorista controlado do receptor.
 	var vehicle := preload("res://scripts/Vehicle.gd").new()
 	vehicle.archetype = "desert_coyote"
 	root.add_child(vehicle)

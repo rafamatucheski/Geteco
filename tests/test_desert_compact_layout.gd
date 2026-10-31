@@ -1,6 +1,6 @@
 extends SceneTree
-## Content/space contracts for the compact desert. Physics, rendered travel and FPS
-## are separate checks; this inventory cannot certify their behaviour.
+## Contratos de conteúdo/espaço do deserto compacto. Física, viagem renderizada e FPS
+## são checagens à parte; este inventário não certifica esse comportamento.
 const L := preload("res://world/desert/DesertLayout.gd")
 const VILLAGE := preload("res://world/desert/DesertMoonVillage.gd")
 const HOMES := preload("res://world/desert/village/DesertVillageHomes.gd")
@@ -147,8 +147,8 @@ func shortcut_clearance(roads: Array[Dictionary]) -> void:
 	var paddock := PackedVector2Array([bounds.position,Vector2(bounds.end.x,bounds.position.y),bounds.end,Vector2(bounds.position.x,bounds.end.y)])
 	var cuts_paddock := false
 	for polygon: PackedVector2Array in pavement: cuts_paddock=cuts_paddock or overlaps(polygon,paddock)
-	# Inspect only the new link. Its eventual route may enter the paddock through
-	# the original access; that authorised final connection is not a collision.
+	# Inspeciona só a ligação nova. A rota final dela pode entrar no paddock pelo
+	# acesso original; essa conexão final autorizada não é colisão.
 	check(not cuts_paddock, "Town shortcut's full paved width remains outside the reserved paddock")
 	for car in MEET.car_spots():
 		var dimensions: Array=FLEET.spec(str(car.model)).bounds_size

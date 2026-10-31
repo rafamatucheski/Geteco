@@ -1,6 +1,6 @@
 extends SceneTree
-## Native room collision plus rendered depth with real player/NPC rigs.
-## --geometry-only allows the physical subset headless; it never certifies depth.
+## Colisão da sala nativa mais profundidade renderizada com rigs reais de jogador/NPC.
+## --geometry-only permite o subconjunto físico em headless; nunca certifica profundidade.
 const ROOM := preload("res://gameplay/urban_v1/VerticeUndercroft.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const OUTPUT := "res://evidence/port-logistics-20260928/undercroft-depth"
@@ -93,7 +93,7 @@ func run() -> void:
 	print("UNDERCROFT_RESULT checks=",checks," failures=",failures," depth_executed=",not geometry_only)
 	scene.free()
 	viewport.free()
-	# Allow render resources and procedural texture jobs to retire before quit.
+	# Deixa os recursos de render e os jobs de textura procedural se aposentarem antes de sair.
 	for _i in 3: await process_frame
 	quit(0 if failures.is_empty() else 1)
 
@@ -139,7 +139,7 @@ func depth(scene: Node3D,room: Node3D) -> void:
 	mask.albedo_color=Color(1,0,1)
 	mask.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 	var setups := [
-		# Front corner leaves the supply crates out of this object's sightline.
+		# O canto da frente deixa as caixas de suprimento fora da linha de visão deste objeto.
 		{"id":"workbench","camera":Vector3(-3.2,3.6,2.5),"target":Vector3(-5.02,1,-2.2),"front":Vector3(-4.15,.04,.15),"behind":Vector3(-5.02,.04,-4.25),"side":Vector3(-3.8,.04,-2.2)},
 		{"id":"cabinet","camera":Vector3(-3,2.4,-4.32),"target":Vector3(3.5,1,-4.32),"front":Vector3(1.7,.04,-4.32),"behind":Vector3(5.2,.04,-4.32),"side":Vector3(3.5,.04,-2.8)}]
 	camera.size=5.8

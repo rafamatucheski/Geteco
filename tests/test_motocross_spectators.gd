@@ -1,5 +1,5 @@
 extends SceneTree
-## The standard civilian rig, real combat signals, solid furniture and boat edge.
+## O rig civil padrão, sinais reais de combate, mobília sólida e borda do barco.
 const SPECTATOR := preload("res://activities/motocross/MotocrossSpectator.gd")
 const MODEL := preload("res://assets/CivilianModel.gd")
 class CombatFixture extends Node:
@@ -61,7 +61,7 @@ func run() -> void:
 	world.add_child(source)
 	sitter.receive_damage(25, source)
 	check(sitter.health == 75.0 and not sitter.dead and sitter.model._hit_target.length() > 0, "real injury damages health and drives existing civilian flinch")
-	# A solid table immediately ahead makes standing unsafe: shelter in the seat.
+	# Uma mesa sólida logo à frente torna inseguro ficar em pé: abriga-se no assento.
 	solid(world, Vector3(-3,.225,.1), Vector3(1.4,.45,.55))
 	solid(world, Vector3(-3,.65,-.7), Vector3(1.4,.2,.6))
 	var trapped := spawn(world, Vector3(-3,0,0), {"seated": true})
@@ -69,7 +69,7 @@ func run() -> void:
 	await step(90)
 	check(trapped.seated and trapped.position.distance_to(Vector3(-3,0,0)) < .01 and trapped.frightened, "blocked table causes seated shielding without sliding into furniture or air")
 
-	# Deck is above the land fixture, so an edge probe cannot mistake land for deck.
+	# O deck fica acima da fixture de terra, então uma sonda de borda não confunde terra com deck.
 	var boat := Node3D.new()
 	boat.position = Vector3(15,2,0)
 	world.add_child(boat)

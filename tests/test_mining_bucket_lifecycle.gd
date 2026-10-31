@@ -28,7 +28,7 @@ func run() -> void:
 	for i in 75: controls.operate(1.0,1.0/60.0)
 	controls.release_cargo()
 	check(controls._withdrawal_load()==rock,"release clearance preserves recent-load history before contact")
-	# Represent the small solver overlap of a resting rigid ore rock.
+	# Representa a pequena sobreposição do solver de uma rocha de minério rígida em repouso.
 	var bottom := INF
 	for child in rock.get_children():
 		if child is CollisionShape3D and child.shape is ConvexPolygonShape3D:

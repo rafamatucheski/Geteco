@@ -1,6 +1,6 @@
 extends "res://tests/test_fishing_session.gd"
-## The normal paid tournament test plus continuous frames for animation review.
-## Capture cost is excluded from the separate performance comparison.
+## O teste normal de torneio pago mais quadros contínuos para revisar a animação.
+## O custo da captura fica fora da comparação de desempenho separada.
 var recording := false
 var sequence_started := false
 var sequence: Array[Dictionary] = []

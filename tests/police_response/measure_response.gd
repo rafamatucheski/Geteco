@@ -1,6 +1,6 @@
 extends SceneTree
-## Identical Main scenario in the preserved baseline and current checkout.
-## Run rendered, no saves; eight seconds warmup, thirty seconds measured.
+## Cenário idêntico do Main na linha de base preservada e no checkout atual.
+## Rode renderizado, sem saves; oito segundos de aquecimento, trinta segundos medidos.
 var world: Node3D
 var label := "after"
 var scenario := "pursuit"

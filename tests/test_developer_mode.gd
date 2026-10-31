@@ -66,8 +66,8 @@ func run() -> void:
 	check(not await tools.teleport_to(Vector3(origin.x,-1000,origin.z)),"destination without ground rejected")
 	check(player.global_position.distance_to(before_invalid)<.1,"failed teleport preserves player position")
 	check(not await tools.travel_to("desert"),"locked campaign region remains locked")
-	# The production spawn is beside Maciota's automatic entrance. Walking right
-	# there enters the garage; exercise the test wall away from that real trigger.
+	# O spawn de produção fica ao lado da entrada automática do Maciota. Andar bem
+	# ali entra na garagem; exercita a parede de teste longe desse gatilho real.
 	check(await tools.teleport_to(origin+Vector3(0,0,12)),"collision fixture placed away from garage entrance")
 	panel.open_panel()
 	check(tools.begin_flight(),"flight enabled")

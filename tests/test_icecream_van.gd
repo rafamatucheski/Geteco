@@ -110,7 +110,7 @@ func run() -> void:
 	world.player.position.x = 0
 	await create_timer(.4).timeout
 	check(rig.song.playing,"return to range resumes jingle")
-	# Keep screenshots focused on one vehicle; the others only exercise the voice cap.
+	# Mantém as capturas focadas num veículo; os outros só exercitam o limite de vozes.
 	restored.hide()
 	third.hide()
 	camera.global_position = car.global_position+Vector3(6,3.4,-6)

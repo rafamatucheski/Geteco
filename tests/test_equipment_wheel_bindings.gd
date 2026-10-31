@@ -1,5 +1,5 @@
 extends SceneTree
-## Input migration contracts only. Does not write settings or start a game session.
+## Só contratos de migração de entrada. Não grava configurações nem inicia uma sessão de jogo.
 var failures: Array[String] = []
 var checks := 0
 var controls: Node
@@ -42,14 +42,14 @@ func run() -> void:
 	check(bound("weapon_next", pad(JOY_BUTTON_RIGHT_SHOULDER)) and bound("weapon_previous", pad(JOY_BUTTON_LEFT_SHOULDER)), "controller shoulder buttons retain immediate weapon cycling")
 	check(bound("weapon_wheel", pad(JOY_BUTTON_LEFT_SHOULDER)), "L1/LB opens the wheel while its older navigation contexts stay available")
 
-	# Q belongs to separate on-foot and mounted-skate contexts in either remap order.
+	# Q pertence aos contextos separados a pé e de skate montado em qualquer ordem de remapeamento.
 	check(controls.rebind_slot("weapon_wheel", 0, key(KEY_Q)).ok and bound("skate_flip", key(KEY_Q)), "rebinding the wheel preserves kickflip")
 	check(controls.rebind_slot("skate_flip", 0, key(KEY_Q)).ok and bound("weapon_wheel", key(KEY_Q)), "rebinding kickflip preserves the wheel")
 	controls.reset_bindings()
 	var defaults: Dictionary = controls.export_bindings()
 	var pad_defaults: Dictionary = controls.export_gamepad_bindings()
 
-	# This is the historical serialized shape, not generated from the new defaults.
+	# Esta é a forma serializada histórica, não gerada a partir dos padrões novos.
 	var legacy := {"weapon_next": [{"key": KEY_Q}, {"mouse": MOUSE_BUTTON_WHEEL_UP}], "weapon_previous": [{"mouse": MOUSE_BUTTON_WHEEL_DOWN}]}
 	var original := legacy.duplicate(true)
 	controls.import_bindings(legacy)

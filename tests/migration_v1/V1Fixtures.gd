@@ -1,5 +1,5 @@
 extends RefCounted
-## Synthetic data shaped only from the productive V1 writers. No user:// access.
+## Dados sintéticos moldados só a partir dos gravadores produtivos da V1. Sem acesso a user://.
 
 static func start() -> Dictionary:
 	return {

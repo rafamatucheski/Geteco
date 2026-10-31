@@ -1,6 +1,6 @@
 extends SceneTree
-## Visual evidence only: continuous rendered frames, never an FPS benchmark.
-## The fixture represents a delayed evening service already loading at North Pier.
+## Só evidência visual: quadros renderizados contínuos, nunca um benchmark de FPS.
+## A fixture representa um serviço noturno atrasado já carregando no North Pier.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
 var world
@@ -85,8 +85,8 @@ func run() -> void:
 	var deadline := Time.get_ticks_msec()+18000
 	while convoy.fleet.size() != 4 and Time.get_ticks_msec() < deadline: await physics_frame
 	if convoy.fleet.size() != 4: push_error("ARMORED_NIGHT fleet admission failed"); quit(1); return
-	# Retain the production lens, pitch, framing and camera update. A stationary
-	# observation target centers the existing camera on the two real cash trucks.
+	# Mantém a lente, a inclinação, o enquadramento e a atualização de câmera da produção. Um alvo
+	# de observação parado centra a câmera existente nos dois carros-fortes reais.
 	var camera_target := Node3D.new()
 	world.add_child(camera_target)
 	camera_target.global_position = (convoy.fleet[0].global_position+convoy.fleet[1].global_position)*.5
@@ -110,7 +110,7 @@ func run() -> void:
 			if convoy.fleet.size() != 4: push_error("ARMORED_NIGHT physical fleet lost"); break
 			if not bridge_seam: camera_target.global_position = (convoy.fleet[0].global_position+convoy.fleet[1].global_position)*.5
 			_follow_observer(convoy)
-		# 10s static, 10s slow available orbit, 10s return to the initial heading.
+		# 10s parado, 10s de órbita lenta disponível, 10s voltando ao rumo inicial.
 		if not gateway_driving: world.camera.heading = PI if rear_view else (0.0 if seconds < 10 else minf(seconds-10,30-seconds)*.045)
 		await RenderingServer.frame_post_draw
 		var captured_at := Time.get_ticks_usec()

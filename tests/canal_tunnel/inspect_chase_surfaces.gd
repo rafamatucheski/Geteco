@@ -50,7 +50,7 @@ func run() -> void:
 			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	await capture("diagnose-car-two-sided")
 	for mat in states: mat.cull_mode = states[mat]
-	# Compare with the same model before the door cut, without changing gameplay.
+	# Compara com o mesmo modelo antes do corte da porta, sem mudar a jogabilidade.
 	car.visual.hide()
 	var untouched: Node3D = preload("res://runtime/FleetCatalog.gd").create(car.archetype)
 	car.add_child(untouched)

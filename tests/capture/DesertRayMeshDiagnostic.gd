@@ -1,5 +1,5 @@
 extends RefCounted
-## Offline-at-capture CPU mesh interrogation. Never use in a runtime/frame benchmark.
+## Interrogação de malha na CPU, offline no momento da captura. Nunca use num benchmark de execução/quadro.
 const DISTANCE := 180.0
 
 static func capture_existing(main: Node3D,folder: String) -> Dictionary:

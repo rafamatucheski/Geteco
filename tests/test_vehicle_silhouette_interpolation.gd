@@ -1,8 +1,8 @@
 extends SceneTree
-## The self-occlusion bounds must follow the rendered body, including turns.
+## Os limites de auto-oclusão precisam seguir o corpo renderizado, inclusive nas curvas.
 class SilhouetteLook extends "res://world/city_look/CityLook.gd":
-	# Only the production silhouette lifecycle is under test; skip unrelated
-	# reflection viewports and city lighting startup.
+	# Só o ciclo de vida da silhueta de produção está em teste; pula viewports de reflexo
+	# e o início da iluminação da cidade, não relacionados.
 	func _ready() -> void: pass
 class Driving extends RefCounted:
 	var occupied := true

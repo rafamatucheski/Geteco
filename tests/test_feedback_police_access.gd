@@ -65,7 +65,7 @@ func run() -> void:
 		dispatch._dispatch_police(.1)
 		check(not dispatch.units.is_empty() and dispatch.deployed_this_pursuit > RULES.DEPLOYMENT[6],"six-star reinforcements continue beyond the old cumulative budget")
 		car.queue_free()
-	# Geometry from the actual route-detail factory, queried at both lane centers.
+	# Geometria da fábrica real de detalhes de rota, consultada nos dois centros de faixa.
 	var zone := DETAIL._build_connecting_streets()
 	bundle.scene.add_child(zone)
 	await frames(3)

@@ -1,5 +1,5 @@
 extends SceneTree
-## Finite smoke of the three new special thresholds in the real session.
+## Fumaça finita dos três limiares especiais novos na sessão real.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const FIRE := preload("res://gameplay/emergency/Fire.gd")
 var world
@@ -35,7 +35,7 @@ func run() -> void:
 	world.gameplay.emergency.dispatch_owned = true
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
-	# Resource sharing must not share incident intensity or live node ownership.
+	# O compartilhamento de recursos não pode compartilhar a intensidade do incidente nem a posse de nós vivos.
 	var first = FIRE.new()
 	var second = FIRE.new()
 	first._ensure_visuals()

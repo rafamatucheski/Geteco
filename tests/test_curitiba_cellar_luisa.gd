@@ -1,6 +1,6 @@
 extends SceneTree
-## Focused rendered regression: real native Actor, room, Gameplay signals and
-## WorkplaceThreatReaction. No session/save mock replaces the reaction or IK.
+## Regressão renderizada focada: Actor nativo real, sala, sinais do Gameplay e
+## WorkplaceThreatReaction. Nenhum mock de sessão/save substitui a reação ou o IK.
 const ROOM := preload("res://world/places/curitiba_cellar/CuritibaCellarPlace.gd")
 const MODEL := preload("res://world/places/curitiba_cellar/LuisaModel.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
@@ -76,8 +76,8 @@ func run() -> void:
 	original.free()
 	model = MODEL.new()
 	actor.visual.add_child(model)
-	# The real Gameplay signal/catalog owner is sufficient for this scoped
-	# runtime integration. It is not added to a full city or allowed to save.
+	# O dono real de sinais/catálogo do Gameplay basta para esta integração de runtime
+	# delimitada. Ele não é acrescentado a uma cidade completa nem tem permissão de salvar.
 	gameplay = GAMEPLAY.new()
 	reaction = REACTION.install(actor,model,gameplay)
 	await frames(15)
@@ -91,8 +91,8 @@ func run() -> void:
 	for i in 20:
 		await frames(1)
 		for side in 2:
-			# CivilianMeshKit.forearm_mesh authors the curved finger pad at
-			# y=-.35,z=.012; inspect the actual rendered fingers, not the IK target.
+			# CivilianMeshKit.forearm_mesh desenha a ponta curva do dedo em
+			# y=-.35,z=.012; inspeciona os dedos renderizados reais, não o alvo do IK.
 			var endpoint: Vector3 = model.forearms[side].to_global(Vector3(.012 if side == 0 else -.012,-.35,.012))
 			hand_samples.append({"side":side,"x":endpoint.x,"y":endpoint.y,"z":endpoint.z})
 	var contact := true
@@ -119,8 +119,8 @@ func run() -> void:
 		await process_frame
 		quit(0 if failures.is_empty() else 1)
 		return
-	# A shot from her right admits a real 1.6 m retreat into the rear staff
-	# aisle. A frontal shot is intentionally blocked by the rear bookcase.
+	# Um tiro pela direita dela admite um recuo real de 1.6 m para o corredor de funcionários
+	# dos fundos. Um tiro de frente é bloqueado de propósito pela estante dos fundos.
 	gameplay.weapon_fired.emit("pistol",home+Vector3(3,0,0))
 	await frames(40)
 	check(actor.get_meta("workplace_threatened",false),"gunfire signal interrupts financial work")

@@ -1,6 +1,6 @@
 extends SceneTree
-## Dispatch admission budget and lifecycle only. Spy vehicles keep the test
-## independent of mesh cost: the builder's whole-part budget is not a deadline.
+## Só orçamento de admissão e ciclo de vida do dispatch. Veículos espiões mantêm o teste
+## independente do custo de malha: o orçamento de peça inteira do montador não é um prazo.
 const CONTROLLER := preload("res://gameplay/dispatch/DispatchController.gd")
 var checks := 0
 var failures: Array[String] = []
@@ -33,8 +33,8 @@ func check(ok: bool, label: String) -> void:
 		push_error(label)
 
 func next_render_frame() -> void:
-	# process_frame is emitted before the counter advances. The initial
-	# deferred callback can share its value with the first signal we await.
+	# process_frame é emitido antes de o contador avançar. O callback adiado
+	# inicial pode compartilhar o valor com o primeiro sinal que esperamos.
 	var previous := Engine.get_process_frames()
 	while Engine.get_process_frames() == previous:
 		await process_frame
@@ -92,8 +92,8 @@ func run() -> void:
 	check(first.warm_calls == 2 and second.warm_calls == 2 and third.warm_calls == 2, "completed jobs remain skipped on subsequent frames")
 	check(first.requested_budgets == [1000,1000] and second.requested_budgets == [1000,1000] and third.requested_budgets == [1000,1000], "each admitted call receives the provisional 1 ms work budget")
 
-	# Every invalid case stays owned by this fixture; only the final valid car
-	# may warm. Inspect queued cars before yielding, while their objects exist.
+	# Todo caso inválido continua pertencendo a esta fixture; só o carro válido final
+	# pode aquecer. Inspeciona os carros na fila antes de ceder, enquanto os objetos existem.
 	var invalid_cars: Array[SpyWarmCar] = []
 	var invalid_units: Array[FakeUnit] = []
 	for index in 7:
@@ -122,14 +122,14 @@ func run() -> void:
 	for car in invalid_cars: all_invalid_skipped = all_invalid_skipped and car.warm_calls == 0
 	check(all_invalid_skipped and eligible.warm_calls == 1, "suspended, finished, wrecked, empty crew, inactive, dead, detached, queued and missing cars are skipped")
 	check(eligible_unit.state == "parked" and eligible_unit.crew_remaining == 2, "warming a parked approaching crew does not alter deployment state")
-	# Clear the queued reference before the engine deletes that fixture car.
+	# Limpa a referência na fila antes de o motor apagar esse carro de fixture.
 	controller.units.clear()
 	queued_unit.vehicle = null
 	invalid_cars[6].free()
 	await next_render_frame()
 
-	# Suspended crews get no work. Resuming inside that same frame cannot gain
-	# a second admission; they become eligible at the following rendered frame.
+	# Equipes suspensas não recebem trabalho. Retomar dentro do mesmo quadro não dá
+	# uma segunda admissão; elas ficam elegíveis no quadro renderizado seguinte.
 	var resumed := make_car(stage)
 	var resumed_unit := make_unit(resumed)
 	resumed_unit.suspended = true
@@ -153,8 +153,8 @@ func run() -> void:
 	catchup_calls(controller)
 	check(resumed.warm_calls == 2, "readiness survives suspension and resume without rebuilding doors")
 
-	# Actual removal can leave a stale vehicle reference until the unit's next
-	# lifecycle tick. Warming runs before that tick and must safely ignore it.
+	# A remoção real pode deixar uma referência obsoleta de veículo até o próximo tick
+	# de ciclo de vida da unidade. O aquecimento roda antes desse tick e precisa ignorá-la com segurança.
 	var removed := make_car(stage)
 	var removed_unit := make_unit(removed)
 	controller.units.clear()

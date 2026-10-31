@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_desert.gd"
-## Main/.NET A/B using preserved sources, never replacing workspace files.
-## --visual records every rendered frame separately; those timings are not FPS.
+## A/B no Main/.NET usando códigos preservados, nunca substituindo arquivos do workspace.
+## --visual grava todo quadro renderizado à parte; esses tempos não são FPS.
 const BEFORE := "res://evidence/weather-follow-20261012/Weather.before.gd"
 var visual := false
 var recorder: Node
@@ -87,15 +87,15 @@ func capture_drive(setup: Dictionary) -> void:
 	var start := Vector3(45,.08,27) if setup.region=="harbor" else Vector3(345,.08,-470)
 	world.production.region.set_focus(start)
 	world.production.region.prepare_collision_at(start)
-	# Keep the player outside the spawn footprint; production admission correctly
-	# rejects a car that would overlap a pedestrian.
+	# Mantém o jogador fora da área do spawn; a admissão de produção rejeita
+	# com razão um carro que se sobreporia a um pedestre.
 	world.player.teleport(start+Vector3(0,0,4))
 	await create_timer(2).timeout
 	var ground: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(start+Vector3.UP*20,start-Vector3.UP*5,1))
 	if ground.is_empty(): visual_failures.append(setup.id+": no road support"); return
 	start.y = ground.position.y+.12
-	# Existing owned car is the fixture; weather validation does not depend on
-	# ambient fleet admission or proximity-option caching after a teleport.
+	# O carro próprio existente é a fixture; a validação do clima não depende da
+	# admissão da frota do ambiente nem do cache de opções de proximidade depois de um teleporte.
 	var car = world.driving.car
 	car.place(start,-PI*.5 if setup.region=="harbor" else 0.0)
 	car.set_meta("region_id",setup.region)

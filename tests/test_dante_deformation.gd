@@ -81,7 +81,7 @@ func run() -> void:
 		var ok := max_joint_error < 0.001 and max_support_error < 0.080 and max_palm_radius < 1.0
 		print("DANTE_TRANSITIONS ", id, " joint=", max_joint_error, " support=", max_support_error, " radius=", max_palm_radius, " pass=", ok)
 		if not ok: failures.append(id)
-	# Switch during recoil/reload/sprint, rather than only at settled boundaries.
+	# Troca durante recuo/recarga/corrida, em vez de só em limites assentados.
 	var ids: Array = DATA.PROFILES.keys()
 	var switch_error := 0.0
 	for tick in 960:

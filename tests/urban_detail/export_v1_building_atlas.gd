@@ -1,7 +1,7 @@
 extends SceneTree
-## Offline-only exporter run from the V1 project root. It renders the actual
-## productive HarborBuilding/CobraResidence drawing code to transparent PNGs.
-## The V2 runtime never creates a SubViewport for these source projections.
+## Exportador só offline, rodado da raiz do projeto V1. Renderiza o código de desenho
+## produtivo real de HarborBuilding/CobraResidence em PNGs transparentes.
+## O runtime da V2 nunca cria um SubViewport para essas projeções de origem.
 
 const SOURCE_SCRIPTS := [
 	"res://world/harbor/HarborBuilding.gd",
@@ -46,8 +46,8 @@ func _run() -> void:
 		push_error("V1 building atlas exporter refuses to run without --no-save")
 		quit(2)
 		return
-	# These sources only exist in V1. Do not preload them while the V2 editor
-	# scans this offline utility, or create output before validating its inputs.
+	# Estas fontes só existem na V1. Não as pré-carregue enquanto o editor da V2
+	# varre este utilitário offline, nem crie saída antes de validar as entradas.
 	for source_path in SOURCE_SCRIPTS:
 		if not ResourceLoader.exists(source_path):
 			push_error("V1 building atlas exporter requires the V1 project root; missing: %s" % source_path)
@@ -118,8 +118,8 @@ func _export_building(data: Dictionary) -> bool:
 	await RenderingServer.frame_post_draw
 	var image := viewport.get_texture().get_image()
 	if building_id == "Laundry":
-		# HarborBuilding hard-codes the category-only WASH / DRY label. Keep the
-		# productive fascia and border but remove that forbidden descriptive text.
+		# HarborBuilding fixa no código o rótulo só de categoria WASH / DRY. Mantém a
+		# faixa e a borda produtivas, mas remove esse texto descritivo proibido.
 		image.fill_rect(Rect2i(MARGIN + int(size.x * 0.5) - 36, MARGIN + int(size.y * 0.5) + 11, 72, 11), Color("315d5d"))
 		image.fill_rect(Rect2i(MARGIN + int(size.x * 0.5) - 35, MARGIN + int(size.y * 0.5) + 12, 70, 1), Color("a9c3af"))
 		image.fill_rect(Rect2i(MARGIN + int(size.x * 0.5) - 35, MARGIN + int(size.y * 0.5) + 20, 70, 1), Color("a9c3af"))

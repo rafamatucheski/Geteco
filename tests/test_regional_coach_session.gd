@@ -36,8 +36,8 @@ func run() -> void:
 		world.session.weather.weather_state = 0
 		world.session.weather._update()
 	if "--accelerated" in OS.get_cmdline_user_args():
-		# Preserve the native 1/60 simulation step while traversing long routes.
-		# This functional run is never used as a performance benchmark.
+		# Preserva o passo de simulação nativo de 1/60 ao percorrer rotas longas.
+		# Esta rodada funcional nunca é usada como benchmark de desempenho.
 		Engine.time_scale = 4
 		Engine.physics_ticks_per_second = 240
 		print("REGIONAL_COACH accelerated functional run: 4x, 240 physics ticks")
@@ -111,7 +111,7 @@ func run() -> void:
 	service.cancel_for_transition()
 	await create_timer(.8).timeout
 	check(not service.busy() and not is_instance_valid(service.train) and not world.player.input_locked,"cancelled boarding cannot recreate a coach")
-	# Exercise the ordinary rescue owner after damage to an occupied coach.
+	# Exercita o dono comum de resgate depois de dano num ônibus ocupado.
 	check(service.travel_to("mountain",false),"destruction recovery boarding admitted")
 	while service._boarding: await process_frame
 	if is_instance_valid(service.train):
@@ -171,8 +171,8 @@ func trip(id: String, instant: bool) -> void:
 				check(is_equal_approx(service.train.route_distance,paused_at),"pause holds the physical coach")
 				paused = false
 				pause_checked = true
-				# Timing starts after the intentional pause and synchronous photos;
-				# their coroutine gap is not a rendered frame-time sample.
+				# A cronometragem começa depois da pausa intencional e das fotos síncronas;
+				# o intervalo da corrotina delas não é amostra de tempo de quadro renderizado.
 				measurement_start = Time.get_ticks_usec()
 				previous_frame = 0
 			if "--short-ride" in OS.get_cmdline_user_args() and seen_progress and (not measure or now-measurement_start >= 38000000):

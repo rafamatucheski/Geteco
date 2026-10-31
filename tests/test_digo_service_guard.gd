@@ -72,7 +72,7 @@ func _run() -> void:
 	blocker.global_position = session.room.to_global(Vector3(5,.04,6))
 	await _frames(2)
 	_check(helper.open_service_view(car),"cleared doorway opens service normally")
-	# Stop camera lifetime checks; this fixture intentionally supplies only the room contract.
+	# Para as checagens de vida da câmera; esta fixture fornece de propósito só o contrato da sala.
 	helper.set_process(false)
 	await _frames(2)
 	var shutter: StaticBody3D = helper._service_shutter.get_node("Collision")
@@ -104,8 +104,8 @@ func _run() -> void:
 	var accepted_pose: Transform3D = helper._camera.global_transform
 	var accepted_fov: float = helper._camera.fov
 	var accepted_yaw: float = helper._yaw
-	# An impossible stage forces every candidate through a real projection failure.
-	# The old code leaked its final zero-angle pose instead of rolling back.
+	# Um palco impossível força cada candidato a passar por uma falha real de projeção.
+	# O código antigo vazava a pose final de ângulo zero em vez de reverter.
 	root.size = Vector2i(40,720)
 	helper._yaw = -.8
 	_check(not helper._update_camera(),"impossible preview stage rejects every fallback candidate")

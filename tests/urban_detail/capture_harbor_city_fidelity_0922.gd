@@ -1,6 +1,6 @@
 extends SceneTree
-## Isolated visual validator for the V1/V2 city comparison. Requires --no-save,
-## writes only to the explicit --out-dir supplied by the caller, and is not a
+## Validador visual isolado da comparação de cidade V1/V2. Exige --no-save,
+## grava só no --out-dir explícito passado por quem chama e não é um
 ## benchmark.
 
 var region: Node3D
@@ -73,7 +73,7 @@ func _run() -> void:
 	await _shot_oblique("v2-market-oblique",Vector2(1750,665),38.0)
 	await _shot_oblique("v2-cobra-oblique",Vector2(7700,1700),52.0)
 	await _shot_oblique("v2-south-port-oblique",Vector2(4750,4450),62.0)
-	# Exact centers and apparent scales used by the productive V1 captures.
+	# Centros exatos e escalas aparentes usados pelas capturas produtivas da V1.
 	for shot in [
 		["market",Vector2(1620,900),.85],["port",Vector2(3050,1380),.60],
 		["garage",Vector2(1030,1800),.90],["bridge",Vector2(3790,420),.90],
@@ -127,10 +127,10 @@ func _shot_oblique(label: String, source_center: Vector2, size: float) -> void:
 
 
 func _ensure_capture_coverage(point: Vector3,size: float)->void:
-	# The production camera is capped at 52 m and is fully covered by the normal
-	# 3x3 residency contract. Wide V1 comparison shots exceed that gameplay view;
-	# mount every cell visible to this isolated validator so streaming is not
-	# mistaken for missing source geometry.
+	# A câmera de produção é limitada a 52 m e fica toda coberta pelo contrato
+	# normal de residência 3x3. As tomadas largas de comparação da V1 passam dessa vista de jogo;
+	# monta toda célula visível para este validador isolado, para que o streaming não
+	# seja confundido com geometria de origem faltando.
 	var half_z:=size*.5
 	var half_x:=half_z*float(root.size.x)/float(root.size.y)
 	var minimum:=Vector2(point.x-half_x,point.z-half_z)

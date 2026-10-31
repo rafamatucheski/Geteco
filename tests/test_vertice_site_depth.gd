@@ -1,5 +1,5 @@
 extends "res://tests/test_vertice_depth.gd"
-## Depth of the new props, inheriting the validated capture/mask helpers.
+## Profundidade dos props novos, herdando os helpers validados de captura/máscara.
 const DETAIL := preload("res://gameplay/urban_v1/VerticeSiteDressing.gd")
 const DETAIL_OUTPUT := "res://evidence/vertice-detail-20260928/depth"
 

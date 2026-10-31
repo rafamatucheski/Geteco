@@ -98,7 +98,7 @@ func run() -> void:
 		npc.global_position.y=.04
 		contact=npc.move_and_collide(motion)
 		check(contact==null,"Native resident sweeps through house%d door"%index)
-		# Bed volume, including its sides, is fully solid for both body types.
+		# O volume da cama, incluindo as laterais, é totalmente sólido para os dois tipos de corpo.
 		var beds:Array=homes.furniture.filter(func(row): return row.home==index and row.id=="Bed")
 		for actor in [player,npc]:
 			var bed:StaticBody3D=beds[0].body
@@ -107,8 +107,8 @@ func run() -> void:
 			actor.global_position=start
 			actor.velocity=Vector3.ZERO
 			for frame in 2: await physics_frame
-			# A horizontal sweep starts just above ground so floor support is not
-			# mistaken for the furniture contact under test.
+			# Uma varredura horizontal começa logo acima do chão para que o apoio do piso não seja
+			# confundido com o contato da mobília em teste.
 			actor.global_position.y=.04
 			var hit:KinematicCollision3D=actor.move_and_collide(home.basis*Vector3(0,0,-2.5))
 			check(hit!=null and hit.get_collider()==bed,"House%d bed blocks %s"%[index,actor.name])

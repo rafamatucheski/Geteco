@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Same production scene and seeded conditions before/after. Never writes saves.
+## Mesma cena de produção e condições semeadas antes/depois. Nunca grava saves.
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return
 	seed(22092026)
@@ -22,8 +22,8 @@ func run() -> void:
 		await process_frame
 		if world.session != null and world.session.weather != null: break
 	if world.session == null or world.session.weather == null: quit(1); return
-	# Keep the original source as evidence and swap only this process's instance.
-	# This permits an A/B run on the same current city without rewriting runtime files.
+	# Mantém o código original como evidência e troca só a instância deste processo.
+	# Isto permite uma rodada A/B na mesma cidade atual sem reescrever arquivos de runtime.
 	if "--original-weather" in OS.get_cmdline_user_args():
 		var previous_weather = world.session.weather
 		world.remove_child(previous_weather)

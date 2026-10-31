@@ -1,6 +1,6 @@
 extends SceneTree
-## Shared pickup sound lifecycle with a real voice and the original sample.
-## This isolated test does not certify subjective loudness or rendered FPS.
+## Ciclo de vida do som compartilhado de coleta com uma voz real e a amostra original.
+## Este teste isolado não certifica volume subjetivo nem FPS renderizado.
 const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
 var failures := 0

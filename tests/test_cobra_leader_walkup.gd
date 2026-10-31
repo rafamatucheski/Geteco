@@ -1,6 +1,6 @@
 extends "res://tests/test_harbor_building_walkthrough.gd"
-## Campaign gate, physical porch, automatic entry, chapter event and revisit.
-## The checkpoint is isolated; this test does not simulate the preceding race.
+## Portão da campanha, varanda física, entrada automática, evento de capítulo e revisita.
+## O checkpoint é isolado; este teste não simula a corrida anterior.
 const LEADER := "cobra_leader_house"
 
 func wait_condition(predicate: Callable, seconds := 8.0) -> bool:

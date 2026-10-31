@@ -91,8 +91,8 @@ func run() -> void:
 			print("BUS_STEP ",snappedf(simulated,.1)," ",bus.service_state," stop=",bus.service_stop," distance=",snappedf(bus.total_travelled,.1)," blocked=",bus.blocked_by," people=",ops.boarded,"/",ops.alighted)
 			for p in ops.people:
 				if p.stop==bus.service_stop and p.bus==null and is_instance_valid(p.actor): print("PERSON ",p.id," ",p.phase," ",p.actor.global_position," target=",ops.waiting_point(p))
-		# Exit at the sixth distinct platform; the separate hull audit covers the
-		# closed circuit. Signal phases intentionally remain in real wall time.
+		# Sai na sexta plataforma distinta; a auditoria separada do casco cobre o
+		# circuito fechado. As fases dos sinais ficam de propósito em tempo de parede real.
 		if visited.size()==(2 if westgate_only else 6): ride.request_exit()
 		if not ride.riding: break
 	check(visited.size()==(2 if westgate_only else 6),"Westgate junction passes with normal traffic" if westgate_only else "All six stops physically served")

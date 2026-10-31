@@ -1,5 +1,5 @@
 extends "res://tests/video_phase4_fall_probe.gd"
-## Real impacts on the recorded Westgate junction; no overlapping spawn.
+## Impactos reais no entroncamento registrado da Westgate; sem spawn sobreposto.
 var cases: Array[Dictionary] = []
 var truck: CharacterBody3D
 

@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_desert.gd"
-## Actual Main with real car, ordinary Input actions and gameplay camera.
-## --baseline suppresses only the new trial; both variants drive identical wash.
+## Main real com carro real, ações comuns de Input e câmera de jogo.
+## --baseline suprime só o novo teste; as duas variantes fazem a mesma lavagem.
 const COURSE := preload("res://activities/desert_wash/DesertWashCourse.gd")
 var race
 var car
@@ -23,8 +23,8 @@ func run() -> void:
 	root.size=Vector2i(1280,720)
 	output=FIXTURE.output_dir("desert-wash-baseline" if baseline else "desert-wash-after")
 	var start:=COURSE.gate(0)
-	# Keep the saved pedestrian outside the requested car body. Production spawn
-	# correctly rejects overlap with Dante; the fixture must obey that admission.
+	# Mantém o pedestre salvo fora da carroceria do carro pedido. O spawn de produção
+	# rejeita com razão a sobreposição com o Dante; a fixture precisa obedecer essa admissão.
 	var pedestrian_start:=start+COURSE.direction(0).cross(Vector3.UP)*6.0
 	var snapshot:=FIXTURE.full_snapshot(pedestrian_start,true)
 	snapshot.region_id="desert"
@@ -112,8 +112,8 @@ func run() -> void:
 		if Time.get_ticks_msec()-last_capture>1000:
 			last_capture=Time.get_ticks_msec()
 			trace.append({"position":[p.x,p.y,p.z],"speed":car.speed,"gate":race.next_gate if is_instance_valid(race) else 0,"seconds":Time.get_ticks_msec()/1000.0,"on_floor":car.is_on_floor()})
-			# Optional visual run is marked separately: PNG compression stalls must
-			# never be mistaken for ordinary frame performance in the A/B report.
+			# A rodada visual opcional é marcada à parte: travadas de compressão PNG nunca
+			# podem ser confundidas com desempenho comum de quadro no relatório A/B.
 			if "--capture" in OS.get_cmdline_user_args() and DisplayServer.get_name()!="headless":
 				await RenderingServer.frame_post_draw
 				root.get_texture().get_image().save_png(output.path_join("route-%03d.png"%trace.size()))
@@ -143,8 +143,8 @@ func run() -> void:
 	quit(0 if failures.is_empty() else 1)
 
 func verify_discontinuity() -> void:
-	# Adversarial case AFTER the genuine input-driven finish; these explicit
-	# fixture teleports never contribute to the validated route or its time.
+	# Caso adversarial DEPOIS do término genuíno guiado por entrada; estes teleportes
+	# explícitos da fixture nunca contam para a rota validada nem para o tempo dela.
 	var saved: Dictionary=preload("res://activities/desert_wash/DesertWashState.gd").data(world.session.state.world_state)
 	var balance: int=world.session.state.economy.balance
 	var start:=COURSE.gate(0)

@@ -1,9 +1,9 @@
 extends SceneTree
 
-## Automated test suite for UrbanBuildingFactory and native 3D urban architecture.
-## Verifies that all 65 Harbor buildings instantiate properly, generate native physical collision on layer 1,
-## contain zero SubViewports, preserve entrance/courtyard approaches, support swept vehicle hulls,
-## enforce proper-name signage, and rotate transit boarding approaches correctly.
+## Suíte automatizada para UrbanBuildingFactory e a arquitetura urbana 3D nativa.
+## Confere que os 65 prédios do Harbor instanciam direito, geram colisão física nativa na camada 1,
+## não contêm nenhum SubViewport, preservam as aproximações de entrada/pátio, aceitam cascos de veículo varridos,
+## impõem placas com nome próprio e giram corretamente as aproximações de embarque do transporte.
 
 var failures: Array[String] = []
 
@@ -85,7 +85,7 @@ func run() -> void:
 		if building == null:
 			continue
 		
-		# Mount building to scene tree and finalize
+		# Monta o prédio na árvore de cena e finaliza
 		root.add_child(building)
 		factory.finalize_building(building, entry)
 		await physics_frame
@@ -110,7 +110,7 @@ func run() -> void:
 		for body in bodies:
 			verify(body.collision_layer & 1 != 0, "Body on layer 1: %s (%s)" % [b_id, body.name])
 		
-		# 3. Clean signage and labels (proper name only)
+		# 3. Placas e rótulos limpos (só nome próprio)
 		for label in building.find_children("*", "Label3D", true, false):
 			var text: String = label.text
 			for forbidden in ["BANCO /", "ROUPAS /", "POSTO /", " / 04", " / 02", "NÃO ENTRE DE MADRUGADA"]:
@@ -124,24 +124,24 @@ func run() -> void:
 			verify(pedestrian_probe.move_and_collide(Vector3.UP * 0.001, true) == null, "FoundryLofts courtyard is open")
 		
 		elif b_id == "MotorWorkshop":
-			# Full vehicle hull (2.46m x 1.5m x 5.21m) driving through the bay from entrance (Z=+5.0) to inside (Z=-1.0)
+			# Casco completo de veículo (2.46m x 1.5m x 5.21m) atravessando a baia da entrada (Z=+5.0) até dentro (Z=-1.0)
 			vehicle_probe.global_position = b_pos + Vector3(0, 0.75, 5.0)
 			var sweep_col = vehicle_probe.move_and_collide(Vector3(0, 0, -6.0), true)
 			verify(sweep_col == null, "MotorWorkshop drive-in bay accommodates full vehicle hull sweep")
 			
-			# Check that rear wall blocks excessive penetration past the bay
+			# Confere que a parede do fundo bloqueia penetração excessiva além da baia
 			vehicle_probe.global_position = b_pos + Vector3(0, 0.75, -1.0)
 			var rear_col = vehicle_probe.move_and_collide(Vector3(0, 0, -4.0), true)
 			verify(rear_col != null, "MotorWorkshop rear wall physically stops vehicles at back")
 		
 		elif building is UrbanShopfrontBuilding:
-			# Test the actual authored doorway axis, stopping immediately in front of
-			# the recessed door. The rear body is deliberately solid and must not be
-			# crossed by this exterior-approach probe.
+			# Testa o eixo real da porta autoral, parando logo na frente da
+			# porta recuada. O corpo dos fundos é sólido de propósito e não pode ser
+			# atravessado por esta sonda de aproximação externa.
 			var half_d: float = b_size.y * 0.5
 			var is_corner: bool = entry.get("kind", "") in ["corner_shop", "corner_diner"] or b_id.begins_with("Corner")
 			var door_x: float = -b_size.x * 0.15 if is_corner else 0.0
-			# The collider itself is already centred 0.85 m above the body origin.
+			# O próprio colisor já fica centrado 0.85 m acima da origem do corpo.
 			pedestrian_probe.global_position = b_pos + Vector3(door_x, 0.0, half_d + 1.0)
 			var alcove_col = pedestrian_probe.move_and_collide(Vector3(0, 0, -1.45), true)
 			var blocker := "none" if alcove_col == null else str(alcove_col.get_collider().name)
@@ -151,7 +151,7 @@ func run() -> void:
 		await physics_frame
 	
 	verify(count_null_maciota == 1, "Verified 1 Maciota Garage place returning null")
-	# CemeteryKeeper is catalog-only and therefore not one of these 65 JSON rows.
+	# CemeteryKeeper é só de catálogo e por isso não é uma destas 65 linhas do JSON.
 	verify(count_reused_models == 3, "Verified 3 reused authored 3D models in the 65-row registry (Hospital, Ammunation, Residence)")
 	verify(count_reconstructed == 61, "Verified 61 native reconstructed 3D buildings")
 	verify(count_null_maciota + count_reused_models + count_reconstructed == 65, "Verified exact total of 65 Harbor building records")

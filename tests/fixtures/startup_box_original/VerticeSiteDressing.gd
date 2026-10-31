@@ -1,6 +1,6 @@
 extends Node3D
 ## Static working detail for Vértice, authored in company-local metres.
-## Central cargo islands leave the truck loop, patrol and dock lanes unobstructed.
+## Ilhas centrais de carga deixam o circuito dos caminhões, a ronda e as faixas da doca livres.
 var solids: Array[StaticBody3D] = []
 var placements: Array[Dictionary] = []
 var roof_parts: Array[Node3D] = []
@@ -99,13 +99,13 @@ func _cone(p: Vector2) -> void:
 	_solid("SafetyCone",at+Vector3(0,.34,0),Vector3(.42,.68,.42))
 
 func _perimeter_work() -> void:
-	# Guard patrol is x=-43; vehicles run x=-37. Keep this strip west of -45.
+	# A ronda do vigia é x=-43; os veículos passam em x=-37. Mantém esta faixa a oeste de -45.
 	for z in [5.0,10.0,17.0,22.0]: _cargo(Vector3(-46.6,.03,z),1.6 if z<15 else 2.15)
 	_reel(Vector3(-46.7,.03,31),.82)
 	_reel(Vector3(-46.7,.03,35),.67)
 	_empty_pallets(Vector3(-46.6,.03,43),5)
 	for z in [65.5,73.0]: _dumpster(Vector3(-46.5,.03,z))
-	# East-side utility plant sits beyond the x44 patrol, clear of office access.
+	# A central de utilidades do lado leste fica além da ronda x44, longe do acesso ao escritório.
 	for z in [5.0,8.0,11.0]: _drum(Vector3(47.4,.03,z),"teal")
 	var bench := Vector3(47.5,.03,17)
 	_box(bench+Vector3(0,.9,0),Vector3(2.1,.15,4),"steel")
@@ -189,7 +189,7 @@ func _planter(at: Vector3) -> void:
 	_solid("Planter",at+Vector3(0,.76,0),Vector3(.9,1.52,.9))
 
 func _office_details() -> void:
-	# A compact kitchenette in the unused west office bay; x35 walk stays open.
+	# Uma copa compacta na baia oeste sem uso do escritório; a passagem x35 continua aberta.
 	_box(Vector3(29.3,.49,17),Vector3(1.6,.98,4.2),"cream")
 	_box(Vector3(29.3,1.02,17),Vector3(1.7,.09,4.3),"dark")
 	for z in [15.5,16.6,17.7,18.5]:
@@ -219,7 +219,7 @@ func _office_details() -> void:
 		_solid("NoticeBoard",Vector3(41.8,1.9,z),Vector3(.12,1.1,2))
 
 func _storage_details() -> void:
-	# Wrap and shipping-label detail uses existing rack collision envelopes.
+	# O detalhe de filme e etiqueta de envio usa os envelopes de colisão existentes das prateleiras.
 	for x in [-19.0,-7.0,7.0,19.0]:
 		for z in [-13.0,-4.0]:
 			for dx in [-2.0,0.0,2.0]:
@@ -232,17 +232,17 @@ func _storage_details() -> void:
 		_box(Vector3(x+.85,1.94,-17.5),Vector3(.63,.02,.52),"label")
 		_cylinder(Vector3(x-.8,1.9,-17.45),.15,.18,"yellow")
 		_box(Vector3(x,1.82,-17.2),Vector3(.4,.07,.24),"dark")
-	# Emergency equipment goes on already solid wall/piers, not in walking lanes.
+	# Equipamento de emergência vai em parede/pilares já sólidos, não nas faixas de passagem.
 	for x in [-25.0,25.0]:
 		_cylinder(Vector3(x,1.0,17.56),.14,.55,"red")
 		_box(Vector3(x,1.35,17.56),Vector3(.2,.12,.2),"dark")
 		_solid("FireExtinguisher",Vector3(x,1.1,17.56),Vector3(.3,.75,.3))
-	# No props in the hatch reserve x[-25,-20], z[-16,-10].
+	# Nenhum prop na reserva da tampa x[-25,-20], z[-16,-10].
 
 func _packing_stations() -> void:
-	# Two recognisable packing islands in the otherwise empty receiving hall.
-	# Reserved footprint each: x=center±2.1, z6.8..9.2. Cross-aisle is z12;
-	# central/side lanes x0, ±12 and x24 remain continuous and unobstructed.
+	# Duas ilhas de embalagem reconhecíveis no salão de recebimento, de resto vazio.
+	# Área reservada de cada: x=centro±2.1, z6.8..9.2. O corredor transversal é z12;
+	# as faixas central/laterais x0, ±12 e x24 continuam contínuas e desobstruídas.
 	for x in [-19.0,19.0]:
 		var bench := Vector3(x-.55,0,7.45)
 		_box(bench+Vector3(0,1.02,0),Vector3(2.8,.12,1.1),"wood")
@@ -256,7 +256,7 @@ func _packing_stations() -> void:
 		_box(bench+Vector3(-.91,1.46,-.42),Vector3(.07,.78,.07),"steel")
 		_box(bench+Vector3(-.91,1.85,-.39),Vector3(.52,.29,.13),"dark")
 		_box(bench+Vector3(-.91,1.88,-.315),Vector3(.4,.12,.022),"green")
-		# Label printer with output sheet, a tape gun and rolls of wrapping film.
+		# Impressora de etiquetas com folha de saída, uma fita adesiva com aplicador e rolos de filme.
 		_box(bench+Vector3(.36,1.27,-.08),Vector3(.53,.38,.5),"cream")
 		_box(bench+Vector3(.36,1.22,.178),Vector3(.35,.07,.022),"dark")
 		_box(bench+Vector3(.36,1.16,.33),Vector3(.27,.017,.36),"label")
@@ -265,7 +265,7 @@ func _packing_stations() -> void:
 			_cylinder(bench+Vector3(dx,1.322,-.23),.045,.008,"wood_dark")
 		_box(bench+Vector3(.96,1.17,.26),Vector3(.21,.2,.24),"red")
 		_solid("PackingStationBench",bench+Vector3(0,.99,0),Vector3(2.8,1.98,1.1))
-		# Short roller bed joins the station to its cart; each roller has relief.
+		# Uma esteira curta de roletes liga a estação ao carrinho; cada rolete tem relevo.
 		var conveyor := Vector3(x-.55,0,8.73)
 		for side in [-1.0,1.0]:
 			_box(conveyor+Vector3(0,.89,side*.29),Vector3(2.75,.13,.06),"teal")

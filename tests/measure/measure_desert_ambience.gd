@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_desert.gd"
-## Paired on/off diagnostic in actual Main; retains population, weather and camera.
+## Diagnóstico pareado ligado/desligado no Main real; mantém população, clima e câmera.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--benchmark" not in OS.get_cmdline_user_args() or "--no-save" not in OS.get_cmdline_user_args() or not OS.get_environment("HARBOR_NO_CSHARP").is_empty():
 		quit(2)
@@ -55,7 +55,7 @@ func run() -> void:
 			await create_timer(10).timeout
 			await measure(setup.id + ("-on" if active else "-off"))
 			if mix.wind.playing != active: push_error("Incorrect real wind activation"); quit(1); return
-	# Ordinary interior entry/exit exercises the same mix attached to the real session.
+	# A entrada/saída comum de interior exercita a mesma mistura ligada à sessão real.
 	var definition := preload("res://world/places/PlaceCatalog.gd").get_definition("desert_bank")
 	world.production.region.set_focus(definition.entry_position)
 	world.production.region.prepare_collision_at(definition.entry_position)

@@ -70,12 +70,12 @@ func test_incremental_build() -> void:
 		await process_frame
 		var visible_before := count_visible_parts(slow)
 		var source_counts := door_source_counts(slow)
-		# The generous bound scales with actual source work and permits setup,
-		# surface assembly and part finalization in addition to triangle batches.
+		# O limite generoso escala com o trabalho real de origem e permite preparação,
+		# montagem de superfícies e finalização de peças além dos lotes de triângulos.
 		var max_calls: int = source_counts.triangles * 2 + source_counts.surfaces * 8 + source_counts.parts * 8 + 8
 		var steps := 0
-		# Zero budget forces the builder to yield at its next progress boundary;
-		# even one large mesh must not be cut entirely in the first call.
+		# Orçamento zero força o montador a ceder no próximo limite de progresso;
+		# mesmo uma malha grande não pode ser cortada inteira na primeira chamada.
 		while not slow.warm_doors(0):
 			steps += 1
 			check(count_visible_parts(slow) == visible_before, id + ": o carro mudou no meio do preparo da porta")

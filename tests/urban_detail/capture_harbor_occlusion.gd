@@ -1,6 +1,6 @@
 extends SceneTree
-## Separate visual-depth check for the new Cobra vegetation. Collision is
-## exercised by test_harbor_fidelity_contract.gd; this capture checks occlusion.
+## Checagem separada de profundidade visual da nova vegetação do Cobra. A colisão é
+## exercitada por test_harbor_fidelity_contract.gd; esta captura confere a oclusão.
 
 const REGION := preload("res://world/regions/NativeRegion.gd")
 const OUTPUT_ROOT := "C:/Users/rafae/.codex/visualizations/2026/09/21/01a0c5d4-0aa6-7ba0-819f-d0c3afa28d07/harbor-fidelity"

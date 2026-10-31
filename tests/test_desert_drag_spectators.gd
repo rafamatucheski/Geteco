@@ -1,5 +1,5 @@
 extends SceneTree
-## Physical integration: stream the actual strip, not a duplicate prop layout.
+## Integração física: carrega em streaming a pista real, não um layout duplicado de props.
 const REGION := preload("res://world/desert/DesertRegion.gd")
 const MEET := preload("res://world/desert/drag_meet/DesertDragMeet.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")

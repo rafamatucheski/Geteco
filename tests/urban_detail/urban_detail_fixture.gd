@@ -1,8 +1,8 @@
 extends SceneTree
 
-## Visual demonstration fixture and showcase for Urban Detail 3D architecture.
-## Displays all reconstructed building typologies and transit models side by side
-## with realistic street staging for visual inspection and FPS measurement by the integrator.
+## Fixture de demonstração visual e vitrine da arquitetura 3D do Urban Detail.
+## Mostra todas as tipologias de prédio reconstruídas e modelos de transporte lado a lado
+## com encenação de rua realista para inspeção visual e medição de FPS pelo integrador.
 
 const SAMPLE_FRAMES := 180
 var frame_times: Array[float] = []
@@ -48,7 +48,7 @@ func setup_showcase() -> void:
 	
 	var factory = preload("res://world/urban_detail/UrbanBuildingFactory.gd")
 	
-	# Showcase lineup of archetypes with spacing along X/Z grid
+	# Fileira de vitrine dos arquétipos com espaçamento numa grade X/Z
 	var lineup: Array[Dictionary] = [
 		{
 			"id": "FoundryTerraceShowcase", "kind": "rowhouse_terrace", "name": "Foundry Terraces",
@@ -121,7 +121,7 @@ func setup_showcase() -> void:
 	print("Urban Detail Showcase ready. 11 Building Archetypes + Transit Station placed.")
 	print("Starting frame time sampling window (%d frames)..." % SAMPLE_FRAMES)
 	
-	# Warm up for 10 frames before sampling
+	# Aquece por 10 quadros antes de amostrar
 	for i in 10:
 		await process_frame
 	

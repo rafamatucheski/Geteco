@@ -21,7 +21,7 @@ func _initialize() -> void:
 			if absf(car.speed + expected_reverse) > 0.001:
 				push_error("Reverse limit failed: %s speed=%f" % [id, car.speed])
 				failures += 1
-			# An excessive restored reverse speed is bounded on the next step.
+			# Uma velocidade de ré restaurada excessiva é limitada no próximo passo.
 			car.horizontal_velocity = Vector3(0, 0, 40)
 			controller.step(car, 1.0/60.0, -1.0, 0.0, false, 1.0)
 			if car.speed < -EXPECTED_REVERSE_MPS - 0.001: failures += 1

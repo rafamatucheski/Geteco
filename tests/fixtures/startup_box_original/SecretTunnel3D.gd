@@ -1,13 +1,13 @@
 extends Node3D
-## Continuous secret-tunnel stage. It stays in the production World3D, but is
-## authored below and away from streamed streets so the walk down is visible
-## without creating an isolated interior scene.
+## Palco contínuo do túnel secreto. Fica no World3D de produção, mas é
+## montado abaixo e longe das ruas em streaming para que a descida fique visível
+## sem criar uma cena de interior isolada.
 
 const RAT := preload("res://gameplay/urban_v1/SecretTunnelRat.gd")
 const TUNNEL_AUDIO := preload("res://gameplay/urban_v1/SecretTunnelAudio.gd")
 const UNDERGROUND_ENVIRONMENT := preload("res://gameplay/urban_v1/SecretUndergroundEnvironment.gd")
-# The first basement occupies roughly y 0 .. -4.3. The hidden shelf opens at
-# its rear landing; this second flight reaches the deeper network at y ~ -9.
+# O primeiro porão ocupa mais ou menos y 0 .. -4.3. A estante escondida abre no
+# patamar dos fundos; este segundo lance chega à rede mais funda em y ~ -9.
 const WORLD_ORIGIN := Vector3(-409.4,-8.86,99.65)
 const WORLD_YAW := PI
 const ENTRY_POINT := Vector3(0,4.55,7.2)
@@ -118,8 +118,8 @@ func contains(point: Vector3) -> bool:
 	var local := to_local(point)
 	if local.y <= -1.0 or local.y >= 6.5:
 		return false
-	# The cellar overlaps the broad underground rectangle. Only the authored
-	# landing and stair may claim the higher level and switch cameras there.
+	# O porão se sobrepõe ao retângulo subterrâneo largo. Só o patamar e a escada
+	# autorais podem reivindicar o nível mais alto e trocar de câmera ali.
 	if local.y >= 3.55:
 		return absf(local.x) <= 1.9 and local.z >= -.8 and local.z <= 8.35
 	var xz := Vector2(local.x,local.z)
@@ -148,8 +148,8 @@ func _process(delta: float) -> void:
 	var in_headquarters := local.x >= 49.5 and local.z >= -13.0 and local.z <= 9.5
 	var target_size := 20.0 if in_headquarters else 15.0
 	tunnel_camera.size = lerpf(tunnel_camera.size,target_size,1.0-exp(-4.2*delta))
-	# Dedicated render layers let this use the project's readable isometric
-	# angle while the streamed surface remains excluded from the cutaway.
+	# Camadas de render dedicadas deixam usar o ângulo isométrico legível do projeto
+	# enquanto a superfície em streaming continua excluída do corte.
 	tunnel_camera.global_position = to_global(focus+Vector3(0,18.0,15.0))
 	tunnel_camera.look_at(to_global(focus),Vector3.UP)
 	_flicker_clock -= delta
@@ -198,18 +198,18 @@ func _build() -> void:
 	_apply_underground_layer(self)
 
 func _build_stairs() -> void:
-	# A masonry stair descends 4.5 m. The treads are visual; one hidden ramp owns
-	# smooth actor collision so feet cannot snag on fourteen separate boxes.
+	# Uma escada de alvenaria desce 4.5 m. Os degraus são visuais; uma rampa escondida
+	# cuida da colisão suave do ator para os pés não engancharem em catorze caixas separadas.
 	for step in 14:
 		var z := 5.7-float(step)*.58
 		var y := 4.18-float(step)*.32
 		_box(Vector3(0,y,z),Vector3(3.4,.22,.64),"454b45")
-	# Landing aligns with the opening behind the cellar bookshelf.
+	# O patamar se alinha com a abertura atrás da estante do porão.
 	_box(Vector3(0,4.48,7.15),Vector3(3.4,.20,2.45),"454b45")
 	_solid("EntryLanding",Vector3(0,4.37,7.15),Vector3(3.3,.20,2.45))
 	var angle := atan2(4.48,8.1)
-	# Bury the lower end beneath the floor while keeping the upper landing
-	# fixed. An exposed box end traps a walking capsule on the return climb.
+	# Enterra a ponta de baixo sob o piso mantendo o patamar de cima
+	# fixo. Uma ponta de caixa exposta prende uma cápsula andando na subida de volta.
 	var buried_toe := .40
 	var ramp_center := Vector3(0,2.18,1.95)-Vector3(0,sin(angle),cos(angle))*buried_toe*.5
 	_solid("StairRamp",ramp_center,Vector3(3.25,.18,9.25+buried_toe),Vector3(-angle,0,0))
@@ -224,13 +224,13 @@ func _build_stairs() -> void:
 	_light(Vector3(1.18,4.2,5.1),Color("d2a45f"),3.6,.82)
 
 func _build_old_tunnel() -> void:
-	# The dogleg stays below the village and away from the western coast: short
-	# west descent, long north gallery, broken service bend, then the HQ.
-	# Side-specific end openings keep every dogleg physically traversable.
+	# O zigue-zague fica abaixo da vila e longe da costa oeste: descida curta
+	# para oeste, galeria longa para o norte, curva de serviço quebrada e então o QG.
+	# Aberturas de ponta específicas de cada lado mantêm todo zigue-zague fisicamente atravessável.
 	_corridor_z(Vector3(0,0,-7.0),10.0,0,1,0)
 	_corridor_x(Vector3(18.0,0,-12.0),36.0,1,1,1)
 	_corridor_z(Vector3(36.0,0,-5.0),14.0,2,-1,1)
-	# The final walls stop at the west face of the HQ instead of partitioning it.
+	# As paredes finais param na face oeste do QG em vez de dividi-lo.
 	_corridor_x(Vector3(46.0,0,2.0),20.0,3,-1,0,5.35)
 	_rock(Vector3(-1.8,.18,-8.5),Vector3(.72,.38,.58),.47)
 	_rock(Vector3(14.0,.16,-10.1),Vector3(.62,.32,.48),.9)
@@ -294,8 +294,8 @@ func _corridor_wall_x(center: Vector3,offset: float,length: float,side: float,va
 	if span<=.2: return
 	var at := center+Vector3((min_cut-max_cut)*.5,1.65,offset)
 	_solid("StoneWallX_%d_%d"%[variant,int(side)],at,Vector3(span,3.5,.48))
-	# The +Z wall is closest to the isometric camera: retain collision but use
-	# the far wall and partial arches as the cutaway silhouette.
+	# A parede +Z é a mais próxima da câmera isométrica: mantém a colisão, mas usa
+	# a parede do fundo e os arcos parciais como silhueta do corte.
 	if not visible_wall: return
 	_box(at,Vector3(span-.08,3.5,.46),"454b45")
 	_box(Vector3(at.x,3.42,center.z+side*2.35),Vector3(span-.10,.36,.72),"3d4541",Vector3(side*.22,0,0))
@@ -316,7 +316,7 @@ func _masonry_face_z(at: Vector3,length: float,side: float,variant: int) -> void
 				_box(Vector3(at.x-side*(.245+depth*.5),y,at.z+cursor+run*.5),Vector3(depth,.46,run),palette[(index+course+variant)%palette.size()],Vector3(0,.012*float((index%3)-1),0))
 			cursor += brick_length
 			index += 1
-	# Damp mineral blooms sit on the inner face rather than tinting the room.
+	# Manchas minerais úmidas ficam na face interna em vez de tingir a sala.
 	_box(Vector3(at.x-side*.305,.78,at.z-length*.18),Vector3(.025,.82,minf(1.4,length*.26)),"34433b",Vector3(.06,0,.02*side))
 
 func _masonry_face_x(at: Vector3,length: float,side: float,variant: int) -> void:
@@ -343,8 +343,8 @@ func _arch_z(at: Vector3,variant: int) -> void:
 		_box(at+Vector3(t*2.23,2.64+(1.0-absf(t))*.78,0),Vector3(.62,.34,.46),color,Vector3(0,0,-t*.54))
 
 func _arch_x(at: Vector3,variant: int) -> void:
-	# Only the far half remains, making the vaulted construction readable while
-	# preserving the camera-side cutaway.
+	# Só a metade do fundo fica, deixando a construção abobadada legível e
+	# preservando o corte do lado da câmera.
 	for index in 4:
 		var t := -1.0+float(index)/3.0
 		var color := "6b6d60" if (index+variant)%2 else "555e55"
@@ -384,8 +384,8 @@ func _build_headquarters() -> void:
 	var c := HQ_CENTER
 	_box(c+Vector3(0,-.12,0),Vector3(15,.20,15),"4f5550")
 	_solid("HeadquartersFloor",c+Vector3(0,-.20,0),Vector3(15,.22,15))
-	# The west wall is split around the tunnel mouth. The previous continuous
-	# slab at x=50.4 visually and physically cut across the incoming corridor.
+	# A parede oeste é dividida em volta da boca do túnel. A laje contínua anterior
+	# em x=50.4 cortava visual e fisicamente o corredor de chegada.
 	_headquarters_wall_z(c+Vector3(-7.6,2,-5.2),Vector3(.35,4,4.6),-1.0,"WestWallNorth")
 	_headquarters_wall_z(c+Vector3(-7.6,2,5.2),Vector3(.35,4,4.6),-1.0,"WestWallSouth")
 	_headquarters_wall_z(c+Vector3(7.6,2,0),Vector3(.35,4,15),1.0,"EastWall")
@@ -396,21 +396,21 @@ func _build_headquarters() -> void:
 		c+Vector3(7.22,1.65,-7.15),c+Vector3(-7.22,1.65,-7.15),
 	]:
 		_box(pillar,Vector3(.62,3.3,.62),"3d4541")
-	# Operations table has a readable top and actual legs; its full footprint
-	# remains the collision owner so Dante cannot walk through the tabletop.
+	# A mesa de operações tem tampo legível e pernas de verdade; a área inteira
+	# continua dona da colisão para o Dante não atravessar o tampo.
 	_box(c+Vector3(0,.82,1.2),Vector3(3.4,.14,2.1),"796a4e")
 	_solid("MapTable",c+Vector3(0,.46,1.2),Vector3(3.4,.92,2.1))
 	for x in [-1.42,1.42]:
 		for z in [.38,2.02]: _box(c+Vector3(x,.39,z),Vector3(.16,.72,.16),"4a4133")
 	_box(c+Vector3(0,.91,1.2),Vector3(3.02,.025,1.72),"b8ad8d")
-	# Harbor coastline, main road and drainage branch are geometry, not labels.
+	# A costa do Harbor, a estrada principal e o ramal de drenagem são geometria, não rótulos.
 	_box(c+Vector3(-1.08,.932,1.22),Vector3(.52,.018,1.58),"526f73",Vector3(0,.08,0))
 	_box(c+Vector3(.12,.944,1.28),Vector3(2.34,.022,.10),"5c5850",Vector3(0,-.20,0))
 	_box(c+Vector3(.48,.946,.86),Vector3(.10,.023,1.08),"5c5850",Vector3(0,.34,0))
 	_box(c+Vector3(.98,.948,1.62),Vector3(.72,.024,.34),"68755d",Vector3(0,-.18,0))
 	for marker in [Vector3(-.42,.98,.84),Vector3(.45,.98,1.19),Vector3(1.12,.98,1.65)]:
 		_cylinder(c+marker,.07,.10,"9f513f")
-	# A real open shelf with uprights, trays and stored field boxes.
+	# Uma estante aberta de verdade com montantes, bandejas e caixas de campo guardadas.
 	_solid("SupplyShelf",c+Vector3(-5.85,.75,-2.0),Vector3(1.8,1.5,3.8))
 	for x in [-6.62,-5.08]:
 		for z in [-3.62,-.38]: _box(c+Vector3(x,.86,z),Vector3(.11,1.72,.11),"4c514a")
@@ -418,7 +418,7 @@ func _build_headquarters() -> void:
 	_box(c+Vector3(-5.86,.47,-2.95),Vector3(1.28,.48,.72),"6b5b43")
 	_box(c+Vector3(-5.86,1.06,-1.02),Vector3(1.25,.42,.66),"5b674f")
 	for z in [-2.18,-1.94,-1.70,-1.46]: _box(c+Vector3(-5.82,1.15,z),Vector3(1.18,.47,.12),"704f42")
-	# Desk and vintage radio retain the route-console footprint.
+	# A mesa e o rádio antigo mantêm a área do console de rotas.
 	_box(c+Vector3(5.7,.78,-2.1),Vector3(2.2,.14,1.1),"675d4b")
 	_solid("RadioDesk",c+Vector3(5.7,.68,-2.1),Vector3(2.2,1.36,1.1))
 	for x in [4.82,6.58]:
@@ -429,8 +429,8 @@ func _build_headquarters() -> void:
 	_light(c+Vector3(4.7,3.1,-4.8),Color("88a291"),5.0,.66)
 
 func _build_network_console(c: Vector3) -> void:
-	# Mechanical network console communicates state with lamps, not labels. Built
-	# from nodes (not batched) because it lifts away once the sealed sector has power.
+	# O console mecânico da rede comunica o estado com lâmpadas, não rótulos. Montado
+	# com nós (não em lote) porque é removido quando o setor lacrado tem energia.
 	console_node = Node3D.new()
 	console_node.name = "NetworkConsoleBoard"
 	add_child(console_node)
@@ -442,7 +442,7 @@ func _build_network_console(c: Vector3) -> void:
 		var color := "6b8f6a" if x<0 else "76564a"
 		_node_cylinder(console_node,c+Vector3(x,1.55,-6.67),.16,.08,color,Vector3(PI*.5,0,0))
 		_node_box(console_node,c+Vector3(x,1.08,-6.67),Vector3(.22,.08,.07),"b18a4f")
-	# Exposed cloth wiring gives the board a mechanical, repaired-by-hand read.
+	# Fiação de pano exposta dá ao painel uma leitura mecânica, consertada à mão.
 	for wire in [
 		[Vector3(-1.46,1.30,-6.60),Vector3(-.55,.70,-6.60),"8d3f35"],
 		[Vector3(-.48,1.30,-6.60),Vector3(.40,.82,-6.60),"a68a4c"],
@@ -498,11 +498,11 @@ func _build_vintage_radio(at: Vector3) -> void:
 	_pipe(at+Vector3(.60,.38,0),at+Vector3(.82,1.16,-.08),.018,"777063")
 
 func _build_sealed_sector() -> void:
-	# A damaged containment threshold hints at something older below the city.
-	# No readable signage and no creature confirms what happened here.
+	# Uma soleira de contenção danificada insinua algo mais antigo sob a cidade.
+	# Nenhuma placa legível nem criatura confirma o que aconteceu aqui.
 	var gate := HQ_CENTER+Vector3(0,0,-7.9)
-	# Open bars reveal the room beyond. A dedicated full gate collider owns the
-	# locked threshold until the sealed sector has power (set_sealed_access).
+	# As barras abertas revelam a sala além. Um colisor dedicado do portão inteiro cuida da
+	# soleira trancada até o setor lacrado ter energia (set_sealed_access).
 	gate_body = _solid("SealedGate",gate+Vector3(0,1.65,.02),Vector3(4.2,3.3,.28))
 	for x in [-2.04,2.04]: _box(gate+Vector3(x,1.65,.02),Vector3(.24,3.45,.30),"303a39")
 	for y in [.08,3.22]: _box(gate+Vector3(0,y,.02),Vector3(4.25,.24,.30),"303a39")
@@ -525,13 +525,13 @@ func _build_sealed_sector() -> void:
 		_masonry_face_z(gate+Vector3(side*2.2,1.65,-3.5),7,side,6)
 	_box(gate+Vector3(0,1.65,-6.92),Vector3(4.7,3.5,.34),"414946")
 	_solid("SealedBackWall",gate+Vector3(0,1.65,-6.92),Vector3(4.7,3.5,.38))
-	# Broken edge slabs preserve the ceiling volume without hiding the evidence
-	# from the elevated cutaway camera.
+	# Lajes quebradas na borda preservam o volume do teto sem esconder a evidência
+	# da câmera de corte elevada.
 	for side in [-1.0,1.0]:
 		_box(gate+Vector3(side*1.92,3.3,-3.6),Vector3(.72,.32,7.2),"343b39",Vector3(0,0,side*.025))
 	_box(gate+Vector3(-1.12,3.28,-6.35),Vector3(1.05,.24,1.22),"3d4541",Vector3(.03,.10,-.02))
 	_box(gate+Vector3(1.30,3.26,-5.92),Vector3(.82,.20,.90),"3d4541",Vector3(-.02,-.14,.03))
-	# Gurney with frame, mattress, pillow, snapped restraints, legs and wheels.
+	# Maca com estrutura, colchão, travesseiro, contenções arrebentadas, pernas e rodas.
 	var bed := gate+Vector3(-.75,0,-4.5)
 	_box(bed+Vector3(0,.66,0),Vector3(1.02,.13,2.20),"65716b",Vector3(0,.12,0))
 	_solid("OldGurney",gate+Vector3(-.75,.42,-4.5),Vector3(1.0,.84,2.2))
@@ -627,8 +627,8 @@ func _build_wildlife() -> void:
 		rats.append(rat)
 
 func _light(at: Vector3,color: Color,reach: float,energy: float) -> void:
-	# Lights are deliberately few, short-range and shadowless; darkness and
-	# flicker sell the space without a large overlapping-light budget.
+	# As luzes são de propósito poucas, de curto alcance e sem sombra; escuridão e
+	# tremulação vendem o espaço sem um orçamento grande de luzes sobrepostas.
 	var lamp := OmniLight3D.new()
 	lamp.position = at
 	lamp.light_color = color
@@ -638,7 +638,7 @@ func _light(at: Vector3,color: Color,reach: float,energy: float) -> void:
 	lamp.set_meta("base_energy",energy*4.0)
 	add_child(lamp)
 	lights.append(lamp)
-	# Batched bulkhead housing and guard cage make every real light motivated.
+	# Carcaça de luminária de antepara e grade de proteção em lote justificam cada luz real.
 	_box(at+Vector3(0,.15,-.08),Vector3(.44,.30,.12),"303a39")
 	_box(at+Vector3(0,.14,.015),Vector3(.25,.13,.10),"7a6a51")
 	for x in [-.18,.18]: _box(at+Vector3(x,.14,.03),Vector3(.035,.32,.035),"777063")
@@ -656,7 +656,7 @@ func _pipe(a: Vector3,b: Vector3,radius: float,color: String) -> void:
 	var up := Vector3.FORWARD if absf(direction.normalized().dot(Vector3.UP))>.98 else Vector3.UP
 	var local_basis := Basis.looking_at(direction.normalized(),up)*Basis(Vector3.RIGHT,PI*.5)
 	_batch_mesh(mesh,color,Transform3D(local_basis,midpoint))
-	# Slight collars make pipe joins and repaired endpoints visible.
+	# Colares discretos deixam visíveis as junções de cano e as pontas consertadas.
 	for point in [a,b]:
 		var collar := CylinderMesh.new()
 		collar.top_radius=radius*1.34; collar.bottom_radius=radius*1.34

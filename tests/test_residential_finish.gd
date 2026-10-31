@@ -20,7 +20,7 @@ func run() -> void:
 		for identity in ["Sofa","Bed","CoffeeTable","Kitchen"]:
 			var rect: Rect2 = room.model.solid_rects[identity]
 			var center := rect.get_center()
-			# Sweep the real capsule towards the full furniture footprint.
+			# Varre a cápsula real na direção da área inteira da mobília.
 			for side in [-1,1]:
 				actor.global_position = room.to_global(Vector3(center.x,0,rect.position.y-.7 if side == -1 else rect.end.y+.7))+Vector3.UP*.04
 				check(actor.move_and_collide(Vector3(0,0,side*-1.2),true) != null,id+" solid "+identity+" side "+str(side))

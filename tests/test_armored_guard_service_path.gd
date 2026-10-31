@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical carrier path: perpendicular crossing at its own truck, then bank
-## frontage. Repeated service assignments must not restart passed waypoints.
+## Caminho físico do carregador: travessia perpendicular no próprio caminhão, depois a fachada
+## do banco. Atribuições de serviço repetidas não podem reiniciar waypoints já passados.
 const GUARD := preload("res://gameplay/armored/ArmoredGuard.gd")
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
 class State extends RefCounted:

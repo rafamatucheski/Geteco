@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Rendered shadow A/B in the actual Main scene. Does not load or write a save.
+## A/B renderizado de sombras na cena real do Main. Não lê nem grava save.
 
 var out_dir := ""
 var world

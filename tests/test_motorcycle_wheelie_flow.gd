@@ -137,8 +137,8 @@ func run() -> void:
 	var dirt = world.session.motocross.player_bike
 	if not is_instance_valid(dirt): world.free(); quit(1); return
 	target = dirt
-	# Rental changes the interaction/weapon context. Let the touch overlay settle
-	# before starting new fingers so its context refresh cannot release them.
+	# O aluguel muda o contexto de interação/arma. Deixa a sobreposição de toque assentar
+	# antes de começar dedos novos para que a atualização de contexto dela não os solte.
 	await frames(12)
 	if overlay != null:
 		overlay._refresh()

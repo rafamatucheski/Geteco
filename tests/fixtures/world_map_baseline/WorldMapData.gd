@@ -1,6 +1,6 @@
 extends RefCounted
-## Read-only snapshot of prepared production geography. Never mounts a region,
-## creates a physics body, modifies the route graph or changes campaign state.
+## Snapshot só leitura da geografia de produção preparada. Nunca monta uma região,
+## cria um corpo físico, modifica o grafo de rotas nem muda o estado da campanha.
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const DESERT := preload("res://world/desert/DesertLayout.gd")
 const GATE := preload("res://world/north_gateway/NorthGatewayLayout.gd")
@@ -84,8 +84,8 @@ func _read_region(id: String, region) -> void:
 	elif id=="desert":
 		lands.append({"polygon":rectangle(DESERT.BOUNDS),"biome":"desert"})
 	elif id=="mountain":
-		# The terrain is continuous east of the bridge. Its cartographic extent
-		# follows authored records, excluding the sea-spanning entry road.
+		# O terreno é contínuo a leste da ponte. Sua extensão cartográfica
+		# segue os registros autorais, excluindo a estrada de entrada que cruza o mar.
 		var points := PackedVector2Array()
 		for key in region.records:
 			if key.x<9 or key.y>=-2: continue
@@ -138,8 +138,8 @@ func _mountain_markers(region) -> void:
 		var line := PackedVector3Array([CATALOG._at(course.start,"mountain")])
 		for point in course.points: line.append(CATALOG._at(point,"mountain"))
 		_add_road({"id":id,"points":line,"width":1.0,"surface":"ski"},"mountain")
-	# Ski terrain extends beyond the road/forest record cells. Include its real
-	# activity corridors in the land footprint instead of painting them at sea.
+	# O terreno de esqui vai além das células de registro de estrada/floresta. Inclui os
+	# corredores reais de atividade na área de terra em vez de pintá-los no mar.
 	for land in lands:
 		if land.biome!="mountain": continue
 		var coverage: PackedVector2Array=land.polygon.duplicate()

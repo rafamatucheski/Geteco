@@ -87,7 +87,7 @@ func run() -> void:
 	check(mx._course().trackside.board_detail.text.begins_with("RECORDE"),"placar mostra o recorde depois da prova")
 	check(session.state.economy.balance==1940,"vitória real retorna entrada mais lucro40")
 	check(mx.progress.data.unlocked==1,"vitória real libera intermediário")
-	# Ownership is tested with the real ledger; mounting and dismounting use real world geometry.
+	# A posse é testada com o livro-razão real; montar e desmontar usam a geometria real do mundo.
 	mx.selected_model = 2
 	var before_win: int = session.state.economy.balance
 	check(mx.start_race(1),"modelo de curva entra no intermediário")

@@ -23,7 +23,7 @@ func run() -> void:
 	check(port.return_position.is_equal_approx(port.exterior_position), "Port boss return restores the exact productive exterior point")
 	check(sewer.entry_position.is_equal_approx(sewer.exterior_position), "Sewer access is the manhole itself")
 
-	# Isolate local geometry so the swept capsule only reports the authored portal.
+	# Isola a geometria local para que a cápsula varrida só acuse o portal autoral.
 	var fixture := Node3D.new()
 	root.add_child(fixture)
 	var port_local := port.duplicate(true)

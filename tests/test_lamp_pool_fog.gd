@@ -56,8 +56,8 @@ func run() -> void:
 	var broken_max := 0.0
 	for x in [-5.8,5.8]:
 		for z in [-5.8,5.8]:
-			# Project coordinates use the project's logical stretch viewport;
-			# readback uses the actual window resolution.
+			# As coordenadas de projeção usam o viewport lógico esticado do projeto;
+			# a leitura usa a resolução real da janela.
 			var pixel: Vector2i = Vector2i(camera.unproject_position(Vector3(x,.05,z))*Vector2(baseline.get_size())/root.get_visible_rect().size)
 			if not Rect2i(Vector2i.ZERO,baseline.get_size()).has_point(pixel):
 				errors.append("Projected fixture corner outside readback")

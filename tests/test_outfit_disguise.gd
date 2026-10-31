@@ -99,7 +99,7 @@ func _run() -> void:
 	var bought: Dictionary = session.state.economy.purchase("outfit", purchase_id, "disguise_purchase")
 	check(bought.ok and DISGUISE.equip(session, purchase_id, true) and gameplay.stars == 0, "new purchase equips clothing and clears distant pursuit")
 	check(session.applied == purchase_id, "purchased appearance applied")
-	# Parse the actual UI adapters too; no user save is read or written.
+	# Analisa também os adaptadores reais de UI; nenhum save do usuário é lido ou gravado.
 	for path in ["res://runtime/FullSession.gd", "res://runtime/HarborStorefronts.gd", "res://runtime/ResidenceServices.gd", "res://systems/inventory/ui/InventoryPanel.gd"]:
 		check(load(path).can_instantiate(), "adapter compiles: " + path)
 	officer.free()

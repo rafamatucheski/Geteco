@@ -145,7 +145,7 @@ func run() -> void:
 		world.queue_free()
 		await process_frame
 		await process_frame
-	# New game after an existing preview must discard that world and start CGI.
+	# Novo jogo depois de uma prévia existente precisa descartar aquele mundo e começar o CGI.
 	menu = load("res://ui/MainMenu.tscn").instantiate()
 	root.add_child(menu)
 	current_scene = menu

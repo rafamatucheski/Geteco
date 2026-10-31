@@ -1,6 +1,6 @@
 extends SceneTree
-## Visual-only evidence for res://runtime/TrunkView.gd on the real baked
-## Monaliza model. Run with a real renderer (not --headless).
+## Evidência só visual para res://runtime/TrunkView.gd no modelo Monaliza
+## real assado. Rode com um renderizador real (não --headless).
 class ProxyCar extends Node3D:
 	var visual: Node3D
 
@@ -27,8 +27,8 @@ func run() -> void:
 	root.add_child(sun)
 
 	var car := preload("res://runtime/FleetCatalog.gd").create("monaliza")
-	# FleetCatalog.create() returns the visual root directly; TrunkView only
-	# reads car.visual, so a tiny proxy stands in for the real Vehicle.gd.
+	# FleetCatalog.create() devolve a raiz visual direto; o TrunkView só
+	# lê car.visual, então um proxy minúsculo faz o papel do Vehicle.gd real.
 	var proxy := ProxyCar.new()
 	proxy.add_child(car)
 	root.add_child(proxy)
@@ -57,9 +57,9 @@ func run() -> void:
 	view.update_loadout({"curta": "pistol", "longa": "ak47", "corpo": "knife", "granada": "grenade"})
 	for frame in 90: await process_frame
 
-	# The loadout tray rises LIFT_HEIGHT clear of the car on open (see
-	# TrunkView's comment on why: the baked model has no real trunk cavity to
-	# reveal), so frame the risen tray, not the closed deck.
+	# A bandeja de equipamento sobe LIFT_HEIGHT acima do carro ao abrir (veja o
+	# comentário do TrunkView sobre o motivo: o modelo assado não tem cavidade de porta-malas real
+	# para revelar), então enquadra a bandeja erguida, não a tampa fechada.
 	var risen_focus: Vector3 = focus + Vector3(0, trunk_view_script.LIFT_HEIGHT, 0)
 	camera.global_position = risen_focus + Vector3(0.9, 0.55, 1.15)
 	camera.look_at(risen_focus)

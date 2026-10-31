@@ -1,5 +1,5 @@
 extends "res://tests/test_vertice_depth.gd"
-## Positive-control depth coverage for outdoor seats under the native camera.
+## Cobertura de profundidade com controle positivo para assentos externos sob a câmera nativa.
 const VILLAGE := preload("res://world/desert/DesertMoonVillage.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")
 var destination := "res://evidence/desert-moon-village/depth"
@@ -52,8 +52,8 @@ func run() -> void:
 	await physics_frame
 	var setups := [
 		{"id":"courtyard_bench","camera":Vector3(-524,5,-828),"target":Vector3(-538,.8,-828),"front":Vector3(-536.6,.07,-828),"behind":Vector3(-539.1,.07,-828),"side":Vector3(-538,.07,-826)},
-		# Foundation ends at x=-545.86; bench back starts at x=-545.13.
-		# The 0.60 m capsule fits at the middle of this real 0.73 m gap.
+		# A fundação termina em x=-545.86; o encosto do banco começa em x=-545.13.
+		# A cápsula de 0.60 m cabe no meio deste vão real de 0.73 m.
 		{"id":"porch_bench","camera":Vector3(-532.77,4.5,-838.92),"target":Vector3(-544.77,.8,-838.92),"front":Vector3(-543.35,.07,-838.92),"behind":Vector3(-545.50,.07,-838.92),"side":Vector3(-544.77,.07,-840.92)},
 	]
 	for player in [true,false]:

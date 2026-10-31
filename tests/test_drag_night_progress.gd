@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical runs are covered by the integrated runner. This suite protects the
-## durable series, exact wallet provenance and real isolated SaveStore boundary.
+## As rodadas físicas são cobertas pelo runner integrado. Esta suíte protege a
+## série durável, a procedência exata da carteira e o limite real do SaveStore isolado.
 const NIGHT := preload("res://activities/desert_drag/DragNightProgress.gd")
 const DRAG := preload("res://activities/desert_drag/DesertDragProgress.gd")
 const WINS := preload("res://systems/campaign/RaceWins.gd")

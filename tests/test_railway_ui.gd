@@ -1,5 +1,5 @@
 extends SceneTree
-## UI contract only. The runtime suite separately exercises actual Main/physics.
+## Só contrato de UI. A suíte de runtime exercita à parte o Main/física reais.
 const UI := preload("res://ui/railway/RailwayUI.gd")
 
 class TransitDouble extends Node:

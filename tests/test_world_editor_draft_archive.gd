@@ -36,7 +36,7 @@ func probe(world_path: String, slot: String) -> EditorProbe:
 	result.saved_document = DATA.empty_document()
 	return result
 func run() -> void:
-	# Every write/copy is confined to unique test fixtures; no real user draft is read.
+	# Toda gravação/cópia fica confinada a fixtures de teste únicas; nenhum rascunho real do usuário é lido.
 	var official := DATA.disk_hash()
 	var folder := "res://.godot/draft_archive_test_%d_%d" % [OS.get_process_id(),Time.get_ticks_usec()]
 	DirAccess.make_dir_recursive_absolute(folder)

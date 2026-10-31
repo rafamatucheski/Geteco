@@ -142,7 +142,7 @@ func run() -> void:
 		print("PASS test_seated_driver")
 	else:
 		print("FAIL test_seated_driver: ", failures.size())
-	# Driving owns physics-query resources even in this isolated fixture.
+	# O Driving é dono de recursos de consulta de física mesmo nesta fixture isolada.
 	driving.car = null
 	driving.world = null
 	driving.free()

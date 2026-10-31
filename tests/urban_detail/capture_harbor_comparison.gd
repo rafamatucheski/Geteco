@@ -1,7 +1,7 @@
 extends SceneTree
 
-## Deterministic top-down evidence for points also present in the V1 Harbor
-## overview capture. Visual evidence only; never use this script as a benchmark.
+## Evidência determinística vista de cima para pontos também presentes na captura
+## geral do Harbor da V1. Só evidência visual; nunca use este script como benchmark.
 
 var region: Node3D
 var camera: Camera3D
@@ -13,7 +13,7 @@ func run() -> void:
 	if DisplayServer.get_name() == "headless":
 		quit(2)
 		return
-	# Match capture_harbor_preview.gd exactly: 2000x1100 and the same centres.
+	# Igual a capture_harbor_preview.gd: 2000x1100 e os mesmos centros.
 	root.size = Vector2i(2000, 1100)
 	var fixture := Node3D.new()
 	root.add_child(fixture)

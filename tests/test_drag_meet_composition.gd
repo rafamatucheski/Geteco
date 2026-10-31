@@ -1,6 +1,6 @@
 extends SceneTree
-## New shoulder layout: budget, real solid clearance, protected spectators and
-## the clear racing/service lanes. Does not infer appearance or frame time.
+## Layout novo do acostamento: orçamento, folga sólida real, espectadores protegidos e
+## as faixas livres de corrida/serviço. Não infere aparência nem tempo de quadro.
 const MEET:=preload("res://world/desert/drag_meet/DesertDragMeet.gd")
 const G:=preload("res://world/desert/DesertGeometry.gd")
 const COVER:=preload("res://world/desert/DesertGroundCover.gd")

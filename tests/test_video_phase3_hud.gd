@@ -1,5 +1,5 @@
 extends SceneTree
-## Real boarding/minimap and isolated on-disk autosave feedback regression.
+## Regressão real de embarque/minimapa e do retorno de autosave isolado em disco.
 var world
 var checks := 0
 var failures: Array[String] = []
@@ -161,7 +161,7 @@ func check_saves() -> void:
 	world.pause_panel.pause_game()
 	world.pause_panel.get_node("%BtnSaveGame").pressed.emit()
 	check(not paused and session.notice.text == "Mensagem funcional de controle", "pause menu save resumes without central save message")
-	# A real filesystem error must still be reported for automatic saves.
+	# Um erro real de sistema de arquivos ainda precisa ser relatado nos saves automáticos.
 	isolated_store.path = output_dir.path_join("missing-parent-%d" % Time.get_ticks_usec()).path_join("blocked/progress.json")
 	var blocker_path: String = isolated_store.path.get_base_dir().get_base_dir()
 	var blocker := FileAccess.open(blocker_path, FileAccess.WRITE)

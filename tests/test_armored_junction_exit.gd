@@ -48,7 +48,7 @@ func run() -> void:
 	driver.set_route(route)
 	truck.set_physics_process(true)
 	civil.set_physics_process(true)
-	# Reproduce the old policy: own hull is outside the intersection, so it holds.
+	# Reproduz a política antiga: o próprio casco fica fora do cruzamento, então ele espera.
 	for frame in 90:
 		await physics_frame
 		driver.holding = true

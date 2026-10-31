@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## One finite Main/.NET comparison of the two requested recreational areas.
+## Uma comparação finita no Main/.NET das duas áreas de lazer pedidas.
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const PARK = preload("res://world/places/amusement_park/AmusementParkLayout.gd")
 const FISH = preload("res://runtime/FishingLocation.gd")

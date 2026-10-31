@@ -17,7 +17,7 @@ func run() -> void:
 	root.add_child(probe)
 	await physics_frame
 	await physics_frame
-	# Fast sweeps against each prop, from both sides of the yard.
+	# Varreduras rápidas contra cada prop, dos dois lados do quintal.
 	for case in [[Vector3(-2,.05,-5),Vector3(0,0,4),"car"],
 		[Vector3(-5,.05,-2),Vector3(0,0,3),"engine pallet"],
 		[Vector3(-2.25,.05,2),Vector3(0,0,-2),"detached panels"],
@@ -27,7 +27,7 @@ func run() -> void:
 		[Vector3(5.83,.05,-2),Vector3(0,0,3),"bin three"]]:
 		probe.position=case[0]
 		if probe.move_and_collide(case[1],true)==null: failures.append("Unblocked "+case[2])
-	# Cross-yard route and the side passage remain usable, including oil patches.
+	# A rota atravessando o quintal e a passagem lateral continuam utilizáveis, incluindo manchas de óleo.
 	for case in [[Vector3(-7,.05,-3.8),Vector3(15,0,0)],
 		[Vector3(2.2,.05,-4),Vector3(0,0,5)],
 		[Vector3(1.35,.05,-1.4),Vector3(0,0,.3)]]:

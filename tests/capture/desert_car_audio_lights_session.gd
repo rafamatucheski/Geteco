@@ -69,7 +69,7 @@ func run() -> void:
 	world.session.weather.weather_timer = 3600
 	world.session.weather.time_of_day = .9
 	world.session.weather._update()
-	# Keep the normal world, population, weather and gameplay camera running.
+	# Mantém o mundo, a população, o clima e a câmera de jogo normais rodando.
 	AudioServer.add_bus()
 	meter_bus = AudioServer.bus_count-1
 	AudioServer.set_bus_name(meter_bus,"DesertAVCapture")

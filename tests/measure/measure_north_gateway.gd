@@ -1,9 +1,9 @@
 extends SceneTree
-## SERIAL rendered comparison, never headless. Run baseline and candidate with
-## identical arguments/hardware except --north-gateway-baseline. --completed
-## selects the completed checkpoint in BOTH runs. Require --benchmark --no-save.
-## The player follows the same existing dry land between the old lanes; baseline
-## never relies on the new bridge, shoreline opening, or new collision geometry.
+## Comparação renderizada EM SÉRIE, nunca headless. Rode linha de base e candidato com
+## argumentos/hardware idênticos, exceto --north-gateway-baseline. --completed
+## seleciona o checkpoint concluído nas DUAS rodadas. Exige --benchmark --no-save.
+## O jogador segue a mesma terra seca existente entre as faixas antigas; a linha de base
+## nunca depende da ponte nova, da abertura na margem nem da geometria de colisão nova.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const POLICY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
 const START := Vector3(375.0,.12,-248.0)
@@ -86,8 +86,8 @@ func run() -> void:
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
 	world.player.speed = 3.5
-	# An identical fixed overview makes workers, gap and completed deck visible
-	# while streaming/population keep their actual focus on the physical player.
+	# Uma visão geral fixa idêntica deixa visíveis os trabalhadores, o vão e o deck concluído
+	# enquanto streaming/população mantêm o foco real no jogador físico.
 	world.camera.set_process(false)
 	world.camera.global_position = VIEW_FOCUS+Vector3(0,35,35)
 	world.camera.look_at(VIEW_FOCUS)

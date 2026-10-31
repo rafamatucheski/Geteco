@@ -1,7 +1,7 @@
 extends SceneTree
-## Real Main/Vehicle/.NET integration. --no-save is mandatory. --drive adds
-## a complete physical race, with test input supplied through the new pilot;
-## it never places vehicles or changes checkpoint progress after the start.
+## Integração real Main/Vehicle/.NET. --no-save é obrigatório. --drive acrescenta
+## uma corrida física completa, com a entrada de teste fornecida pelo piloto novo;
+## ele nunca posiciona veículos nem muda o progresso de checkpoints depois da largada.
 const DRIVER := preload("res://activities/mountain_downhill/MountainDownhillDriver.gd")
 var world
 var checks := 0
@@ -58,7 +58,7 @@ func run() -> void:
 	if not failures.is_empty(): finish(); return
 	var session = world.session
 	check(session.controller.no_save,"save protection actually enabled")
-	# Fixture only: completed introductory delivery, before any race begins.
+	# Só fixture: entrega introdutória concluída, antes de qualquer corrida começar.
 	var intro: Dictionary = session.state.intro.snapshot()
 	intro.phase = "complete"
 	intro.location_id = "harbor_street"

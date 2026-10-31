@@ -1,5 +1,5 @@
 extends "res://tests/desert_curve_drive.gd"
-## Finite real-input canyon traversal. Photos/diagnostic rays are not FPS samples.
+## Travessia finita do cânion com entrada real. Fotos/raios de diagnóstico não são amostras de FPS.
 const FIELD := preload("res://world/desert/DesertTerrainRelief.gd")
 const HM := preload("res://world/desert/DesertTerrainMesh.gd")
 var car: CharacterBody3D
@@ -25,8 +25,8 @@ func _run() -> void:
 	output=FIXTURE.output_dir("desert-canyon-drive")
 	source_start=_fingerprint()
 	var entry := Vector3(-860,.1,-1540)
-	# Production parks the initial coupe on the road nearest the saved pedestrian.
-	# Load 40m east so the Bison's real admission at the canyon mouth is unoccupied.
+	# A produção estaciona o cupê inicial na rua mais próxima do pedestre salvo.
+	# Carrega 40m a leste para que a admissão real do Bison na boca do cânion esteja livre.
 	var arrival := entry+Vector3.RIGHT*40.0
 	var snapshot := FIXTURE.full_snapshot(arrival,true)
 	snapshot.region_id="desert"
@@ -90,7 +90,7 @@ func _run() -> void:
 	if not await _walk_to(walking_start+away_from_car.normalized()*5.0,"plateau-five-metre-walk"): _finish(1); return
 	await _photo("plateau-on-foot")
 	if not await _walk_to(walking_start,"plateau-walk-back-to-car"): _finish(1); return
-	# Optional natural U-turn uses the open landing; no transform write or snap.
+	# O retorno natural opcional usa o patamar aberto; sem escrita de transformação nem encaixe.
 	var returning := _return_guide(guide)
 	if _reserved_guide(returning):
 		optional_return="attempted"
@@ -112,8 +112,8 @@ func _run() -> void:
 func _begin_temporal() -> bool:
 	temporal=load("res://tests/capture/DesertDragTemporalCapture.gd").new()
 	root.add_child(temporal)
-	# 240s cap bounds disk use while covering the <=120s drive, <=35s return,
-	# ordinary boarding/exits and walking. The fixture watchdog remains300s.
+	# O limite de 240s restringe o uso de disco enquanto cobre a direção de <=120s, a volta de <=35s,
+	# os embarques/saídas comuns e a caminhada. O watchdog da fixture continua300s.
 	var started: bool=temporal.begin(world,world.session.desert.drag,output.path_join("sequence"),7200)
 	if not _check(started,"continuous canyon temporal evidence opens a new isolated directory"): return false
 	temporal.segment="canyon_drive_day"
@@ -135,8 +135,8 @@ func _guide_from_offset(original: Curve3D, offset: float) -> Curve3D:
 	return result
 
 func _diagnostic_spawn_point(point: Vector3, yaw: float) -> Vector3:
-	# The production body is horizontal at admission, so its entire footprint
-	# must start above the uphill ground. It then settles through normal physics.
+	# O corpo de produção fica horizontal na admissão, então a área inteira dele
+	# precisa começar acima do chão em subida. Depois assenta pela física normal.
 	var spec: Dictionary=preload("res://runtime/FleetCatalog.gd").spec("desert_bison")
 	var dimensions: Array=spec.bounds_size
 	var basis := Basis(Vector3.UP,yaw)
@@ -152,7 +152,7 @@ func _diagnostic_support_rays(point: Vector3, yaw: float) -> void:
 	var dimensions: Array=preload("res://runtime/FleetCatalog.gd").spec("desert_bison").bounds_size
 	var basis := Basis(Vector3.UP,yaw)
 	var samples: Array[Dictionary]=[]
-	# Exactly the existing production four support locations and ray range.
+	# Exatamente os quatro pontos de apoio e o alcance de raio da produção existentes.
 	for x in [-float(dimensions[0])*.4,float(dimensions[0])*.4]:
 		for z in [-float(dimensions[2])*.4,float(dimensions[2])*.4]:
 			var support: Vector3=point+basis*Vector3(x,0,z)
@@ -192,8 +192,8 @@ func _return_guide(primary: Curve3D) -> Curve3D:
 	for i in 25:
 		var angle := float(i)/24.0*PI
 		_add_grounded(result,center-left*cos(angle)*8.0+forward*sin(angle)*8.0)
-	# A short connector lies wholly on the landing, followed by50m of the actual
-	# reversed access. The whole guide is validated against the reserved passage.
+	# Um conector curto fica todo no patamar, seguido de50m do acesso real
+	# invertido. O guia inteiro é validado contra a passagem reservada.
 	var length := primary.get_baked_length()
 	for distance in range(20,71,2): _add_grounded(result,primary.sample_baked(maxf(0,length-float(distance))))
 	return result
@@ -268,8 +268,8 @@ func _drive_path(id: String, guide: Curve3D, bound_seconds: float) -> bool:
 		var acceleration := absf(float(car.speed)-previous_speed)/step
 		var speed_before := previous_speed
 		acceleration_max=maxf(acceleration_max,acceleration)
-		# Service braking uses the existing V1 braking /16 model and can exceed
-		# 45m/s². Keep raw telemetry; reject impulses not requested by that brake.
+		# A frenagem de serviço usa o modelo de frenagem /16 existente da V1 e pode passar de
+		# 45m/s². Mantém a telemetria crua; rejeita impulsos não pedidos por esse freio.
 		var commanded_braking: bool = car.brake_input and float(car.speed)<previous_speed
 		if not commanded_braking: uncommanded_acceleration_max=maxf(uncommanded_acceleration_max,acceleration)
 		previous_speed=float(car.speed)
@@ -376,7 +376,7 @@ func _camera_near_plane_clearance(car_point: Vector3) -> Dictionary:
 	for sample in samples:
 		if bool(sample.inside_terrain_bounds): terrain_samples+=1
 	var result := {"valid_camera":true,"camera_path":str(camera.get_path()),"camera_position":_v3(camera.global_position),"pitch_degrees":rad_to_deg(asin(clampf(camera.global_basis.z.normalized().y,-1.0,1.0))),"distance_to_car":camera.global_position.distance_to(car_point),"orthographic_size":camera.size,"near":camera.near,"viewport_size":[viewport_size.x,viewport_size.y],"terrain_samples":terrain_samples,"minimum_clearance":minimum if terrain_samples>0 else null,"samples":samples}
-	# Optional helper telemetry explains adjustments; it never supplies the oracle.
+	# A telemetria opcional do helper explica os ajustes; nunca fornece o oráculo.
 	var helper: Variant=camera.get("_desert_terrain_camera")
 	if is_instance_valid(helper) and helper.has_method("diagnostics"):
 		result["helper_diagnostics"]=helper.call("diagnostics")
@@ -440,7 +440,7 @@ func _photo(id: String) -> void:
 	root.get_texture().get_image().save_png(output.path_join(id+".png"))
 
 func _surface_diagnostic() -> void:
-	# Explicit fixed-pose diagnostic AFTER the physical assertions. Not traversal evidence.
+	# Diagnóstico explícito em pose fixa DEPOIS das asserções físicas. Não é evidência de travessia.
 	car.set_physics_process(false)
 	car.global_position=Vector3(-1048,HM.surface_height(Vector2(-1048,-1809))+.32,-1809)
 	world.camera.initialized=false
@@ -471,8 +471,8 @@ func _surface_diagnostic() -> void:
 	reports.append({"id":"surface_shadow_diagnostic","fixed_pose_after_drive":true,"same_camera_and_light":true,"only_canyon_shadow_casting_temporarily_disabled":true,"production_shadow_setting_restored":true,"not_traversal_or_performance_evidence":true})
 
 func _wall_probes() -> void:
-	# Diagnostic placement is explicitly AFTER the physical drive/walk. It cannot
-	# substitute for any travelled route or the optional return above.
+	# O posicionamento de diagnóstico fica explicitamente DEPOIS da direção/caminhada física. Não pode
+	# substituir nenhuma rota percorrida nem a volta opcional acima.
 	var floor_point := Vector3(-850,HM.surface_height(Vector2(-850,-1740))+.08,-1740)
 	world.player.teleport(floor_point)
 	world.production.region.set_focus(floor_point)

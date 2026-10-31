@@ -73,7 +73,7 @@ func run() -> void:
 	world.add_child(approach)
 	var objects: Array = FRAGILE.query(Vector3.ZERO,10)
 	check(objects.size() == 6, "three cave rocks and three pines registered")
-	# Isolate each real object so neighboring rocks cannot shield the target.
+	# Isola cada objeto real para que rochas vizinhas não protejam o alvo.
 	for item in objects:
 		var prop: Node3D = item.root.get_ref()
 		item.state = "standing"

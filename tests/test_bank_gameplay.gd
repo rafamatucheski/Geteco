@@ -1,6 +1,6 @@
 extends SceneTree
-## Production bank: real walking, gunfire, pickup, vault and outward crossing.
-## Damage is injected only to finish guards after checking their first real hit.
+## Banco de produção: caminhada real, tiros, coleta, cofre e travessia para fora.
+## O dano só é injetado para acabar com os guardas depois de conferir o primeiro acerto real deles.
 const PLACES = preload("res://world/places/PlaceCatalog.gd")
 const HEIST = preload("res://runtime/Robberies.gd")
 var world
@@ -104,7 +104,7 @@ func run() -> void:
 	await frames(42)
 	Input.action_release("interact")
 	check(heist.lockpick.active and world.player.input_locked,"holding opens puzzle and locks movement")
-	# Exercise cancellation then solve the actual dial controller.
+	# Exercita o cancelamento e depois resolve o controlador real do disco.
 	heist.lockpick.finish(false)
 	check(not session.modal and not world.player.input_locked,"cancel restores player control")
 	heist.perform("bank_vault")
@@ -153,8 +153,8 @@ func run() -> void:
 	var balance_before_reentry: int = session.state.economy.balance
 	check(await session.enter_place("harbor_bank",false),"immediate re-entry remains available")
 	await frames(20)
-	# Crossing outdoors can pay legitimate wallet/escape achievements. Compare
-	# against the settled exterior balance and the bank's immutable receipts.
+	# Atravessar para fora pode pagar conquistas legítimas de carteira/fuga. Compara
+	# com o saldo externo assentado e com os recibos imutáveis do banco.
 	check(heist.data.bank_cash0 and heist.data.bank_cash1 and heist.data.bank_cash2 and session.state.economy.balance==balance_before_reentry,"re-entry preserves loot without paying twice")
 	check(session.state.economy.snapshot().transactions["reward:bank_haul:0:7"]==receipts_before["reward:bank_haul:0:7"],"bank receipt unchanged on re-entry")
 	check(HEIST.validate_snapshot(heist.snapshot()),"complete robbery state is save-valid")
@@ -179,7 +179,7 @@ func aftermath_review(session,heist,door: Vector3) -> void:
 	var far: Vector3 = world.production.nearest_road(door+Vector3(0,0,140))
 	await place_outside(session,far)
 	check(heist.aftermath_controller.bank_is_away(),"bank is distant and outside camera before time advances")
-	# Advance the actual production calendar; only elapsed waiting is shortened.
+	# Avança o calendário real de produção; só a espera decorrida é encurtada.
 	session.state.world_state.moon_day=session.weather.moon_day()+1
 	await frames(20)
 	check(not heist.can_enter_bank() and heist.data.aftermath=="closed","one actual game day away closes bank")

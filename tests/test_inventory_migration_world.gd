@@ -29,8 +29,8 @@ func run() -> void:
 	var key:="drop_"+str(drop.uid)
 	check(field.pickups.has(key),"migrated bag has physical presentation")
 	if field.pickups.has(key):
-		# A neighboring source bag or passing vehicle may own the first approach.
-		# Find a walkable side using the same ground and interaction queries.
+		# Uma bolsa de origem vizinha ou um veículo passando pode ocupar a primeira aproximação.
+		# Acha um lado caminhável usando as mesmas consultas de chão e de interação.
 		for i in 8:
 			var candidate: Vector3=field._ground_point(field.pickups[key].node.global_position+Vector3.FORWARD.rotated(Vector3.UP,i*TAU/8.0)*.85)
 			if not candidate.is_finite(): continue

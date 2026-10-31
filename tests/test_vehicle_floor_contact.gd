@@ -1,7 +1,7 @@
 extends SceneTree
-## Regression: real Vehicle movement keeps support with floor snapping,
-## traverses 12.5% slopes, falls off edges, and still collides with solids.
-## Run sequentially with other Godot work. This test does not measure FPS.
+## Regressão: o movimento real do Vehicle mantém o apoio com o encaixe no piso,
+## percorre rampas de 12.5%, cai de bordas e ainda colide com sólidos.
+## Rode em sequência com outros trabalhos do Godot. Este teste não mede FPS.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const SLOPE := 0.125
 var failures: Array[String] = []
@@ -90,7 +90,7 @@ func traverse_ramp(descending: bool) -> void:
 	var label := "downhill" if descending else "uphill"
 	check(furthest > 24.0 if descending else furthest < -24.0,label+": traversed slope and both flat joins")
 	check(measured>30 and float(supported)/maxi(measured,1)>.90,label+": supported throughout slope")
-	# The car has a horizontal hull: its uphill end rests above centre terrain.
+	# O carro tem casco horizontal: a ponta do lado da subida repousa acima do terreno central.
 	check(worst_gap<car.half_length*SLOPE+.12,label+": no hovering above hull support")
 	check(worst_below>-.025,label+": no penetration through ramp")
 	check(absf(car.global_position.x)<.1,label+": no lateral collision drift")

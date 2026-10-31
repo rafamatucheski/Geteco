@@ -22,8 +22,8 @@ func _run() -> void:
 	var land_count := 0
 	var surrounding_land := false
 	var outside := Vector2(floor.position.x - 1.0, center.z)
-	# Request the neighbouring cell as gameplay does on entry. Twelve frames
-	# cannot guarantee its queued streaming job has finished construction.
+	# Pede a célula vizinha como o jogo faz na entrada. Doze quadros
+	# não garantem que o job de streaming enfileirado terminou a construção.
 	region._ensure_chunk(region._cell(Vector3(outside.x,0,outside.y)))
 	await physics_frame
 	await process_frame
@@ -31,8 +31,8 @@ func _run() -> void:
 		for child in chunk.get_children():
 			# Desde 2026-10-13 o chão base "Land" é uma malha recortada (camada única de chão); a pegada
 			# física continua sendo a caixa de colisão de 0,3 m, filha do nó.
-			# A chunk can contain several disjoint base pieces. Godot renames
-			# repeated Land nodes; identify support by its material and collider.
+			# Um chunk pode conter várias peças base disjuntas. O Godot renomeia
+			# nós Land repetidos; identifica o apoio pelo material e pelo colisor.
 			if not child is MeshInstance3D:
 				continue
 			# _material() multiplica a cor pelo relevo (commit c6685136): comparar com o material do chão

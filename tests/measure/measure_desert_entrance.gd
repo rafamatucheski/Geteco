@@ -68,7 +68,7 @@ func run() -> void:
 			await measure("border-day")
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(output.path_join(pose.id+".png"))
-	# Wide diagnostic view only; timing above uses the ordinary gameplay camera.
+	# Só vista larga de diagnóstico; a cronometragem acima usa a câmera de jogo comum.
 	world.camera.set_process(false)
 	world.camera.position=Vector3(390,105,-298)
 	world.camera.look_at(Vector3(342.5,0,-453))
@@ -86,8 +86,8 @@ func run() -> void:
 	else: quit()
 
 func install_baseline() -> void:
-	# Original resources are copied into evidence; production files stay untouched.
-	# The ridge copy's SHA256 matches the pre-edit file recorded in this review.
+	# Os recursos originais são copiados para a evidência; os arquivos de produção ficam intocados.
+	# O SHA256 da cópia da serra bate com o arquivo de antes da edição registrado nesta revisão.
 	world.session.desert.entrance_toll.set_process(false)
 	world.camera._desert_terrain_camera._boundary_camera.enabled=false
 	for plaza in get_nodes_in_group("desert_toll_plaza"): plaza.free()
@@ -115,8 +115,8 @@ func drive_toll() -> void:
 	var start:=Vector3(345,2.48,-353)
 	world.production.region.set_focus(start)
 	world.production.region.prepare_collision_at(start)
-	# Reuse the initial fixture car. Spawning a second car would leave the first
-	# parked at the payment window, artificially blocking the test's own route.
+	# Reaproveita o carro inicial da fixture. Criar um segundo carro deixaria o primeiro
+	# parado na janela de pagamento, bloqueando artificialmente a própria rota do teste.
 	var car=world.driving.car
 	car.global_position=start
 	car.rotation.y=0

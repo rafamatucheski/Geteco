@@ -37,7 +37,7 @@ static func capture_existing(tree: SceneTree, main: Node3D, folder: String) -> D
 	camera.set_process(false)
 	camera.set_physics_process(false)
 	tree.paused=true
-	# Let any prior interpolation finish at the frozen physical transforms.
+	# Deixa qualquer interpolação anterior terminar nas transformações físicas congeladas.
 	for i in batch.instance_count: batch.reset_instance_physics_interpolation(i)
 	var initial_visibility := _visible_instances(birds,camera)
 	result.original_visibility=initial_visibility
@@ -91,8 +91,8 @@ static func capture_existing(tree: SceneTree, main: Node3D, folder: String) -> D
 		result.image_write_errors=[old_error,candidate_error,restored_error]
 	else:
 		result.reason="No unoccluded glider center could be placed in frame at its original altitude"
-	# restored.png restores only the mesh at the common comparison pose. Now
-	# restore any diagnostic instance placement and every changed runtime state.
+	# restored.png restaura só a malha na pose de comparação comum. Agora
+	# restaura qualquer posicionamento de instância de diagnóstico e todo estado de execução alterado.
 	batch.mesh=original
 	for i in poses.size():
 		batch.set_instance_transform(i,poses[i])

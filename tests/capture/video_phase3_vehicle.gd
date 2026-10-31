@@ -1,6 +1,6 @@
 extends "res://tests/test_video_phase3_vehicle.gd"
-## Same Main theft fixture with full body/car physics; normal gameplay camera.
-## Visual evidence only. The user's other running game precludes FPS approval.
+## Mesma fixture de roubo no Main com física completa de corpo/carro; câmera de jogo normal.
+## Só evidência visual. O outro jogo do usuário rodando impede aprovar FPS.
 var captures: Array[Dictionary] = []
 
 func run() -> void:

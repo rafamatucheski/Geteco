@@ -128,8 +128,8 @@ func run() -> void:
 	var points: Array
 	if world.session.state.region_id == "harbor":
 		points=[Vector3(106,0,71),Vector3(67,0,132),Vector3(390,0,132),Vector3(106,0,71)]
-	# Stay inside the desert and outside the race camera's retained band, so
-	# the return can exercise ordinary cell retirement/reuse rather than void.
+	# Fica dentro do deserto e fora da faixa retida da câmera de corrida, para que
+	# a volta possa exercitar aposentadoria/reuso comum de células em vez de vazio.
 	else: points=[origin,origin+Vector3(-288,0,0),origin]
 	await _sample("01-first-route",points,35)
 	await _sample("02-return-route",points,35)
@@ -146,7 +146,7 @@ func run() -> void:
 	tools.set_active(false)
 	overview=false
 	await _sample("05-recovery",[],30,transition_began)
-	# Recheck the saved display configuration in this process, without saving it.
+	# Reconfere a configuração de tela salva neste processo, sem salvá-la.
 	DisplayServer.window_set_mode(normal_mode)
 	if normal_mode==DisplayServer.WINDOW_MODE_WINDOWED: DisplayServer.window_set_size(normal_size)
 	DisplayServer.window_set_vsync_mode(normal_vsync)

@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_combat.gd"
-## Rendered production session; independent output folders preserve before/after samples.
+## Sessão de produção renderizada; pastas de saída independentes preservam as amostras de antes/depois.
 func _run() -> void:
 	if not "--no-save" in OS.get_cmdline_user_args():
 		quit(2)

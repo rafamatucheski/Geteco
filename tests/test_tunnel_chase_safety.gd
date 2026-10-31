@@ -1,5 +1,5 @@
 extends SceneTree
-## Focused lens collision and camera-local haze contracts; visual approval is separate.
+## Contratos focados de colisão da lente e névoa local à câmera; a aprovação visual é à parte.
 const SAFETY := preload("res://scripts/camera/TunnelChaseSafety.gd")
 var failures: Array[String] = []
 
@@ -52,8 +52,8 @@ func run() -> void:
 	check(safety.clear_origin_found and overlap_pose.z < 2.65,"overlap at origin retreats before sweep instead of ignoring wall")
 	var near_roof_pose := safety.resolve_position(space,Vector3(0,2.75,0),Vector3(0,8,-4))
 	check(safety.clear_origin_found and near_roof_pose.y < 2.65,"initial roof overlap resolves on accessible side")
-	# The mountain's lateral clamp used to leave the lens exactly tangent to
-	# a .20m rib support: cast_motion accepted it while overlap queries did not.
+	# O limite lateral da montanha deixava a lente exatamente tangente a
+	# um apoio de nervura de .20m: cast_motion aceitava, enquanto as consultas de sobreposição não.
 	var support := box(Vector3(20,2.42,7.15),Vector3(.20,3.96,.30))
 	await physics_frame
 	await physics_frame

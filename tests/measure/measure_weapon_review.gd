@@ -1,7 +1,7 @@
 extends "res://tests/measure/measure_combat.gd"
-## Production scene, normal cooldown/reloads, fixed input; fixture equipment only.
-## Requires --no-save --skip-arrival --out=res://evidence/.../new-label.
-## Keep the same population, window, renderer and concurrent processes for A/B.
+## Cena de produção, cooldown/recargas normais, entrada fixa; só equipamento da fixture.
+## Exige --no-save --skip-arrival --out=res://evidence/.../new-label.
+## Mantém a mesma população, janela, renderizador e processos concorrentes para o A/B.
 var output := ""
 var events: Array[Dictionary] = []
 var last_pulse := -1
@@ -16,8 +16,8 @@ func _arg(key: String, fallback: String) -> String:
 
 func _baseline_source(name: String, recorded: String, current: String) -> String:
 	if name != "Gameplay": return recorded
-	# Railway locking arrived concurrently with this review. Preserve those
-	# unrelated methods in both variants of the weapon comparison.
+	# O travamento da ferrovia chegou em paralelo com esta revisão. Preserva esses
+	# métodos não relacionados nas duas variantes da comparação de armas.
 	for method in ["attack_allowed", "_railway_controls_locked", "_free_play_ok"]:
 		var expression := RegEx.new()
 		expression.compile("(?ms)^func " + method + "\\(.*?(?=^func |\\z)")
@@ -55,8 +55,8 @@ func _run() -> void:
 		quit(2)
 		return
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output.get_base_dir()))
-	# Reconstruct this review's recorded source revision in this process only.
-	# Shared files and other sessions are never reverted to run a comparison.
+	# Reconstrói a revisão de código registrada desta revisão só neste processo.
+	# Arquivos compartilhados e outras sessões nunca são revertidos para rodar uma comparação.
 	if "--baseline-sources" in OS.get_cmdline_user_args():
 		for name in ["WeaponPoseData", "WeaponRigPose", "WeaponPresentation3D", "WeaponFinish3D", "ArsenalWeapon3D", "CombatAudio", "CombatEffects", "Gameplay"]:
 			var path: String = "res://gameplay/" + name + ".gd"

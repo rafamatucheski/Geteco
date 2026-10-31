@@ -1,5 +1,5 @@
 extends SceneTree
-## Isolated fixed pose. Explicit placements and disabled body physics are diagnostic only.
+## Pose fixa isolada. Posicionamentos explícitos e física de corpo desligada são só diagnóstico.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const HM := preload("res://world/desert/DesertTerrainMesh.gd")
 const CAPTURE := preload("res://tests/capture/DesertCanyonShadowDiagnostic.gd")

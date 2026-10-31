@@ -1,6 +1,6 @@
 extends SceneTree
-## Money may be restored before the world marker. No cache may pay twice or
-## mark itself collected when a dead player/full wallet cannot take its reward.
+## O dinheiro pode ser restaurado antes do marcador do mundo. Nenhum esconderijo pode pagar duas vezes nem
+## se marcar como coletado quando um jogador morto/carteira cheia não pode pegar a recompensa.
 const STATE := preload("res://runtime/desert/expansion/DesertDiscoveryState.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")
 const RELICS := preload("res://world/desert/expansion/DesertRelics.gd")

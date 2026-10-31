@@ -22,8 +22,8 @@ func run() -> void:
 	if failures: quit(1); return
 	world.player.teleport(service.stops[0].inside)
 	service.refresh_presence()
-	# The source remains on screen during the first frame of a transition.
-	# Visibility must not override the region/interior lifetime boundary.
+	# A origem continua na tela durante o primeiro quadro de uma transição.
+	# A visibilidade não pode sobrepor o limite de vida de região/interior.
 	world.camera.set_process(false)
 	world.camera.global_position=service.fleet[0].global_position+Vector3(0,25,25)
 	world.camera.look_at(service.fleet[0].global_position)

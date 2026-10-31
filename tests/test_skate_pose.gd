@@ -1,6 +1,6 @@
 extends SceneTree
-## Actual Dante/civilian rigs: ankle contact, knee direction and bounded scale.
-## Rendering and frame cost are validated separately in the gameplay capture.
+## Rigs reais do Dante/civis: contato do tornozelo, direção do joelho e escala limitada.
+## A renderização e o custo de quadro são validados à parte na captura de jogo.
 const ACTOR = preload("res://scripts/Actor.gd")
 const BOARD = preload("res://activities/skate/SkateBody.gd")
 const POSE = preload("res://activities/skate/SkatePose.gd")

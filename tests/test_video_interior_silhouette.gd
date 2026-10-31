@@ -1,5 +1,5 @@
 extends SceneTree
-## Scope and ownership of the exterior-only occlusion aid.
+## Escopo e posse da ajuda de oclusão só do exterior.
 const LOOK := preload("res://world/city_look/CityLook.gd")
 var failures: Array[String] = []
 var checks := 0
@@ -68,8 +68,8 @@ func _run() -> void:
 	look._refresh_silhouette()
 	check(body.material_overlay is ShaderMaterial, "exterior return restores occlusion aid")
 	check(body.material_overlay.get_shader_parameter("readable_actor") == true, "exterior return restores walking contrast")
-	# Boarding first owns the vehicle while the seated player is still hidden.
-	# Its final show must refresh the bounds before the next periodic scan.
+	# O embarque primeiro toma posse do veículo enquanto o jogador sentado ainda está escondido.
+	# O show final dele precisa atualizar os limites antes da próxima varredura periódica.
 	world.player.hide()
 	world.driving.occupied = true
 	look._follow_silhouettes()
@@ -82,8 +82,8 @@ func _run() -> void:
 	look._follow_silhouettes()
 	var shown_box_max: Vector3 = chassis.material_overlay.get_shader_parameter("box_max")
 	check(shown_box_max.y > 1.8, "boarding completion includes visible pilot before next 4Hz scan")
-	# A long frame can hide/show between observations. Completion still changes
-	# the transition identity and updates the final pose/position once.
+	# Um quadro longo pode esconder/mostrar entre observações. A conclusão ainda muda
+	# a identidade da transição e atualiza a pose/posição final uma vez.
 	var transition := Node.new()
 	world.add_child(transition)
 	world.driving.transition = transition

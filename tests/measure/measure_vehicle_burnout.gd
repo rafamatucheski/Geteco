@@ -25,8 +25,8 @@ func run() -> void:
 	world.session.weather._update()
 	world.camera.target_size = 24
 	var car = world.driving.car
-	# The starting plaza looks paved but its collider resolves as dirt. Use an
-	# actual road for the rubber-smoke scenario, without overriding surface tags.
+	# A praça de partida parece calçada, mas o colisor dela resolve como terra. Usa uma
+	# rua real para o cenário de fumaça de borracha, sem sobrescrever tags de superfície.
 	var route: Curve3D = world.production.traffic_routes.route_near(car.position)
 	var offset := route.get_closest_offset(car.position)
 	var point := route.sample_baked(offset, true)

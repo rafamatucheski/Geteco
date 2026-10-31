@@ -1,5 +1,5 @@
 extends SceneTree
-## Rendered presentation review for dirt slope, exhaust, damage smoke and impact.
+## Revisão renderizada de apresentação para rampa de terra, escapamento, fumaça de dano e impacto.
 
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 var stage: Node3D

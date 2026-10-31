@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_truckers_village.gd"
-## Optional process-local control removes only this feature, preserving other
-## sessions' current world edits. No shared source or save is reverted on disk.
+## O controle opcional local ao processo remove só este recurso, preservando as edições
+## atuais de mundo de outras sessões. Nenhum código compartilhado nem save é revertido no disco.
 func run() -> void:
 	if "--leisure-control" in OS.get_cmdline_user_args():
 		var visuals: GDScript = load("res://gameplay/urban_v1/TruckersVillageVisuals.gd")

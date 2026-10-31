@@ -1,5 +1,5 @@
 extends "res://tests/test_sky_menu.gd"
-## Click while the real save is still loading, including a pending different slot.
+## Clica enquanto o save real ainda está carregando, incluindo um slot diferente pendente.
 const OUTPUT := "res://evidence/simple-loading-20261002/continue"
 
 func run() -> void:
@@ -79,7 +79,7 @@ func run() -> void:
 		world.queue_free()
 		await process_frame
 		await process_frame
-	# Failure recovery must restore the menu rather than strand a hidden panel.
+	# A recuperação de falha precisa restaurar o menu em vez de deixar um painel escondido preso.
 	var menu = load("res://ui/MainMenu.tscn").instantiate()
 	root.add_child(menu)
 	current_scene = menu

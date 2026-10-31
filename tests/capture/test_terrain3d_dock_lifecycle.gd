@@ -1,7 +1,7 @@
 @tool
 extends SceneTree
-## Run in the real .NET editor: --editor --script res://tests/capture/test_terrain3d_dock_lifecycle.gd.
-## EditorDock registration cannot be exercised by the standalone game host.
+## Rode no editor .NET real: --editor --script res://tests/capture/test_terrain3d_dock_lifecycle.gd.
+## O registro do EditorDock não pode ser exercitado pelo host de jogo standalone.
 const ASSET_DOCK := preload("res://addons/terrain_3d/src/asset_dock.gd")
 var checks := 0
 var failures := 0
@@ -27,7 +27,7 @@ func run() -> void:
 		wrapper.add_child(panel)
 		panel._dock = wrapper
 		plugin.add_dock(wrapper)
-		# Let the panel's enter-tree notification finish before tearing it down.
+		# Deixa a notificação de entrada na árvore do painel terminar antes de desmontá-lo.
 		await process_frame
 		panel.remove_dock(true)
 		check(not is_instance_valid(wrapper), "Unregistering Terrain3D also frees its EditorDock wrapper")

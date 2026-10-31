@@ -1,6 +1,6 @@
 extends SceneTree
-## Eight authored cars: nose/tail, low fascia, wheel fit and optional cabins.
-## Isolated art inspection only. Integrated gameplay/performance are separate.
+## Oito carros autorais: frente/traseira, para-choque baixo, encaixe das rodas e cabines opcionais.
+## Só inspeção isolada de arte. Jogabilidade/desempenho integrados são à parte.
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")

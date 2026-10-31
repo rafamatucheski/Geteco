@@ -45,7 +45,7 @@ func _run() -> void:
 		var first_count: int=LAND.build_chunk(first,rect,6102026,_base_height)
 		var first_signature := _signature(first)
 		var held_resources := _resources(first)
-		first.free() # A released chunk must not invalidate the immutable resources.
+		first.free() # Um chunk liberado não pode invalidar os recursos imutáveis.
 		var second_count: int=LAND.build_chunk(second,rect,6102026,_base_height)
 		var second_resources := _resources(second)
 		if first_count>0: populated+=1

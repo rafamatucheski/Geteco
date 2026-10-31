@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Main/.NET, native jeep, boarding, session cancellation and isolated save/load.
-## Staging teleports below are fixture setup; this does not certify a driven full lap.
+## Main/.NET real, jipe nativo, embarque, cancelamento da sessão e save/load isolados.
+## Os teleportes de preparação abaixo são preparação da fixture; isto não certifica uma volta completa dirigida.
 const COURSE := preload("res://world/mountain_jeep/MountainJeepCourse.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")

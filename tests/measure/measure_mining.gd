@@ -1,7 +1,7 @@
 extends "res://tests/measure/measure_desert.gd"
 var arrival_reports: Array[Dictionary]=[]
-## Same integrated Main camera settings, XZ and live population before/after;
-## baseline flat ground and excavated floor necessarily have different elevations.
+## Mesmas configurações de câmera integrada do Main, XZ e população viva antes/depois;
+## o chão plano da linha de base e o piso escavado têm necessariamente elevações diferentes.
 func _initialize() -> void:
 	create_timer(260).timeout.connect(func(): push_error("MINING_MEASURE timeout"); quit(3))
 	run.call_deferred()
@@ -94,8 +94,8 @@ func run() -> void:
 		await create_timer(2).timeout
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(output.path_join("pit-day-gameplay.png"))
-		# Additional composition review only. Measurements above keep ordinary
-		# gameplay cameras; this explicitly labelled overview has a diagnostic lens.
+		# Só revisão adicional de composição. As medições acima mantêm as câmeras de jogo
+		# comuns; esta visão geral rotulada explicitamente tem uma lente de diagnóstico.
 		world.production.region.set_retention_radius(2)
 		var bounds: Rect2 = preload("res://world/mining/MiningLayout.gd").BOUNDS
 		for x in range(floori(bounds.position.x / 96), ceili(bounds.end.x / 96)):

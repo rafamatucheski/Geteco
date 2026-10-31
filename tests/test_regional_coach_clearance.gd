@@ -1,5 +1,5 @@
 extends SceneTree
-## Static corridor audit, separate from traffic interaction and driven journeys.
+## Auditoria estática do corredor, separada da interação com o trânsito e das viagens dirigidas.
 const F := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const ROUTES := preload("res://runtime/regional/RegionalCoachRoute.gd")
 const COACH := preload("res://runtime/regional/RegionalCoach.gd")
@@ -50,13 +50,13 @@ func run() -> void:
 				for region in world.production.regions.values(): region.prepare_collision_at(point)
 				await physics_frame
 				if distance==start:
-					# A local audit can jump directly across regions. Give newly
-					# streamed collision shapes the same settling frames as boarding.
+					# Uma auditoria local pode saltar direto entre regiões. Dá às formas de colisão
+					# recém-carregadas os mesmos quadros de assentamento do embarque.
 					for frame in 3: await physics_frame
-				# Road curves approximate height. The northern descent's rendered
-				# floor is curved, so obtain real support rather than burying the
-				# chassis at the route's interpolated Y. Upright hulls stand on the
-				# highest support under their length, as the native driver does.
+				# As curvas da rua aproximam a altura. O piso renderizado da descida norte
+				# é curvo, então obtém o apoio real em vez de enterrar o
+				# chassi no Y interpolado da rota. Cascos em pé ficam sobre o
+				# apoio mais alto sob o comprimento deles, como o motorista nativo faz.
 				var support := -INF
 				for along in [-coach.half_length,0.0,coach.half_length]:
 					var footprint := road.sample_baked(clampf(distance+along,0,length),true)

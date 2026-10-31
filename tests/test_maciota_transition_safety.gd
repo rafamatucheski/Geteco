@@ -1,6 +1,6 @@
 extends "res://tests/test_combat_flow.gd"
-## Reuses input helpers only; Main, session, gameplay and residents are real.
-## Mandatory --no-save. Runner must isolate APPDATA. Does not benchmark FPS.
+## Reaproveita só helpers de entrada; Main, sessão, jogabilidade e moradores são reais.
+## --no-save obrigatório. O runner precisa isolar o APPDATA. Não faz benchmark de FPS.
 const PROTECTION = preload("res://gameplay/DamageProtection.gd")
 const STORE = preload("res://runtime/SaveStore.gd")
 var fired := 0
@@ -8,7 +8,7 @@ var exit_diagnostic: Dictionary = {}
 
 func _inventory() -> Dictionary:
 	var value: Dictionary = state.economy.snapshot()
-	# Automatic holstering is the expected equipment change, not inventory loss.
+	# Guardar a arma automaticamente é a mudança de equipamento esperada, não perda de inventário.
 	value.erase("equipped_weapon")
 	return value
 
@@ -48,8 +48,8 @@ func _run() -> void:
 	gameplay.weapon_fired.connect(_weapon_event)
 	for id in ["pistol", "knife", "grenade"]:
 		if not state.owns_weapon(id): check(state.grant_weapon(id), "fixture adquire " + id)
-	# Grants qualify for armed_up. Commit that legitimate reward before the
-	# baseline; leave_place also refreshes achievements through save_game.
+	# As concessões qualificam para armed_up. Confirma essa recompensa legítima antes da
+	# linha de base; leave_place também atualiza as conquistas via save_game.
 	world.session.activities.refresh_achievements()
 	check(state.equip_weapon("pistol"), "pistola equipada antes da entrada")
 	var inventory_before := _inventory()
@@ -85,7 +85,7 @@ func _run() -> void:
 	world.add_child(external_source)
 	var residents: Array = [world.maciota_place.maciota, world.maciota_place.mechanic]
 	for resident in residents:
-		# The working mechanic is its own swept body; stationary residents keep a child.
+		# O mecânico trabalhando é um corpo varrido próprio; moradores parados mantêm um filho.
 		var body: PhysicsBody3D = resident if resident is PhysicsBody3D else resident.get_node_or_null("ResidentBody")
 		check(is_instance_valid(body) and body.find_children("*","CollisionShape3D",true,false).any(func(shape): return shape.shape != null and not shape.disabled), resident.name+" tem corpo físico ativo")
 		if not is_instance_valid(body): continue
@@ -98,8 +98,8 @@ func _run() -> void:
 		await frames(3)
 		check(is_instance_valid(resident) and not resident.is_queued_for_deletion() and is_instance_valid(body) and body.collision_layer == 2 and PROTECTION.is_protected(body), resident.name+" conserva corpo protegido após dano direto, contínuo e explosão externa")
 	external_source.queue_free()
-	# Synthetic armed interior record, as in the existing combat regression.
-	# Real SaveStore validates/loads it; its only path is in the isolated user://.
+	# Registro sintético de interior armado, como na regressão de combate existente.
+	# O SaveStore real o valida/carrega; o único caminho dele fica no user:// isolado.
 	saved.place_id = "maciota"
 	var store := STORE.new()
 	store.path = "user://tests/maciota-transition-safety/armed-interior.json"

@@ -45,8 +45,8 @@ func run() -> void:
 	cop.throttle_input=0
 	cop.brake_input=true
 	var cop_start: Vector3=cop.position
-	# Start the trip upstream so all three sample offsets exist. A route starting
-	# at -320 would otherwise clamp the entire queue onto its first point.
+	# Começa a viagem mais atrás para que os três offsets de amostra existam. Uma rota que começasse
+	# em -320 prenderia senão a fila inteira no primeiro ponto.
 	var path: Curve3D=world.production.ambient_traffic_routes.route_near(Vector3(-270,0,8),0,Vector3.LEFT)
 	check(path!=null,"rural traffic trip exists")
 	if path==null: world.free(); quit(1); return

@@ -1,7 +1,7 @@
 extends SceneTree
-## Real Main/.NET plane: approach audio, physical cash/SMG collection and save
-## receipts. --no-save is mandatory; disk evidence has a unique isolated path.
-## Playing voices prove routing/lifecycle, not a human listening review or FPS.
+## Avião real no Main/.NET: áudio da aproximação, coleta física de dinheiro/SMG e recibos
+## de save. --no-save é obrigatório; a evidência em disco tem caminho único isolado.
+## Vozes tocando provam roteamento/ciclo de vida, não uma revisão de escuta humana nem FPS.
 const PLANE := preload("res://world/places/CargoPlaneNative.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
@@ -43,8 +43,8 @@ func reward_stamp(kind: String) -> int:
 	return int(pool.get_meta("last_" + kind, -1000)) if pool != null else -1000
 
 func treasure_footprint_clear(plane: Node3D) -> bool:
-	# Probe the authored chest volume above the deck; layer 1 excludes the actor.
-	# A hidden chest must leave neither its centre nor its corners blocked.
+	# Sonda o volume autoral do baú acima do deck; a camada 1 exclui o ator.
+	# Um baú escondido não pode deixar nem o centro nem os cantos bloqueados.
 	for x in [.25, .55, .85]:
 		for z in [-7.56, -7.35, -7.15]:
 			var from := plane.to_global(Vector3(x, .26, z))

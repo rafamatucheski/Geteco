@@ -86,11 +86,11 @@ func run() -> void:
 	gameplay.damage_player(10)
 	await frames(24)
 	check(hud.combat_panel.visible and hud.health_bar.value < 100 and hud.armor_bar.value < 50, "actual damage reveals changed health and armor")
-	# Freeze only simulation of hostile actors while inspecting deterministic levels.
+	# Congela só a simulação dos atores hostis enquanto inspeciona níveis determinísticos.
 	gameplay.set_physics_process(false)
 	gameplay.register_crime(70, world.player.global_position)
-	# Explicit police contact selects pursuit; without it the existing case
-	# director enters search and intentionally adds the functional Busca label.
+	# O contato policial explícito seleciona perseguição; sem ele o diretor de casos
+	# existente entra em busca e acrescenta de propósito o rótulo funcional Busca.
 	gameplay.report_contact(world.player.global_position)
 	hud.refresh_from_state()
 	await frames(20)
@@ -164,7 +164,7 @@ func run() -> void:
 	settings.applied.emit()
 	await frames(40)
 	check(world.camera._preview_blend == 0, "original camera can be restored")
-	# Navigate to the real onboarding target from an existing street segment.
+	# Navega até o alvo real de introdução a partir de um trecho de rua existente.
 	var actor_origin: Vector3 = world.player.position
 	world.player.teleport(actor_origin + Vector3(35,0,5))
 	await frames(45)

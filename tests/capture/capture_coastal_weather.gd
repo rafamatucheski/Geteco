@@ -1,5 +1,5 @@
 extends SceneTree
-## Concept framing and continuous rendered weather transitions in actual Main.
+## Enquadramento conceitual e transições de clima renderizadas contínuas no Main real.
 var world
 var folder := "res://evidence/coastal-weather-20261013/visual-final"
 func _initialize() -> void: run.call_deferred()

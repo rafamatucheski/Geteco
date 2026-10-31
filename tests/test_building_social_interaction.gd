@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical sightline and conversation ownership. FullSession entry, live NPC
-## reactions and rendered presentation are covered by the separate session run.
+## Linha de visão física e posse da conversa. A entrada pela FullSession, as reações
+## vivas dos NPCs e a apresentação renderizada são cobertas pela rodada de sessão separada.
 const SOCIAL := preload("res://runtime/BuildingSocialInteraction.gd")
 
 class Player extends CharacterBody3D:

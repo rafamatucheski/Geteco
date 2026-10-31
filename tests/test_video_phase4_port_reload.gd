@@ -1,5 +1,5 @@
 extends "res://tests/test_video_phase4_port_freight.gd"
-## Resume the already-proven physical trip; never repeat it to investigate load.
+## Retoma a viagem física já comprovada; nunca a repete para investigar o load.
 var startup_gates_checked := false
 
 func _trace_added(node: Node) -> void:
@@ -113,7 +113,7 @@ func run() -> void:
 	var legacy: Dictionary = ops.snapshot()
 	legacy.erase("freight")
 	check(ops.restore_snapshot(legacy) and not freight.bay_available(bay), "legacy world markers still respect durable paid receipts")
-	# Materialize another existing bay only for the independent removal branch.
+	# Materializa outra vaga existente só para o ramo independente de remoção.
 	if not is_instance_valid(ops.cargo_handling.work_trucks[0].truck): ops.cargo_handling._spawn_work_truck(0)
 	var other = ops.cargo_handling.work_trucks[0].truck
 	check(is_instance_valid(other), "second authored truck available for the removal branch")

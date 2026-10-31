@@ -1,5 +1,5 @@
 extends SceneTree
-## Rendered contract for the actual body lamp: radial reach and solid occlusion.
+## Contrato renderizado para a lanterna de corpo real: alcance radial e oclusão sólida.
 class Actor extends Node3D:
 	var visual: Node3D
 class Game extends Node3D:

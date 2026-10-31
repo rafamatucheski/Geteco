@@ -1,8 +1,8 @@
 extends "res://tests/test_police_walkin.gd"
 const DATA := preload("res://world/editing/WorldEditData.gd")
 func _process(_delta: float) -> bool:
-	# The current camera maps move_up diagonally in world space. Drive the real
-	# CharacterBody along the doorway normal, independent of camera mapping.
+	# A câmera atual mapeia move_up na diagonal no espaço do mundo. Aciona o
+	# CharacterBody real ao longo da normal da porta, independente do mapeamento da câmera.
 	if is_instance_valid(world) and is_instance_valid(world.player):
 		world.player.controlled_automatically = true
 		world.player.speed = 3.5
@@ -35,7 +35,7 @@ func _initialize() -> void:
 	row.height *= 1.25
 	row.color = "728496"
 	if "--rotated" in OS.get_cmdline_user_args():
-		# Rotating in place would put the entrance over the existing sewer hatch.
+		# Girar no lugar poria a entrada sobre a tampa de esgoto existente.
 		row.rotation = 25.0
 		row.position = [5.0,95.0]
 	check(DATA.validate_entity(row).is_empty(),"Police move, resize, height and color validate")

@@ -1,8 +1,8 @@
 extends "res://tests/measure/measure_rain_driving.gd"
-## Real Main scene, native weather and C# routing. Performance and recording are separate.
-## Required: --no-save --benchmark --isolated-save-root=<fresh folder>
-## Options: --label=before --out-dir=<folder> --only=storm-parked
-## --capture-only records 30 seconds parked (rain and shots), then 10 seconds driving.
+## Cena real do Main, clima nativo e roteamento C#. Desempenho e gravação são separados.
+## Obrigatório: --no-save --benchmark --isolated-save-root=<pasta nova>
+## Opções: --label=before --out-dir=<pasta> --only=storm-parked
+## --capture-only grava 30 segundos estacionado (chuva e tiros) e depois 10 segundos dirigindo.
 const GLASS := preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 const BODY_RAIN := preload("res://gameplay/vehicle_effects/VehicleRain.gd")
@@ -89,7 +89,7 @@ func run() -> void:
 			world.camera.initialized = false
 			print("VEHICLE_RAIN_BEGIN ",scenario[0]," ",label)
 			var warm := await sample(8.0)
-			# Reset route after warming so a full 30 s drive fits the avenue.
+			# Reinicia a rota depois do aquecimento para que uma direção completa de 30 s caiba na avenida.
 			if moving: reset_car()
 			var start_distance: float = car.distance_travelled
 			var start_position: Vector3 = car.position
@@ -118,7 +118,7 @@ func run() -> void:
 	quit()
 
 func present() -> void:
-	# Inherit route steering and sampling only; never switch unrelated rainfall effects.
+	# Herda só a direção e a amostragem da rota; nunca troca efeitos de chuva não relacionados.
 	if not capture_only or not is_instance_valid(capture_camera): return
 	var pose: Transform3D = car.get_global_transform_interpolated()
 	var center := pose.origin + Vector3.UP*.8
@@ -137,7 +137,7 @@ func write_report() -> void:
 	FileAccess.open(folder.path_join("report.json"),FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 
 func scene_load() -> Dictionary:
-	# ProductionWorld owns actual vehicles; world.traffic is an empty legacy container.
+	# O ProductionWorld é dono dos veículos reais; world.traffic é um contêiner legado vazio.
 	var vehicles := 0
 	var traffic := 0
 	var visible_traffic := 0
@@ -170,8 +170,8 @@ func glass_ray() -> Array:
 				var car_point: Vector3 = car.to_local(world_point)
 				var cross := (b-a).cross(c-a)
 				var facing: Vector3 = car.global_basis.inverse()*cross.normalized()
-				# Camera is on the driver's side. Prefer the large door pane, leaving
-				# the windshield intact to observe its beads throughout the shots.
+				# A câmera fica do lado do motorista. Prefere o vidro grande da porta, deixando
+				# o para-brisa intacto para observar as gotas dele durante os tiros.
 				if car_point.x >= 0.0 or absf(facing.x) < .5 or absf(facing.x) < absf(facing.z): continue
 				var normal: Vector3 = car.global_basis * Vector3.LEFT
 				var from := world_point + normal*5.0
@@ -213,7 +213,7 @@ func record_sequence() -> void:
 	present()
 	var ray := glass_ray()
 	if ray.is_empty(): push_error("No reachable glass for capture"); quit(7); return
-	# Save every rendered frame, capped at 30 fps. Recording overhead is excluded from perf.
+	# Salva todo quadro renderizado, limitado a 30 fps. O custo da gravação fica fora do desempenho.
 	Engine.max_fps = 30
 	var frames: Array = []
 	var events: Array = [{"time":0.0,"event":"start","state":rain_state()}]

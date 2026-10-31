@@ -20,13 +20,13 @@ func run() -> void:
 		await process_frame
 		if world.session!=null and world.session.ready_for_play: break
 	if world.session==null or not world.session.ready_for_play: quit(3); return
-	# Session video preferences can resize the window during initialization.
-	# Apply the measurement resolution after those preferences have loaded.
+	# As preferências de vídeo da sessão podem redimensionar a janela durante a inicialização.
+	# Aplica a resolução de medição depois que essas preferências carregaram.
 	root.size=Vector2i(1280,720)
 	world.player.controlled_automatically=true
 	world.player.automatic_direction=Vector3.ZERO
-	# A stationary observer must not die of cold or be hit while measuring.
-	# Keep traffic, pedestrians, weather and their collisions fully enabled.
+	# Um observador parado não pode morrer de frio nem ser atingido durante a medição.
+	# Mantém trânsito, pedestres, clima e as colisões deles totalmente ligados.
 	world.session.cold.set_process(false)
 	world.player.collision_layer=0
 	world.camera.set_process_unhandled_input(false)
@@ -64,5 +64,5 @@ func run() -> void:
 	await process_frame
 	quit()
 
-# The base class has a per-frame prototype runner; this diagnostic owns its loop.
+# A classe base tem um runner de protótipo por quadro; este diagnóstico é dono do próprio laço.
 func _process(_delta: float) -> bool: return false

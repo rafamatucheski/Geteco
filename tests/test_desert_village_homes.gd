@@ -1,5 +1,5 @@
 extends SceneTree
-## Physical contracts of the four actual NativePlace rooms; depth/FPS need rendered Main separately.
+## Contratos físicos das quatro salas NativePlace reais; profundidade/FPS precisam do Main renderizado à parte.
 const HOMES := preload("res://world/desert/village/DesertVillageHomes.gd")
 const NATIVE := preload("res://world/places/NativePlace.gd")
 const ACTOR := preload("res://scripts/Actor.gd")

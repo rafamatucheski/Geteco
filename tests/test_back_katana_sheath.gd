@@ -6,8 +6,8 @@ const ACTOR := preload("res://scripts/Actor.gd")
 const GAMEPLAY := preload("res://gameplay/Gameplay.gd")
 
 class SheathGameplay extends "res://gameplay/Gameplay.gd":
-	# This fixture drives the real sheath methods manually. Only their socket
-	# setup is needed; unrelated police, audio and effects need a full world.
+	# Esta fixture aciona os métodos reais da bainha à mão. Só a preparação do soquete
+	# deles é necessária; polícia, áudio e efeitos não relacionados precisam de um mundo completo.
 	func _ready() -> void:
 		_build_socket()
 

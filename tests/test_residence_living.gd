@@ -186,7 +186,7 @@ func _home(id: String) -> void:
 			check(not services.storage.unlocked(),id+" chest waits for backpack integration")
 		session.close_menu()
 	await _physical(id)
-	# Save through the same manual service action to a test-only file.
+	# Salva pela mesma ação de serviço manual num arquivo só de teste.
 	world.player.teleport(session.room.interaction_points.save+Vector3.UP*.08)
 	await frames()
 	var previous_path: String = session.controller.store.path
@@ -247,7 +247,7 @@ func _depth_photos(id: String) -> void:
 			await RenderingServer.frame_post_draw
 			root.get_texture().get_image().save_png("res://evidence/residence-living/depth-"+id+"-"+key+"-"+side+".png")
 			check(world.player.visible and npc.visible,id+" depth positive control "+key+" "+side)
-	# Then swap player/NPC roles; both use native depth in the same room.
+	# Depois troca os papéis de jogador/NPC; os dois usam profundidade nativa na mesma sala.
 	world.player.teleport(room.to_global(Vector3(0,.06,2.4)))
 	var chest: Rect2 = room.model.solid_rects.StorageChest
 	npc.teleport(room.to_global(Vector3(chest.get_center().x,.06,chest.end.y+.42)))

@@ -1,6 +1,6 @@
 extends SceneTree
-## Real pause save while the inventory holds the player, then fresh Main load.
-## SaveStore is redirected before enabling writes; executor also isolates APPDATA.
+## Save real pela pausa enquanto o inventário segura o jogador, e depois load num Main novo.
+## O SaveStore é redirecionado antes de ligar as gravações; o executor também isola o APPDATA.
 var world
 var checks := 0
 var failures: Array[String] = []
@@ -82,7 +82,7 @@ func run() -> void:
 	paused = false
 	world.production.no_save = true
 	session.close_menu()
-	# Drain UI focus callbacks while their controls still belong to the old Main.
+	# Esvazia os callbacks de foco da UI enquanto os controles ainda pertencem ao Main antigo.
 	await process_frame
 	await process_frame
 	world.free()

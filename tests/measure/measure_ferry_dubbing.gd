@@ -1,6 +1,6 @@
 extends SceneTree
-## Same production movie and render setup; baseline reconstructs only this
-## change's preimage in memory, leaving the live FerryFilm.gd untouched.
+## Mesmo filme de produção e mesma montagem de render; a linha de base reconstrói em memória
+## só a pré-imagem desta mudança, deixando o FerryFilm.gd vivo intocado.
 var samples: Array[float] = []
 var previous_us := 0
 var started_us := 0

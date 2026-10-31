@@ -1,6 +1,6 @@
 extends "res://tests/test_vehicle_usage.gd"
-## Retain the existing population, cargo-fit and restore checks, then assert
-## that legacy cap removal does not strip the new multi-surface pickup body.
+## Mantém as checagens existentes de população, encaixe de carga e restauração, e então afirma
+## que remover o limite legado não tira a nova carroceria de picape de várias superfícies.
 func stored_setup(car: CharacterBody3D, id: String, world: Node3D) -> void:
 	super.stored_setup(car, id, world)
 	var body := car.visual.get_node_or_null("Body") as MeshInstance3D

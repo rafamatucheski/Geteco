@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_desert.gd"
-## Same real Main positions before/after. Fixture relocation is not traversal evidence.
+## Mesmas posições reais do Main antes/depois. A realocação da fixture não é evidência de travessia.
 var save_path := ""
 var expansion_errors: Array[String] = []
 var capped := false

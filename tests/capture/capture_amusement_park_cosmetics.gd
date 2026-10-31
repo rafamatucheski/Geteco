@@ -1,6 +1,6 @@
 extends SceneTree
-## Isolated real Dante portrait. Fixed pose, cameras and lighting across each outfit.
-## Render with Godot .NET, -- --label=before|after. This is not a benchmark.
+## Retrato isolado do Dante real. Pose, câmeras e iluminação fixas em cada roupa.
+## Renderize com Godot .NET, -- --label=before|after. Isto não é benchmark.
 const ACTOR := preload("res://scripts/Actor.gd")
 const COSMETICS := preload("res://activities/amusement_park/AmusementParkCosmetics.gd")
 const STATE := preload("res://activities/amusement_park/AmusementParkCosmeticState.gd")

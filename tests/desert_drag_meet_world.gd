@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical contract for the separated drag paddock. Visual occlusion, light
-## continuity and frame time require rendered gameplay, outside this fixture.
+## Contrato físico do paddock separado da arrancada. Oclusão visual, continuidade
+## de luz e tempo de quadro exigem jogo renderizado, fora desta fixture.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const REGION := preload("res://world/desert/DesertRegion.gd")
 const MEET := preload("res://world/desert/drag_meet/DesertDragMeet.gd")
@@ -74,8 +74,8 @@ func _run() -> void:
 	_check(region.find_child("GolUnderRepair",true,false)!=null,"Digo's Gol stays physically present in his working garage")
 	for car in MEET.car_spots():
 		_check(not _clear(car.position),"Parked display car has a real solid footprint: "+str(car.id))
-	# The complete eight-metre straight approach stays usable between the rows,
-	# including vehicle clearance on either side of its centre-line.
+	# A aproximação reta completa de oito metros continua utilizável entre as fileiras,
+	# incluindo a folga do veículo dos dois lados da linha central.
 	for x in range(-1034,-947,3):
 		for offset in [-3.0,0.0,3.0]:
 			var point := Vector3(x,0,-1280+offset)

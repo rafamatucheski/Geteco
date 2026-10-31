@@ -1,6 +1,6 @@
 extends SceneTree
-## Functional contracts only. Temporal appearance and GPU cost require the
-## rendered, integrated drag/free-driving captures run separately.
+## Só contratos funcionais. A aparência temporal e o custo de GPU exigem as
+## capturas renderizadas e integradas de arrancada/direção livre, rodadas à parte.
 const NEON := preload("res://gameplay/desert_cars/DesertCarNeon.gd")
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")

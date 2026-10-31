@@ -71,7 +71,7 @@ func depth_probe(local: Vector3, id: String, back_offset: float, front_offset: f
 	camera.look_at(at+Vector3.UP*1.05)
 	camera.make_current()
 	paused = true
-	# Body visibility is measured separately from its cast shadow on the ground.
+	# A visibilidade do corpo é medida à parte da sombra projetada dele no chão.
 	var shadow_modes := {}
 	for mesh: GeometryInstance3D in world.player.visual.find_children("*","GeometryInstance3D",true,false):
 		shadow_modes[mesh] = mesh.cast_shadow
@@ -99,8 +99,8 @@ func depth_probe(local: Vector3, id: String, back_offset: float, front_offset: f
 	world.camera.initialized = false
 	camera.queue_free()
 	depth[id] = counts
-	# The .30–.55 m band projects into this tabletop; chest/head remain above it.
-	# The stall is opaque over the complete standing body instead.
+	# A faixa de .30–.55 m se projeta neste tampo; peito/cabeça ficam acima dele.
+	# Já a barraca é opaca sobre o corpo inteiro em pé.
 	var correct: bool = counts.front.whole>1000 and counts.behind.whole<counts.front.whole*.20 if id=="stall" else counts.front.lower>200 and counts.behind.lower<counts.front.lower*.20 and counts.behind.upper>500
 	check(correct,"native depth hides geometrically covered body at "+id+" with visible front and upper control "+str(counts))
 
@@ -211,7 +211,7 @@ func run() -> void:
 	finish()
 
 func purchase_flow() -> void:
-	# The wardrobe opens west; first return north along its open face, then east.
+	# O armário abre para o oeste; primeiro volta ao norte pela face aberta dele, depois ao leste.
 	check(await walk(Vector3(29,.08,15)) and await walk(Vector3(34,.08,15)) and await walk(Vector3(34,.08,7.4)),"walk around wardrobe side to visible drink machine")
 	world.session.state.economy.grant_reward("park_life_fixture",1000)
 	var cash: int = world.session.state.economy.balance
@@ -221,8 +221,8 @@ func purchase_flow() -> void:
 	await frames(20)
 	check(world.session.state.economy.inventory.get("water",0)==1 and world.session.state.economy.balance==cash-6 and park.vending.remaining("drinks","water")==23,"UI purchase charges correct price and decrements stock with item")
 	await capture("vending_after")
-	# This fixture begins in cobra_finale. A purchase must queue a checkpoint,
-	# preserving the mission save guard until that artificial mission is cancelled.
+	# Esta fixture começa em cobra_finale. Uma compra precisa enfileirar um checkpoint,
+	# preservando a proteção de save da missão até essa missão artificial ser cancelada.
 	check(world.session.state.campaign.active_id=="cobra_finale" and world.session.save_block_reason().contains("missão") and world.session._checkpoint_retry!=null and not world.session._checkpoint_retry.is_stopped(),"mission purchase retains save guard and schedules checkpoint retry")
 	check(world.session.state.campaign.cancel("park_save_fixture"),"fixture cancels active mission to release ordinary save guard")
 	await create_timer(1.4).timeout
@@ -240,7 +240,7 @@ func purchase_flow() -> void:
 	await capture("gameplay_machine")
 
 func reentry_flow(entry: Vector3) -> void:
-	# Streaming boundary relocation is a lifecycle fixture, not evidence of walking that distance.
+	# A realocação no limite do streaming é fixture de ciclo de vida, não evidência de ter andado essa distância.
 	var away := Vector3(166,.08,112.8)
 	world.production.region.set_focus(away)
 	world.production.region.prepare_collision_at(away)

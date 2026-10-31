@@ -8,7 +8,7 @@ func check(ok: bool, label: String) -> void:
 	if not ok: failures += 1
 
 func run() -> void:
-	# Prewarming frees facades in the same frame; queued work must be cancelled.
+	# O pré-aquecimento libera fachadas no mesmo quadro; o trabalho na fila precisa ser cancelado.
 	var temporary: Node3D = FACTORY.build_building({"id":"CanalHomesWest","position":Vector3.ZERO})
 	root.add_child(temporary)
 	temporary.free()

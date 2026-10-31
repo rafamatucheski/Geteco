@@ -23,8 +23,8 @@ static func park_monaliza(world):
 	session.garage_rewards.data.vehicles.personal_monaliza = session.garage_rewards._initial_record("monaliza", car.position, car.rotation.y, "")
 	return car
 
-## Session readiness is published briefly during restore_location, before the
-## streaming settle and loading-curtain fade finish. Fixtures must wait for play.
+## A prontidão da sessão é publicada brevemente durante restore_location, antes de
+## o assentamento do streaming e o fade da cortina de carregamento terminarem. Fixtures precisam esperar o jogo.
 static func wait_for_startup(world, max_frames:=2400) -> bool:
 	for i in max_frames:
 		await world.get_tree().physics_frame

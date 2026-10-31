@@ -1,6 +1,6 @@
 extends RefCounted
-## Isolated, valid checkpoints for the gateway tests. These are fixtures, not
-## evidence that a test played the preceding missions or drove the final race.
+## Checkpoints isolados e válidos para os testes do portal. São fixtures, não
+## evidência de que um teste jogou as missões anteriores ou correu a corrida final.
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const CAMPAIGN := preload("res://systems/campaign/CampaignRuntime.gd")
 const STATE := preload("res://runtime/GameState.gd")
@@ -54,7 +54,7 @@ static func full_snapshot(point: Vector3, completed := false, old_save := false)
 		assert(result.ok)
 		if not result.ok: return {}
 	var data: Dictionary = state.snapshot()
-	# Retain genuine version-1 bytes so the real SaveStore must migrate them.
+	# Mantém bytes genuínos da versão 1 para que o SaveStore real precise migrá-los.
 	if old_save and completed: data.campaign = prefix(MISSIONS.LEGACY_ORDER.size(),true)
 	assert(STATE.new().restore_snapshot(data))
 	return data
@@ -82,8 +82,8 @@ static func graph_snapshot(routes) -> Array:
 	return result
 
 static func route_keeps_outside(routes, forbidden: Rect2) -> bool:
-	# Check segments continuously enough to include narrow barriers, rather than
-	# checking graph vertices alone (a long edge could jump across the works).
+	# Confere os segmentos com continuidade suficiente para pegar barreiras estreitas, em vez de
+	# conferir só os vértices do grafo (uma aresta longa poderia pular por cima da obra).
 	for segment in routes.segments:
 		var a: Vector3 = segment.a
 		var b: Vector3 = segment.b

@@ -57,7 +57,7 @@ func _run() -> void:
 	heist.bank_departed()
 	check(session.state.economy.balance==18000,"later escape secures remainder, exact R$15000 cycle")
 	check(heist.player_died()==5000 and session.state.economy.balance==13000,"new death charges new receipt, secured loot remains in wallet")
-	# A poor wallet is emptied, never wrapped negative or left untouched.
+	# Uma carteira pobre é esvaziada, nunca fica negativa nem intocada.
 	heist._death_latched=false
 	session.state.economy.spend(12000,"poor_wallet_setup")
 	check(heist.player_died()==1000 and session.state.economy.balance==0,"death with under R$5000 empties available wallet")

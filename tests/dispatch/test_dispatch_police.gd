@@ -182,7 +182,7 @@ func _foot_agent_contract() -> void:
 	# de 0,30 m; a 5,5 m, o único tiro nesta janela podia errar por sorte.
 	officer.global_position = Vector3(6.0, 0, 0)
 	await _frames(5)
-	# Gameplay owns crime attribution and force authorization, the actor owns damage.
+	# A jogabilidade é dona da atribuição de crime e da autorização de força; o ator é dono do dano.
 	gameplay._damage(officer, 1.0, bundle.player)
 	await _frames(90)
 	check(officer.response_aggression > 0.0 and gameplay.contact_age < 1.0, "dano identifica o agressor real e renova contato")
@@ -199,7 +199,7 @@ func _entity_limits() -> void:
 	var gameplay: Node3D = bundle.gameplay
 	var controller: Node3D = bundle.controller
 	await _frames(3)
-	# This fixture exercises maximum dispatch, independently of player escalation.
+	# Esta fixture exercita o dispatch máximo, independente da escalada do jogador.
 	gameplay.crime_points = 420
 	gameplay._update_stars()
 	gameplay.register_crime(1, bundle.player.global_position)

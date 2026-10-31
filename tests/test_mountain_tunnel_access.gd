@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Actor/Vehicle movement across the bridge and tunnel paving lips.
-## The previous paving check started above the pavement and missed curb entry.
+## Movimento real de Actor/Vehicle pelas bordas do calçamento da ponte e do túnel.
+## A checagem anterior do calçamento começava acima do pavimento e não pegava a entrada pelo meio-fio.
 const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
@@ -30,9 +30,9 @@ func run() -> void:
 	stage = Node3D.new()
 	root.add_child(stage)
 	stage.add_child(CONNECTION.new())
-	# The regional road owns this native support, with asphalt at y=0.
+	# A rua regional é dona deste apoio nativo, com asfalto em y=0.
 	floor_box(Vector3(560,-.25,CONNECTION.CENTER_Z),Vector3(210,.5,8.75))
-	# Terrain immediately beyond the east portal, outside the shared structure.
+	# Terreno logo depois do portal leste, fora da estrutura compartilhada.
 	floor_box(Vector3(CONNECTION.TUNNEL_END_X+4,-.25,CONNECTION.CENTER_Z),Vector3(8,.5,14))
 	await physics_frame
 	await physics_frame
@@ -61,7 +61,7 @@ func run() -> void:
 			for route in routes:
 				await traverse(body,bike,route.from,route.to,"%s %s side=%s entry" % [who,route.id,side])
 				await traverse(body,bike,route.to,route.from,"%s %s side=%s return" % [who,route.id,side])
-			# The exterior wall and bridge rail must still block the whole body.
+			# A parede externa e o guarda-corpo da ponte ainda precisam bloquear o corpo inteiro.
 			for x in [520.0,605.0]:
 				body.global_position = Vector3(x,.075,CONNECTION.CENTER_Z+side*5.65)
 				body.rotation.y = 0.0

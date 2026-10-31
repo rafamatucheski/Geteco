@@ -1,5 +1,5 @@
 extends SceneTree
-## Production meshes in a neutral review stage; --main also records the real city.
+## Malhas de produção num palco neutro de revisão; --main também grava a cidade real.
 const DOG = preload("res://gameplay/police_response/air_k9/PoliceK9.gd")
 const LABELS := ["01  PRETO E CARAMELO", "02  MEL", "03  PRETO E GRAFITE", "04  AREIA E CREME"]
 const SIZES := ["Porte médio", "Porte menor", "Porte maior", "Porte intermediário"]
@@ -78,7 +78,7 @@ func run() -> void:
 		camera.position = focus + Vector3(4, 0.8, 0.4)
 		camera.look_at(focus)
 		await photo("profile-%d" % (index + 1))
-	# One comparison image uses identical camera scale and a common floor.
+	# Uma imagem de comparação usa escala de câmera idêntica e um piso comum.
 	root.size = Vector2i(1800, 700)
 	root.content_scale_size = root.size
 	for index in 4:

@@ -1,5 +1,5 @@
 extends SceneTree
-## Private semantic contract; headless is not rendering/FPS approval.
+## Contrato semântico privado; headless não é aprovação de renderização/FPS.
 const ORIGINAL = preload("res://tests/fixtures/GroundBlood3D_before_first_material.gd")
 const CANDIDATE = preload("res://gameplay/street_physics/GroundBlood3D.gd")
 const PROPS := ["albedo_color", "transparency", "depth_draw_mode", "roughness", "metallic_specular", "render_priority", "cull_mode"]

@@ -109,8 +109,8 @@ func finish() -> void:
 	FileAccess.open(folder.path_join("report.json"), FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("TERRAIN3D_BENCHMARK ", folder, " ", JSON.stringify(report.summary))
 	if "--temporal" in OS.get_cmdline_user_args():
-		# Capture every rendered frame on a short physical crossing, after timing.
-		# GPU readback affects this sequence, so it is not an FPS sample.
+		# Captura todo quadro renderizado numa travessia física curta, depois da cronometragem.
+		# A leitura da GPU afeta esta sequência, então não é amostra de FPS.
 		var at := Vector3(766,0,-434)
 		at.y = world.production.region.terrain.surface_height_at(Vector2(at.x,at.z))+.08
 		world.player.teleport(at)

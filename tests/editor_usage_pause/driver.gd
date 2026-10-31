@@ -1,7 +1,7 @@
 @tool
 extends EditorPlugin
-## Test only: the root runner enables this plugin temporarily in its own editor.
-## It never enables itself, persists project settings, or controls external apps.
+## Só para teste: o runner raiz habilita este plugin temporariamente no próprio editor.
+## Ele nunca se habilita sozinho, não persiste configurações do projeto nem controla apps externos.
 
 const RUN_ARGS := "editor/run/main_run_args"
 const TOTAL_TIMEOUT_MS := 300000
@@ -59,8 +59,8 @@ func _run() -> void:
 	_had_args = ProjectSettings.has_setting(RUN_ARGS)
 	_previous_args = ProjectSettings.get_setting(RUN_ARGS, "")
 	var temporary_args := str(_previous_args)
-	# This setting is parsed by the editor; the separator puts these switches in
-	# OS.get_cmdline_user_args() in the child. Existing arguments remain intact.
+	# Esta configuração é lida pelo editor; o separador põe estas chaves em
+	# OS.get_cmdline_user_args() no filho. Os argumentos existentes ficam intactos.
 	if not ("--" in temporary_args.split(" ", false)): temporary_args += " --"
 	temporary_args += " --no-save --skip-arrival"
 	ProjectSettings.set_setting(RUN_ARGS, temporary_args.strip_edges())
@@ -84,7 +84,7 @@ func _run() -> void:
 		if not await _hold_playing(OBSERVATION_SECONDS, "observation", cycle): break
 		if not await _stop_owned(cycle): break
 		_completed_cycles += 1
-		# Allow the asynchronous restoration receipt to settle before another Play.
+		# Deixa o recibo assíncrono de restauração assentar antes de outro Play.
 		await get_tree().create_timer(5.0).timeout
 		_record("between_cycles", {"cycle": cycle})
 	await _finish()

@@ -1,5 +1,5 @@
 extends SceneTree
-## Regression: presentation receives resolved motion even when move_and_slide stopped the attacker.
+## Regressão: a apresentação recebe o movimento resolvido mesmo quando move_and_slide parou o atacante.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const STREET := preload("res://gameplay/street_physics/StreetPhysics.gd")
 
@@ -53,7 +53,7 @@ func run() -> void:
 		world.add_child(attacker)
 		world.add_child(target)
 		target.position.z = -5.0
-		# The sweep already stopped the attacker. Its incoming velocity remains separate.
+		# A varredura já parou o atacante. A velocidade de chegada dele continua separada.
 		var incoming := Vector3(0, 0, -32)
 		var target_before := Vector3(0, 0, -4)
 		target.horizontal_velocity = target_before

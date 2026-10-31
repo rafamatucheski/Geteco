@@ -1,5 +1,5 @@
 extends SceneTree
-## A civilian U-turn must not repeatedly cancel and restart its foot stroke.
+## O retorno de um civil não pode cancelar e reiniciar repetidamente a remada do pé.
 const BOARD = preload("res://activities/skate/SkateBody.gd")
 const ACTOR = preload("res://scripts/Actor.gd")
 const SKATE = preload("res://activities/skate/Skate.gd")

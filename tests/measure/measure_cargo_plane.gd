@@ -67,7 +67,7 @@ func run() -> void:
 	world.session.set_process_input(false)
 	for i in 120: await physics_frame
 	await photograph("approach")
-	# Photographic setups are excluded from frame-time sampling.
+	# As montagens fotográficas ficam fora da amostragem de tempo de quadro.
 	world.player.teleport(center+Vector3(.2,.25,-5.8))
 	for entry in [[0.0,"rear"],[PI*.5,"starboard"],[-PI*.5,"port"],[PI,"cockpit"]]:
 		world.camera.heading=entry[0]; world.camera.initialized=false

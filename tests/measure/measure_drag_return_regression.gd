@@ -1,6 +1,6 @@
 extends "res://tests/capture/capture_drag_start_camera.gd"
-## Compare the same two real 800 m runs. --before-dir reloads a frozen source
-## snapshot in this process only; it never replaces files in the shared checkout.
+## Compara as mesmas duas rodadas reais de 800 m. --before-dir recarrega um snapshot congelado
+## do código só neste processo; nunca substitui arquivos no checkout compartilhado.
 var recording := false
 var stamp := 0
 var samples: Array[float]=[]

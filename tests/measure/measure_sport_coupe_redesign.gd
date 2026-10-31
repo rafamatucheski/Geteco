@@ -1,9 +1,9 @@
 extends SceneTree
-## Real Main, normal city population and one parked player coupe. No save access.
+## Main real, população normal da cidade e um cupê do jogador estacionado. Sem acesso a save.
 ## Godot .NET --path . --script res://tests/measure/measure_sport_coupe_redesign.gd
 ## -- --no-save --skip-arrival --population=24 --label=before [--uncapped]
-## --paired performs one finite ABBA block per day/night in the same Main.
-## The label only names evidence: the caller selects the actual asset version.
+## --paired executa um bloco ABBA finito por dia/noite no mesmo Main.
+## O rótulo só nomeia a evidência: quem chama seleciona a versão real do recurso.
 var world
 var car: CharacterBody3D
 var label := "before"
@@ -26,8 +26,8 @@ var background_run := false
 var paired_focus_condition := ""
 ## Optional fixed focus contract for subclasses using a normal window.
 var expected_focus_mode := ""
-## Opt-in: before the first complete paired window only, a single OS focus
-## change may select the lasting condition. All prior frames are discarded.
+## Opcional: só antes da primeira janela pareada completa, uma única mudança de foco
+## do SO pode selecionar a condição duradoura. Todos os quadros anteriores são descartados.
 var allow_initial_focus_reselection := false
 var initial_focus_reselected := false
 
@@ -36,7 +36,7 @@ func _initialize() -> void:
 	run.call_deferred()
 
 func apply_background_policy() -> void:
-	# Apply before Main, and before/after autoload startup can set window mode.
+	# Aplica antes do Main, e antes/depois que o início dos autoloads pode definir o modo de janela.
 	var review_size := DisplayServer.window_get_size()
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS,true)
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
@@ -55,14 +55,14 @@ func run() -> void:
 	if paired and "--baseline" in args:
 		push_error("--paired requires the installed final asset and its separate baseline, not --baseline"); quit(2); return
 	if background_run:
-		# Process-local window policy: never bring this review over the user's app.
+		# Política de janela local ao processo: nunca traz esta revisão por cima do app do usuário.
 		apply_background_policy()
 	for arg in args:
 		if arg.begins_with("--label="): label = arg.trim_prefix("--label=").validate_filename()
 	var normal_cap := Engine.max_fps
 	var normal_vsync := DisplayServer.window_get_vsync_mode()
 	uncapped = "--uncapped" in args
-	# Isolated comparison only: keep the installed production asset untouched.
+	# Só comparação isolada: mantém intocado o recurso de produção instalado.
 	if "--baseline" in args:
 		preload("res://runtime/FleetCatalog.gd").all()["sport_coupe"].scene = BASELINE_MODEL
 	if uncapped:
@@ -107,9 +107,9 @@ func run() -> void:
 	world.camera.global_position = focus + Vector3(0, 25.3, 25.3)
 	world.camera.look_at(focus)
 	world.session.weather.set_process(false)
-	# Allow production streaming, ambient citizens and traffic to settle first.
-	# Earlier runs grew from 32 to the 40-car traffic cap across windows. A
-	# longer paired settle reduces that nonlinear startup ramp without freezing AI.
+	# Deixa o streaming de produção, os cidadãos do ambiente e o trânsito assentarem primeiro.
+	# Rodadas anteriores cresciam de 32 até o limite de 40 carros de trânsito ao longo das janelas. Um
+	# assentamento pareado mais longo reduz essa rampa não linear do início sem congelar a IA.
 	var settle_seconds := 60 if paired else 12
 	var settle_start := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - settle_start < settle_seconds*1000:
@@ -133,8 +133,8 @@ func run() -> void:
 			paired_valid=false
 			write_paired_summary()
 			world.free(); quit(5); return
-		# Verified against this installation's GodotSharp.xml. Values are ms;
-		# they describe the main viewport, not scripts or every subviewport.
+		# Conferido contra o GodotSharp.xml desta instalação. Os valores são ms;
+		# descrevem o viewport principal, não scripts nem cada subviewport.
 		RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(),true)
 		render_timing_enabled=true
 		for night in [false,true]:
@@ -312,8 +312,8 @@ func prepare_paired_models() -> bool:
 	paint.bind(paired_baseline,"sport_coupe")
 	paint.apply(car.paint_color)
 	preload("res://runtime/VehicleUsage.gd").apply(paired_baseline,"sport_coupe",car.vehicle_id,paint.materials)
-	# Reuse the equipment's real material binding, but create no projectors,
-	# audio, physics, effects or second vehicle. Both variants are parked/unlit.
+	# Reaproveita a ligação real de material do equipamento, mas não cria projetores,
+	# áudio, física, efeitos nem segundo veículo. As duas variantes ficam estacionadas/apagadas.
 	var materials := {}
 	var mounts: Array[Vector3] = []
 	var bars: Array[Vector3] = []
@@ -337,9 +337,9 @@ func prepare_paired_models() -> bool:
 	return paired_contract.baseline_model=={"meshes":39,"surfaces":39,"triangles":61087} and paired_contract.final_model.meshes<39 and paired_contract.final_model.triangles<61087
 
 func create_paired_baseline() -> Node3D:
-	# Factory passes cache by archetype, not source path. Isolate only this id's
-	# entries while building the alternate source, then restore them atomically.
-	# No await, spawning or production tick can observe the temporary state.
+	# As passadas da fábrica fazem cache por arquétipo, não por caminho de origem. Isola só as entradas
+	# deste id enquanto monta a origem alternativa e depois as restaura de forma atômica.
+	# Nenhum await, spawn ou tick de produção consegue observar o estado temporário.
 	if not ResourceLoader.exists(BASELINE_MODEL): return null
 	var definition: Dictionary = preload("res://runtime/FleetCatalog.gd").all()["sport_coupe"]
 	var installed: String = definition.scene
@@ -375,7 +375,7 @@ func select_paired_model(variant: String) -> void:
 	paired_final.visible=variant=="final"
 	active_model=paired_baseline if variant=="baseline" else paired_final
 	active_model_source=BASELINE_MODEL if variant=="baseline" else paired_contract.final_source
-	# Duplicate prevents later selection from mutating reports held in memory.
+	# O duplicate impede que uma seleção posterior altere relatórios guardados em memória.
 	fixture=fixture.duplicate(true)
 	fixture.model=mesh_metrics(active_model)
 	fixture.paired_variant=variant

@@ -98,7 +98,7 @@ func run()->void:
 		controller.units.clear()
 		check(production._active_dispatch_support().harbor.is_empty(),"remoção da unidade não deixa registro de suporte")
 	else:check(false,"contrato de suporte de despacho disponível")
-	# The unit is fixture-owned; do not invoke gameplay teardown on the bare car.
+	# A unidade pertence à fixture; não chama a desmontagem de jogo no carro sozinho.
 	controller.units.clear()
 	scene.free()
 	print("%s DISPATCH_GROUND_RETENTION checks=%d builds=%d failures=%s"%["PASS" if failures.is_empty() else "FAIL",checks,builds,failures])

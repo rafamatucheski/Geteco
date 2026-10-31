@@ -17,8 +17,8 @@ func _process(delta: float) -> bool:
 	var now := Time.get_ticks_usec()
 	if attempts != capture_seen_attempts:
 		capture_seen_attempts = attempts
-		# The existing fixture has already requested a 9 m/s dismount. Only the
-		# now-driverless car gets 24 m/s for the real sweep into the staged NPC.
+		# A fixture existente já pediu um desmonte a 9 m/s. Só o carro
+		# agora sem motorista recebe 24 m/s para a varredura real contra o NPC encenado.
 		var car = world.driving.car
 		car.speed = 24.0
 		car.horizontal_velocity = -car.global_basis.z*24.0
@@ -47,8 +47,8 @@ func _capture_one(job: Dictionary) -> void:
 		capture_errors += 1
 		capture_busy = false
 		return
-	# Follow just this shot's subject so the fast NPC stays large enough to
-	# inspect. The live city, cars, shadows and geometry remain rendered.
+	# Segue só o alvo desta tomada para o NPC rápido continuar grande o bastante para
+	# inspecionar. A cidade viva, os carros, as sombras e a geometria continuam renderizados.
 	var focus := subject.global_position+Vector3.UP*.7
 	world.camera.look_at_from_position(focus+Vector3(5.5,5,7),focus)
 	world.camera.size = 9.0
@@ -60,7 +60,7 @@ func _capture_one(job: Dictionary) -> void:
 	var captured_at := Time.get_ticks_usec()
 	var output_dir := evidence_dir if not evidence_dir.is_empty() else "res://evidence"
 	var file_name := "%s-%s-%d-%04dms.png" % [label,job.kind,job.cycle,int(round(float(job.delay)*1000))]
-	# Save after the sequence: PNG compression was delaying later pose samples.
+	# Salva depois da sequência: a compressão PNG atrasava as amostras de pose seguintes.
 	var shot := root.get_texture().get_image()
 	var record := {"file":file_name,"kind":job.kind,"cycle":job.cycle,
 		"requested_seconds":job.delay,"actual_seconds":float(captured_at-int(job.event_time))/1000000.0,
@@ -98,9 +98,9 @@ func _npc_geometry(npc: CharacterBody3D) -> Dictionary:
 	if model == null:
 		record["missing_rig"] = true
 		return record
-	# Read actual transformed vertices, not the actor root or rotated AABB.
-	# Hands share a rigid forearm mesh; below local y=-.25 is authored hand
-	# geometry in CivilianMeshKit.forearm_mesh (palm, fingers and thumb).
+	# Lê os vértices transformados reais, não a raiz do ator nem a AABB girada.
+	# As mãos compartilham uma malha rígida de antebraço; abaixo de y=-.25 local fica a geometria
+	# autoral da mão em CivilianMeshKit.forearm_mesh (palma, dedos e polegar).
 	var parts := {"head":model.head_node,"left_foot":model.feet[0],"right_foot":model.feet[1],
 		"left_hand":model.forearms[0],"right_hand":model.forearms[1]}
 	for part in parts:
@@ -124,8 +124,8 @@ func _mesh_minimum(node: MeshInstance3D, hand_only: bool, npc: CharacterBody3D) 
 	if count == 0: return {"missing_vertices":true}
 	var record := {"mesh":str(node.get_path()),"vertices":count,"minimum_world":_point(minimum),
 		"maximum_y":maximum_y,"hand_local_y_max":-.25 if hand_only else null}
-	# A downward scene query provides local road/terrain height for the lowest
-	# actual vertex. Keep collider and normal so a wall/roof isn't called floor.
+	# Uma consulta de cena para baixo dá a altura local da rua/terreno para o vértice
+	# real mais baixo. Guarda colisor e normal para que uma parede/telhado não seja chamado de piso.
 	var query := PhysicsRayQueryParameters3D.create(minimum+Vector3.UP*2.0,minimum-Vector3.UP*6.0,1,[npc.get_rid()])
 	var hit := npc.get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty():

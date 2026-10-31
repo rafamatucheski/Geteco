@@ -1,5 +1,5 @@
 extends SceneTree
-## Production scene and actual weapon light; never reads or writes player saves.
+## Cena de produção e luz de arma real; nunca lê nem grava saves do jogador.
 var world
 var failures := 0
 const OUT := "res://evidence/sewer-flashlight-20261012"

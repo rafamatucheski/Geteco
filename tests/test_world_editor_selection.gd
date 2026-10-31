@@ -73,7 +73,7 @@ func run() -> void:
 	mouse(at,false,true)
 	check(canvas.selected_id == shape.id,"Alt click cycles overlapping objects")
 	check(not canvas.edit_points,"Selecting another object leaves point editing")
-	# A road endpoint on the X axis must win over its transform handle.
+	# A ponta de uma rua no eixo X precisa ganhar da alça de transformação dela.
 	var road := {"id":"road/test","type":"road","points":[[0,0],[4,0]],"width":2.0}
 	canvas.objects = {road.id:road}
 	canvas.selected_id = road.id
@@ -82,7 +82,7 @@ func run() -> void:
 	mouse(at,true)
 	check(canvas.selected_point == 1 and canvas.drag_axis.is_empty(),"Road endpoint wins over overlapping axis")
 	canvas.cancel_drag()
-	# Actual terminal furniture and paving shown in the editor screenshot.
+	# Mobília e calçamento reais do terminal mostrados na captura do editor.
 	canvas.zoom = 8
 	canvas.selected_id = ""
 	canvas.objects = catalog.context.duplicate(true)

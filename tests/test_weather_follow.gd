@@ -19,8 +19,8 @@ func run() -> void:
 	rain.process_material = ParticleProcessMaterial.new()
 	root.add_child(rain)
 	COVERAGE.configure(rain)
-	# Independent expectation: every corner ray at the ground and above the
-	# driver must lie within the falling volume, at maximum zoom and every orbit.
+	# Expectativa independente: todo raio de canto no chão e acima do
+	# motorista precisa ficar dentro do volume de queda, no zoom máximo e em toda órbita.
 	for size in [22.0,39.0,52.0]:
 		camera.size = size
 		for heading in [0.0,PI/4.0,PI/2.0,PI]:
@@ -38,8 +38,8 @@ func run() -> void:
 					check(absf(relative.x)<extent.x and absf(relative.z)<extent.z,"Screen corner covered at size %s heading %s"%[size,heading])
 			var drop := Vector3(3,-8,2)
 			var before := rain.to_global(drop)
-			# At high speed only the spawning volume moves; living drops must not
-			# translate with the player, which makes rain look glued to the screen.
+			# Em alta velocidade só o volume de spawn se move; as gotas vivas não podem
+			# se deslocar com o jogador, o que faz a chuva parecer colada na tela.
 			var travel := Vector3(83.33*.1,0,0)
 			camera.position += travel
 			COVERAGE.follow(rain,camera,focus+travel)

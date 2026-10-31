@@ -1,5 +1,5 @@
 extends SceneTree
-## Exercise the actual root shutdown signal with pending, detached GPU owners.
+## Exercita o sinal real de desligamento da raiz com donos de GPU pendentes e desligados.
 const RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 func _initialize() -> void: run.call_deferred()
 func run() -> void:
@@ -17,8 +17,8 @@ func run() -> void:
 	branch.add_child(child)
 	RELEASE.retire(branch)
 	var leaf_id := leaf.get_instance_id()
-	# Cache evictions are detached whole subtrees, not merely detached GPU
-	# leaves. Shutdown may happen before even their first disposal slice.
+	# Despejos de cache são subárvores inteiras desligadas, não só folhas de GPU
+	# desligadas. O desligamento pode acontecer antes até da primeira fatia de descarte delas.
 	var detached := Node3D.new()
 	var detached_child := MeshInstance3D.new()
 	detached_child.mesh=BoxMesh.new()
@@ -33,8 +33,8 @@ func run() -> void:
 		assert(not is_instance_id_valid(leaf_id),"detached GPU owner must be freed")
 		assert(not is_instance_id_valid(detached_id),"pending detached subtree must be freed before renderer teardown")
 		assert(not is_instance_id_valid(detached_child_id),"pending detached subtree's GPU owner must be freed")
-		# Another owner's shutdown callback can hand work over after the queue's
-		# own shutdown callback has already run. There will be no next tick.
+		# O callback de desligamento de outro dono pode passar trabalho adiante depois que o
+		# callback de desligamento da própria fila já rodou. Não haverá próximo tick.
 		var late := Node3D.new()
 		var late_child := MeshInstance3D.new()
 		late_child.mesh=SphereMesh.new()

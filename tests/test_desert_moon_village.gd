@@ -1,6 +1,6 @@
 extends SceneTree
-## Real region admission/re-entry plus swept moves with the production actor
-## capsule for player and NPC. Rendered depth/performance remain separate.
+## Admissão/reentrada real na região mais movimentos varridos com a cápsula de ator de produção
+## para jogador e NPC. Profundidade renderizada/desempenho continuam à parte.
 const REGION := preload("res://world/desert/DesertRegion.gd")
 const VILLAGE := preload("res://world/desert/DesertMoonVillage.gd")
 const ACTOR := preload("res://scripts/Actor.gd")

@@ -1,6 +1,6 @@
 extends SceneTree
-## Component diagnostic in the rendered production scene. Switches only the
-## parked car's audio selection metadata; it does not certify normal driving.
+## Diagnóstico de componente na cena de produção renderizada. Troca só os
+## metadados de seleção de áudio do carro estacionado; não certifica direção normal.
 const BANKS := preload("res://audio/EngineBankCache.gd")
 const PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
@@ -17,8 +17,8 @@ func frame(_delta: float) -> void:
 	if previous > 0: frames.append(float(now - previous) / 1000.0)
 	previous = now
 func legacy_read_and_copy(audio: Node, family: String) -> void:
-	# Diagnostic control of the removed hot path, after the common selector.
-	# Tank already reused its procedural bank in the original implementation.
+	# Controle de diagnóstico do caminho quente removido, depois do seletor comum.
+	# O tanque já reaproveitava o banco procedural na implementação original.
 	if family == "tank": return
 	for index in 7:
 		audio.layers[index].stop()
@@ -44,8 +44,8 @@ func run() -> void:
 	current_scene = world
 	while world.session == null or not world.session.ready_for_play: await process_frame
 	world.session.state.intro.stage = "complete"
-	# Nearby audio has already started warming; wait for every real family so
-	# this isolates foreground reuse, rather than racing background loading.
+	# O áudio próximo já começou a aquecer; espera cada família real para que
+	# isto isole o reaproveitamento em primeiro plano, em vez de correr contra o carregamento em segundo plano.
 	for family in BANKS.all_families():
 		while not BANKS._family_loaded(family): await process_frame
 		BANKS.bank(family)

@@ -1,6 +1,6 @@
 extends "res://tests/test_desert_drag_runtime.gd"
-## Temporal visual review in real Main, with the production race framing.
-## Fixture clock sweep is diagnostic; capture cadence is not an FPS benchmark.
+## Revisão visual temporal no Main real, com o enquadramento de corrida da produção.
+## A varredura do relógio da fixture é diagnóstico; a cadência de captura não é benchmark de FPS.
 func begin_temporal(race) -> bool:
 	var previous := root.get_camera_3d()
 	var preview := Camera3D.new()

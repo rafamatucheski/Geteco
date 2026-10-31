@@ -1,5 +1,5 @@
 extends SceneTree
-## Runtime identity/state and bounded ownership of recently streamed desert cells.
+## Identidade/estado em runtime e posse limitada das células do deserto recém-carregadas em streaming.
 const CACHE := preload("res://world/desert/DesertChunkCache.gd")
 const TERRAIN := preload("res://world/desert/DesertTerrainMesh.gd")
 const HORIZON := preload("res://world/desert/DesertHorizon.gd")

@@ -1,5 +1,5 @@
 extends SceneTree
-## Close art inspection plus physical clearance of the parked models; not an FPS benchmark.
+## Inspeção de arte de perto mais folga física dos modelos estacionados; não é benchmark de FPS.
 const ART := preload("res://world/desert/DesertArchitecture.gd")
 var failures: Array[String]=[]
 func _initialize() -> void: run.call_deferred()
@@ -33,7 +33,7 @@ func run() -> void:
 	await physics_frame
 	var space := root.world_3d.direct_space_state
 	for truck in trucks:
-		# A standing actor must be blocked at cab and both trailers, from either side.
+		# Um ator em pé precisa ser bloqueado na cabine e nos dois reboques, de qualquer lado.
 		for z in [-11.0,-2.3,8.2]:
 			for side in [-1.0,1.0]:
 				var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(truck.position+Vector3(side*3,.95,z),truck.position+Vector3(0,.95,z),1))

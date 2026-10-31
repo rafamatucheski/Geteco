@@ -1,6 +1,6 @@
 extends SceneTree
-## CPU attribution only. Run in separate processes, cold and --prime-char.
-## Uses a production-spawned vehicle with the real explosion signal connected.
+## Só atribuição de CPU. Rode em processos separados, frio e com --prime-char.
+## Usa um veículo criado pela produção com o sinal real de explosão ligado.
 const DAMAGE := preload("res://gameplay/vehicle_effects/VehicleDamage.gd")
 var OUTPUT := "res://evidence/video-review-phase4-20260924/"
 var world
@@ -63,7 +63,7 @@ func run() -> void:
 	car.destroyed.connect(_after_explosion)
 	world.gameplay.explosion_occurred.connect(func(_point: Vector3, _radius: float, _source): explosions += 1)
 	await frames(120)
-	# Diagnostic-only ablation preserves reproducibility after startup prewarm.
+	# A ablação só de diagnóstico preserva a reprodutibilidade depois do pré-aquecimento do início.
 	if "--cold-char" in OS.get_cmdline_user_args():
 		DAMAGE._char_albedo = null
 		DAMAGE._char_embers = null

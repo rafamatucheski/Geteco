@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Rendered production city, same seeded crowd deaths before/after; no personal saves.
+## Cidade de produção renderizada, mesmas mortes semeadas na multidão antes/depois; sem saves pessoais.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	var variant := "before"

@@ -1,6 +1,6 @@
 extends SceneTree
-## Menu -> normal startup must keep one curtain and one slideshow clock.
-## Calls presentation only; never prepares a slot or writes a personal save.
+## Menu -> início normal precisa manter uma cortina e um relógio de slideshow.
+## Chama só a apresentação; nunca prepara um slot nem grava um save pessoal.
 var failures: Array[String] = []
 
 func _initialize() -> void: run.call_deferred()

@@ -39,9 +39,9 @@ func run():
 			if candidate.park == park:
 				row = candidate
 				break
-		# Population routes are seeded per visit. If the eligible pedestrian is
-		# just outside activation range, approach that real actor rather than
-		# spawning a stand-in or changing the production activation radius.
+		# As rotas da população são semeadas a cada visita. Se o pedestre elegível estiver
+		# logo fora do alcance de ativação, aproxima-se desse ator real em vez de
+		# criar um substituto ou mudar o raio de ativação da produção.
 		if row.is_empty() and not park:
 			for actor in world.people:
 				if actor.identity % 5 == 0 and not actor.has_meta("skate_used") and actor.is_on_floor() and not actor.dead and actor.health == 100:

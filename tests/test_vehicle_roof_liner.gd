@@ -1,5 +1,5 @@
 extends SceneTree
-## Cabin lining must remain below the roof, clear of the sloping rear glazing.
+## O forro da cabine precisa ficar abaixo do teto, livre do vidro traseiro inclinado.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 var failures: Array[String] = []

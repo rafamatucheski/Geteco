@@ -1,6 +1,6 @@
 extends SceneTree
-## Regression: authored trim must never become a tail lamp through substring matching.
-## Uses actual factory/Vehicle/equipment for all 59; no driving or visual/FPS claims.
+## Regressão: acabamento autoral nunca pode virar lanterna traseira por casamento de substring.
+## Usa fábrica/Vehicle/equipamento reais para os 59; sem afirmações de direção nem visuais/FPS.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const EQUIPMENT := preload("res://gameplay/VehicleEquipment.gd")
 const REGISTRY := preload("res://runtime/RedesignedFleet.gd")

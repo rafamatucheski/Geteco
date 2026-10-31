@@ -51,7 +51,7 @@ func run() -> void:
 		world.player.teleport(anchor+Vector3(0,0,i*.18))
 		await create_timer(.15).timeout
 		await capture(output_dir+"/motion-%02d.png"%i)
-	# Record authored overlaps, independently of shadows or shader output.
+	# Registra sobreposições autorais, independente de sombras ou da saída do shader.
 	var factory = SURFACE.new()
 	factory.configure()
 	var overlaps: Array = []

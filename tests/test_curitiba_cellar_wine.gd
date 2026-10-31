@@ -1,6 +1,6 @@
 extends SceneTree
-## Transactional wine stock, healing, intoxication and save validation. The
-## Main runner separately verifies physical availability and UI integration.
+## Estoque transacional de vinho, cura, embriaguez e validação de save. O
+## runner do Main confere à parte a disponibilidade física e a integração com a UI.
 const WINE := preload("res://gameplay/wine/WineState.gd")
 const CATALOG := preload("res://gameplay/wine/WineCatalog.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")

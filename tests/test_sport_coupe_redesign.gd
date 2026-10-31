@@ -1,6 +1,6 @@
 extends SceneTree
-## Geometry budget and functional contracts of the authored sport coupe.
-## Uses real Vehicle, equipment, paint, damage and door code; no personal save.
+## Orçamento de geometria e contratos funcionais do cupê esportivo autoral.
+## Usa código real de Vehicle, equipamento, pintura, dano e portas; sem save pessoal.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const BASELINE_MESHES := 39
@@ -99,7 +99,7 @@ func run() -> void:
 	a.repair()
 	check(a.health == a.max_health and not first_paint.detail_enabled and is_equal_approx(first_paint.roughness, original_roughness), "repair restores authored paint finish and health")
 	check(second_paint.albedo_color.is_equal_approx(Color("31577a")), "damage and repair do not touch the other coupe")
-	# Actual movement proves the existing wheel animation still drives the new wheels.
+	# O movimento real prova que a animação existente das rodas ainda aciona as rodas novas.
 	a.set_external_driver(true)
 	a.brake_input = false
 	a.throttle_input = 1.0

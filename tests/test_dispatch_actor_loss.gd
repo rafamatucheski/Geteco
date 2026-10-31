@@ -1,7 +1,7 @@
 extends SceneTree
-## Real dispatch/Responder lifecycle after the incident source disappears.
-## The timeout case advances only the already-running deadline to its boundary;
-## travel, crew creation, event delivery and cleanup use production components.
+## Ciclo de vida real de dispatch/Responder depois que a origem do incidente desaparece.
+## O caso de timeout só avança o prazo já em andamento até o limite;
+## viagem, criação da equipe, entrega de eventos e limpeza usam componentes de produção.
 const KIT := preload("res://tests/dispatch/DispatchTestKit.gd")
 const RULES := preload("res://gameplay/dispatch/DispatchRules.gd")
 var failures: Array[String] = []
@@ -45,8 +45,8 @@ func scenario(timeout: bool) -> void:
 	var notices := {"incident_invalid":0,"crew_lost":0,"incident_abandoned":0,"unit_finished":0}
 	controller.dispatch_event.connect(func(event_name: String, data: Dictionary):
 		if data.get("unit") == unit and notices.has(event_name): notices[event_name] += 1)
-	# Remove the patient only after the actual responder has left the vehicle.
-	# This guarantees returning takes time and exposes the repeated-loss bug.
+	# Remove o paciente só depois que o responder real saiu do veículo.
+	# Isso garante que a volta leve tempo e expõe o bug da perda repetida.
 	var working := false
 	for i in 2400:
 		await physics_frame
@@ -81,7 +81,7 @@ func scenario(timeout: bool) -> void:
 	if timeout:
 		check(not is_instance_valid(crew),label+": expired live responder is released")
 	else:
-		# A dead responder remains an injury for the real emergency manager.
+		# Um responder morto continua sendo um ferido para o gerenciador real de emergências.
 		check(is_instance_valid(crew) and crew.dead,label+": corpse is retained for the mortician")
 	for i in 3600:
 		if unit.finished: break

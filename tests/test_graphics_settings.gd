@@ -4,7 +4,7 @@ const OPTIONS := preload("res://runtime/GraphicsOptions.gd")
 var failures: Array[String] = []
 var checks := 0
 class ReflectionFixture extends "res://world/city_look/CoastalPlanarReflections.gd":
-	# Isolate the production quality subscriber from world registration/capture work.
+	# Isola o assinante de qualidade de produção do trabalho de registro/captura do mundo.
 	func _ready() -> void: set_process(false)
 	func _exit_tree() -> void: pass
 

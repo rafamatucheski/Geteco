@@ -1,5 +1,5 @@
 extends SceneTree
-## Exterior ground ownership only; no interior setup or gameplay mutation.
+## Só a posse do chão externo; sem preparação de interior nem mutação de jogo.
 const CEMETERY := preload("res://world/regions/OriginalCemetery3D.gd")
 const SALVAGE := preload("res://world/places/SalvageYardNative.gd")
 const TERMINAL := preload("res://world/urban_detail/HarborTerminalModel3D.gd")
@@ -62,8 +62,8 @@ func run() -> void:
 	inspect(meshes,(780.0*700.0+50.0*140.0)/256.0,"cemetery paths/lawn")
 	check(cemetery.solids.get_child_count()>0,"Cemetery physical support remains")
 	cemetery.free()
-	# The standalone fixture above has no region reservation. Exercise the real
-	# keeper floor union separately: foundation plus only the protruding step.
+	# A fixture independente acima não tem reserva de região. Exercita à parte a união real
+	# de piso do zelador: fundação mais só o degrau saliente.
 	var context := FacadeContext.new()
 	context.harbor_facade_ground = preload("res://world/urban_detail/HarborFacadeGround.gd").footprints()
 	root.add_child(context)

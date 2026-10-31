@@ -1,5 +1,5 @@
 extends SceneTree
-## Same rendered production scene and finite contact workload before/after the audio patch.
+## Mesma cena de produção renderizada e carga finita de contatos antes/depois do patch de áudio.
 var world
 var label := "baseline"
 var output := ""

@@ -35,7 +35,7 @@ func run() -> void:
 	world.add_child(floor)
 	var street := CollisionStreet.new()
 	world.add_child(street)
-	street.set_physics_process(false) # The fixture has no player to observe.
+	street.set_physics_process(false) # A fixture não tem jogador para observar.
 	var striking := VEHICLE.new()
 	striking.archetype = "sport_coupe"
 	world.add_child(striking)
@@ -131,7 +131,7 @@ func run() -> void:
 	trace_panel_materials("after_world_queue_free")
 	await world.tree_exited
 	trace_panel_materials("after_world_tree_exited")
-	# Deletion and audio playback shutdown finish outside this physics callback.
+	# A exclusão e o desligamento da reprodução de áudio terminam fora deste callback de física.
 	await create_timer(.1).timeout
 	print("VEHICLE_CRASH_DAMAGE checks=10 failures=", failures.size())
 	quit(0 if failures.is_empty() else 1)

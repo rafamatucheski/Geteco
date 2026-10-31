@@ -70,8 +70,8 @@ func check(condition: bool, label: String) -> void:
 		push_error(label)
 
 func await_contact(gameplay) -> void:
-	# Melee damage and grenade release belong to the visible contact frame.
-	# Exercise normal physics until that bounded animation window completes.
+	# O dano corpo a corpo e o lançamento da granada pertencem ao quadro de contato visível.
+	# Exercita a física normal até essa janela limitada de animação terminar.
 	for frame in 45:
 		if gameplay._pending_contact.is_empty(): return
 		await physics_frame
@@ -226,7 +226,7 @@ func run() -> void:
 	state.safe = true
 	gameplay.explode(target.position + Vector3.UP, 4, 50, player)
 	check(target.health == snapshot_before_safe_blast, "in-flight explosion cannot follow player into safe zone")
-	# Shop economics and capacity use the production Economy, not CombatState.
+	# A economia e a capacidade da loja usam a Economy de produção, não o CombatState.
 	var economy_state := EconomyState.new()
 	economy_state.economy.grant_reward("gameplay_fixture", 4000)
 	economy_state.economy.grant_weapon("pistol")
@@ -289,7 +289,7 @@ func run() -> void:
 		check(responder.visual.get_child_count() > 4, "original emergency rig built: " + role)
 		check(responder.find_children("*", "SubViewport", true, false).is_empty(), "native emergency rig: " + role)
 		responder.queue_free()
-	# Finish the prior explosive/fire fixture before testing self-defense.
+	# Termina a fixture anterior de explosivo/fogo antes de testar a legítima defesa.
 	for effect in gameplay.emergency.fires:
 		if is_instance_valid(effect): effect.queue_free()
 	for child in gameplay.get_children():

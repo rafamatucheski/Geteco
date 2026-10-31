@@ -1,5 +1,5 @@
 extends SceneTree
-## Exterior infill must remain solid and leave the edited streets usable.
+## O preenchimento externo precisa continuar sólido e deixar as ruas editadas utilizáveis.
 const CATALOG = preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
 const FACTORY = preload("res://world/urban_detail/UrbanBuildingFactory.gd")
 const SKATE = preload("res://activities/skate/SkateParkLayout.gd")

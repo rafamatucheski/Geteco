@@ -1,5 +1,5 @@
 extends SceneTree
-## Physical fixtures use real Dante and sewer resident bodies, not point queries.
+## As fixtures físicas usam os corpos reais do Dante e dos moradores do esgoto, não consultas de ponto.
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const NETWORK := preload("res://world/places/sewers/SewerNetwork.gd")
 const RESIDENT := preload("res://world/places/sewers/SewerResident.gd")
@@ -46,7 +46,7 @@ func run() -> void:
 		var dante_cases := sweep(dante, room)
 		var resident_cases := sweep(resident, room)
 		check(dante_cases > 0 and resident_cases == dante_cases, id + ": jogador e NPC reais varridos")
-		# Solid tags must cover the transformed mesh after crate/bench rotations.
+		# As tags de sólido precisam cobrir a malha transformada depois das rotações de caixa/banco.
 		var inventory_ok := true
 		var tags := 0
 		for mesh in room.model.find_children("*", "MeshInstance3D", true, false):

@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Rendered A/B/C and night comparison in production Main; never saves.
+## Comparação renderizada A/B/C e noturna no Main de produção; nunca salva.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	var variant := "before"
@@ -39,8 +39,8 @@ func run() -> void:
 	var settings := root.get_node("V2Settings")
 	report.settings = {"shadows":settings.shadow_quality,"atlas":settings.SHADOW_ATLAS[settings.shadow_quality],"msaa":root.msaa_3d,"scale":root.scaling_3d_scale}
 	var planar: Node = world.get_node("CityLook/CoastalPlanarReflections")
-	# Diagnostic only: compare with the same world/materials and capture manager
-	# suspended. Never changes the saved settings or production defaults.
+	# Só diagnóstico: compara com o mesmo mundo/materiais e o gerenciador de captura
+	# suspenso. Nunca muda as configurações salvas nem os padrões de produção.
 	var without_planar := "--without-planar" in OS.get_cmdline_user_args()
 	if without_planar:
 		planar.set_process(false)
@@ -65,7 +65,7 @@ func run() -> void:
 		weather.weather_state = entry[2]
 		weather.rain_intensity = .25
 		if weather.get("coastal_wetness") != null: weather.coastal_wetness = 1.0 if entry[2]==1 else 0.0
-		# Settle weather before timing; the dedicated transition capture observes fades.
+		# Assenta o clima antes de cronometrar; a captura dedicada de transição observa os fades.
 		for i in 200:
 			weather.atmosphere_step = .2
 			weather._update()

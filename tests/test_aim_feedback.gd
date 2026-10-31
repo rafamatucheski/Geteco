@@ -74,7 +74,7 @@ func run() -> void:
 	reticle._process(0.0)
 	check(not reticle.visible, "Reticle control hides on release")
 	Input.action_press("aim")
-	# Exercise the combat permission contract without pretending a room was loaded.
+	# Exercita o contrato de permissão de combate sem fingir que uma sala foi carregada.
 	world.session.set_process(false)
 	state.set_location("harbor", "maciota")
 	await frames(3)

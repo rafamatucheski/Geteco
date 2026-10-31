@@ -86,7 +86,7 @@ func run():
 	session.world.gameplay.health = 100
 	session.state.economy = ECONOMY.new()
 	session.state.economy.enable_grid_inventory()
-	# Occupy the shoulder slot; a second long gun cannot fit in two pockets.
+	# Ocupa o slot do ombro; uma segunda arma longa não cabe em dois bolsos.
 	check(session.state.economy.grant_weapon("hunting_rifle"),"occupy carried long gun slot")
 	for i in 100:
 		car.vehicle_id = TRUNK.PREFIX+str(i)

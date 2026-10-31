@@ -1,6 +1,6 @@
 extends SceneTree
-## Production Main, actual mixer output and finite optional on/off measurement.
-## Recording and PCM inspection are excluded from all performance windows.
+## Main de produção, saída real do mixer e medição opcional finita ligado/desligado.
+## A gravação e a inspeção do PCM ficam fora de todas as janelas de desempenho.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const L := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const CANYON := preload("res://runtime/desert/canyon/CanyonState.gd")
@@ -107,8 +107,8 @@ func run() -> void:
 	finish(0 if failures.is_empty() else 1)
 
 func capture_bridge() -> void:
-	# Additional child bus captures only the real canyon sources, while a second
-	# recorder on Master preserves the unmodified full game mix for review.
+	# Um bus filho adicional captura só as fontes reais do cânion, enquanto um segundo
+	# gravador no Master preserva a mistura completa do jogo sem alteração para revisão.
 	AudioServer.add_bus()
 	source_probe_bus=AudioServer.bus_count-1
 	AudioServer.set_bus_name(source_probe_bus,"CanyonCaptureProbe")
@@ -156,8 +156,8 @@ func store_recording(record: AudioEffectRecord, filename: String, minimum_second
 	recordings.append({"file":filename,"seconds":stream.get_length(),"sampled_peak":peak,"rate":stream.mix_rate,"stereo":stream.stereo})
 
 func check_ambient_mute() -> void:
-	# Isolate the Ambient branch in the actual Master mix for this diagnostic.
-	# Bus settings are restored before any performance or presentation sample.
+	# Isola o ramo Ambient na mistura real do Master para este diagnóstico.
+	# As configurações dos buses são restauradas antes de qualquer amostra de desempenho ou apresentação.
 	for index in AudioServer.bus_count:
 		original_buses.append({"index":index,"mute":AudioServer.is_bus_mute(index)})
 		AudioServer.set_bus_mute(index,index!=0 and index!=ambient_bus)

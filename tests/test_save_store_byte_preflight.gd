@@ -1,6 +1,6 @@
 extends SceneTree
-## Pure persistence contract; no Main, rendering, timings or personal save path.
-## Select baseline/candidate with --store-script=res://path/to/SaveStore.gd.
+## Contrato puro de persistência; sem Main, renderização, tempos nem caminho de save pessoal.
+## Seleciona linha de base/candidato com --store-script=res://path/to/SaveStore.gd.
 const STATE := preload("res://runtime/GameState.gd")
 const BASE_STORE := preload("res://runtime/SaveStore.gd")
 var StoreScript: Script
@@ -81,8 +81,8 @@ func _exact_limit() -> void:
 	var state = STATE.new()
 	state.world_state["save_boundary_payload"] = ""
 	var overhead := JSON.stringify(state.snapshot(),"\t").to_utf8_buffer().size()
-	# World extension values are retained by GameState; only fill this fixture's
-	# field so the actual serialized UTF-8 size is exactly the reader boundary.
+	# Os valores de extensão do mundo são retidos pelo GameState; preenche só o campo
+	# desta fixture para que o tamanho UTF-8 serializado real seja exatamente o limite do leitor.
 	state.world_state.save_boundary_payload = "x".repeat(BASE_STORE.MAX_BYTES-overhead)
 	var encoded := JSON.stringify(state.snapshot(),"\t").to_utf8_buffer()
 	check(encoded.size()==BASE_STORE.MAX_BYTES and STATE.new().restore_snapshot(state.snapshot()),"exact-limit control has a valid 2 MiB snapshot")
@@ -91,8 +91,8 @@ func _exact_limit() -> void:
 	check(FileAccess.get_file_as_bytes(store.path)==encoded,"valid save writes exactly the serialized UTF-8 bytes")
 	var loaded = STATE.new()
 	var load_ok: bool = bool(store.load_into(loaded).get("ok",false))
-	# JSON parses numbers as floats; compare both snapshots in that same numeric
-	# representation, retaining every key and value, including the full payload.
+	# O JSON lê números como floats; compara os dois snapshots nessa mesma representação
+	# numérica, mantendo cada chave e valor, incluindo o conteúdo completo.
 	var strict_equal: bool = loaded.snapshot()==state.snapshot()
 	var json_equal: bool = JSON.parse_string(JSON.stringify(loaded.snapshot()))==JSON.parse_string(JSON.stringify(state.snapshot()))
 	cases.append({"name":"exact_limit_roundtrip","load_ok":load_ok,"strict_variant_equal":strict_equal,"json_values_equal":json_equal})

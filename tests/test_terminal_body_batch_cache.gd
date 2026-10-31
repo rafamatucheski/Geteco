@@ -45,7 +45,7 @@ func same_materials(a: Array, b: Array) -> bool:
 	if a.size() != b.size(): return false
 	for index in a.size():
 		if material_signature(a[index].material_override) != material_signature(b[index].material_override): return false
-		# Palette/damage overrides belong to the instance, never the shared mesh.
+		# As sobrescritas de paleta/dano pertencem à instância, nunca à malha compartilhada.
 		for surface in a[index].mesh.get_surface_count():
 			if a[index].mesh.surface_get_material(surface) != null: return false
 	return true
@@ -71,7 +71,7 @@ func same_collision(a, b) -> bool:
 
 func run() -> void:
 	for frame in 2: await process_frame
-	# This standalone process owns the test cache. Production never clears it.
+	# Este processo independente é dono do cache de teste. A produção nunca o limpa.
 	COACH._body_batches.clear()
 	var stage := Node3D.new()
 	root.add_child(stage)

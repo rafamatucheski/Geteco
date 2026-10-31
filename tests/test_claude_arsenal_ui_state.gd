@@ -68,17 +68,17 @@ func _run() -> void:
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
 	current_scene = world
-	# Main prewarms regions and lifts the loading curtain asynchronously.
-	# A physics-frame count expires during that work; use the existing live
-	# session's finite wall-clock startup budget and require actual admission.
+	# O Main pré-aquece as regiões e levanta a cortina de carregamento de forma assíncrona.
+	# Uma contagem de quadros de física expira durante esse trabalho; usa o orçamento
+	# finito de início em tempo de parede da sessão viva existente e exige admissão real.
 	if not await wait_for_session():
 		quit(1)
 		return
 	session = world.session
 	economy = session.state.economy
 	check(world.production.no_save, "fixture não usa save pessoal")
-	# Assertions below intentionally exercise the Portuguese presentation.
-	# Set only this process's translation locale; never write user settings.
+	# As asserções abaixo exercitam de propósito a apresentação em português.
+	# Define só o locale de tradução deste processo; nunca grava configurações do usuário.
 	var original_locale := TranslationServer.get_locale()
 	TranslationServer.set_locale("pt_BR")
 	var original_economy: Dictionary = economy.snapshot()
@@ -104,11 +104,11 @@ func _run() -> void:
 	check("JÁ POSSUI" in catalog.caption.text and not "R$" in catalog.caption.text, "pistola possuída mostra posse, não R$0", catalog.caption.text)
 	check(catalog.buy.disabled and catalog.buy.text == "JÁ POSSUI", "compra de arma possuída fica desabilitada", catalog.buy.text)
 	await capture("catalogo-pistola-possuida")
-	# Both pistols and SMGs use the single short-weapon personal slot. MP5
-	# starts with 180 rounds; _grid_register_weapon only admits its overflow
-	# while can_carry_weapon(id) is true. A bag alone cannot make a second
-	# slotted weapon carryable. Store the pistol through the real transfer API
-	# so the MP5 can occupy that slot, retaining ownership of both weapons.
+	# Pistolas e SMGs usam o único slot pessoal de arma curta. A MP5
+	# começa com 180 balas; _grid_register_weapon só admite o excedente dela
+	# enquanto can_carry_weapon(id) é true. Uma mochila sozinha não torna uma segunda
+	# arma de slot carregável. Guarda a pistola pela API real de transferência
+	# para que a MP5 ocupe esse slot, mantendo a posse das duas armas.
 	check(economy.grid_equip_bag("backpack"), "fixture equipa mochila para reserva excedente")
 	check(economy.grid_store_weapon("pistol", "trunk"), "fixture guarda pistola no porta-malas e libera slot curto")
 	check(economy.personal_loadout().get("curta", "") == "", "slot curto está livre antes de receber SMG")
@@ -146,7 +146,7 @@ func _run() -> void:
 	check(catalog.handle_input(action("weapon_previous")) and catalog.stock[catalog.selection] == "shotgun", "ação de arma anterior volta item")
 	await capture("catalogo-saldo-insuficiente")
 
-	# Utilities are separate from weapons and use the same production transactions.
+	# Utilitários são separados das armas e usam as mesmas transações de produção.
 	var selected_weapon: int = catalog.selection
 	catalog.category_buttons[5].pressed.emit()
 	check(catalog.utilities_active and catalog.category_buttons[5].button_pressed, "aba Utilitários é a sexta categoria")
@@ -154,8 +154,8 @@ func _run() -> void:
 	check(catalog.preview.render_target_update_mode == SubViewport.UPDATE_DISABLED, "Utilitários suspende renderização da arma oculta")
 	check(not catalog.ammo_button.visible and not catalog.workbench_button.visible, "Utilitários não mistura munição e edição de arma")
 	check(catalog.lockpick_button.is_visible_in_tree() and catalog.belt_flashlight_button.is_visible_in_tree() and catalog.customize_button.is_visible_in_tree(), "gazua, cinto e lanterna tática ficam somente em Utilitários")
-	# Verify the icon in every utility row, including texture pixels. A total
-	# descendant count alone cannot establish that all three cards have icons.
+	# Confere o ícone em toda linha de utilitário, incluindo os pixels da textura. Uma contagem
+	# total de descendentes sozinha não estabelece que os três cartões têm ícones.
 	var utility_icons_valid := true
 	var utility_icon_details: Array[String] = []
 	for utility_action: Button in [catalog.lockpick_button,catalog.belt_flashlight_button,catalog.customize_button]:

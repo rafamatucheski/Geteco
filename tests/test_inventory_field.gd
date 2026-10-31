@@ -133,7 +133,7 @@ func run() -> void:
 	world.player.teleport(dropped_node.global_position+Vector3(0,.01,.9)); await frames()
 	check(field.perform(key),"recover dropped bag by physical interaction")
 	check(economy.grid_snapshot().storage==content and economy.grid_snapshot().ground.is_empty(),"recover exactly once")
-	# Physical trunk access uses the real vehicle rear and occlusion query.
+	# O acesso físico ao porta-malas usa a traseira real do veículo e a consulta de oclusão.
 	var car=session.personal_car._car()
 	car.vehicle_id="personal_monaliza"; car.controlled=false; car.external_input=false; car.speed=0
 	session.garage_rewards.cars.personal_monaliza=car
@@ -156,7 +156,7 @@ func run() -> void:
 	before=economy.snapshot()
 	check(not field.move("trunk",0,"storage") and economy.snapshot()==before,"stale open trunk cannot transfer after moving away")
 	field.close()
-	# Exercise the actual visible button and keyboard route, not only the adapter.
+	# Exercita o botão visível real e a rota pelo teclado, não só o adaptador.
 	session.show_inventory(); await frames()
 	check(field.ui.drop_button!=null and field.ui.drop_button.visible,"drop control discoverable in actual HUD")
 	field.ui.drop_button.pressed.emit(); await frames()

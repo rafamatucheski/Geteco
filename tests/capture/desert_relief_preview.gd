@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_desert_horizon.gd"
-## Rendered visual review only. Reuses real Main setup and camera, never reports FPS.
+## Só revisão visual renderizada. Reaproveita a preparação e a câmera reais do Main, nunca reporta FPS.
 func sample_warmup() -> void:
 	await create_timer(1.0).timeout
 

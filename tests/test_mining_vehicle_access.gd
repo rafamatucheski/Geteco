@@ -1,5 +1,5 @@
 extends SceneTree
-## Real door selection and clipping; no Main/streaming or rendered-FPS claim.
+## Seleção e recorte reais de porta; sem afirmação de Main/streaming nem de FPS renderizado.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const FLEET := preload("res://gameplay/mining/MiningFleet.gd")
 class ProbeWorld extends Node3D:

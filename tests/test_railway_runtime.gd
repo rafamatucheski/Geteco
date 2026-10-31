@@ -1,7 +1,7 @@
 extends SceneTree
-## Real Main/.NET round trips, campaign gates, modal ownership and isolated save.
-## Only initial positioning/campaign prerequisites are fixtures; normal rides are
-## timed by the production controller and never advance route distance from here.
+## Idas e voltas reais no Main/.NET, portões de campanha, posse de modal e save isolado.
+## Só o posicionamento inicial/pré-requisitos de campanha são fixtures; as viagens normais são
+## cronometradas pelo controlador de produção e nunca avançam a distância da rota daqui.
 const NETWORK := preload("res://world/railway/RailwayNetwork.gd")
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
@@ -100,7 +100,7 @@ func run() -> void:
 	var cancel := action("ui_cancel")
 	check(transit.handle_input(cancel), "controller cancel consumed by station modal")
 	check(not world.session.modal and not world.player.input_locked and not transit.busy() and not ui.is_station_open(), "closing selector releases modal, player and UI together")
-	# Subsequent saves may only target the already-validated unique fixture path.
+	# Os saves seguintes só podem mirar o caminho de fixture único já validado.
 	world.production.no_save = false
 	check(await ride("harbor_north", false, true), "normal outward city ride completes without skip or fixture movement")
 	if not failures.is_empty(): finish(); return
@@ -109,8 +109,8 @@ func run() -> void:
 	check(await ride("mountain_pines", true, false), "fast travel reaches mountain before final city mission")
 	check(await ride("harbor_central", true, false), "fast travel returns from mountain")
 	if not failures.is_empty(): finish(); return
-	# Use the supported legacy prefix: this scenario has not played Jessica's
-	# independent quest and must not forge its completion/world-state cross ledger.
+	# Usa o prefixo legado aceito: este cenário não jogou a missão independente
+	# da Jessica e não pode forjar a conclusão nem o livro-razão cruzado de estado do mundo dela.
 	check(world.session.state.campaign.restore_snapshot(FIXTURE.before_document(true)), "final-mission prerequisite fixture accepted")
 	check(preload("res://runtime/GameState.gd").new().restore_snapshot(world.session.state.snapshot()), "campaign prerequisite fixture preserves full-save cross contracts")
 	check(not transit.station_available(NETWORK.get_station("desert_copper")), "desert remains locked immediately before final document")
@@ -137,8 +137,8 @@ func run() -> void:
 	transit.cancel_for_transition()
 	check(not transit.busy() and world.player.is_physics_processing() and world.player.collision_layer == initial_collision.x and world.player.collision_mask == initial_collision.y, "recovery cancellation releases train ownership and collision")
 	check(not world.camera.locked and world.camera.is_processing() and transit.save_block_reason().is_empty(), "recovery cancellation restores camera and save eligibility")
-	# Recovery owns the destination after cancel_for_transition. Return its test
-	# fixture to the already verified safe platform before persisting a checkpoint.
+	# A recuperação é dona do destino depois de cancel_for_transition. Devolve a fixture
+	# de teste dela à plataforma segura já conferida antes de persistir um checkpoint.
 	world.player.teleport(NETWORK.get_station("harbor_central").arrival)
 	await frames(12)
 	check(world.session.save_game(), "actual session saves supported station arrival")

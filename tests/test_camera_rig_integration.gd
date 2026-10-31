@@ -15,8 +15,8 @@ func frames(count: int) -> void:
 
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
-	# The measured V1 reference belongs to the original exterior framing.
-	# Player preferences must not silently select the diagonal camera instead.
+	# A referência medida da V1 pertence ao enquadramento externo original.
+	# As preferências do jogador não podem selecionar em silêncio a câmera diagonal no lugar.
 	root.get_node("V2Settings").camera_view = 0
 	var world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)

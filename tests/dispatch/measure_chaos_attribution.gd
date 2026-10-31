@@ -1,14 +1,14 @@
 extends SceneTree
-## Diagnostic only: paired workload windows with processing callbacks of one
-## existing group gated at a time. All nodes, collision shapes and visual assets
-## remain. The gate disables inherited processing of the subtree, not native
-## physics bodies; differences are NOT pure engine-physics or exclusive CPU cost.
-## Lifecycle set_physics_process/set_process writes remain authoritative.
-## Frame intervals and callback intervals of every physics tick are retained.
-## Sentinels bracket scene callbacks only; they exclude native solver work that
-## runs outside those callbacks. First tick -> process_frame is separately named
-## a batch wall-time estimate and must not be called pure physics CPU time.
-## Rendered only; --no-save --skip-arrival, isolated user directory by executor.
+## Só diagnóstico: janelas de carga pareadas com os callbacks de processamento de um
+## grupo existente bloqueados por vez. Todos os nós, formas de colisão e recursos visuais
+## ficam. O bloqueio desliga o processamento herdado da subárvore, não os corpos de
+## física nativos; as diferenças NÃO são custo puro de física do motor nem custo exclusivo de CPU.
+## As escritas de set_physics_process/set_process do ciclo de vida continuam valendo.
+## Os intervalos de quadro e de callback de cada tick de física são guardados.
+## Sentinelas delimitam só callbacks da cena; excluem o trabalho do solver nativo que
+## roda fora desses callbacks. Primeiro tick -> process_frame é chamado à parte de
+## estimativa de tempo de parede do lote e não deve ser chamado de tempo puro de CPU da física.
+## Só renderizado; --no-save --skip-arrival, diretório de usuário isolado pelo executor.
 
 const WARM_LIMIT_SECONDS := 60.0
 const MIN_UNITS := 6
@@ -261,8 +261,8 @@ func _groups() -> Dictionary:
 	return {"dispatch_controller": [dispatch], "dispatch_vehicles": vehicles, "police_on_foot": foot,
 		"emergency_crews_and_fires": crews, "air_and_k9": air, "ambient_traffic": ambient, "pedestrians": people}
 
-## process_mode is an independent gate: process flags can still change underneath.
-## Respect an explicit lifecycle change of mode during the diagnostic as well.
+## process_mode é um bloqueio independente: as flags de process ainda podem mudar por baixo.
+## Respeita também uma mudança explícita de modo pelo ciclo de vida durante o diagnóstico.
 func _suspend(nodes: Array) -> Array:
 	var changed: Array = []
 	var seen := {}
@@ -295,8 +295,8 @@ func _resume(changed: Array) -> Dictionary:
 			report.errors.append(row.path+": restoration changed authoritative process flags")
 	return report
 
-## Meaningful engine-node check: the old unconditional physics=true restoration
-## fails the first case. No gameplay mock or permissive assertion is involved.
+## Checagem significativa de nó do motor: a antiga restauração incondicional physics=true
+## falha no primeiro caso. Não há mock de jogabilidade nem asserção permissiva.
 func _check_gate_contract() -> Dictionary:
 	var results := {"passed":false,"flags_preserved":false,"mode_override_preserved":false,"freed_skipped":false,
 		"disabled_excluded":false,"inherited_child_preserved":false,"explicit_child_excluded":false}

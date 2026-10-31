@@ -1,5 +1,5 @@
 extends Control
-## Full-world cartography. All map geometry is a read-only production snapshot.
+## Cartografia do mundo inteiro. Toda a geometria do mapa é um snapshot só leitura da produção.
 const STYLE := preload("res://ui/GameStyle.gd")
 const ART := preload("res://tests/fixtures/world_map_baseline/Cartography.gd")
 const DATA := preload("res://tests/fixtures/world_map_baseline/WorldMapData.gd")
@@ -223,8 +223,8 @@ func _redraw() -> void:
 	var factor := _base_zoom*zoom
 	for layer in [terrain,geography]:
 		layer.position=_area.size*.5-center*factor; layer.scale=Vector2.ONE*factor
-	# Retained draw commands: panning never retriangulates land or road strokes.
-	# Rebuild screen-space casings only when the zoom changes meaningfully.
+	# Comandos de desenho retidos: arrastar nunca retriangula terra nem traços de rua.
+	# Reconstrói os contornos em espaço de tela só quando o zoom muda de forma significativa.
 	if _geometry_scale==0 or absf(factor/_geometry_scale-1)>.08:
 		_geometry_scale=factor; geography.queue_redraw()
 	canvas.queue_redraw()
@@ -327,7 +327,7 @@ func draw_terrain(target: CanvasItem) -> void:
 
 func draw_geography(target: CanvasItem) -> void:
 	var scale_value := maxf(.001,_base_zoom*zoom)
-	# Coast casing follows actual land polygons; no generated image used for roads.
+	# O contorno da costa segue os polígonos reais de terra; nenhuma imagem gerada é usada para as ruas.
 	for land in atlas.lands:
 		var edge: PackedVector2Array=land.polygon.duplicate()
 		if edge.size()<3: continue

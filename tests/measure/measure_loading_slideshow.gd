@@ -12,12 +12,12 @@ func run() -> void:
 	DisplayServer.window_move_to_foreground()
 	Engine.max_fps = 60
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
-	# Settings applies the saved fullscreen mode deferred on startup.
+	# Settings aplica o modo de tela cheia salvo de forma adiada no início.
 	await process_frame
 	await process_frame
 	DisplayServer.window_move_to_foreground()
-	# Without foreground, the native presenter deliberately does not paint. Zero
-	# frames must never be reported as a successful loading performance sample.
+	# Sem primeiro plano, o apresentador nativo de propósito não pinta. Zero
+	# quadros nunca pode ser reportado como amostra bem-sucedida de desempenho de carregamento.
 	var focus_deadline := Time.get_ticks_msec()+30000
 	while not root.has_focus() and Time.get_ticks_msec()<focus_deadline:
 		await process_frame
@@ -40,7 +40,7 @@ func run() -> void:
 	var stages := {}
 	var intervals: Array[Dictionary] = []
 	var previous_stage := "Carregando…"
-	# Match the menu's threaded loading path, not change_scene_to_file's blocking IO.
+	# Segue o caminho de carregamento em thread do menu, não a E/S bloqueante de change_scene_to_file.
 	ResourceLoader.load_threaded_request("res://Main.tscn")
 	var scene_requested := false
 	while release > 0 or Time.get_ticks_usec()-began < 180000000:

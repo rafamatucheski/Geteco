@@ -1,7 +1,7 @@
 extends SceneTree
-## Before/after actual Digo room presentation, same Main/car/save/cameras.
-## Baseline is captured before connecting new props/materials/music. No legacy UI.
-## Stable samples exclude JPEG/PNG encoding. Never run concurrently.
+## Apresentação real da sala do Digo antes/depois, mesmo Main/carro/save/câmeras.
+## A linha de base é capturada antes de ligar props/materiais/música novos. Sem UI legada.
+## As amostras estáveis excluem a codificação JPEG/PNG. Nunca rode em paralelo.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const DIGO := preload("res://systems/campaign/DigoProgress.gd")
@@ -62,12 +62,12 @@ func _run() -> void:
 	if launch == null: push_error("Missing launch autoload"); _finish(1); return
 	old_path = str(launch.selected_path)
 	launch.selected_path = path
-	# Control the same 1280x720 viewport throughout startup too. User display
-	# preferences can change in concurrent sessions; never persist this override.
+	# Controla o mesmo viewport 1280x720 também durante o início. As preferências de tela
+	# do usuário podem mudar em sessões concorrentes; nunca persiste esta sobrescrita.
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	DisplayServer.window_set_size(Vector2i(1280,720))
-	# Deterministic read-only capture: real desktop input must not navigate the
-	# panel while the runner records it. Main UI interaction has its own runner.
+	# Captura só leitura determinística: a entrada real do desktop não pode navegar no
+	# painel enquanto o runner grava. A interação com a UI do Main tem o próprio runner.
 	root.gui_disable_input = true
 	seed(19102026)
 	world = load("res://Main.tscn").instantiate()
@@ -190,8 +190,8 @@ func _show_case(variant: String) -> void:
 	var parts: Dictionary = TUNED.duplicate(true)
 	ADAPTER.attach(car,parts)
 	_stationary_case = variant == "room_occupied"
-	# This is a stationary visual/performance sample, not a driving test. Keep
-	# physics active but reject physical keyboard/controller input during it.
+	# É uma amostra visual/de desempenho parada, não um teste de direção. Mantém
+	# a física ativa, mas rejeita entrada física de teclado/controle durante ela.
 	if _stationary_case:
 		car.input_locked = true
 		return
@@ -271,8 +271,8 @@ func _capture(name: String) -> void:
 	root.get_texture().get_image().save_png(folder.path_join(name))
 
 func _capture_temporal(label := "live-tuned") -> Dictionary:
-	# Every rendered frame is captured in this separate QA pass. Encoding and the
-	# temporary 30 FPS cap never contaminate the earlier performance samples.
+	# Todo quadro renderizado é capturado nesta passada de QA separada. A codificação e o
+	# limite temporário de 30 FPS nunca contaminam as amostras de desempenho anteriores.
 	var destination := folder.path_join("temporal-"+label)
 	DirAccess.make_dir_recursive_absolute(destination)
 	var original_max_fps := Engine.max_fps

@@ -64,7 +64,7 @@ func run() -> void:
 	check(driving.leave(),"Can exit stopped vehicle")
 	await wait_body_transition()
 	check(world.player.visible and world.player.collision_mask == 7 and world.camera.target == world.player,"Exit restores walking, collisions and camera")
-	# Place car in an isolated test area, then block one / both door sides.
+	# Põe o carro numa área de teste isolada e depois bloqueia um / os dois lados das portas.
 	car.place(Vector3(18,0.04,37),PI/2)
 	world.player.teleport(car.to_global(Vector3(-1.65,0.04,0.15)))
 	await frames(2)
@@ -87,7 +87,7 @@ func run() -> void:
 	await frames(2)
 	check(driving.leave(),"Exit works once obstruction is removed")
 	await wait_body_transition()
-	# Sweep at full speed into a solid. Body cannot tunnel or climb.
+	# Varre em velocidade máxima contra um sólido. O corpo não pode atravessar nem subir.
 	car.place(Vector3(-10,0.04,8),0)
 	world.player.teleport(Vector3(-11.65,0.04,8))
 	await frames(2)
@@ -107,7 +107,7 @@ func run() -> void:
 	await wait_body_transition()
 	car.place(Vector3(-4.25,0.04,9),0)
 	world.player.teleport(Vector3(-8.3,0.04,3))
-	# Traffic uses real route progress and physical motion, with no teleport wrap.
+	# O trânsito usa progresso real na rota e movimento físico, sem teleporte de volta.
 	var traffic_before: Array[float] = []
 	for vehicle in world.traffic.cars: traffic_before.append(vehicle.distance_travelled)
 	await frames(4800)
@@ -116,7 +116,7 @@ func run() -> void:
 		print("TRAFFIC ",i," travelled=",vehicle.distance_travelled-traffic_before[i]," laps=",vehicle.route_laps," position=",vehicle.position," blocked=",vehicle.blocked)
 		check(vehicle.distance_travelled-traffic_before[i] > 300,"Traffic must keep circulating for 80 seconds")
 		check(vehicle.route_laps >= 1,"Traffic must complete a loop")
-	# A real NPC ahead must be sensed and the traffic vehicle must yield.
+	# Um NPC real à frente precisa ser percebido e o veículo de trânsito precisa ceder.
 	var lead = world.traffic.cars[0]
 	lead.place(Vector3(-1.8,0.04,-15),PI)
 	lead.speed = 5.5
@@ -132,7 +132,7 @@ func run() -> void:
 	resident.set_physics_process(true)
 	await frames(120)
 	check(lead.speed > 1,"Traffic resumes after obstruction clears")
-	# Activity requires the occupied vehicle, ordered checkpoints and a full stop.
+	# A atividade exige o veículo ocupado, checkpoints em ordem e parada total.
 	world.player.teleport(car.to_global(Vector3(-1.65,0.04,0.15)))
 	await frames(2)
 	check(driving.interact(),"Can enter for route activity")

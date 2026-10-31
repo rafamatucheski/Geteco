@@ -41,8 +41,8 @@ func run() -> void:
 	hidden.add_child(hidden_mesh)
 	check(await INDEX.rebuild(weakref(edit),weakref(source),self), "Hidden replacement geometry can be indexed before swapping views")
 	check(edit.meshes.size() == 1 and edit.groups.has("visible") and not edit.groups.has("hidden"), "Index preserves authored hidden subtrees")
-	# A finite oversized tree forces at least one slice boundary. Closing the
-	# control while the independent job waits must return false without resuming it.
+	# Uma árvore grande demais finita força pelo menos um limite de fatia. Fechar o
+	# controle enquanto o job independente espera precisa devolver false sem retomá-lo.
 	for i in 50000: source.add_child(Node3D.new())
 	edit.call_deferred("free")
 	var result: bool = await INDEX.rebuild(weakref(edit),weakref(source),self)

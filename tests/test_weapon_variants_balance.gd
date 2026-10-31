@@ -1,6 +1,6 @@
 extends SceneTree
-## Product contracts: distinct choices, bounded burst accuracy, native suppression,
-## authored reload timing and no draw/ammo loophole in protected garages.
+## Contratos do produto: escolhas distintas, precisão de rajada limitada, supressão nativa,
+## tempo de recarga autoral e nenhuma brecha de sacar/munição nas garagens protegidas.
 const CATALOG := preload("res://gameplay/WeaponCatalog.gd")
 const CUSTOM := preload("res://gameplay/WeaponCustomization.gd")
 const HANDLING := preload("res://gameplay/WeaponHandling.gd")

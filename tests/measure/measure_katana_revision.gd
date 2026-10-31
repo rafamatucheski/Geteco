@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_katana_session.gd"
-## Same 30-second steel benchmark as baseline; extra checks run AFTER that window.
+## Mesmo benchmark de aço de 30 segundos da linha de base; checagens extras rodam DEPOIS dessa janela.
 var revision_moves: Array[int] = []
 func phase(label: String, use_rage := false) -> void:
 	await super.phase(label,use_rage)
@@ -10,7 +10,7 @@ func picture(label: String) -> void:
 	root.get_texture().get_image().save_png(output_dir.path_join(label+".png"))
 
 func verify_revision() -> void:
-	# Exercise the real damage -> HUD -> keyboard chain, not a pre-filled meter.
+	# Exercita a cadeia real dano -> HUD -> teclado, não um medidor pré-preenchido.
 	var saved_health: float = gameplay.health
 	var saved_armor: float = gameplay.armor
 	gameplay.god_mode = false
@@ -49,8 +49,8 @@ func verify_revision() -> void:
 		var victim = preload("res://gameplay/PoliceAgent.gd").new() if kind == "police" else preload("res://scripts/Actor.gd").new()
 		if kind == "police":
 			victim.controller = gameplay
-			# New weapon pickups auto-equip in production. Own this drop before the
-			# fixture dies so the remaining strikes still exercise the katana.
+			# Coletas de arma nova se equipam sozinhas na produção. Toma posse deste drop antes de a
+			# fixture morrer para que os golpes restantes ainda exercitem a katana.
 			state.grant_weapon(victim.weapon_id)
 		state.equip_weapon("katana")
 		world.add_child(victim)
@@ -80,7 +80,7 @@ func verify_revision() -> void:
 		gameplay.clear_loot()
 		await frames(3)
 	check(revision_moves.slice(0,3)==[0,1,2],"deliberate clicks cycle three distinct attacks")
-	# Clear aim/attack recovery, then use the desktop's actual movement actions.
+	# Limpa a recuperação de mira/ataque e então usa as ações reais de movimento do desktop.
 	root.get_node("GameInput").touch_aim=Vector2.ZERO
 	await frames(90)
 	var start: Vector3 = world.player.global_position

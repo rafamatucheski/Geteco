@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_railway.gd"
-## Isolated Main scene. Visual comparison by default; --reveal-benchmark opts
-## into 30s A/B samples and must be launched without other rendered sessions.
+## Cena do Main isolada. Comparação visual por padrão; --reveal-benchmark opta
+## por amostras A/B de 30s e precisa ser lançado sem outras sessões renderizadas.
 var temporal_count := 0
 var temporal_trace: Array = []
 var temporal_errors: Array[String] = []
@@ -35,7 +35,7 @@ func capture(id: String) -> void:
 		break
 	if not chosen: push_error("No valid building approach"); quit(1); return
 	await compare("building-foot")
-	# Real boarding transfers the camera to the actual production car.
+	# O embarque real transfere a câmera para o carro de produção real.
 	var car = world.driving.car
 	var road_point := _rail_point
 	if not await stage_reveal(road_point): quit(1); return
@@ -101,7 +101,7 @@ func temporal_review() -> void:
 	var car = world.driving.car
 	while Time.get_ticks_usec()-start < 30000000:
 		var seconds := (Time.get_ticks_usec()-start)/1000000.0
-		# Bounded genuine steering/drive input under the viaduct, then stop and orbit.
+		# Entrada genuína limitada de esterço/direção sob o viaduto, depois para e orbita.
 		car.throttle_input = .3 if seconds < 7 else -.25 if seconds < 13 else 0
 		car.brake_input = seconds >= 13
 		if seconds > 16: world.camera.heading = (seconds-16)*.18

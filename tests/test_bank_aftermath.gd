@@ -73,8 +73,8 @@ func run() -> void:
 	cycle.advance(0.0, true)
 	check(heist.can_enter_bank() and heist.data.bank_cycle == 1 and not heist.data.bank_alarm, "offscreen reopening resets robbery and changes generation")
 	check(heist.data.guards == [160.0,160.0] and heist.data.clerks == [100.0,100.0], "new team recovers full intended health")
-	# The functional fixture has no live gameplay physics tick; model the
-	# restored living player, which resets this latch in _physics_process.
+	# A fixture funcional não tem tick de física de jogo vivo; modela o
+	# jogador vivo restaurado, que reinicia esta trava em _physics_process.
 	heist._death_latched = false
 	heist.data.bank_alarm = true
 	heist.player_died()

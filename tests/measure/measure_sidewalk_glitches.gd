@@ -24,8 +24,8 @@ func run() -> void:
 	world.camera.set_process_unhandled_input(false)
 	world.session.set_process_input(false)
 	world.diagnostic_label.hide()
-	# Diagnostic A/B only: reconstruct the former coplanar draw list without
-	# reverting shared production files. Cold startup is not a before/after claim.
+	# Só A/B de diagnóstico: reconstrói a antiga lista de desenho coplanar sem
+	# reverter arquivos de produção compartilhados. O início frio não é afirmação de antes/depois.
 	if "--legacy-surfaces" in OS.get_cmdline_user_args():
 		var region = world.production.region
 		region.harbor_urban_surface._visible_surfaces.assign(region.harbor_urban_surface._surfaces)

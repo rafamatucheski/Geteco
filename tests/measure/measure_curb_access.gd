@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Real Main corner route, with traffic/NPCs and no save writes.
+## Rota real de esquina no Main, com trânsito/NPCs e sem gravar save.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args():
 		quit(2)
@@ -57,7 +57,7 @@ func run() -> void:
 		frames.append((now-last)/1000.0)
 		last = now
 		var t := (now-begin)/1000000.0
-		# Finite back-and-forth through both vertical edges; no teleport in samples.
+		# Vai e vem finito pelas duas bordas verticais; nenhum teleporte nas amostras.
 		world.player.automatic_direction = Vector3(0, 0, 1 if fmod(t, 4.0) < 2.0 else -1)
 	world.player.automatic_direction = Vector3.ZERO
 	var report := {"gpu":RenderingServer.get_video_adapter_name(), "engine":Engine.get_version_info().string, "renderer":RenderingServer.get_current_rendering_method(), "resolution":str(root.size), "vsync":DisplayServer.window_get_vsync_mode(), "max_fps":Engine.max_fps, "population":world.people.size(), "traffic_children":world.traffic.get_child_count(), "summary":stats(frames), "warmup":stats(warm), "frames_ms":frames, "warmup_ms":warm}

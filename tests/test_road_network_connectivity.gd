@@ -57,7 +57,7 @@ func run():
 	for destination in [Vector3(680.625,0,-476.25),Vector3(758,0,-323),Vector3(715,0,-477.375),Vector3(748,0,-438)]:
 		check(graph.route_between(city,destination)!=null,"Current map outbound to "+str(destination))
 		check(graph.route_between(destination,city)!=null,"Current map inbound from "+str(destination))
-	# Every road eligible for general vehicle routing belongs to the same directed network.
+	# Toda rua elegível para o roteamento geral de veículos pertence à mesma rede dirigida.
 	for reverse in [false,true]:
 		var adjacency: Dictionary={}
 		for i in graph.vertices.size(): adjacency[i]=[]

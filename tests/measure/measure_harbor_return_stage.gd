@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_intermittent_stalls.gd"
-## Same productive route and observers; aggregate only its 30–60 second return.
+## Mesma rota produtiva e observadores; agrega só o retorno de 30–60 segundos.
 const RETURN_START_USEC := 30000000
 const RETURN_END_USEC := 60000000
 var _return_start_usec := 0
@@ -32,8 +32,8 @@ func run() -> void:
 	_export_return_stage()
 
 func capture_interval(now: int, previous: int) -> void:
-	# Close before the parent collects the last completed interval. It includes
-	# the work since the preceding process-frame signal, before this callback.
+	# Fecha antes de o pai coletar o último intervalo concluído. Ele inclui
+	# o trabalho desde o sinal de process-frame anterior, antes deste callback.
 	if capture_start > 0 and _return_start_usec != 0 and _return_end_usec == 0 and now-capture_start >= RETURN_END_USEC:
 		_stop_return_stage()
 	super.capture_interval(now,previous)
@@ -42,13 +42,13 @@ func capture_interval(now: int, previous: int) -> void:
 		var finish := _return_end_usec if _return_end_usec != 0 else now
 		if int(row.start_usec) >= _return_start_usec and int(row.end_usec) <= finish:
 			_return_expected_rows += 1
-			# Keep fast intervals too. Parent deduplication and DETAIL_LIMIT remain
-			# authoritative; any loss invalidates both the parent and this report.
+			# Guarda também os intervalos rápidos. A deduplicação do pai e o DETAIL_LIMIT continuam
+			# valendo; qualquer perda invalida o pai e este relatório.
 			capture_keep(row)
 		elif int(row.end_usec) > _return_start_usec and int(row.start_usec) < finish and _return_edges.size() < 2:
 			_return_edges.append(row)
-	# Start after collecting the interval that crosses the 30-second boundary;
-	# its earlier callbacks must not be retrospectively counted as aggregate work.
+	# Começa depois de coletar o intervalo que cruza o limite de 30 segundos;
+	# os callbacks anteriores dele não podem ser contados retroativamente como trabalho agregado.
 	if capture_start > 0 and _return_start_usec == 0 and now-capture_start >= RETURN_START_USEC and now-capture_start < RETURN_END_USEC:
 		_return_start_usec = Time.get_ticks_usec()
 		_return_cpu_start = _boundary_sample()
@@ -99,8 +99,8 @@ func _boundary_totals(rows: Array[Dictionary]) -> Dictionary:
 		if cpu < 0: result.invalid_cpu_pairs += 1
 		else: result.draw_cpu_usec += cpu
 		for tick in row.physics_ticks:
-			# Between consecutive process-frame signals, physics belongs after
-			# the previous draw. Reject overlap instead of double-counting it.
+			# Entre sinais consecutivos de process-frame, a física pertence ao período depois
+			# do desenho anterior. Rejeita sobreposição em vez de contá-la duas vezes.
 			if int(tick.start_usec) < draw_post or int(tick.end_usec) > finish or int(tick.end_usec) < int(tick.start_usec):
 				result.invalid_boundary_rows += 1
 				continue

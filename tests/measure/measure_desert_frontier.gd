@@ -34,8 +34,8 @@ func run() -> void:
 	output=FIXTURE.output_dir("desert-frontier-measure")
 	if output.is_empty(): fail("Cannot create isolated evidence folder"); return
 	fingerprint=source_fingerprint()
-	# Parent fingerprint covers central/audio/HUD/vehicle code; include nested
-	# expansion and this exact fixture while freezing the initial file list.
+	# A impressão digital do pai cobre o código central/áudio/HUD/veículo; inclui a expansão
+	# aninhada e esta fixture exata enquanto congela a lista inicial de arquivos.
 	add_source_tree("res://world/desert",fingerprint)
 	for path in [get_script().resource_path,"res://tests/measure/measure_desert.gd","res://scripts/CameraRig.gd","res://gameplay/Gameplay.gd","res://gameplay/CobraAgent.gd"]: fingerprint[path]=FileAccess.get_sha256(path)
 	process_start=process_metadata()
@@ -85,14 +85,14 @@ func run() -> void:
 		world.session.weather._update()
 		await warm_and_measure(str(setup.id))
 		if not errors.is_empty(): finish(); return
-		# The camera correction only affects the canyon. Its first scenario retains
-		# the identical startup, pose and sampling window of the full reference run.
+		# A correção de câmera só afeta o cânion. O primeiro cenário mantém
+		# o início, a pose e a janela de amostragem idênticos da rodada de referência completa.
 		if "--canyon-only" in OS.get_cmdline_user_args(): break
 	finish()
 
 func admit(at: Vector3, camera_size: float) -> bool:
-	# Establish player residency BEFORE waiting for collision synchronization.
-	# Initial placement and these later placements do not prove physical access.
+	# Estabelece a residência do jogador ANTES de esperar a sincronização de colisão.
+	# O posicionamento inicial e estes posteriores não provam acesso físico.
 	var expected: float=preload("res://world/desert/DesertTerrainMesh.gd").surface_height(Vector2(at.x,at.z))
 	world.player.teleport(Vector3(at.x,expected+2,at.z))
 	region.set_focus(at)
@@ -233,7 +233,7 @@ func finish() -> void:
 	if reports.size()!=expected_scenarios: errors.append("Selected complete scenario samples required: %d"%expected_scenarios)
 	if not output.is_empty():
 		var result := {"complete":reports.size()==expected_scenarios,"requested_scenarios":expected_scenarios,"valid":errors.is_empty(),"comparison":"current-state absolute measurement only; previous relief baseline invalidated by external overlap","errors":errors,"scenarios":reports,"photos":photos,"engine":Engine.get_version_info().string,"gpu":RenderingServer.get_video_adapter_name(),"cpu":OS.get_processor_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"window_size":str(DisplayServer.window_get_size()),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"msaa":root.msaa_3d,"physics_ticks_per_second":Engine.physics_ticks_per_second,"isolated_save":save_path,"source_stable":fingerprint==ended,"source_sha256_start":fingerprint,"source_sha256_end":ended,"process_start":process_start,"process_end":process_metadata(),"external_overlap_verification":"Coordinator lease/process history required; endpoint snapshots alone do not exclude interference during samples","notes":"Actual rendered Main .NET, population24 requested, alive ordinary actor, native routing, normal camera. Each scenario10s warmup and30s steady wall-frame intervals; no screenshot/process-list/source hashing inside samples. Camp uses existing CameraRig target_size45 review zoom to include three non-aggressive bandits at33m; canyon and ruins size20. Fixture ground-ray placements do not prove access traversal. No invulnerability, disabled NPC controller or modal pause. CPU/physics monitors are sampled counters, not summed frame cost. This provides no before/after or universal lighting/FPS certification."}
-		# Read generation/cache metadata after all sampling, never in the frame loop.
+		# Lê os metadados de geração/cache depois de toda a amostragem, nunca no laço de quadros.
 		result["terrain_mesh"]=preload("res://world/desert/DesertTerrainMesh.gd").diagnostics()
 		FileAccess.open(output.path_join("report.json"),FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))
 	print("DESERT_FRONTIER_MEASURE_DONE ",output," valid=",errors.is_empty())

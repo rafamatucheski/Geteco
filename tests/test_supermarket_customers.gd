@@ -17,8 +17,8 @@ func run() -> void:
 	for frame in 9000:
 		await physics_frame
 		for customer in market.customers:
-			# A grown rectangle falsely rejects a round capsule beside furniture corners.
-			# Measure circle-to-box distance using the Actor's actual .30 m radius.
+			# Um retângulo aumentado rejeita falsamente uma cápsula redonda ao lado dos cantos da mobília.
+			# Mede a distância círculo-caixa usando o raio real de .30 m do Actor.
 			var overlaps := false
 			for bounds in market.solid_bounds:
 				var closest := Vector2(clampf(customer.position.x,bounds.position.x,bounds.end.x),clampf(customer.position.z,bounds.position.z,bounds.end.z))

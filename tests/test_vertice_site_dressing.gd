@@ -1,6 +1,6 @@
 extends SceneTree
-## Only the new dressing is present: clearance queries cannot be masked by
-## existing architecture, guard booths or the known dock-handling machinery.
+## Só o acabamento novo está presente: as consultas de folga não podem ser mascaradas pela
+## arquitetura existente, pelas guaritas nem pelo maquinário conhecido de manuseio da doca.
 const DRESSING := preload("res://gameplay/urban_v1/VerticeSiteDressing.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const ROUTES := preload("res://gameplay/urban_v1/PortHaulRoutes.gd")

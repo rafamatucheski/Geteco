@@ -1,7 +1,7 @@
 extends SceneTree
-## A populated save list must not start a world before the player clicks.
-## No --no-save flag: it masked the previous automatic-preload regression.
-## Every slot is redirected to a unique fixture directory before menu creation.
+## Uma lista de saves preenchida não pode iniciar um mundo antes de o jogador clicar.
+## Sem a flag --no-save: ela mascarava a regressão anterior de pré-carregamento automático.
+## Todo slot é redirecionado para um diretório de fixture único antes de criar o menu.
 class IsolatedLaunch extends "res://runtime/SessionLaunch.gd":
 	var folder := ""
 	func slot_path(id: String) -> String:

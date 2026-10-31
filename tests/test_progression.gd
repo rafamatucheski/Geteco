@@ -92,7 +92,7 @@ func _weapons() -> void:
 	_check(not state.equip_weapon("rifle"), "Cannot equip an unowned weapon")
 
 func _persistence() -> void:
-	# Unique directory: never read or alter the player's progress file.
+	# Diretório único: nunca lê nem altera o arquivo de progresso do jogador.
 	var directory := "user://GetecoV2/tests/progression_%d_%d" % [OS.get_process_id(), Time.get_ticks_usec()]
 	var path := directory + "/progress.json"
 	var state := Progression.new()

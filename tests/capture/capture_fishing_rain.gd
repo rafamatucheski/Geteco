@@ -1,8 +1,8 @@
 extends "res://tests/measure/measure_fishing_life.gd"
-## Real Main / native fishing input / rain contact / water-response capture.
-## Default: every rendered frame saved as JPEG, capped at 30 FPS, 32 s per rain.
-## --measure: 30 s per rain without images; preserve the configured cap/resolution.
-## Build Harbor.csproj before running with Godot 4.7.2 .NET console.
+## Captura no Main real / entrada nativa de pesca / contato da chuva / resposta da água.
+## Padrão: todo quadro renderizado salvo como JPEG, limitado a 30 FPS, 32 s por chuva.
+## --measure: 30 s por chuva sem imagens; preserva o limite/resolução configurados.
+## Compile Harbor.csproj antes de rodar com o console do Godot 4.7.2 .NET.
 const COVERAGE := preload("res://runtime/atmosphere/PrecipitationCoverage.gd")
 var failures: Array[String] = []
 var checks := 0
@@ -21,12 +21,12 @@ func check(value: bool, message: String) -> void:
 	if not value: failures.append(message)
 
 func _process(delta: float) -> bool:
-	# Reuse the existing E/hold/release driver and its real wall-clock samples.
+	# Reaproveita o driver existente de E/segurar/soltar e suas amostras reais de relógio de parede.
 	super._process(delta)
 	if weather_locked_for_capture and is_instance_valid(world):
 		var weather = world.session.weather
 		var camera: Camera3D = world.get_viewport().get_camera_3d()
-		# Freezing the weather clock must not freeze precipitation at the old camera.
+		# Congelar o relógio do clima não pode congelar a precipitação na câmera antiga.
 		COVERAGE.follow(weather.precipitation, camera, world.player.global_position)
 		weather.drag_rain.apply(weather.precipitation, camera, delta, weather.weather_state == 2)
 		weather.drag_sky.update_lightning(weather.storm.envelope(weather.storm.flash_age) if weather.weather_state == 2 else 0.0, weather.storm.flashes)
@@ -35,8 +35,8 @@ func _process(delta: float) -> bool:
 func run() -> void:
 	measure_mode = "--measure" in OS.get_cmdline_user_args()
 	folder = FIXTURE.output_dir("fishing-rain-measure" if measure_mode else "fishing-rain-capture")
-	# Shared-machine startup alone took >200 s in the captured timeout. Keep a
-	# finite overall budget, plus a separate observation budget after readiness.
+	# Só o início numa máquina compartilhada levou >200 s no timeout capturado. Mantém um
+	# orçamento total finito, mais um orçamento de observação separado depois da prontidão.
 	create_timer(420.0, true, false, true).timeout.connect(_timeout)
 	if DisplayServer.get_name() == "headless":
 		check(false, "requires the real rendered Main scene")
@@ -129,7 +129,7 @@ func run() -> void:
 	check(not world.session.fishing.active and not world.player.input_locked, "ending fishing restores player control")
 	var old_id: int = site.get_instance_id()
 	var old_field: WeakRef = weakref(site.water_dynamics)
-	# Exercise the real residency owner's release and remount, never clone the site.
+	# Exercita a liberação e a remontagem do dono real da residência, nunca clona o local.
 	var away := Vector3(132, .15, 72)
 	world.production.region.set_focus(away)
 	world.production.region.prepare_collision_at(away)
@@ -232,7 +232,7 @@ func _contacts(site: Node3D, ground: Node3D) -> Dictionary:
 		var point: Vector3 = batch.get_instance_transform(index).origin
 		if not site.contains_water(point): continue
 		result.count += 1
-		# Rings are placed four cm above contact; subsequent waves can move ±3.5 cm.
+		# Os anéis ficam quatro cm acima do contato; as ondas seguintes podem mover ±3.5 cm.
 		result.max_error = maxf(float(result.max_error), absf(point.y - .04 - site.rain_surface_height_at(point)))
 	return result
 

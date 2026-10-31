@@ -1,6 +1,6 @@
 extends "res://tests/tank_control/test_heavy_impacts.gd"
-## Exact content equivalence, not a headless FPS test. The reference uses the
-## same original generation rectangle with spatial partitioning disabled.
+## Equivalência exata de conteúdo, não um teste de FPS headless. A referência usa o
+## mesmo retângulo de geração original com a partição espacial desligada.
 const COVER := preload("res://world/desert/DesertGroundCover.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
@@ -39,7 +39,7 @@ func run() -> void:
 	FRAGILE.query(Vector3(outside_center.x,0,outside_center.y),80)
 	check(FRAGILE.cells.is_empty(),"all discarded chunks leave no stale breakable entries after query")
 	Engine.remove_meta("geteco_live_preview_build")
-	# Let the real debris collision-grace timers expire before their scene exits.
+	# Deixa os timers reais de tolerância de colisão dos destroços expirarem antes de a cena sair.
 	await create_timer(.4,false,true).timeout
 	world.free()
 	RELEASE.flush()
@@ -126,13 +126,13 @@ func compare_cell(rect: Rect2,exercise_hits: bool,retire: bool) -> void:
 				vehicle.position=item.point+Vector3(0,0,6)
 				CRUSH.set_planar(vehicle,Vector3.FORWARD*20)
 				var before:=street.get_child_count()
-				# Isolate this indexed contact from neighbouring shrubs. The real car
-				# sweep and FragileProps hit/debris path remain unchanged.
+				# Isola este contato indexado dos arbustos vizinhos. A varredura real do carro
+				# e o caminho de acerto/destroços do FragileProps continuam inalterados.
 				var registry: Dictionary=FRAGILE.cells
 				FRAGILE.cells={FRAGILE._key(item.point):[item]}
 				street._hit_props(vehicle,vehicle.horizontal_velocity,Vector3.FORWARD*10)
 				FRAGILE.cells=registry
-				# Rendering and physics interpolation consume the update across ticks.
+				# A renderização e a interpolação da física consomem a atualização ao longo dos ticks.
 				for frame in 2: await physics_frame
 				await RenderingServer.frame_post_draw
 				if item.state!="down" or not is_zero_approx(item.multimesh.get_instance_transform(item.index).basis.determinant()): print("DRAG_BATCH_IMPACT ",part," ",kind," state=",item.state," transform=",item.multimesh.get_instance_transform(item.index)," expected_base=",item.base)

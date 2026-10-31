@@ -162,8 +162,8 @@ func _run():
 	player.free()
 	gameplay.free()
 	stop_reward_audio()
-	# Room detach queues actors and their deferred rig/fall setup; drain that
-	# lifecycle before SceneTree teardown so the fixture does not leak resources.
+	# Desligar a sala enfileira os atores e a preparação adiada de rig/queda deles; esvazia esse
+	# ciclo de vida antes da desmontagem da SceneTree para a fixture não vazar recursos.
 	await process_frame
 	await process_frame
 	for message in failures: push_error(message)

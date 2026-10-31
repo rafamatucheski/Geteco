@@ -1,7 +1,7 @@
 extends SceneTree
-## Read-only census: source roads and sampled near-coplanar upper surfaces.
-## Queued-for-deletion batching inputs are excluded; pairs are candidates,
-## not automatically defects (paint, foundations and decks need classification).
+## Censo só leitura: ruas de origem e superfícies superiores quase coplanares amostradas.
+## Entradas de lote na fila de exclusão ficam de fora; pares são candidatos,
+## não defeitos automáticos (pintura, fundações e decks precisam de classificação).
 const NATIVE := preload("res://world/regions/NativeRegion.gd")
 const DESERT := preload("res://world/desert/DesertRegion.gd")
 var cells := {}

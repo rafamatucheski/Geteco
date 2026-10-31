@@ -73,8 +73,8 @@ func run() -> void:
 				reports[-1]["competing_after"]=after
 			else: performance_skipped="Other gameplay process prevents interior FPS approval: "+competing
 			Engine.max_fps=60
-		# Each pickup is reached at its authored physically clear floor position.
-		# Swept furniture/circulation coverage is in the separate room contract.
+		# Cada coleta é alcançada na posição de piso autoral fisicamente livre.
+		# A cobertura varrida de mobília/circulação fica no contrato separado da sala.
 		for reward in world.session.room.reward_points:
 			check(world.session.position_clear(reward.position+Vector3.UP*.05),id+" pickup capsule has support and clearance")
 			world.player.teleport(reward.position+Vector3.UP*.05)
@@ -115,7 +115,7 @@ func run() -> void:
 		if id!=HOMES.IDS[-1]:
 			if not await leave(): finish(); return
 			check(residents()==0,id+" departure releases resident")
-	# Reload through the production scene replacement and the same isolated slot.
+	# Recarrega pela substituição de cena da produção e pelo mesmo slot isolado.
 	var expected_balance: int=world.session.state.economy.balance
 	var prior_instance: int=world.get_instance_id()
 	world.session.load_game()

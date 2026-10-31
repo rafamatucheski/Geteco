@@ -68,7 +68,7 @@ func run() -> void:
 		print("FOLIAGE_VISUAL_CAPTURE_COMPLETE")
 		quit()
 		return
-	# Fixed-camera sample in the real city scene.
+	# Amostra de câmera fixa na cena real da cidade.
 	var start_point: Vector3 = sites.values()[0]
 	place(start_point)
 	await frames(120)
@@ -82,7 +82,7 @@ func run() -> void:
 		samples.append(float(now-previous)/1000.0)
 		previous = now
 		var elapsed := float(now-started)/1000000.0
-		pass # Fixed camera keeps the same foliage and city load throughout sampling.
+		pass # A câmera fixa mantém a mesma carga de folhagem e cidade durante toda a amostragem.
 		if "--temporal" in OS.get_cmdline_user_args() and elapsed >= next_capture:
 			await shot("motion_%03d" % capture_index)
 			capture_times.append(float(Time.get_ticks_usec()-started)/1000000.0)

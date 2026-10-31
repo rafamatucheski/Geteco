@@ -1,7 +1,7 @@
 extends SceneTree
-## Real Main/.NET, ordinary boarding and physical 800 m pass. Isolated save.
-## Private recording buses forward to the ORIGINAL SFX/Music buses; no global
-## gain changes during the run. Captures motor contributions separately.
+## Main/.NET real, embarque comum e passada física de 800 m. Save isolado.
+## Buses privados de gravação repassam para os buses ORIGINAIS de SFX/Music; nenhuma mudança
+## global de ganho durante a rodada. Captura as contribuições do motor separadamente.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 var world
@@ -152,8 +152,8 @@ func run() -> void:
 
 func finish() -> void:
 	recording=false
-	# Freeze all five captures before exporting any WAV, so filesystem time
-	# cannot extend the tails of the later files.
+	# Congela as cinco capturas antes de exportar qualquer WAV, para que o tempo do sistema de arquivos
+	# não estique as caudas dos arquivos posteriores.
 	for row in records.values(): row.effect.set_recording_active(false)
 	for label in records:
 		var row: Dictionary=records[label]

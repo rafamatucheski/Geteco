@@ -2,7 +2,7 @@ extends "res://tests/test_world_editor_service_buildings.gd"
 var frontage_checked := false
 
 func _initialize() -> void:
-	# Exercise the saved, shipped layout rather than a synthetic editor document.
+	# Exercita o layout salvo e distribuído em vez de um documento sintético do editor.
 	run.call_deferred()
 
 func capture(label: String) -> void:

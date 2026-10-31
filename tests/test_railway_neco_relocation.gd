@@ -1,6 +1,6 @@
 extends SceneTree
-## Authored reservation checks; real access, train clearance and presentation
-## are separately checked in rendered Main by the integrated railway harness.
+## Checagens de reserva autoral; acesso real, folga do trem e apresentação
+## são conferidos à parte no Main renderizado pelo arnês integrado da ferrovia.
 const NETWORK := preload("res://world/railway/RailwayNetwork.gd")
 var failures: Array[String]=[]
 var checks := 0
@@ -46,7 +46,7 @@ func run() -> void:
 	var rail := NETWORK.get_route("harbor_central","harbor_north")
 	check(rail.size()>2 and rail[0].is_equal_approx(station.position),"Viaduct starts at relocated stop")
 	var clear_buildings := true
-	# Both sides of the coastal circuit avoid authored building footprints.
+	# Os dois lados do circuito costeiro evitam as áreas autorais dos prédios.
 	var whole_loop := rail+NETWORK.get_route("harbor_north","harbor_central")
 	for point in whole_loop:
 		for building in source.harbor_buildings:

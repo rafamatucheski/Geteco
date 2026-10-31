@@ -1,5 +1,5 @@
 extends SceneTree
-## Real shop, expanded parts, controller input and rendered layout at two sizes.
+## Loja real, peças expandidas, entrada por controle e layout renderizado em dois tamanhos.
 var world
 var checks := 0
 var failures: Array[String] = []

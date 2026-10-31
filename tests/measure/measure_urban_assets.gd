@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Same real Main scene, camera, population and six parcels for both variants.
+## Mesma cena real do Main, câmera, população e seis lotes para as duas variantes.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args():
 		quit(2)

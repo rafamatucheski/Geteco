@@ -1,6 +1,6 @@
 extends SceneTree
-## Actual production manifest and WAVs only. Run after the first 22 Ferry takes publish.
-## Headless calls exercise transport callbacks; they do not certify listening or rendered timing.
+## Só o manifesto e os WAVs reais de produção. Rode depois que as 22 primeiras tomadas da Ferry forem publicadas.
+## As chamadas headless exercitam os callbacks de transporte; não certificam a escuta nem a cronometragem renderizada.
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
 const BANK := preload("res://audio/DirectedVoiceBank.gd")
 const TRACK := preload("res://cutscenes/opening/ferry/FerryVoiceTrack.gd")
@@ -76,8 +76,8 @@ func _film_contracts() -> void:
 	settings.text_language = "pt_BR"
 	var film := FILM.new()
 	root.add_child(film)
-	# Keep the real video/stems and deferred startup. Explicit jumps below probe
-	# the speech scheduler without seeking the video decoder.
+	# Mantém o vídeo/stems reais e o início adiado. Os saltos explícitos abaixo sondam
+	# o agendador de fala sem buscar no decodificador de vídeo.
 	film.set_process(false)
 	var start_deadline := Time.get_ticks_msec() + 3000
 	while not film._started and Time.get_ticks_msec() < start_deadline: await process_frame

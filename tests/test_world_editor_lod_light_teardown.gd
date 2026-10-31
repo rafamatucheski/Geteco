@@ -43,8 +43,8 @@ func run() -> void:
 	for frame in 10: await process_frame
 	check(meshes.all(func(node): return node.layers == 4 and node.visible and node.mesh == shared),"Repeated LOD transitions never modify node visibility, render layers or shared resources")
 	check(meshes.all(func(node): return bool(node.get_meta("world_preview_lod_hidden",false))),"The final frame exercises light teardown while subpixel geometry is culled")
-	# Upstream Godot issue 121989 previously emitted renderer errors at this
-	# exact transition after modifying geometry layer masks. Keep it rendered.
+	# A issue 121989 do Godot upstream emitia antes erros do renderizador exatamente
+	# nesta transição depois de modificar máscaras de camada da geometria. Mantém renderizado.
 	light.free()
 	for frame in 3:
 		panel._render_once()

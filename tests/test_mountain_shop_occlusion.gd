@@ -1,6 +1,6 @@
 extends SceneTree
-## Rendered native player silhouette, with the same blocking furniture hidden as
-## positive control. Headless cannot certify this test.
+## Silhueta nativa renderizada do jogador, com a mesma mobília bloqueadora escondida como
+## controle positivo. Headless não consegue certificar este teste.
 const PLACES = preload("res://world/places/PlaceCatalog.gd")
 const ACTOR = preload("res://scripts/Actor.gd")
 var failures: Array[String] = []
@@ -59,8 +59,8 @@ func _run() -> void:
 			silhouette.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 			silhouette.albedo_color = Color(1, 0, 1)
 			for mesh in actor.find_children("*", "MeshInstance3D", true, false): mesh.material_override = silhouette
-			# Keep the identical pose for the visible/hidden furniture pair: idle
-			# animation must not change the silhouette between control captures.
+			# Mantém a pose idêntica no par mobília visível/escondida: a animação
+			# ociosa não pode mudar a silhueta entre as capturas de controle.
 			actor.process_mode = Node.PROCESS_MODE_DISABLED
 			var counter: Vector2 = room.model.counter
 			var blockers: Array[Node3D] = []

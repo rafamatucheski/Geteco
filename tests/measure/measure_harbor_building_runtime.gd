@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## A/B of the real Main scene. Never use headless results as frame evidence.
+## A/B da cena real do Main. Nunca use resultados headless como evidência de quadro.
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const CATALOG = preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
 var folder := ""
@@ -63,8 +63,8 @@ func run() -> void:
 	Engine.set_meta("harbor_building_lights_baseline",lights_baseline)
 	var source_before := fingerprints()
 	folder = FIXTURE.output_dir("harbor-runtime-"+label)
-	# Start beyond staging range so the first approach includes facade carving,
-	# the first room, residents and rendering uploads rather than a warmed room.
+	# Começa além do alcance de preparação para que a primeira aproximação inclua o recorte da fachada,
+	# a primeira sala, os moradores e os uploads de render, em vez de uma sala aquecida.
 	var snapshot := FIXTURE.full_snapshot(definition.return_position+Vector3(0,.08,24),true)
 	snapshot.campaign.aftermath = {"call_complete":true}
 	snapshot.world.time = .90 if night else .45

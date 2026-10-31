@@ -1,6 +1,6 @@
 extends SceneTree
-## Functional scheduling regression with real 3D walls and the real escape planner.
-## This fixture does not certify FPS or the full gameplay signal chain.
+## Regressão funcional de agendamento com paredes 3D reais e o planejador de fuga real.
+## Esta fixture não certifica FPS nem a cadeia completa de sinais de jogo.
 const DIRECTOR := preload("res://gameplay/civilian_reactions/CivilianReactionDirector.gd")
 
 class Witness extends CharacterBody3D:
@@ -95,24 +95,24 @@ func _run() -> void:
 	for _tick in 30:
 		director._steer_panic(witness, state, 1.0 / 60.0)
 	check("failed search respects retry interval", danger.attempts == 1, "attempts=" + str(danger.attempts))
-	# Renew the same real danger as a burst would. Perception must not restart
-	# the failed search clock on every alert, or the per-frame fix is bypassed.
+	# Renova o mesmo perigo real como uma rajada faria. A percepção não pode reiniciar
+	# o relógio da busca falha a cada alerta, senão a correção por quadro é contornada.
 	for _tick in 30:
 		director._alert(witness, threat, threat + Vector3.LEFT * 30, null)
 		director._steer_panic(witness, state, 1.0 / 60.0)
 	check("repeated alerts preserve retry interval", danger.attempts == 1, "attempts=" + str(danger.attempts))
 	check("burst still renews danger", danger.threats.size() == 1 and float(danger.threats[0].age) == 0.0)
-	# A different threat is remembered immediately even while the failed search
-	# remains on its bounded cadence. It must be used by the next due search.
+	# Uma ameaça diferente é lembrada na hora mesmo enquanto a busca falha
+	# continua na cadência limitada. Ela precisa ser usada pela próxima busca devida.
 	director._alert(witness, threat + Vector3.RIGHT * 2, threat + Vector3.LEFT * 28, null)
 	check("distinct threat is retained during cooldown", danger.threats.size() == 2 and danger.attempts == 1)
-	# A real obstruction disappears. Retry must resume, rather than suppressing
-	# escape permanently or allowing movement through the still-closed walls.
+	# Uma obstrução real desaparece. A nova tentativa precisa retomar, em vez de suprimir
+	# a fuga para sempre ou permitir movimento através das paredes ainda fechadas.
 	exit_wall.queue_free()
 	for _frame in 3:
 		await physics_frame
-	# Stop at the first due retry: this stationary fixture must not also
-	# trigger the legitimate stuck replan after an escape has been found.
+	# Para na primeira nova tentativa devida: esta fixture parada não pode também
+	# disparar o replanejamento legítimo de travado depois que uma fuga foi achada.
 	for _tick in 8:
 		director._steer_panic(witness, state, .25)
 		if danger.attempts > 1: break
@@ -125,8 +125,8 @@ func _run() -> void:
 	director._steer_panic(witness, state, 1.0 / 60.0)
 	check("actual arrival replans immediately", danger.attempts == before + 1)
 	await finish_search(director, state)
-	# Recovery discards the old target. A new shot must resume panic immediately,
-	# even if the previous failed-search countdown has not expired.
+	# A recuperação descarta o alvo antigo. Um tiro novo precisa retomar o pânico na hora,
+	# mesmo que a contagem regressiva da busca falha anterior não tenha expirado.
 	state.phase = "recover"
 	state.target = Vector3.ZERO
 	state.replan = DIRECTOR.REPLAN_INTERVAL
@@ -135,7 +135,7 @@ func _run() -> void:
 	director._steer_panic(witness, state, 1.0 / 60.0)
 	check("new threat resumes panic immediately", state.phase == "panic" and danger.attempts == before + 1)
 	await finish_search(director, state)
-	# The horn sidestep is also a distinct reaction phase, not an active panic.
+	# O desvio por buzina também é uma fase de reação distinta, não um pânico ativo.
 	state.phase = "horn"
 	state.target = Vector3.ZERO
 	state.replan = DIRECTOR.REPLAN_INTERVAL

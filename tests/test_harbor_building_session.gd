@@ -1,3 +1,3 @@
 extends "res://tests/test_harbor_building_walkthrough.gd"
-## Compatibility runner for the continuous door and real-height building contract.
-## --building, --start and --count select bounded portions of the full inventory.
+## Runner de compatibilidade para o contrato de porta contínua e prédio em altura real.
+## --building, --start e --count selecionam porções limitadas do inventário completo.

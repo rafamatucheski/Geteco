@@ -1,6 +1,6 @@
 extends SceneTree
-## Fast layout regression using production controls, without Main or a gameplay world.
-## Also accepts --touch-controls to exercise the production touch layout.
+## Regressão rápida de layout usando os controles de produção, sem Main nem mundo de jogo.
+## Também aceita --touch-controls para exercitar o layout de toque de produção.
 const HUD := preload("res://ui/hud/ContextualHUDManager.gd")
 const CAPTION := preload("res://ui/dialogue/DialogueCaption.gd")
 const SAVE_INDICATOR := preload("res://ui/SaveIndicator.gd")
@@ -58,8 +58,8 @@ func run() -> void:
 	hud = HUD.new()
 	viewport.add_child(hud)
 	hud.set_process(false)
-	# No world is required for layout. Disable the minimap's data refresh, which
-	# correctly hides itself when a gameplay session has not been supplied.
+	# Nenhum mundo é necessário para o layout. Desliga a atualização de dados do minimapa, que
+	# se esconde com razão quando nenhuma sessão de jogo foi fornecida.
 	hud.minimap.set_process(false)
 	hud.minimap.show()
 	caption = CAPTION.new()
@@ -101,7 +101,7 @@ func run() -> void:
 		check(hud.interaction_row.size.x < long_size.x and hud.interaction_row.size.y <= long_size.y,
 			"short action releases the long prompt's space at %s" % extent)
 		check_prompt("short action %s" % extent)
-		# The action remains unchanged: only the current binding grows.
+		# A ação continua a mesma: só o atalho atual cresce.
 		controls.binding = LONG_HINT
 		hud.interaction_row.update_prompt("Entrar", "vehicle_interact", controls)
 		await settle()
@@ -119,8 +119,8 @@ func run() -> void:
 		check_feed("speech %s" % extent)
 		check_prompt("speech %s" % extent)
 		check_save("speech %s" % extent)
-		# Save feedback belongs to its own layer and must survive the gameplay
-		# channel being hidden, including a pause with no processing HUD.
+		# O retorno de save pertence à própria camada e precisa sobreviver ao canal de jogo
+		# escondido, incluindo uma pausa sem HUD processando.
 		caption.hide()
 		hud.root_control.hide()
 		paused = true
@@ -231,7 +231,7 @@ func check_save(context: String) -> void:
 	check(indicator.is_visible_in_tree(), "%s keeps the save warning visible" % context)
 	var rect := save_rect()
 	check_bounds(rect, context+" save warning")
-	# Desktop instruments are at the bottom; touch instruments sit at the top.
-	# The warning may use either adjacent row, but cannot cover either instrument.
+	# Os instrumentos do desktop ficam embaixo; os de toque ficam em cima.
+	# O aviso pode usar qualquer das fileiras adjacentes, mas não pode cobrir nenhum instrumento.
 	check(not rect.intersects(hud.speed_label.get_global_rect()) and not rect.intersects(hud._lower_right.get_global_rect()),
 		"%s keeps the whole save warning separate from speed and equipment" % context)

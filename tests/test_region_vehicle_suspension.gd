@@ -16,7 +16,7 @@ func car(point:Vector3)->CharacterBody3D:
 func run():
 	var harbor:=RegionProbe.new();harbor.region_id="harbor";root.add_child(harbor)
 	var mountain:=RegionProbe.new();mountain.region_id="mountain";root.add_child(mountain)
-	# Same chunk key, opposite sides of the logical region seam.
+	# Mesma chave de chunk, lados opostos da emenda lógica de região.
 	var west:=car(Vector3(455,0,-285))
 	var east:=car(Vector3(457,0,-285))
 	var key:=harbor._cell(west.position)

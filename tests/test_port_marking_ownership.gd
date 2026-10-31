@@ -6,7 +6,7 @@ func _initialize() -> void:
 	geometry.configure(roads)
 	var left := Node3D.new()
 	var right := Node3D.new()
-	# Place a dash midpoint exactly on the chunk boundary.
+	# Põe o ponto médio de um traço exatamente no limite do chunk.
 	geometry._build_markings(left,Rect2(-10,-5,5.875,10))
 	geometry._build_markings(right,Rect2(-4.125,-5,14.125,10))
 	var seen := {}

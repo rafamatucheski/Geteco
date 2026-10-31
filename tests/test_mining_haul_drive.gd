@@ -1,6 +1,6 @@
 extends "res://tests/desert_curve_drive.gd"
-## Real player steering down the complete haul spiral and back up. No body
-## transform correction after the single starting fixture.
+## Esterço real do jogador descendo a espiral de transporte inteira e subindo de volta. Nenhuma
+## correção de transformação do corpo depois da única fixture inicial.
 const MINE := preload("res://world/mining/MiningLayout.gd")
 const SURFACE := preload("res://world/mining/MiningExterior.gd")
 
@@ -47,8 +47,8 @@ func _run() -> void:
 	while world.driving.is_body_transition_active(): await physics_frame
 	if not _check(world.driving.occupied and world.driving.car==car,"player controls haul truck"): _finish(1); return
 	if not await _haul(car,guide,"descent"): _finish(1); return
-	# Use the existing reverse gear for the ascent. This exercises the identical
-	# driven route and loaded collision without fixture rotation at the bottom.
+	# Usa a marcha à ré existente para a subida. Isto exercita a mesma rota
+	# dirigida e a colisão carregada sem rotação da fixture no fundo.
 	var return_guide:=Curve3D.new(); return_guide.bake_interval=.2
 	var points:=MINE.haul_points(); points.reverse()
 	for point in points: return_guide.add_point(point)

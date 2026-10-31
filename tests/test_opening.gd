@@ -1,5 +1,5 @@
 extends SceneTree
-## Real current opening playback, ownership of pause/rendering, and save checkpoint.
+## Reprodução real da abertura atual, posse de pausa/renderização e checkpoint de save.
 const PRESENTATION := preload("res://runtime/OpeningPresentation.gd")
 var failures: Array[String] = []
 var completions: Array[bool] = []

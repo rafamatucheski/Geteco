@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_performance_plan.gd"
-## Opt-in by choosing this script. Keeps the base Main/scenario/warm-up/sample loop.
-## Writes <label>-physics-boundaries.json after the base report. Not a clean FPS run.
+## Opte escolhendo este script. Mantém o laço base de Main/cenário/aquecimento/amostra.
+## Grava <label>-physics-boundaries.json depois do relatório base. Não é uma rodada limpa de FPS.
 const BOUNDARY_NODE := preload("res://tests/measure/PhysicsBoundaryProbe.gd")
 const MAX_BOUNDARY_INTERVALS := 12000
 const MAX_BOUNDARY_TICKS := 32
@@ -38,7 +38,7 @@ var boundary_pending_overhead := 0
 var boundary_pending_calls := 0
 
 func run() -> void:
-	# Do not silently stack the older observers on this bounded diagnostic.
+	# Não empilha em silêncio os observadores mais antigos neste diagnóstico limitado.
 	for key in ["HARBOR_PLAN_WARMUP_IDENTITY", "HARBOR_PLAN_STARTUP_ORPHANS", "HARBOR_STALL_AGGREGATE", "HARBOR_STALL_WORK", "HARBOR_STALL_TRACE", "HARBOR_WCT"]:
 		if OS.get_environment(key) == "1":
 			push_error("PHYSICS_BOUNDARIES_REQUIRES_DISABLED_OBSERVER: "+key)
@@ -72,7 +72,7 @@ func settle_load() -> bool:
 	return true
 
 func _audit_callback_order() -> bool:
-	# One scan of the settled scene, before the ten-second warm-up; no node observer.
+	# Uma varredura da cena assentada, antes do aquecimento de dez segundos; sem observador de nós.
 	var pending: Array[Node] = [root]
 	while not pending.is_empty():
 		var node: Node = pending.pop_back()
@@ -93,7 +93,7 @@ func _audit_callback_order() -> bool:
 
 func state() -> Dictionary:
 	var row := super.state()
-	# First post-settle state is the base READY message, immediately before its loop.
+	# O primeiro estado pós-assentamento é a mensagem READY da base, logo antes do laço dela.
 	if boundary_armed and not boundary_active:
 		boundary_armed = false
 		_start_boundaries()
@@ -212,7 +212,7 @@ func _capture_boundaries(now: int) -> void:
 	boundary_post_cpu = PackedInt64Array()
 	boundary_pending_overhead = 0
 	boundary_pending_calls = 0
-	# Capture runs after the interval's timestamp, so its cost belongs to the next.
+	# A captura roda depois do timestamp do intervalo, então o custo dela pertence ao próximo.
 	_boundary_cost(began)
 
 func _stop_boundaries() -> void:

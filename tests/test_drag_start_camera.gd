@@ -1,5 +1,5 @@
 extends SceneTree
-## Framing contracts only; rendered Main review remains necessary for occlusion.
+## Só contratos de enquadramento; a revisão renderizada no Main continua necessária para a oclusão.
 const RACE = preload("res://activities/desert_drag/DesertDrag.gd")
 var checks := 0
 var failures: Array[String] = []

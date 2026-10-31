@@ -10,7 +10,7 @@ func run() -> void:
 	place.set_interior_active(true)
 	var worker: CharacterBody3D = place.mechanic
 	check(not worker.has_method("take_damage") and not worker.has_method("die"),"invulnerable resident has no damage/death path")
-	# Walk the full route with real physics; only the physical workbench is a work stop.
+	# Percorre a rota inteira com física real; só a bancada física é parada de trabalho.
 	var visited := [false,false,false,false]
 	var origin: Vector3 = worker.position
 	var travelled := 0.0

@@ -1,5 +1,5 @@
 extends SceneTree
-## Bake the actual rival models once; the board uses static textures at runtime.
+## Assa os modelos reais dos rivais uma vez; o painel usa texturas estáticas em tempo de execução.
 func _initialize() -> void:
 	run.call_deferred()
 

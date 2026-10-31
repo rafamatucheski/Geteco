@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical workshop/worker fixture. FullSession menus and travel are covered
-## by the meet integration check; this fixture does not certify rendered FPS.
+## Fixture física de oficina/trabalhador. Os menus da FullSession e a viagem são cobertos
+## pela checagem de integração do encontro; esta fixture não certifica FPS renderizado.
 const ROUTINE := preload("res://runtime/desert/DesertDigoRoutine.gd")
 const WORKER := preload("res://runtime/desert/DesertDigoWorker.gd")
 const SHOP := preload("res://world/desert/drag_meet/DesertDigoWorkshop.gd")
@@ -130,7 +130,7 @@ func _run() -> void:
 	_check(not worker.tool_audio.playing,"modal also stops workshop tool detail")
 	session.modal=false
 	stage.player.teleport(origin+Vector3(-8,.08,-6))
-	# Observe one genuine bounded loop; no teleport or fake arrival is injected.
+	# Observa um laço genuíno limitado; nenhum teleporte ou chegada falsa é injetado.
 	var saw_bench := false
 	var saw_return := false
 	for i in 2100:

@@ -1,5 +1,5 @@
 extends SceneTree
-## Run only after production runtime.json is complete. No fixtures or legacy fallback.
+## Rode só depois que o runtime.json de produção estiver completo. Sem fixtures nem fallback legado.
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
 const BANK := preload("res://audio/DirectedVoiceBank.gd")
 const FERRY_TRACK := preload("res://cutscenes/opening/ferry/FerryVoiceTrack.gd")

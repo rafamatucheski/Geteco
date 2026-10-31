@@ -1,6 +1,6 @@
 extends SceneTree
-## Sensor regression uses actual physics obstacles; full driving is covered by
-## test_mountain_downhill_runtime --drive in the production .NET session.
+## A regressão de sensores usa obstáculos de física reais; a direção completa é coberta por
+## test_mountain_downhill_runtime --drive na sessão .NET de produção.
 const DRIVER := preload("res://activities/mountain_downhill/MountainDownhillDriver.gd")
 const COURSE := preload("res://activities/mountain_downhill/MountainDownhillCourse.gd")
 class SensorCar extends CharacterBody3D:

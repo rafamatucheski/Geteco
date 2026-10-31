@@ -1,5 +1,5 @@
 extends SceneTree
-## Regression coverage for menus, HUD and activity strings added after the original catalog.
+## Cobertura de regressão para strings de menus, HUD e atividades acrescentadas depois do catálogo original.
 var failures := 0
 var checks := 0
 

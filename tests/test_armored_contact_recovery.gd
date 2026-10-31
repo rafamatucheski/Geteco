@@ -39,11 +39,11 @@ func run() -> void:
 		blocker.position = Vector3(0,.001,3.0+blocker.half_length)
 		blocker.rotation.y = PI
 		blocker.set_physics_process(false)
-		# Let the physics server publish the disjoint spawn transforms before the
-		# first moving frame (new CollisionObjects initially register at the origin).
+		# Deixa o servidor de física publicar as transformações de spawn disjuntas antes do
+		# primeiro quadro em movimento (CollisionObjects novos registram de início na origem).
 		for frame in 3: await physics_frame
-		# Establish the oblique contact by real straight-line driving. Both hulls
-		# start disjoint; the fixture never places a body into its blocker.
+		# Estabelece o contato oblíquo dirigindo de verdade em linha reta. Os dois cascos
+		# começam disjuntos; a fixture nunca põe um corpo dentro do bloqueador.
 		car.set_external_driver(true)
 		car.throttle_input = .35
 		car.brake_input = false

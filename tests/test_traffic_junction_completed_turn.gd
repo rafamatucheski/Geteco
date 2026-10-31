@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Vehicles and reservations. Setup restores two observed committed turns;
-## movement after setup uses normal traffic physics, without a convoy controller.
+## Vehicles e reservas reais. A preparação restaura duas curvas comprometidas observadas;
+## o movimento depois da preparação usa a física normal de trânsito, sem controlador de comboio.
 const VEHICLE = preload("res://scripts/Vehicle.gd")
 const BUS = preload("res://runtime/transit/BiarticulatedBus.gd")
 const J = preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
@@ -79,7 +79,7 @@ func run() -> void:
 	check(not J._cross_traffic_inside(key,eastbound.get_instance_id(),true), "completed aligned turn permits compatible outgoing axis")
 	check(J.owners[key].has(id) and J.owners[key][id][1] == timestamp and J.occupies(key,id), "reclassification retains same physical lease and timestamp")
 	check(J._cross_traffic_inside(key,eastbound.get_instance_id(),false), "completed turn still blocks transverse entry")
-	# Each exclusion restores the original entry axis, then requests the crossing.
+	# Cada exclusão restaura o eixo de entrada original e depois pede a travessia.
 	for property in {"traffic":false,"controlled":true,"external_input":true,"bypass_side":1.0,"bypass_blend":.5,"_merging_back":true,"speed":-1.0,"route":null}:
 		var previous = westbound.get(property)
 		var excluded: Dictionary = {"traffic":false,"controlled":true,"external_input":true,"bypass_side":1.0,"bypass_blend":.5,"_merging_back":true,"speed":-1.0,"route":null}

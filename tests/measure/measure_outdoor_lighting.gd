@@ -14,7 +14,7 @@ func run() -> void:
 		await process_frame
 		if world.session != null and world.session.ready_for_play: break
 	if world.session == null or not world.session.ready_for_play: quit(3); return
-	# Keep the measurement actor alive through incidental traffic/security.
+	# Mantém o ator de medição vivo diante de trânsito/segurança incidentais.
 	world.gameplay.health = 1000000
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO

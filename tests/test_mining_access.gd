@@ -1,6 +1,6 @@
 extends SceneTree
-## Real streamed desert collision, complete bidirectional body sweeps at the
-## highway/worksite entrance, and terrain-camera checks. This is not an FPS test.
+## Colisão real do deserto em streaming, varreduras completas do corpo nos dois sentidos na
+## entrada da rodovia/obra e checagens da câmera de terreno. Isto não é teste de FPS.
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const EXTERIOR := preload("res://world/mining/MiningExterior.gd")
 const REGION := preload("res://world/desert/DesertRegion.gd")
@@ -123,7 +123,7 @@ func _sweep(id: String,size: Vector3,reverse: bool) -> void:
 							print("MINING_SUPPORT_DETAIL ",JSON.stringify(support))
 			samples+=1
 			if samples%80==0: await physics_frame
-		# Check the complete turning envelope, not only the two straight headings.
+		# Confere o envelope completo de curva, não só os dois rumos retos.
 		if i<path.size()-1:
 			var next := (path[i+1]-b).normalized()
 			for turn in range(1,9):

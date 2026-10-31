@@ -54,8 +54,8 @@ func run() -> void:
 	check(restored.get_node("Block_0/Thing_0").mesh == restored.get_node("Block_2/Thing_29").mesh,"Shared generated meshes stay shared across imported parts")
 	model.free()
 	restored.free()
-	# Persistent workers reuse procedural caches. A later revision must re-export
-	# those resources, even if their old temporary resource_path is already set.
+	# Os workers persistentes reaproveitam caches procedurais. Uma revisão posterior precisa reexportar
+	# esses recursos, mesmo que o resource_path temporário antigo deles já esteja definido.
 	var next := Node3D.new()
 	next.name = "NextRevision"
 	root.add_child(next)

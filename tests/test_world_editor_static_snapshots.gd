@@ -76,7 +76,7 @@ func run() -> void:
 		instance.free()
 	check(SNAPSHOTS.promote_document(doc).is_empty() and FileAccess.file_exists(published),"Only explicit promotion publishes immutable geometry")
 	source.free()
-	# Remove the draft and source to prove that the saved copy is independent.
+	# Remove o rascunho e a origem para provar que a cópia salva é independente.
 	DirAccess.remove_absolute(staged)
 	instance = SNAPSHOTS.instantiate(row)
 	check(instance != null,"Published geometry reloads without original preview or draft")

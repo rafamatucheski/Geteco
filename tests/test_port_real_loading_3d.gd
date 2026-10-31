@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Observe an unforced loading cycle in Main, with three physical road vehicles.
+## Observa um ciclo de carregamento não forçado no Main, com três veículos físicos de rua.
 var world
 var failures: Array[String] = []
 
@@ -16,8 +16,8 @@ func run() -> void:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	# Startup prewarms and streams asynchronously at render cadence. Use the
-	# same readiness budget as the integrated port capture/measurement runners.
+	# O início pré-aquece e carrega em streaming de forma assíncrona na cadência de render. Usa o
+	# mesmo orçamento de prontidão dos runners integrados de captura/medição do porto.
 	# Por tempo, não por quadros (24/10): a carga passou de 40 s a 60 fps e 2400 quadros não bastavam
 	# (mesma correção do test_v2_session, 80dec037).
 	var ready_deadline := Time.get_ticks_msec()+180000

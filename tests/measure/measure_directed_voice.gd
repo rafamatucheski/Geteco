@@ -1,7 +1,7 @@
 extends "res://tests/measure/measure_performance_plan.gd"
-## Same rendered production scene and live load in both modes. Exercise the real
-## speech presentation every seven seconds, alternating both language banks.
-## GETECO_DIRECTED_VOICES=0 selects the preserved legacy path for comparison.
+## Mesma cena de produção renderizada e carga viva nos dois modos. Exercita a apresentação
+## real de fala a cada sete segundos, alternando os dois bancos de idioma.
+## GETECO_DIRECTED_VOICES=0 seleciona o caminho legado preservado para comparação.
 const LINE_KEYS := [
 	"2f74ccc16ed52b718b42204c49235f59574f5f599fab5aca4763f109dce41430",
 	"a0f159168a801dab0e029c9259fde373c44d1123fcb8aa78ab0bd27a6abf3f40",
@@ -55,8 +55,8 @@ func apply_load(now: int) -> void:
 		"crowd":_exercise_crowd()})
 
 func _exercise_crowd() -> Array[Dictionary]:
-	# Exercise the production presenter with live local pedestrians, without
-	# teleporting them, disabling their AI or inventing fixture-only bodies.
+	# Exercita o apresentador de produção com pedestres locais vivos, sem
+	# teleportá-los, desligar a IA deles nem inventar corpos só de fixture.
 	var nearby: Array[Node3D] = []
 	for candidate in world.people:
 		if not is_instance_valid(candidate) or not candidate is Node3D: continue

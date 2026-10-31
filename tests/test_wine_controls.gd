@@ -1,6 +1,6 @@
 extends SceneTree
-## Focused actor/camera boundary checks. Run with the compiled Godot .NET project.
-## The rendered Main walkthrough remains the evidence for presentation and FPS.
+## Checagens focadas de limite de ator/câmera. Rode com o projeto Godot .NET compilado.
+## O percurso renderizado no Main continua sendo a evidência de apresentação e FPS.
 const ACTOR := preload("res://scripts/Actor.gd")
 const CAMERA := preload("res://scripts/CameraRig.gd")
 const WINE := preload("res://gameplay/wine/WineRuntime.gd")

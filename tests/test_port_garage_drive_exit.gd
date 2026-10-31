@@ -20,8 +20,8 @@ func run():
 	var car = session.garage_rewards.cars.get("port_garage_stock_2")
 	check(is_instance_valid(car),"Port stock vehicle materializes")
 	if not is_instance_valid(car): world.free(); quit(1); return
-	# Start seated; boarding has its own integration test. Keep actual vehicle
-	# physics, garage processing, streaming and transfer admission enabled.
+	# Começa sentado; o embarque tem o próprio teste de integração. Mantém ligados a física
+	# real do veículo, o processamento da garagem, o streaming e a admissão de transferência.
 	world.driving.car = car
 	world.driving.occupied = true
 	car.controlled = true

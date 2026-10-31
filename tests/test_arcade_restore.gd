@@ -1,5 +1,5 @@
 extends "res://tests/test_arcade_session.gd"
-## Cold Main restoration from the bytes written by test_arcade_session.
+## Restauração fria do Main a partir dos bytes gravados por test_arcade_session.
 func run() -> void:
 	create_timer(120).timeout.connect(func(): quit(3))
 	var source := ""

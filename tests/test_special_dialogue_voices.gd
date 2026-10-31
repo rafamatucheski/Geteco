@@ -1,5 +1,5 @@
 extends SceneTree
-## Exercise the actual nonstandard dialogue producers without loading the city.
+## Exercita os produtores reais de diálogo fora do padrão sem carregar a cidade.
 const SPOKEN_LINE := preload("res://audio/VisibleDialogueVoice.gd")
 const MOTOCROSS := preload("res://activities/motocross/Motocross.gd")
 const CEMETERY := preload("res://gameplay/urban_v1/CemeteryOperations.gd")
@@ -140,7 +140,7 @@ func run() -> void:
 	check(not owned_voice.playing, "unloading the speaker stops the take before freeing its actor")
 	storyteller.free()
 	cemetery.free()
-	# The same helper also resolves Portuguese independently of subtitle locale.
+	# O mesmo helper também resolve o português independente do locale da legenda.
 	settings.voice_language = "pt_BR"
 	session._menu("phone")
 	var caption := Label.new()

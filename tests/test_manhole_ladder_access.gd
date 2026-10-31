@@ -69,7 +69,7 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute("res://output/manhole-access")
 	scene = Node3D.new()
 	root.add_child(scene)
-	# Street slabs carve the real shaft out, rather than supporting a flying actor.
+	# As lajes da rua recortam o poço real, em vez de apoiar um ator voando.
 	floor_piece(Vector3(-2.28125,-.1,0), Vector3(3.4375,.2,8))
 	floor_piece(Vector3(2.28125,-.1,0), Vector3(3.4375,.2,8))
 	floor_piece(Vector3(0,-.1,-2.28125), Vector3(1.125,.2,3.4375))

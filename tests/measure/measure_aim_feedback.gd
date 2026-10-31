@@ -4,7 +4,7 @@ func _run() -> void:
 	if not "--no-save" in OS.get_cmdline_user_args():
 		quit(2)
 		return
-	# Reconstruct only this change's previous behavior in memory; never rewrite shared files.
+	# Reconstrói em memória só o comportamento anterior desta mudança; nunca reescreve arquivos compartilhados.
 	if "--baseline" in OS.get_cmdline_user_args():
 		var replacements := {
 			"res://runtime/GameInput.gd": [["AIM_TURN_SPEED_MIN := 3.0", "AIM_TURN_SPEED_MIN := 1.20"], ["AIM_TURN_SPEED_MAX := 20.0", "AIM_TURN_SPEED_MAX := 5.50"], ["AIM_RESPONSE_CURVE := 1.25", "AIM_RESPONSE_CURVE := 1.65"]],

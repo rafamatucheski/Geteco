@@ -1,5 +1,5 @@
 extends "res://tests/capture/capture_lighting_glitches.gd"
-## Sequential images are visual evidence only, never frame-time samples.
+## Imagens sequenciais são só evidência visual, nunca amostras de tempo de quadro.
 func run() -> void:
 	if DisplayServer.get_name()=="headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	output_dir="res://evidence/sidewalk-glitches/motion"

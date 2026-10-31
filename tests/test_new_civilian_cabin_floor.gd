@@ -1,6 +1,6 @@
 extends "res://tests/test_seated_driver.gd"
-## Regression: a fitted ankle can still place the visible shoe below the chassis.
-## New civilian chassis deck spans Y=.22..30 in model coordinates.
+## Regressão: um tornozelo ajustado ainda pode pôr o sapato visível abaixo do chassi.
+## O deck do chassi civil novo vai de Y=.22..30 em coordenadas do modelo.
 const CHASSIS_DECK_TOP := .30
 
 func selected_ids() -> Array:

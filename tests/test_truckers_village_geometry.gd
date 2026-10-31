@@ -14,7 +14,7 @@ func run() -> void:
 	root.add_child(scene)
 	var village := VILLAGE.new()
 	scene.add_child(village)
-	# This geometry fixture has no terrain; gait/gravity use the resident test.
+	# Esta fixture de geometria não tem terreno; marcha/gravidade usam o teste de moradores.
 	village.tonico.set_physics_process(false)
 	for frame in 3: await physics_frame
 	check(village.houses.size()==6,"Six accessible homes compose the village")
@@ -47,8 +47,8 @@ func run() -> void:
 			var result := actor.move_and_collide(hit[1])
 			check(result != null,who+" swept collision "+hit[2])
 			check(is_equal_approx(actor.position.y,.04),who+" remains on ground against "+hit[2])
-		# Each yard has an open gate and a clear centre leading to the veranda.
-		# Test actual bodies against a rotated home's front, not an axis-aligned proxy.
+		# Cada quintal tem um portão aberto e um centro livre levando à varanda.
+		# Testa corpos reais contra a frente de uma casa girada, não um proxy alinhado aos eixos.
 		for home in home_bodies:
 			var approach: Vector3 = home.position+home.basis*Vector3(0,0,8.5)
 			approach.y = .04

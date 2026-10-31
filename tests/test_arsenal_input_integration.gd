@@ -1,5 +1,5 @@
 extends SceneTree
-## Run with --no-save --skip-arrival. Uses real input dispatch and production session.
+## Rode com --no-save --skip-arrival. Usa o despacho real de entrada e a sessão de produção.
 func _initialize() -> void:
 	_run.call_deferred()
 

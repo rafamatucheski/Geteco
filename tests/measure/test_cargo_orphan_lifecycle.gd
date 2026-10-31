@@ -1,6 +1,6 @@
 extends SceneTree
-## Ownership diagnostic only: no Main, save operations or FPS claim.
-## Use Godot .NET debug, --no-save and an isolated APPDATA/LOCALAPPDATA.
+## Só diagnóstico de posse: sem Main, operações de save ou afirmação de FPS.
+## Use Godot .NET debug, --no-save e um APPDATA/LOCALAPPDATA isolado.
 const ID := "cargo_flatbed_truck"
 const SCENE := "res://assets/fleet/cargo_flatbed_truck.scn"
 const FLEET := preload("res://runtime/FleetCatalog.gd")
@@ -134,14 +134,14 @@ func _decorated_pass(packed: PackedScene, label: String) -> void:
 	_stage(label + "/two_tone", model)
 	SPEED.decorate(ID, model)
 	_stage(label + "/speed", model)
-	# Production decorates off-tree, then adds the model during fleet prewarm.
+	# A produção decora fora da árvore e depois acrescenta o modelo durante o pré-aquecimento da frota.
 	root.add_child(model)
 	await process_frame
 	_stage(label + "/attached", model)
 	await _release(model, label + "/freed")
 
 func _vehicle_pass() -> void:
-	# The real consumer owns its children; no Main or fabricated world callbacks.
+	# O consumidor real é dono dos filhos; sem Main nem callbacks de mundo fabricados.
 	var host := Node3D.new()
 	root.add_child(host)
 	var floor_body := StaticBody3D.new()
@@ -162,7 +162,7 @@ func _vehicle_pass() -> void:
 	_check(is_instance_valid(car.visual) and is_instance_valid(car.damage_look),
 		"real Vehicle ready creates visual and damage consumer")
 	_stage("vehicle/ready", host)
-	# Null world is an explicit supported path in Equipment's night/player guards.
+	# Mundo nulo é um caminho explicitamente aceito nas proteções de noite/jogador do Equipment.
 	car.ensure_equipment(null)
 	_stage("vehicle/equipment", host)
 	car.finish_doors()
@@ -192,15 +192,15 @@ func _vehicle_pass() -> void:
 	_check(car.health == car.max_health and not car.damage_look.wrecked,
 		"real wreck repaired")
 	_stage("vehicle/wreck_repaired", host)
-	# queue_free is the normal scene-removal path; do not clean detached objects.
+	# queue_free é o caminho normal de remoção da cena; não limpa objetos desligados.
 	host.queue_free()
 	await process_frame
 	await process_frame
 	_stage("vehicle/freed")
 
 func _fleet_sequence() -> void:
-	# Optional fresh-process ordering from ProductionWorld's shader warm-up.
-	# No cache reset: prove cargo has not already warmed its merge plan.
+	# Ordem opcional de processo novo a partir do pré-aquecimento de shaders do ProductionWorld.
+	# Sem reinício de cache: prova que a carga ainda não aqueceu o plano de junção.
 	_check(not SPEED._plans.has(ID), "cargo merge plan cold before fleet sequence")
 	var order: Array[String] = []
 	for value: String in DISPATCH_RULES.ARCHETYPES.values():
@@ -216,8 +216,8 @@ func _fleet_sequence() -> void:
 		_check(model != null, "fleet factory creates " + value)
 		if model == null: continue
 		_stage("fleet/" + value + "/created", model)
-		# Keep production's disabled callbacks and actual attach/free ownership.
-		# Headless process frames do not certify the two rendered draws.
+		# Mantém os callbacks desligados da produção e a posse real de anexar/liberar.
+		# Quadros de processo headless não certificam os dois desenhos renderizados.
 		model.process_mode = Node.PROCESS_MODE_DISABLED
 		root.add_child(model)
 		await process_frame
@@ -234,7 +234,7 @@ func run() -> void:
 		quit(2)
 		return
 	var before := _hashes()
-	# Let deferred autoload removal finish before defining the baseline.
+	# Deixa a remoção adiada do autoload terminar antes de definir a linha de base.
 	await process_frame
 	await process_frame
 	for id: int in Node.get_orphan_node_ids(): baseline_ids[id] = true
@@ -257,7 +257,7 @@ func run() -> void:
 	await _release(raw, "raw/freed")
 	await _decorated_pass(packed, "after_fleet" if fleet_sequence else "cold")
 	await _decorated_pass(packed, "cache_hit")
-	# Confirm the same lifecycle through the actual public factory.
+	# Confirma o mesmo ciclo de vida pela fábrica pública real.
 	var factory := FLEET.create(ID)
 	_stage("factory/create", factory)
 	root.add_child(factory)

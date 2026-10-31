@@ -1,5 +1,5 @@
 extends "res://tests/test_gameplay.gd"
-## Reproduces the freed references and missing vehicle presentation in session-000.
+## Reproduz as referências liberadas e a apresentação de veículo faltando em session-000.
 const CEMETERY = preload("res://gameplay/urban_v1/CemeteryOperations.gd")
 
 class Resident extends CharacterBody3D:
@@ -81,7 +81,7 @@ func _flame_lifecycle() -> void:
 	target.set_meta("gameplay_role", "vehicle")
 	scene.add_child(target)
 	target.position = Vector3(0, 0, -3)
-	# Wide enough for the weapon's authored spread; rays still use real physics.
+	# Largo o bastante para a dispersão autoral da arma; os raios ainda usam física real.
 	target.get_child(0).shape.size = Vector3(5, 3, 1)
 	await physics_frame
 	await physics_frame

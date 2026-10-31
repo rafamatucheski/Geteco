@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Main/session transition and native visitor presentation. Safe save
-## flags are mandatory. Run rendered to produce room/depth review pictures.
+## Transição real de Main/sessão e apresentação nativa de visitantes. As flags de save
+## seguras são obrigatórias. Rode renderizado para gerar imagens de revisão de sala/profundidade.
 const OFFICER := preload("res://gameplay/PoliceAgent.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 var world: Node3D
@@ -61,8 +61,8 @@ func run() -> void:
 	gameplay.police.append(officer)
 	gameplay.register_crime(150, world.player.global_position, "assault")
 	gameplay.report_contact(world.player.global_position)
-	# Capture before transfer with the real facade/approach, and preserve this
-	# officer's identity throughout the session's actual transition.
+	# Captura antes da transferência com a fachada/aproximação real, e preserva a
+	# identidade deste policial durante toda a transição real da sessão.
 	await frames(3)
 	await capture("01-exterior-existing-officer")
 	var identity := officer.get_instance_id()
@@ -79,9 +79,9 @@ func run() -> void:
 		check(session.room.is_floor_clear(session.room.to_local(officer.global_position), .34), "visitor whole body outside room solids")
 		check(officer.get_viewport() == world.player.get_viewport(), "player, resident and visitor share native depth buffer")
 		await capture("02-interior-player-resident-visitor")
-		# Stage a real visiting officer on each side of an authored display.
-		# Snapshot positions stay on walkable floor; the camera and furniture
-		# remain the production room's own geometry and presentation.
+		# Posiciona um policial visitante real de cada lado de um expositor autoral.
+		# As posições de snapshot ficam em piso caminhável; a câmera e a mobília
+		# continuam sendo a geometria e a apresentação da própria sala de produção.
 		var room: Node3D = session.room
 		var display_bounds: AABB
 		var found := false

@@ -101,7 +101,7 @@ func run() -> void:
 		var ray := ray_for(car, 0)
 		check(not ray.is_empty(), id + " exposes a real window shot")
 		if ray.is_empty(): car.free(); dry.free(); continue
-		# Actual impacts retain the same path through glazing and vehicle health.
+		# Impactos reais mantêm o mesmo caminho pelo vidro e pela vida do veículo.
 		for shot in 3:
 			combat._damage_bullet(car, 25.0, null, ray[0], ray[1])
 			dry.receive_damage(25.0 * .15, null)
@@ -109,7 +109,7 @@ func run() -> void:
 			check(same_colors(car, wet_colors), id + " shot %d preserves wet body color immediately" % (shot + 1))
 			check(has_body_drops(car), id + " shot %d preserves body droplets immediately" % (shot + 1))
 			check(rain.is_active() and is_equal_approx(rain.level(), rain_level), id + " shot %d preserves water on surviving glazing" % (shot + 1))
-			# The weather controller re-applies a material when humidity changes or damage invalidates it.
+			# O controlador de clima reaplica um material quando a umidade muda ou o dano o invalida.
 			BODY_RAIN.apply(car, 1.0)
 			check(same_colors(car, wet_colors), id + " shot %d cannot multiply wet tint on refresh" % (shot + 1))
 			rain.tick(.1)
@@ -133,7 +133,7 @@ func run() -> void:
 		car.repair()
 		BODY_RAIN.apply(car, 1.0)
 		check(same_colors(car, wet_colors) and has_body_drops(car), id + " repair during rain preserves water and paint color")
-		# A real paint operation while wet becomes the base used after drying.
+		# Uma operação real de pintura com o carro molhado vira a base usada depois de secar.
 		car.paint_color = Color("a94435")
 		dry.paint_color = Color("a94435")
 		var repainted := colors(dry)
@@ -142,7 +142,7 @@ func run() -> void:
 		BODY_RAIN.apply(car, 1.0)
 		BODY_RAIN.apply(car, 0.0)
 		check(same_colors(car, repainted), id + " repaint survives rain, subsequent damage and drying")
-		# Rain and dent normals are independent; neither can erase the other.
+		# As normais da chuva e do amassado são independentes; nenhuma pode apagar a outra.
 		BODY_RAIN.apply(car, 1.0)
 		car.restore_health(car.max_health * .45)
 		BODY_RAIN.apply(car, 1.0)
@@ -154,8 +154,8 @@ func run() -> void:
 		for i in dent_normals.size():
 			preserved_dents = preserved_dents and car._paint.materials[i].normal_texture == dent_normals[i]
 		check(preserved_dents, id + " drying keeps damage normals")
-		# A fully wet car can leave presentation range during a rain transition.
-		# Returning must use the current rainfall even though its wetness never changed.
+		# Um carro todo molhado pode sair do alcance de apresentação durante uma transição de chuva.
+		# A volta precisa usar a chuva atual mesmo que a umidade dele nunca tenha mudado.
 		car.set_meta("rain_wet", 1.0)
 		car.set_meta("rain_level", BODY_RAIN.LEVELS)
 		car.set_meta("rain_falling", .9)

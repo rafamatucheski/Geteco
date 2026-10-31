@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Same two courier vans, city, seed and camera before/after; no user save.
+## Mesmas duas vans de entrega, cidade, semente e câmera antes/depois; sem save do usuário.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	create_timer(180).timeout.connect(func(): quit(3))

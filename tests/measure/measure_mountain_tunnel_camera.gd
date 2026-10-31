@@ -114,7 +114,7 @@ func stage(point: Vector3, riding: bool) -> bool:
 	world.production._update_physical_residency(point)
 	world.production._update_logical_region(point)
 	world.production.region.set_focus(point)
-	# Stage only: do not let an actor fall before the real streamed pavement arrives.
+	# Só preparação: não deixa um ator cair antes de o calçamento real em streaming chegar.
 	var deadline := Time.get_ticks_msec() + 15000
 	while Time.get_ticks_msec() < deadline:
 		await process_frame

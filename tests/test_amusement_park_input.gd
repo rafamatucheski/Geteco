@@ -12,8 +12,8 @@ class ParkInput extends "res://runtime/amusement_park/AmusementParkRuntime.gd":
 	func _ready() -> void: set_process(false)
 	func _process(_delta: float) -> void: pass
 	func _exit_tree() -> void: pass
-	# This fixture checks input delivery only; the real animated return is
-	# exercised in test_coaster_session with Main and the actual station.
+	# Esta fixture confere só a entrega da entrada; a volta animada real é
+	# exercitada em test_coaster_session com o Main e a estação real.
 	func request_exit() -> void: leave()
 	func leave() -> void:
 		if active:
@@ -56,7 +56,7 @@ class InputRouter extends Node:
 	var park
 	var controls
 	func _input(event: InputEvent) -> void:
-		# Same ordering and handled-event contract as FullSession._input.
+		# Mesma ordem e mesmo contrato de evento tratado de FullSession._input.
 		controls.observe_event(event)
 		if park.handle_input(event): get_viewport().set_input_as_handled()
 
@@ -124,7 +124,7 @@ func run() -> void:
 	world.add_child(touch)
 	await process_frame
 	touch._refresh()
-	# Added last so the park adapter receives raw events before AndroidControls.
+	# Acrescentado por último para que o adaptador do parque receba os eventos crus antes do AndroidControls.
 	var router := InputRouter.new()
 	router.park = park
 	router.controls = controls
@@ -202,7 +202,7 @@ func run() -> void:
 	check(is_equal_approx(park.yaw,button_yaw), "finger beginning on exit button cannot rotate camera")
 	await finger(7,exit_point+Vector2(5,0),false)
 	check(not park.active and park.departures == 2, "real ride Button responds to native viewport touch press and release")
-	# Desktop offers the actual active bindings, with no button behind capture.
+	# O desktop oferece os atalhos ativos reais, sem botão por trás da captura.
 	controls.remove_meta("touch_controls_active")
 	park.active = true
 	park._make_hint()

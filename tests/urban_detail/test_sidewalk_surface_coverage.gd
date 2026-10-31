@@ -18,8 +18,8 @@ func _initialize() -> void:
 			var material = node.mesh.surface_get_material(0)
 			for i in range(0,faces.size(),3):
 				pieces.append({"a":Vector2(faces[i].x,faces[i].z),"b":Vector2(faces[i+1].x,faces[i+1].z),"c":Vector2(faces[i+2].x,faces[i+2].z),"color":material.albedo_color,"node":node})
-		# Interior samples avoid ambiguous shared edges. Compare original paint
-		# order, independently of the renderer's grouping or tessellation.
+		# As amostras internas evitam arestas compartilhadas ambíguas. Compara a ordem de
+		# pintura original, independente do agrupamento ou da tesselação do renderizador.
 		for x in range(int(bounds.position.x),int(bounds.end.x),2):
 			for y in range(int(bounds.position.y),int(bounds.end.y),2):
 				var point := Vector2(x+.371,y+.613)
@@ -71,8 +71,8 @@ func _check_road_ownership() -> void:
 
 func _check_enclosed_hole() -> void:
 	var cut := preload("res://world/urban_detail/GroundCut.gd")
-	# Tiny completely enclosed opening deliberately exceeds the old binary
-	# subdivision budget. It must never be silently filled back in.
+	# Uma abertura minúscula totalmente fechada passa de propósito do antigo orçamento
+	# de subdivisão binária. Ela nunca pode ser preenchida de volta em silêncio.
 	var polygon := cut.rect_polygon(Rect2(-500,-500,1000,1000))
 	var hole := cut.rect_polygon(Rect2(11.13,17.29,.2,.2))
 	var pieces := cut.subtract_exact([polygon],[hole])
@@ -104,8 +104,8 @@ func _check_route_floor() -> void:
 
 func _check_transformed_spike() -> void:
 	var cut := preload("res://world/urban_detail/GroundCut.gd")
-	# Captured from the fully integrated Harbor dressing: world clipping plus
-	# inverse transform left an eight-micrometre backtrack at the bottom edge.
+	# Capturado do acabamento totalmente integrado do Harbor: recorte do mundo mais
+	# transformação inversa deixou um retrocesso de oito micrômetros na borda inferior.
 	var outline := PackedVector2Array([Vector2(-1.125,4.169273),Vector2(-1.125031,-4.169258),Vector2(0,-4.169266),Vector2(-.90625,-4.169266),Vector2(-.906281,4.162453),Vector2(-.906403,4.169281)])
 	var failures_before := cut.failed_triangulations
 	var mesh := cut.flat_mesh([outline],.0065,1.0)
@@ -116,5 +116,5 @@ func _check_transformed_spike() -> void:
 	var faces := mesh.get_faces()
 	for index in range(0,faces.size(),3):
 		area += (faces[index+1]-faces[index]).cross(faces[index+2]-faces[index]).length()*.5
-	# Preserve the narrow strip, not its 9.38 m² bounding rectangle/spike hull.
+	# Preserva a faixa estreita, não seu retângulo envolvente de 9.38 m² nem o casco com pico.
 	if area < 1.80 or area > 1.84: failed += 1

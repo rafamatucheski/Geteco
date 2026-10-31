@@ -1,6 +1,6 @@
 extends SceneTree
-## Covers the actual reusable Control after an asynchronous paddock return.
-## A directly emitted pressed signal bypasses disabled, so assert availability.
+## Cobre o Control reutilizável real depois de uma volta assíncrona ao paddock.
+## Um sinal pressed emitido diretamente contorna o disabled, então confere a disponibilidade.
 const PANEL := preload("res://activities/desert_drag/DragNightPanel.gd")
 var checks := 0
 var failures: Array[String] = []

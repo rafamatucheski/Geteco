@@ -1,5 +1,5 @@
 extends SceneTree
-## Rendered coverage and timestamped movement frames; never used as FPS samples.
+## Cobertura renderizada e quadros de movimento com timestamp; nunca usados como amostras de FPS.
 const SITES := [
 	["police",Vector3(67,.1,108),52.0],
 	["skate",Vector3(381,.1,132.5),32.0],

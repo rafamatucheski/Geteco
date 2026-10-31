@@ -32,7 +32,7 @@ func run() -> void:
 		var before: int = destroyed[0]
 		burn(car, 5.0)
 		check(car.health > 0 and destroyed[0] == before, "%.4f: alive after reaction and dismount" % ratio)
-		# Repeated refreshes and flame hits must not restart the burning interval.
+		# Atualizações repetidas e acertos de chama não podem reiniciar o intervalo de queima.
 		car.damage_look.refresh()
 		car.damage_look.ignite()
 		burn(car, 4.9)

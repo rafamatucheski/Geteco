@@ -38,7 +38,7 @@ func run() -> void:
 		while not menu.sky.is_ready:
 			await process_frame
 	if "--confirm-gameplay" in OS.get_cmdline_user_args():
-		# Same frozen preview, one bounded confirmation of the post-flight case.
+		# Mesma prévia congelada, uma confirmação limitada do caso pós-voo.
 		await create_timer(8.0, true).timeout
 	else:
 		await sample("menu")

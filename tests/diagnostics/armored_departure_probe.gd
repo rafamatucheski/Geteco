@@ -1,6 +1,6 @@
 extends SceneTree
-## Production admission and loading: real bank geometry, crew and physical cars.
-## Completed campaign/calendar are isolated fixture setup, not campaign coverage.
+## Admissão e carregamento de produção: geometria real do banco, equipe e carros físicos.
+## Campanha/calendário concluídos são preparação isolada da fixture, não cobertura da campanha.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
@@ -38,7 +38,7 @@ func run() -> void:
 	snapshot.world.moon_day = 3 if region == "desert" else 1
 	snapshot.world.time = (14.0 if region == "desert" else 9.0)/24.0
 	if security_level > 0:
-		# Persisted preparation seeds the real scheduler; it must create the event.
+		# A preparação persistida alimenta o agendador real; ele precisa criar o evento.
 		snapshot.world[SCHEDULE.KEY] = {"version":1,"last_event":"","security_level":security_level,"event":{}}
 	var event := SCHEDULE.initial(SCHEDULE.departure(1,9.0/24.0),security_level)
 	event.phase = "boarding"

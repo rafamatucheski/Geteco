@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure.gd"
-## Main gameplay, real player input and normal population; 8 s warmup + 30 s.
-## Run the same workload before/after, with --no-save --skip-arrival.
+## Jogo no Main, entrada real do jogador e população normal; 8 s de aquecimento + 30 s.
+## Rode a mesma carga antes/depois, com --no-save --skip-arrival.
 var scenario := "street"
 var variant := "before"
 var output_dir := "res://evidence/motorcycle-wheelie-20261004"
@@ -85,8 +85,8 @@ func _process(_delta: float) -> bool:
 	var turn := clampf(error*1.8,-1,1)
 	var desired_speed := lerpf(11.0,4.0,clampf(absf(error)/.8,0,1))
 	var lift_requested := fposmod(elapsed,8.0) > 1 and fposmod(elapsed,8.0) < 5 and absf(error) < .4
-	# Keep driving torque during the stunt. Near-zero cruising throttle lowers
-	# the front by design and does not exercise sustained manual wheelies.
+	# Mantém o torque de tração durante a manobra. Um acelerador de cruzeiro quase zero abaixa
+	# a frente por design e não exercita empinadas manuais sustentadas.
 	Input.action_press("move_up", 1.0 if bike.speed < desired_speed else (.65 if lift_requested else .12))
 	Input.action_press("move_left", maxf(0,turn))
 	Input.action_press("move_right", maxf(0,-turn))

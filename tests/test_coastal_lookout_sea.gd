@@ -1,6 +1,6 @@
 extends SceneTree
-## Cast against the actual triangle meshes, not just their shared height helper.
-## A 16m approximation previously rose 0.534m above Harbor's 4m bridge water.
+## Lança contra as malhas de triângulos reais, não só contra o helper de altura compartilhado.
+## Uma aproximação de 16m subia antes 0.534m acima da água de 4m da ponte do Harbor.
 const OCEAN = preload("res://world/regions/HarborOcean.gd")
 const DISTANT = preload("res://world/places/coastal_lookout/LookoutDistantSea.gd")
 var scene: Node3D
@@ -47,13 +47,13 @@ func run() -> void:
 			failures += 1
 			push_error("Sea separation at %s near=%s far=%s"%[point,near_y,far_y])
 		max_error = maxf(max_error,error)
-	# These positions are beyond the old finite apron, inside optical far views
-	# and outside authored land. The actual mesh must continue beneath each ray.
+	# Estas posições ficam além do antigo avental finito, dentro das vistas ópticas distantes
+	# e fora da terra autoral. A malha real precisa continuar por baixo de cada raio.
 	for point in [Vector2(-3000,-900),Vector2(1600,-1700),Vector2(-2200,1400),Vector2(2000,1400)]:
 		if not is_finite(height_at(point,16)):
 			failures += 1
 			push_error("Missing panorama ocean at "+str(point))
-	# Distant water must never cover low terrain or the mine inside the desert.
+	# A água distante nunca pode cobrir terreno baixo nem a mina dentro do deserto.
 	for point in [Vector2(-900,-1320),Vector2(-200,-900),Vector2(100,-1500)]:
 		if is_finite(height_at(point,16)):
 			failures += 1

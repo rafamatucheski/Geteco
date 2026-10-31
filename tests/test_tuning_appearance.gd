@@ -44,8 +44,8 @@ func run() -> void:
 		car.restore_health(car.max_health)
 		var before: Dictionary = TUNING.tuned_spec(id)
 		var after: Dictionary = TUNING.tuned_spec(id,parts)
-		# The existing tuning loop normalises integer durability to float even for
-		# a neutral part. Compare physical values, not Dictionary variant types.
+		# O laço de tuning existente normaliza a durabilidade inteira para float mesmo numa
+		# peça neutra. Compara valores físicos, não tipos variant do Dictionary.
 		for field in ["torque_nm","acceleration","mass","durability","final_drive","max_speed","traction","dirt_grip","turn_speed","low_response","redline","street_cap_mps"]:
 			check(is_equal_approx(float(before[field]),float(after[field])),id+" cosmetic preserves "+field)
 		car._ensure_door_presentation()

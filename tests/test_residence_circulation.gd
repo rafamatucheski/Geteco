@@ -1,5 +1,5 @@
 extends SceneTree
-## Real player/NPC circulation at the sofa corner shown in the user recording.
+## Circulação real de jogador/NPC no canto do sofá mostrado na gravação do usuário.
 var world
 var checks := 0
 var failures: Array[String] = []
@@ -125,7 +125,7 @@ func purchase_flow() -> void:
 	var session = world.session
 	var home = session.activities.residence
 	session.state.economy.grant_reward("circulation_purchase",100000)
-	# Settle the existing cash achievements before checking the purchase debit.
+	# Acerta as conquistas de dinheiro existentes antes de conferir o débito da compra.
 	session.activities.refresh_achievements()
 	world.production.region.set_focus(home.entry("quayside_house"))
 	world.player.teleport(home.entry("quayside_house")+Vector3(0,.04,.8))

@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure.gd"
-## Serial, rendered Main-scene comparison for the session-log lifecycle fixes.
-## Teleports establish each diagnostic site; they do not validate access routes.
+## Comparação renderizada em série na cena do Main para as correções do ciclo de vida do log de sessão.
+## Teleportes estabelecem cada local de diagnóstico; não validam rotas de acesso.
 var results: Array[Dictionary] = []
 
 func run() -> void:

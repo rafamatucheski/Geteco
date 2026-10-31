@@ -1,6 +1,6 @@
 extends "res://tests/capture/capture_drag_start_camera.gd"
-## Actual Main/.NET route. Temporal JPEG recording and FPS measurement are
-## separate invocations; capture overhead never counts as performance evidence.
+## Rota real no Main/.NET. Gravação temporal em JPEG e medição de FPS são
+## invocações separadas; o custo da captura nunca conta como evidência de desempenho.
 var temporal := false
 var reference := ""
 var recording := false

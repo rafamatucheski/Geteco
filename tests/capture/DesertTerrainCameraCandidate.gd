@@ -1,6 +1,6 @@
 extends RefCounted
-## Canyon-only orthographic safety: target footprint visibility and the whole near plane.
-## Height queries occur in at most one batch per 0.1s (except a fresh camera/teleport).
+## Segurança ortográfica só no cânion: visibilidade da área do alvo e do plano próximo inteiro.
+## As consultas de altura ocorrem em no máximo um lote a cada 0.1s (exceto câmera nova/teleporte).
 const TERRAIN := preload("res://world/desert/DesertTerrainMesh.gd")
 const BOUNDS := Rect2(-1140.0,-1936.0,580.0,368.0)
 const INTERVAL := .1
@@ -48,7 +48,7 @@ func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled:
 		return nominal
 	if not local:
 		_active=false
-		# Outside the terrain's24m guard the nearby basin is flat. Restore the usual view gently.
+		# Fora da margem de24m do terreno a bacia próxima é plana. Restaura a vista usual com suavidade.
 		if _pitch<=0 or snap:
 			_pitch=base_pitch
 			_distance=nominal_length
@@ -69,15 +69,15 @@ func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled:
 		var candidate_pitch := clampf(_pitch,_minimum_pitch,MAX_PITCH) if _active else _desired_pitch
 		_near_height=0
 		var candidate_distance := maxf(nominal_length,_distance)
-		# Every footprint covers whole terrain cells, including an8m motion/heading guard.
-		# Retain the maximum across trials so an intermediate/smoothed distance is safe too.
+		# Toda área cobre células inteiras do terreno, incluindo uma margem de8m de movimento/rumo.
+		# Guarda o máximo entre as tentativas para que uma distância intermediária/suavizada também seja segura.
 		for iteration in 4:
 			_near_height=maxf(_near_height,_plane_height_bound(focus,direction,candidate_pitch,candidate_distance,view_size,near_clip))
 			var required := _required_distance(focus,candidate_pitch,nominal_length,view_size,near_clip)
 			if required<=candidate_distance+.01: break
 			candidate_distance=required
 			if iteration==3:
-				# Finite fallback is an authored elevation bound, not skipped safety work.
+				# O fallback finito é um limite autoral de elevação, não trabalho de segurança pulado.
 				_near_height=FIELD_HEIGHT_CEILING
 				_fallback_bound=true
 		_height_cache=_next_cache
@@ -93,7 +93,7 @@ func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled:
 		_cached_distance=candidate_distance
 		if fresh: _pitch=_desired_pitch
 		_active=true
-	# Raise immediately only to the proven minimum; the3degree advance reserve smooths normal motion.
+	# Sobe de imediato só até o mínimo comprovado; a reserva de avanço de3graus suaviza o movimento normal.
 	_pitch=maxf(_minimum_pitch,lerpf(_pitch,_desired_pitch,1.0-exp(-6.0*maxf(delta,0))))
 	var required_distance := _required_distance(focus,_pitch,nominal_length,view_size,near_clip)
 	_distance=maxf(required_distance,lerpf(_distance,required_distance,1.0-exp(-5.0*maxf(delta,0))))
@@ -105,7 +105,7 @@ func _solve_sight(target: Vector3,direction: Vector3,base_pitch: float,radius: f
 	var anticipation := Vector3(velocity.x,0,velocity.z)*.15
 	if anticipation.length()>6: anticipation=anticipation.normalized()*6
 	_needed_pitch=base_pitch
-	# Parallel orthographic rays start from centre and four footprint corners, now and ahead.
+	# Raios ortográficos paralelos partem do centro e dos quatro cantos da área, agora e à frente.
 	for future in [Vector3.ZERO,anticipation]:
 		for corner in [Vector2.ZERO,Vector2(-1,-1),Vector2(-1,1),Vector2(1,-1),Vector2(1,1)]:
 			var start: Vector3=target+future+(right*corner.x+direction*corner.y)*radius
@@ -119,7 +119,7 @@ func _solve_sight(target: Vector3,direction: Vector3,base_pitch: float,radius: f
 	_desired_pitch=minf(MAX_PITCH,_minimum_pitch+deg_to_rad(3.0)) if _minimum_pitch>base_pitch+.001 else base_pitch
 
 func _required_distance(focus: Vector3,pitch: float,nominal_length: float,view_size: Vector2,near_clip: float) -> float:
-	# Bottom of the entire near-plane rectangle, not only its centre, clears the highest sampled cell.
+	# A base do retângulo inteiro do plano próximo, não só o centro, passa acima da célula amostrada mais alta.
 	return maxf(nominal_length,(_near_height+PLANE_MARGIN+view_size.y*.5*cos(pitch)-focus.y)/maxf(sin(pitch),.1)+near_clip)
 
 func _plane_height_bound(focus: Vector3,direction: Vector3,pitch: float,distance: float,view_size: Vector2,near_clip: float) -> float:

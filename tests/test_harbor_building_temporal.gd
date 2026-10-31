@@ -1,6 +1,6 @@
 extends "res://tests/test_harbor_building_walkthrough.gd"
-## Video evidence is separate from frame-time measurement: recorder overhead
-## is intentionally excluded from any performance conclusion.
+## A evidência em vídeo é separada da medição de tempo de quadro: o custo do gravador
+## fica de propósito fora de qualquer conclusão de desempenho.
 var recorder := -1
 var epochs: Array[Dictionary] = []
 var origin := 0

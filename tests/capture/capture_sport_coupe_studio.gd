@@ -1,5 +1,5 @@
 extends SceneTree
-## Matching-angle evidence from the production fleet factory, never a concept image.
+## Evidência em ângulo correspondente da fábrica de frota de produção, nunca uma imagem conceitual.
 var label := "before"
 func _initialize() -> void: run.call_deferred()
 func run() -> void:

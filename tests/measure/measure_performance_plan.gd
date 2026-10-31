@@ -1,6 +1,6 @@
 extends SceneTree
-## Rendered production-scene diagnostic, with normal callbacks and isolated saves.
-## Wait for the production population/traffic caps, then warm 10 s and sample >=30 s.
+## Diagnóstico renderizado na cena de produção, com callbacks normais e saves isolados.
+## Espera os limites de população/trânsito da produção, depois aquece 10 s e amostra >=30 s.
 var world: Node
 var label := "baseline"
 var output := ""
@@ -39,8 +39,8 @@ func census_startup_orphans(phase: String) -> void:
 	for id: int in Node.get_orphan_node_ids():
 		if startup_orphan_seen.has(id): continue
 		var node := instance_from_id(id) as MeshInstance3D
-		# The observed exit leak consists of parentless meshes. Detached owned
-		# subtrees are outside this census, not automatically classified as leaks.
+		# O vazamento observado na saída consiste em malhas sem pai. Subárvores próprias
+		# desligadas ficam fora deste censo, não são classificadas automaticamente como vazamento.
 		if node == null or node.get_parent() != null: continue
 		startup_orphan_seen[id] = true
 		if startup_orphan_rows.size() >= 256:
@@ -122,7 +122,7 @@ func is_interior_warmup(node: Node) -> bool:
 	return int(WARMUP_SOURCE._warming.get(str(vehicle.get("archetype")),0)) == vehicle.get_instance_id()
 
 func start_identity_diagnostic() -> void:
-	# Opt-in observer only: no runtime wrappers, mesh arrays or GPU readback.
+	# Só observador opcional: sem wrappers de runtime, arrays de malha nem leitura da GPU.
 	node_added.connect(func(node: Node) -> void:
 		if is_interior_warmup(node): record_warmup_node(node))
 	RenderingServer.frame_pre_draw.connect(func(): identity_draw_pre = Time.get_ticks_usec())
@@ -242,8 +242,8 @@ func run() -> void:
 	root.add_child(world)
 	census_startup_orphans("main_added")
 	current_scene = world
-	# Session readiness occurs before production finishes its final warm-up.
-	# Do not let restore_location or the loading curtain overwrite this fixture.
+	# A prontidão da sessão ocorre antes de a produção terminar o aquecimento final.
+	# Não deixa restore_location nem a cortina de carregamento sobrescreverem esta fixture.
 	while world.session == null or not world.session.ready_for_play or world.production == null or not world.production.ready_for_play or root.has_node("LoadingCurtain") or world.has_node("LoadingCurtain"):
 		await process_frame
 		census_startup_orphans("startup")
@@ -264,9 +264,9 @@ func run() -> void:
 	world.camera.set_process_unhandled_input(false)
 	world.driving.set_process_unhandled_input(false)
 	world.session.set_process_input(false)
-	# FullSession polls the pointer independently of input callbacks. Pin a real
-	# controller-style aim direction so desktop mouse movement cannot move the
-	# camera or change the firearm pose between the compared runs.
+	# A FullSession consulta o ponteiro independente dos callbacks de entrada. Fixa uma direção
+	# de mira real no estilo controle para que o movimento do mouse do desktop não mova a
+	# câmera nem mude a pose da arma entre as rodadas comparadas.
 	var controls := root.get_node("GameInput")
 	controls.set_process_input(false)
 	controls._clear_camera_motion()
@@ -284,8 +284,8 @@ func run() -> void:
 		push_error("PERFORMANCE_PLAN_SETTLING_TIMEOUT: population/traffic caps and streaming did not settle within %.0f seconds" % setup_seconds)
 		quit(6)
 		return
-	# Reset the clock at the scenario boundary: different fill durations must not
-	# silently change daylight between comparable warm-up/sample windows.
+	# Reinicia o relógio no limite do cenário: durações de preenchimento diferentes não podem
+	# mudar em silêncio a luz do dia entre janelas comparáveis de aquecimento/amostra.
 	world.session.weather.time_of_day = .4
 	world.session.state.world_state.time = .4
 	world.session.weather._update()
@@ -320,7 +320,7 @@ func run() -> void:
 			break
 		if warmup_identity_enabled:
 			var phase := "warmup" if now-started < 10000000 else ("boundary" if sample_started == 0 else "measurement")
-			# Close before apply_load; this frame's shots belong to the next interval.
+			# Fecha antes de apply_load; os disparos deste quadro pertencem ao próximo intervalo.
 			capture_identity_interval(now,previous,phase)
 		previous = now
 		apply_load(now)
@@ -338,7 +338,7 @@ func run() -> void:
 			if profile:
 				EngineDebugger.profiler_enable("servers",true,[256,true])
 				profile_started = true
-			# This interval crossed the warm-up boundary and precedes the profiler.
+			# Este intervalo cruzou o limite do aquecimento e vem antes do profiler.
 			continue
 		frames.append(ms)
 		gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(root.get_viewport_rid()))

@@ -43,7 +43,7 @@ func begin_temporal(race) -> bool:
 		var beginning := Time.get_ticks_usec()
 		var stamp := beginning
 		var samples: Array[float]=[]
-		# Six seconds warm-up followed by exactly32seconds of wall frame intervals.
+		# Seis segundos de aquecimento seguidos de exatamente32segundos de intervalos de quadro de parede.
 		while Time.get_ticks_usec()-beginning<38000000:
 			await process_frame
 			var now := Time.get_ticks_usec()

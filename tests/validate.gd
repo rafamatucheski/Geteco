@@ -37,8 +37,8 @@ func run() -> void:
 		query.exclude = [actor.get_rid()]
 		check(world.get_world_3d().direct_space_state.intersect_shape(query).is_empty(),"Citizen spawn must be clear: "+actor.name)
 		check(actor.is_on_floor(),"Citizen must stand on floor: "+actor.name)
-	# Sweep actual player/NPC bodies across representative solids, including
-	# a displacement large enough to cross the full object in one step.
+	# Varre corpos reais de jogador/NPC contra sólidos representativos, incluindo
+	# um deslocamento grande o bastante para atravessar o objeto inteiro num passo.
 	for actor in [world.player,world.people[0]]:
 		for solid in world.street.solids:
 			if solid.name == "Ground": continue

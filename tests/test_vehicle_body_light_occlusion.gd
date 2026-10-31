@@ -1,5 +1,5 @@
 extends "res://tests/test_belt_lantern_occlusion.gd"
-## Render the real fleet meshes, including the occupied cabin presentation.
+## Renderiza as malhas reais da frota, incluindo a apresentação da cabine ocupada.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const CABIN := preload("res://gameplay/VehicleInterior.gd")
 const OUT := "res://evidence/mobile-lights-rain-20261015/body"
@@ -47,7 +47,7 @@ func run() -> void:
 	box(game,Vector3(0,-.1,-8),Vector3(30,.2,40))
 	var receiver_height := .4 if bus_source else .65
 	var protected := Vector3(0,receiver_height,-12)
-	# The sideways body casts a wider shadow downstream than its own width.
+	# O corpo de lado projeta uma sombra mais larga adiante do que a própria largura.
 	var control := Vector3(5.5,receiver_height,-12)
 	box(game,protected,Vector3(.7,.5,.08))
 	box(game,control,Vector3(.7,.5,.08))

@@ -1,6 +1,6 @@
 extends SceneTree
-## Directed road/land/legacy-save support in the actual edited Harbor geography.
-## Real driving, fishing input and rendered landscaping belong to the session fixture.
+## Apoio dirigido de rua/terra/save legado na geografia real editada do Harbor.
+## Direção real, entrada de pesca e paisagismo renderizado pertencem à fixture de sessão.
 const REGION := preload("res://world/editing/EditableRegion.gd")
 const LOCATION := preload("res://runtime/FishingLocation.gd")
 const LAYOUT := preload("res://world/places/fishing/FishingRuralLayout.gd")
@@ -109,7 +109,7 @@ func run() -> void:
 	for frame in 3: await physics_frame
 	check(site.fishing_spots().map(func(spot): return spot.id)==["sereno_0","sereno_1","sereno_2","sereno_3"],"all fishing station identifiers survive relocation")
 	check(site.fishing_spots().all(func(spot): return support(spot.position) and capsule_clear(spot.position)),"all relocated fishing stations have support and full capsule clearance")
-	# A real actor crosses the previously ocean/land join, using the actual floor.
+	# Um ator real cruza a antiga junção oceano/terra, usando o piso real.
 	actor.teleport(Vector3(-426,.10,25.8))
 	actor.speed = 3.5
 	actor.set_physics_process(true)

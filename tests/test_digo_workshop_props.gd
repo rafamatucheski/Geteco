@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical furniture and budget checks in the actual native Digo room.
-## Rendered oclusion, materials and timing are verified separately in Main.
+## Checagens de mobília física e orçamento na sala nativa real do Digo.
+## Oclusão renderizada, materiais e cronometragem são conferidos à parte no Main.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")

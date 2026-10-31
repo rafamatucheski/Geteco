@@ -1,7 +1,7 @@
 extends SceneTree
-## Real dispatch spawn, model and projectile integration. The dispatch identity
-## determines equipment even when wanted stars change before disembarking.
-## Headless proves these contracts, not appearance or performance in Main.
+## Integração real de spawn, modelo e projétil do dispatch. A identidade do dispatch
+## determina o equipamento mesmo quando as estrelas de procurado mudam antes do desembarque.
+## O headless prova estes contratos, não a aparência nem o desempenho no Main.
 
 const KIT := preload("res://tests/dispatch/DispatchTestKit.gd")
 const CATALOG := preload("res://gameplay/WeaponCatalog.gd")
@@ -48,8 +48,8 @@ func check_response(expected: Dictionary) -> void:
 	game.set_physics_process(false)
 	dispatch.set_physics_process(false)
 	game.stars = int(expected.current)
-	# Weapon integration exercises an authorized response to witnessed violence;
-	# wanted stars alone intentionally no longer authorize firing.
+	# A integração das armas exercita uma resposta autorizada a violência testemunhada;
+	# só as estrelas de procurado de propósito não autorizam mais atirar.
 	game.police_case.confirmed(0, bundle.player.global_position, "gunfire")
 	game.last_known = bundle.player.global_position
 	game.last_known_valid = true

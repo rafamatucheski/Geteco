@@ -80,7 +80,7 @@ func stains_near(point: Vector3, radius: float) -> Array[Dictionary]:
 	return result
 
 
-## Contact consumers only need existence; preserve the same planar/scale test.
+## Os consumidores de contato só precisam da existência; preserva o mesmo teste de plano/escala.
 func has_stain_near(point: Vector3, radius: float) -> bool:
 	for stain in stains:
 		if not is_instance_valid(stain.node): continue

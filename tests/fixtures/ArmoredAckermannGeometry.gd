@@ -1,6 +1,6 @@
 extends "res://gameplay/NativeTrafficRoutes.gd"
-## Only the convoy uses this geometry. The shared traffic graph is unchanged.
-## Vehicle's 2.5 m wheelbase and .48 rad steering need >= 4.8 m radius.
+## Só o comboio usa esta geometria. O grafo de trânsito compartilhado não muda.
+## O entre-eixos de 2.5 m e o esterço de .48 rad do Vehicle precisam de raio >= 4.8 m.
 const TURN_RADIUS := 5.0
 var turn_diagnostics: Array = []
 var asphalt: Array = []

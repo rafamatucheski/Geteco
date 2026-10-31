@@ -1,6 +1,6 @@
 extends "res://tests/capture/video_review_interiors.gd"
-## Real Main and DispatchController models, staged on admitted outdoor ground.
-## Dedicated close views inspect weapons; this is not a benchmark or pursuit run.
+## Modelos reais do Main e do DispatchController, encenados em chão externo admitido.
+## Vistas próximas dedicadas inspecionam as armas; não é benchmark nem rodada de perseguição.
 
 var staged_units: Array[RefCounted] = []
 var staged_officers: Array[CharacterBody3D] = []
@@ -47,7 +47,7 @@ func run() -> void:
 		{"level": 3, "variant": "interceptor", "weapon": "smg", "tier": 1},
 		{"level": 4, "variant": "tactical", "weapon": "m4a1", "tier": 2},
 	]
-	# Current stars deliberately disagree with the three dispatch identities.
+	# As estrelas atuais discordam de propósito das três identidades do dispatch.
 	world.gameplay.stars = 6
 	for index in responses.size():
 		var response: Dictionary = responses[index]

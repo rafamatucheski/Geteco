@@ -1,5 +1,5 @@
 extends SceneTree
-## Real Economy/SaveStore contracts; the production UI route is rendered separately.
+## Contratos reais de Economy/SaveStore; a rota de UI de produção é renderizada à parte.
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")
@@ -105,7 +105,7 @@ func run() -> void:
 	session.close_menu()
 	world.player.teleport(park.to_global(VENDING.MACHINES.drinks.approach))
 	session.state.economy.enable_grid_inventory()
-	# Two pocket cells; full stacks prevent this different drink from fitting.
+	# Duas células de bolso; pilhas cheias impedem que esta bebida diferente caiba.
 	session.state.economy.grant_item("water", 4)
 	session.state.economy.grant_item("apple", 5)
 	vending.open("drinks")

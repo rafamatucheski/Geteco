@@ -1,5 +1,5 @@
 extends SceneTree
-## SaveStore round trip and schema validation, independent of rendered glass.
+## Ida e volta pelo SaveStore e validação de esquema, independentes do vidro renderizado.
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
 const FLEET := preload("res://runtime/FleetState.gd")
@@ -36,7 +36,7 @@ func run() -> void:
 		return
 	check(restored.world_state.vehicles[0].broken_glass==broken,"world vehicle preserves broken panes through JSON")
 	check(restored.world_state.garage_rewards.vehicles.garage_guest_1.broken_glass==broken,"garage vehicle preserves broken panes through JSON")
-	# A subsequent repair is represented by the empty record list.
+	# Um reparo seguinte é representado pela lista vazia de registros.
 	restored.world_state.vehicles[0].broken_glass=[]
 	check(store.save(restored)==OK,"repaired glass state can be saved")
 	var repaired := STATE.new()

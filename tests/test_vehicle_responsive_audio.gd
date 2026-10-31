@@ -87,7 +87,7 @@ func run() -> void:
 	world.add_child(car)
 	car.place(Vector3(0, .04, 0), 0)
 	car.set_physics_process(false)
-	# Upgraded street mechanics still use the original foreground/nearby audio.
+	# A mecânica de rua melhorada ainda usa o áudio original de primeiro plano/próximo.
 	check(car.has_meta("desert_powertrain") and not car.has_node("DesertCarAudio"), "coupe retains its original audio with the upgraded drivetrain")
 	car.controlled = true
 	car.speed = 8
@@ -213,9 +213,9 @@ func run() -> void:
 		check(pool.voices.any(func(voice): return voice.playing and voice.unit_size == 32), "driver impact audible and uses a real stream")
 	var remaining := playback_refs(world)
 	world.free()
-	# stop() marks playbacks for deletion in the real mixer; the server's
-	# following update releases them. Check completion rather than assuming
-	# a SceneTreeTimer covers enough wall time after a slow fixture frame.
+	# stop() marca as reproduções para exclusão no mixer real; a atualização seguinte
+	# do servidor as libera. Confere a conclusão em vez de supor que
+	# um SceneTreeTimer cobre tempo de parede suficiente depois de um quadro lento da fixture.
 	var drain_began := Time.get_ticks_usec()
 	while remaining.any(func(ref: WeakRef): return ref.get_ref() != null) and Time.get_ticks_usec() - drain_began < 2000000:
 		await process_frame

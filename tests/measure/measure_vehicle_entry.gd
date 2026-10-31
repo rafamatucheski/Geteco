@@ -10,8 +10,8 @@ func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--variant="): variant = arg.trim_prefix("--variant=").validate_filename()
-		# Baseline snapshot replaces this resource only in this test process.
-		# Never restore or overwrite concurrent workspace edits for A/B runs.
+		# O snapshot de linha de base substitui este recurso só neste processo de teste.
+		# Nunca restaure nem sobrescreva edições concorrentes do workspace para rodadas A/B.
 		if arg.begins_with("--boarding-source="):
 			var boarding_script: GDScript = load("res://gameplay/VehicleBoardingPresentation.gd")
 			boarding_script.source_code = FileAccess.get_file_as_string(arg.trim_prefix("--boarding-source="))

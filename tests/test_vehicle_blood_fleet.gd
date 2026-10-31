@@ -53,7 +53,7 @@ func run() -> void:
 		car.restore_blood_stains(0)
 		car.restore_blood_stains(int(decoded.blood_stains))
 		check(int(car.get_meta("blood_stains"))==15,id+" restored state")
-		# Real swept contact with an uncontrolled NPC/service vehicle, including reverse.
+		# Contato varrido real com um NPC/veículo de serviço não controlado, incluindo de ré.
 		if id in ["sedan_classic","police_cruiser","police_suv","police_transport","bike_cruiser","bike_urban","bike_sport","bike_police"]:
 			for reverse in [false,true]:
 				car.restore_blood_stains(0)

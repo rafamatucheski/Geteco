@@ -246,8 +246,8 @@ func run() -> void:
 	data.scene.queue_free()
 	await process_frame
 
-	# Fixed, finite seeded sampling tests the selection policy without requiring
-	# live traffic-dependent returns to keep retrying until destinations differ.
+	# Amostragem semeada fixa e finita testa a política de seleção sem exigir
+	# que voltas dependentes do trânsito vivo continuem tentando até os destinos diferirem.
 	var selection = RUNTIME.new()
 	selection._rng.seed = 20261007
 	var first: Array[Vector3] = selection.return_candidates()

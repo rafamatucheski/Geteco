@@ -1,6 +1,6 @@
 extends SceneTree
-## Rendered Main/.NET acceptance and finite diagnostics. Fixture relocation only
-## establishes the park approach; admission, drinks and return use live APIs.
+## Aceitação renderizada no Main/.NET e diagnósticos finitos. A realocação da fixture só
+## estabelece a aproximação do parque; admissão, bebidas e volta usam APIs vivas.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
@@ -107,8 +107,8 @@ func boot() -> void:
 
 func approach() -> bool:
 	if not world.session.state.place_id.is_empty() or runtime.busy(): return false
-	# Setup relocates between distant areas. Hold the real residency gate so
-	# streaming cannot refocus the old player point while the new floor loads.
+	# A preparação realoca entre áreas distantes. Segura o portão real de residência para que
+	# o streaming não volte o foco para o ponto antigo do jogador enquanto o piso novo carrega.
 	var gate: int = world.session._begin_transition("upside_fixture_approach")
 	if not check(gate > 0,"isolated approach fixture owns its streaming transition"): return false
 	var physics_enabled: bool = world.player.is_physics_processing()
@@ -146,8 +146,8 @@ func enter_live() -> bool:
 	if not check(world.session.nearest().get("id","") == "enter","Umbra entry is the live mapped interaction"): return false
 	var accepted: bool = await world.session.interact()
 	var deadline := Time.get_ticks_msec() + 15000
-	# The interaction dispatches entry asynchronously; stop at its admission,
-	# before the newly armed illusion takes ownership of the transition gate.
+	# A interação despacha a entrada de forma assíncrona; para na admissão dela,
+	# antes de a ilusão recém-armada tomar posse do portão de transição.
 	while world.session.transition_kind == "enter_place" and Time.get_ticks_msec() < deadline: await physics_frame
 	return check(accepted and world.session.state.place_id == LAYOUT.HAUNTED_ID,"live doorway interaction enters Umbra")
 
@@ -166,7 +166,7 @@ func negative_entries() -> bool:
 		check(world.session.amusement_park.house_view,"ordinary Umbra retains its own first-person camera")
 		if amount > 0.0:
 			check(world.session.wine.model.purchase(WINE_ID,world.session.state.economy).ok,"inside-drink fixture has a paid bottle")
-			# Boundary fixture starts at72; the last24 points come from a real drink.
+			# A fixture de limite começa em72; os últimos24 pontos vêm de uma bebida real.
 			world.session.wine.model.data.alcohol = 72.0
 			world.session.wine.model.data.cooldown = 0.0
 			check(world.session.wine.drink(WINE_ID) and is_equal_approx(float(world.session.wine.model.data.alcohol),96.0),"real drink reaches96 while already inside Umbra")
@@ -279,8 +279,8 @@ func _process(delta: float) -> bool:
 		previous_frame = 0
 		return false
 	if mode == "capture" and cycle_index > 0:
-		# Cycle0 stays still after the control probe; cycle1 gradually inspects
-		# the meteor sky, and cycle2 sweeps the side ruins. Only view input moves.
+		# O ciclo0 fica parado depois da sonda de controle; o ciclo1 inspeciona aos poucos
+		# o céu de meteoros, e o ciclo2 varre as ruínas laterais. Só a entrada de vista se move.
 		var elapsed: float = runtime.state.elapsed
 		var desired_yaw := sin(elapsed*.24)*(.65 if cycle_index == 1 else 1.05)
 		var desired_pitch := .50 + sin(elapsed*.2)*.12 if cycle_index == 1 else .12 + cos(elapsed*.25)*.12
@@ -299,8 +299,8 @@ func _process(delta: float) -> bool:
 func capture_frame() -> void:
 	if ending or mode != "capture" or not is_instance_valid(runtime) or not runtime.exploring() or paused: return
 	var now := Time.get_ticks_usec()
-	# Keep the target cadence tied to its epoch; scheduling from each actual
-	# render timestamp would halve capture frequency under harmless frame jitter.
+	# Mantém a cadência alvo presa à época dela; agendar a partir de cada timestamp real
+	# de render cortaria pela metade a frequência de captura sob variação inofensiva de quadro.
 	if now + 1500 < next_capture: return
 	if capture_origin == 0: capture_origin = now
 	next_capture = maxi(now,next_capture) + 33333 if next_capture == 0 else maxi(next_capture + 33333,now)
@@ -322,13 +322,13 @@ func persist_and_restore() -> void:
 	var loaded := STORE.read_valid(final_path)
 	var restored = STATE.new()
 	check(restored.restore_snapshot(loaded) and restored.region_id == "harbor" and restored.place_id.is_empty(),"SaveStore and GameState load the final Harbor exterior")
-	# JSON numbers become floats. Use the same canonical wine restore as Main,
-	# instead of comparing raw JSON dictionary types with integer serving counts.
+	# Números JSON viram floats. Usa a mesma restauração canônica do vinho do Main,
+	# em vez de comparar tipos crus de dicionário JSON com contagens inteiras de doses.
 	var restored_wine = preload("res://gameplay/wine/WineState.gd").new()
 	check(restored_wine.restore_snapshot(restored.world_state.wine_cellar) and restored_wine.intensity() == 0.0 and restored_wine.snapshot().servings == world.session.wine.snapshot().servings,"saved return remains sober and preserves stock")
 	var at: Array = restored.world_state.get("pedestrian",{}).get("position",[])
 	check(at.size() == 3 and absf(float(at[2])) < 1000,"disk checkpoint cannot contain the remote arena coordinate")
-	# One cold Main restore in the functional mode checks actual ownership reset.
+	# Uma restauração fria do Main no modo funcional confere o reinício real da posse.
 	if mode != "test": return
 	var saved := preserved_state()
 	world.queue_free()

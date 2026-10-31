@@ -23,7 +23,7 @@ func run() -> void:
 		arrival.start_or_resume(false)
 	assert(is_instance_valid(arrival.presentation))
 	if "--require-render-gate" in OS.get_cmdline_user_args(): assert(root.disable_3d)
-	# Keep the comparison independent of later changes to local user settings.
+	# Mantém a comparação independente de mudanças posteriores nas configurações locais do usuário.
 	Engine.max_fps = 60 if "--normal-fps" in OS.get_cmdline_user_args() else 0
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	root.size = Vector2i(1920,1080)

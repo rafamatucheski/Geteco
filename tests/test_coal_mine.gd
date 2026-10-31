@@ -1,5 +1,5 @@
 extends SceneTree
-## Native full-body paths and reward lifecycle. Rendered depth is a separate gate.
+## Caminhos nativos de corpo inteiro e ciclo de vida da recompensa. A profundidade renderizada é um portão à parte.
 const MINE := preload("res://world/mining/coal/CoalMinePlace.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 var failures: Array[String] = []
@@ -57,8 +57,8 @@ func run() -> void:
 		for frame in 3: await physics_frame
 		var who := "player" if player else "npc"
 		check(walk_path(actor, route), who + " sweeps entrance, full tunnel, lever, cash and return with floor support")
-		# Clear the connector's rock lip at x=16 before turning north with the
-		# full capsule; a diagonal cut at x=15.5 clips that legitimate wall corner.
+		# Passa da borda de rocha do conector em x=16 antes de virar para o norte com a
+		# cápsula inteira; um corte diagonal em x=15.5 raspa esse canto legítimo da parede.
 		var raid_route: Array[Vector3] = [Vector3(9, 0, 8.8), Vector3(9, 0, 3), Vector3(16.7, 0, 3),
 			Vector3(16.7, 0, -.5), Vector3(22, 0, -.5), MINE.RAID_LOOT]
 		check(walk_path(actor, raid_route), who + " crosses criminal gallery and flanks cover to cash table")

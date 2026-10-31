@@ -1,5 +1,5 @@
 extends SceneTree
-## Diagnostic comparison using the fleet's real paint, under the same light/camera.
+## Comparação de diagnóstico com a pintura real da frota, sob a mesma luz/câmera.
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const SOURCE := preload("res://runtime/VehiclePaint.gd")
 const OUT := "res://evidence/paint-glare-20260929/"
@@ -25,7 +25,7 @@ func run() -> void:
 	var camera := Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 11
-	# Align with the sun's reflection on horizontal body panels.
+	# Alinha com o reflexo do sol nos painéis horizontais da carroceria.
 	var reflected := (-sun.transform.basis.z).bounce(Vector3.UP)
 	camera.position = Vector3(0,1,0)+reflected*15.0
 	stage.add_child(camera)

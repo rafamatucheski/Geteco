@@ -1,5 +1,5 @@
 extends SceneTree
-## Temporal evidence in Main; saves every rendered frame, separately from FPS measurements.
+## Evidência temporal no Main; salva todo quadro renderizado, separado das medições de FPS.
 var world
 var folder := "res://evidence/port-glitches-20260929/before"
 var duration := 8.0

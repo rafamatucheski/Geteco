@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_performance_plan.gd"
-## Controlled localization-cost diagnostic in the actual production scene.
-## Disabled translation is a diagnostic baseline, not a historical source baseline.
+## Diagnóstico controlado de custo da localização na cena de produção real.
+## A tradução desligada é uma linha de base de diagnóstico, não uma linha de base histórica do código.
 func run() -> void:
 	var settings := root.get_node("V2Settings")
 	settings.text_language = "en"

@@ -1,7 +1,7 @@
 extends SceneTree
-## Differential public-API contract plus a bounded long-life persistence case.
-## The original Economy copy is required; candidate runtime is applied only to
-## a coordinated snapshot. No Main, rendering, performance claim or real save.
+## Contrato diferencial da API pública mais um caso limitado de persistência de vida longa.
+## A cópia original da Economy é obrigatória; o runtime candidato é aplicado só a
+## um snapshot coordenado. Sem Main, renderização, afirmação de desempenho nem save real.
 const ORIGINAL := preload("res://tests/fixtures/EconomyV1ReceiptReference.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")
 const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")

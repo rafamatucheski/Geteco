@@ -1,6 +1,6 @@
 extends SceneTree
-## Productive Harbor establishments through the same exterior entry and input
-## path used by the player. Run only with --no-save --skip-arrival.
+## Estabelecimentos produtivos do Harbor pela mesma entrada externa e pelo mesmo caminho
+## de entrada usados pelo jogador. Rode só com --no-save --skip-arrival.
 
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SERVICES := preload("res://runtime/Services.gd")
@@ -77,9 +77,9 @@ func press_key(code: Key, settle := 2) -> void:
 		await frames(settle)
 
 func place_player(point: Vector3) -> void:
-	# Interior rooms live far below the streamed exterior. Moving the exterior
-	# streamer to an interior-local point can legitimately keep travel_busy set
-	# and is not how the player walks to an interior action.
+	# As salas de interior ficam bem abaixo do exterior em streaming. Mover o streamer
+	# externo para um ponto local do interior pode legitimamente manter travel_busy ligado
+	# e não é como o jogador anda até uma ação de interior.
 	if state == null or state.place_id.is_empty(): world.production.region.set_focus(point)
 	world.player.teleport(point + Vector3.UP * .08)
 	await frames(5)
@@ -396,8 +396,8 @@ func _run() -> void:
 		check(await drain_dialogue() > 0, "alarme dos bombeiros abre interação própria")
 		await leave_place("harbor_fire_station")
 
-	# Maciota: unlock synthetic only prepares the already-earned service; access
-	# and operation still run through the actual exterior, workbench and UI.
+	# Maciota: o desbloqueio sintético só prepara o serviço já conquistado; o acesso
+	# e a operação ainda passam pelo exterior, bancada e UI reais.
 	check(_complete_intro_and_first_mission(), "fixture libera Monaliza sem save pessoal")
 	session.personal_car.refresh()
 	await frames(6)

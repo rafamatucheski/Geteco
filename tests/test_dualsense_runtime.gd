@@ -1,7 +1,7 @@
 extends SceneTree
-## Run with --no-save --skip-arrival on Godot .NET after compiling Harbor.csproj.
-## Production consumers receive joypad events; positions/equipment are explicit fixtures.
-## This checks input integration, not rendered camera quality, FPS or full travel routes.
+## Rode com --no-save --skip-arrival no Godot .NET depois de compilar Harbor.csproj.
+## Os consumidores de produção recebem eventos de joypad; posições/equipamento são fixtures explícitas.
+## Isto confere a integração da entrada, não a qualidade da câmera renderizada, FPS nem rotas completas.
 const SKATE_LAYOUT := preload("res://activities/skate/SkateParkLayout.gd")
 const ACTIVITY := preload("res://activities/ActivityDefinitions.gd")
 var world

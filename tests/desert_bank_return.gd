@@ -1,5 +1,5 @@
 extends SceneTree
-## Reproduce the measured Main route and inspect all real return blockers without clearing them.
+## Reproduz a rota medida no Main e inspeciona todos os bloqueios reais da volta sem removê-los.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 var world
@@ -45,7 +45,7 @@ func _run() -> void:
 	world.player.automatic_direction=Vector3.ZERO
 	world.session.weather.weather_state=0
 	world.session.weather.weather_timer=3600
-	# The diagnostic mode preserves the benchmark; the controlled obstruction skips its preamble.
+	# O modo de diagnóstico preserva o benchmark; a obstrução controlada pula o preâmbulo.
 	var preamble: Array=[] if blocked_return else [{"point":Vector3(300,.08,-742),"hour":.45},{"point":Vector3(-185,.08,-890),"hour":.9}]
 	for setup in preamble:
 		world.production.region.set_focus(setup.point)
@@ -60,7 +60,7 @@ func _run() -> void:
 	world.production.region.set_focus(definition.entry_position)
 	world.production.region.prepare_collision_at(definition.entry_position)
 	if blocked_return:
-		# Keep live streaming at the destination while admitting an ordinary parked car.
+		# Mantém o streaming vivo no destino enquanto admite um carro comum estacionado.
 		world.player.teleport(Vector3(-215,.08,-905))
 		for i in 240:
 			await physics_frame
@@ -82,7 +82,7 @@ func _run() -> void:
 	await physics_frame
 	var entry: Vector3=definition.entry_position+Vector3.UP*.08
 	if blocked_return:
-		# Admit Dante near the actual doorway, never inside the car placed in front of it.
+		# Admite o Dante perto da porta real, nunca dentro do carro posto na frente dela.
 		entry=Vector3.INF
 		for offset: Vector3 in [Vector3(0,0,-.9),Vector3(1.2,0,-.6),Vector3(-1.2,0,-.6),Vector3(1.4,0,0),Vector3(-1.4,0,0)]:
 			var candidate: Vector3=definition.entry_position+offset+Vector3.UP*.08

@@ -1,5 +1,5 @@
 extends SceneTree
-## Protect the Lastro parcel against the effective saved map, not source JSON alone.
+## Protege o lote do Lastro contra o mapa salvo efetivo, não só o JSON de origem.
 const BAR := preload("res://world/places/bars/BarCatalog.gd")
 const PARKING := preload("res://world/roadside_parking/RoadsideParkingLayout.gd")
 var failures: Array[String] = []

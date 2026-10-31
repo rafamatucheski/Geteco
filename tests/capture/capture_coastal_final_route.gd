@@ -1,8 +1,8 @@
 extends SceneTree
-## Finite rendered integration route; run with the project's .NET build and --no-save.
-## Regional hops are diagnostic teleports, NOT proof of access/progression routes.
-## Default: every drawn frame of the clips is saved. --external-video delegates
-## continuous recording to the operator. Neither mode is a performance benchmark.
+## Rota de integração renderizada finita; rode com o build .NET do projeto e --no-save.
+## Os saltos regionais são teleportes de diagnóstico, NÃO prova das rotas de acesso/progressão.
+## Padrão: todo quadro desenhado dos clipes é salvo. --external-video delega
+## a gravação contínua ao operador. Nenhum dos modos é benchmark de desempenho.
 const POLICE := Vector3(66, .15, 129)
 const ROAD_START := Vector3(107, .1, 23)
 const ROAD_END := Vector3(180, .1, 23)
@@ -61,8 +61,8 @@ func run() -> void:
 	report.gpu = RenderingServer.get_video_adapter_name()
 	report.external_video = external_video
 	report.resolution = str(root.size)
-	# The explicit menu path permits a real cold load while --no-save prevents
-	# automatic writes. No personal save path is loaded or written.
+	# O caminho explícito pelo menu permite um load frio real enquanto --no-save impede
+	# gravações automáticas. Nenhum caminho de save pessoal é lido ou gravado.
 	var state = preload("res://runtime/GameState.gd").new()
 	var intro: Dictionary = state.intro.snapshot()
 	intro.phase = "complete"

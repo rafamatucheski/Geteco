@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure.gd"
-## Real Main and isolated saves. Baseline disables only bars; never certifies
-## performance when another rendered game is running (check process inventory).
+## Main real e saves isolados. A linha de base desliga só os bares; nunca certifica
+## desempenho quando outro jogo renderizado está rodando (confira a lista de processos).
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 var folder := ""
 var issues: Array[String] = []
@@ -45,14 +45,14 @@ func run() -> void:
 	if measure: results.exterior = await sample()
 	if not baseline:
 		var session = world.session
-		# Start on the real approach; only this initial placement is fixture setup.
+		# Começa na aproximação real; só este posicionamento inicial é preparação da fixture.
 		var doorway: Vector3 = definition.entry_position
 		var entered := await walk(doorway - Vector3(0,0,2.0), 6.0)
 		while session.is_transition_blocked(): await physics_frame
 		verify(session.state.place_id == id, "physical push door admits " + id + " (walk=" + str(entered) + ")")
 		if session.state.place_id != id:
-			# Diagnostic fallback permits checking independent downstream contracts;
-			# the failed physical approach stays a failure in the report.
+			# O fallback de diagnóstico permite conferir contratos independentes mais adiante;
+			# a aproximação física que falhou continua como falha no relatório.
 			verify(await session.enter_place(id, false), "direct admission diagnostic")
 		while session.is_transition_blocked(): await physics_frame
 		if session.state.place_id == id:

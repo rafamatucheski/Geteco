@@ -37,8 +37,8 @@ func run() -> void:
 	var restored = STATE.new()
 	var loaded: Dictionary = store.load_into(restored)
 	var restored_honor: Dictionary = HONOR.data(restored.world_state)
-	# JSON numbers are decoded as floats: compare the persisted meaning, not
-	# Dictionary's strict recursive int/float identity.
+	# Os números JSON são decodificados como floats: compara o significado persistido, não
+	# a identidade recursiva estrita int/float do Dictionary.
 	check(loaded.ok and restored_honor.reward=="katana" and restored_honor.won and restored_honor.saber_unlocked and restored_honor.saber_color=="b833e9ff" and is_equal_approx(float(restored_honor.best_seconds),13.9),"Actual disk roundtrip preserves reward, best time and color")
 	state.set_location("harbor","maciota")
 	check(state.equipped_weapon=="fists" and not state.equip_weapon("katana") and not state.can_attack(),"Garage holsters and blocks katana")

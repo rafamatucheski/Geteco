@@ -1,5 +1,5 @@
 extends SceneTree
-## Real Main/.NET and isolated checkpoint. Functional checks do not certify FPS.
+## Main/.NET real e checkpoint isolado. As checagens funcionais não certificam FPS.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 var world
 var checks := 0
@@ -72,12 +72,12 @@ func motocross_case() -> void:
 	await frames(70)
 	check(mx.ambient.rows.size()==2,"missing rider is not replaced in front of the thief")
 	moving.reset_to(Transform3D(Basis.IDENTITY,Vector3(-500,.2,-30)))
-	# Also take the first stolen display out of its bay, preserving both mounts.
+	# Tira também o primeiro expositor roubado da baia dele, preservando os dois suportes.
 	bike.reset_to(Transform3D(Basis.IDENTITY,Vector3(-500,.2,-34)))
 	await frames(80)
 	check(mx.ambient.rows.is_empty() and is_instance_valid(moving),"leaving the venue unloads AI while keeping the stolen mount")
 	if is_instance_valid(venue): check(venue.parked_bikes[0]!=bike and venue.parked_bikes[0].get_parent()==venue,"leaving replenishes the stolen display even if its chunk is still loaded")
-	# Fixture return exercises streaming ownership; this is not a driving-route proof.
+	# A volta da fixture exercita a posse do streaming; isto não é prova de rota dirigida.
 	moving.reset_to(Transform3D(Basis.IDENTITY,Vector3(-220,.2,-32)))
 	world.production.region.set_focus(moving.position)
 	await frames(240)
@@ -145,7 +145,7 @@ func desert_case() -> void:
 		await frames(3)
 		check(is_instance_valid(damaged_display.activated) and damaged_display.activated.health<damaged_display.activated.max_health,"production weapon damage activates and damages the parked car")
 	await photo("stolen-meet-car")
-	# Use production death/rescue, not a direct reset of encounter dictionaries.
+	# Usa morte/resgate de produção, não um reinício direto dos dicionários do encontro.
 	world.gameplay.damage_player(1000)
 	for i in 1800:
 		await physics_frame

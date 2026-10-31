@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Rendered production HUD, same scene/settings and finite samples before/after.
+## HUD de produção renderizado, mesma cena/configurações e amostras finitas antes/depois.
 const STARTUP := preload("res://tests/fixtures/TravelBagScene.gd")
 var folder := ""
 var input_events := {}
@@ -67,8 +67,8 @@ func run() -> void:
 			await process_frame
 			var now := Time.get_ticks_usec()
 			if scenario != "hud" and not wheel.active:
-				# Alt-tab correctly cancels the real wheel. A cancelled view is
-				# never counted as a cheaper rendering of that view.
+				# Alt-tab cancela corretamente a roda real. Uma vista cancelada
+				# nunca conta como render mais barato daquela vista.
 				interrupted.append({"frames_ms":frames.duplicate(),"warmup_ms":warm.duplicate(),"health":world.gameplay.health})
 				if interrupted.size()>1 or world.gameplay.health<82 or not wheel.open():
 					push_error("HUD quality: wheel interrupted; timing sample invalid")
@@ -90,7 +90,7 @@ func run() -> void:
 		await capture(scenario+"-1280")
 		print("HUD_QUALITY ",variant," ",scenario," ",JSON.stringify(report.summary))
 	wheel.close(false)
-	# Restore normal hints only after timing is complete; captures show real keys.
+	# Restaura as dicas normais só depois de a cronometragem terminar; as capturas mostram teclas reais.
 	for action in input_events:
 		for event in input_events[action]: InputMap.action_add_event(action,event)
 	root.get_node("GameInput").bindings_changed.emit()

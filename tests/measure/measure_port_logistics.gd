@@ -66,7 +66,7 @@ func run() -> void:
 		root.get_texture().get_image().save_png(folder+"/"+site.id+".png")
 		print("LOGISTICS_MEASURE ",site.id," ",JSON.stringify(report.summary))
 	if "--undercroft-only" in OS.get_cmdline_user_args(): quit(); return
-	# Authored overview is a review photograph only, outside timing samples.
+	# A visão geral autoral é só fotografia de revisão, fora das amostras de tempo.
 	world.player.teleport(Vector3(-340,.1,-50))
 	world.production.region.set_focus(world.player.position)
 	for i in 90: await process_frame

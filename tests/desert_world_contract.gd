@@ -1,5 +1,5 @@
 extends SceneTree
-## Finite contracts for the real region/room nodes. Rendered depth and frame-time need separate capture.
+## Contratos finitos para os nós reais de região/sala. Profundidade renderizada e tempo de quadro precisam de captura à parte.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const REGION := preload("res://world/desert/DesertRegion.gd")
 const MINING_LAYOUT := preload("res://world/mining/MiningLayout.gd")
@@ -19,7 +19,7 @@ func _run() -> void:
 	var road_data := LAYOUT.roads()
 	check(LAYOUT.BOUNDS.get_area()<=1940.0*1576.5*.5,"Compact desert occupies at most half its previous area")
 	check(is_equal_approx(LAYOUT.DRAG_LENGTH,800.0),"Compact geography preserves the full 800m drag competition")
-	# Safety property: traffic must never cross an authored building, regardless of coordinates.
+	# Propriedade de segurança: o trânsito nunca pode atravessar um prédio autoral, quaisquer que sejam as coordenadas.
 	for building in LAYOUT.buildings():
 		var footprint := Rect2(Vector2(building.position.x,building.position.z)-Vector2(building.size.x,building.size.z)*.5,Vector2(building.size.x,building.size.z))
 		var conflicts: Array[String]=[]
@@ -60,8 +60,8 @@ func _run() -> void:
 	await physics_frame
 	await physics_frame
 	_ramp_layers(warm_region)
-	# Explicit preparation must acquire the complete panorama even when the
-	# ordinary focus is still at the remote bridge, then release its request.
+	# A preparação explícita precisa adquirir o panorama completo mesmo quando o
+	# foco comum ainda está na ponte distante, e depois liberar o pedido.
 	warm_region.prepare_drag_view(true)
 	check(warm_region._drag_preparing and warm_region.drag_view_cells.size()==42,"Explicit race preparation acquires the full42-cell camera band from outside course proximity")
 	warm_region.prepare_drag_view(false)
@@ -71,8 +71,8 @@ func _run() -> void:
 	var region := REGION.new()
 	region.initial_focus=LAYOUT.TRUCK_STOP
 	root.add_child(region)
-	# Idle includes thousands of decorations per cell under the production 1 ms
-	# budget. Check natural progress and completion, rather than 180 arbitrary frames.
+	# O ocioso inclui milhares de decorações por célula sob o orçamento de produção de 1 ms.
+	# Confere o progresso natural e a conclusão, em vez de 180 quadros arbitrários.
 	check(await _settle(region,"truck stop"),"Truck stop streaming settles finitely")
 	check(region.chunks.size()==9 and _residency_owned(region),"Truck stop keeps only its nine requested neighbouring cells")
 	await physics_frame
@@ -128,8 +128,8 @@ func _run() -> void:
 	region.set_focus(LAYOUT.drag_staging_point())
 	check(not region._drag_preparing and region.drag_view_cells.size()==42,"Staging proximity admits the complete camera band without explicit preparation")
 	check(await _settle(region,"drag course"),"Drag scenery completes with continuous progress")
-	# Grid alignment changes after relocation; coverage and ownership, rather
-	# than the previous coordinate-dependent 26-cell count, remain mandatory.
+	# O alinhamento da grade muda depois da realocação; cobertura e posse, em vez
+	# da contagem anterior de 26 células dependente de coordenada, continuam obrigatórias.
 	var view_bounds: Rect2=region.DRAG_VIEW_BOUNDS
 	check(view_bounds.encloses(LAYOUT.DRAG_STRIP_BOUNDS),"Race camera residency covers the complete relocated strip and braking pavement")
 	var expected_view_cells := 0
@@ -151,8 +151,8 @@ func _run() -> void:
 	check(_floor(rival_finish),"Distant rival has actual physical finish support")
 	region.set_vehicle_support([])
 	check(region.vehicle_support_cells.is_empty() and region.drag_view_cells.has(region._cell(rival_finish)) and region.chunks.has(region._cell(rival_finish)),"Removing rival support preserves finish scenery still owned by race camera")
-	# Leave the camera's hysteresis region before requiring the same finish cell
-	# to disappear. Removing one owner must not destroy another owner's scenery.
+	# Sai da região de histerese da câmera antes de exigir que a mesma célula de chegada
+	# desapareça. Remover um dono não pode destruir o cenário de outro dono.
 	region.set_focus(LAYOUT.BRIDGE_END)
 	check(region.drag_view_cells.is_empty() and not region.chunks.has(region._cell(rival_finish)),"Leaving race camera releases distant finish cells")
 	check(region.prepare_collision_at(rival_finish),"Late physical preparation can admit a distant desert cell")
@@ -190,8 +190,8 @@ func _settle(region: Node, label: String) -> bool:
 	var last_progress := began
 	var previous := _stream_state(region)
 	var frames := 0
-	# Finite functional watchdogs, not FPS/loading acceptance criteria. They
-	# catch a stalled phase or endless producer while retaining the real scheduler.
+	# Watchdogs funcionais finitos, não critérios de aceitação de FPS/carregamento. Eles
+	# pegam uma fase travada ou um produtor sem fim enquanto mantêm o agendador real.
 	while not region.is_streaming_idle():
 		await process_frame
 		frames+=1

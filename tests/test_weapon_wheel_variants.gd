@@ -1,6 +1,6 @@
 extends SceneTree
-## Uses production input, carried inventory transfers and garage restrictions.
-## Rendered runs also save the actual wheel at 1280x720 and 800x600.
+## Usa entrada de produção, transferências do inventário carregado e restrições da garagem.
+## As rodadas renderizadas também salvam a roda real em 1280x720 e 800x600.
 const STARTUP := preload("res://tests/fixtures/TravelBagScene.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")
 const ICONS := preload("res://systems/inventory/InventoryIcons.gd")
@@ -118,7 +118,7 @@ func run() -> void:
 		await key(KEY_Q, false)
 		check(session.state.equipped_weapon == family[2], "cancel preserves equipped variant")
 
-	# Shared L1/LB must be consumed by the hold wheel before legacy cycling.
+	# O L1/LB compartilhado precisa ser consumido pela roda de segurar antes da troca cíclica legada.
 	check(economy.restore_snapshot(initial), "controller inventory fixture restores")
 	for id: String in VARIANTS[0]: check(economy.collect_weapon_drop(id, 12), "controller pickup: " + id)
 	check(world.gameplay.equip_slot("pistol"), "controller begins with pistol")

@@ -1,6 +1,6 @@
 extends SceneTree
-## Two continuous rendered night sequences in Main/.NET. Readback, JPEG encoding
-## and the temporary 30 FPS recording cap make this visual evidence, not a benchmark.
+## Duas sequências noturnas renderizadas contínuas no Main/.NET. Leitura, codificação JPEG
+## e o limite temporário de gravação a 30 FPS fazem disto evidência visual, não benchmark.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LAYOUT := preload("res://world/places/amusement_park/AmusementParkLayout.gd")
 const COSMETICS := preload("res://activities/amusement_park/AmusementParkCosmeticState.gd")
@@ -67,7 +67,7 @@ func run() -> void:
 	world.camera.initialized = false
 	await create_timer(.5).timeout
 	await record("park",false)
-	# Walk the clear central aisle into the real compact transfer marker.
+	# Anda pelo corredor central livre até o marcador compacto real de transferência.
 	if not check(await walk(LAYOUT.ORIGIN+Vector3(20,.08,15)),"walk back to house promenade"): finish(); return
 	if not check(await walk(LAYOUT.HAUNTED_ENTRY),"walk up to Umbra"): finish(); return
 	var accepted: bool = await world.session.interact()
@@ -138,9 +138,9 @@ func check_house_pause() -> void:
 	paused = previous_pause
 
 func capture_house_depth() -> void:
-	# Paired rendered controls use the real props and ordinary depth test. Hiding
-	# only the target for the control proves whether its pixels reach the camera;
-	# the authored wall/stage/furniture and all lights remain unchanged.
+	# Os controles renderizados pareados usam os props reais e o teste de profundidade comum. Esconder
+	# só o alvo no controle prova se os pixels dele chegam à câmera;
+	# a parede/palco/mobília autorais e todas as luzes ficam inalteradas.
 	var park = world.session.amusement_park
 	var room = world.session.room
 	var ghost: Node3D = room.model.puppet
@@ -194,8 +194,8 @@ func depth_pair(camera: Camera3D, target: Node3D, id: String, origin: Vector3, l
 		"scene":"depth-"+id+".png","target_hidden_control":"depth-"+id+"-control.png"})
 
 func cosmetic_portrait() -> void:
-	# The separate integrated journey proved real exploration and UI equipping.
-	# These direct fixture grants isolate presentation and never touch a user save.
+	# A jornada integrada separada provou exploração real e equipar pela UI.
+	# Estas concessões diretas da fixture isolam a apresentação e nunca tocam um save do usuário.
 	for id in ["lume_jacket","star_glasses","fox_mask"]:
 		if not COSMETICS.data(world.session.state.world_state).found.has(id):
 			check(COSMETICS.collect(world.session.state.world_state,world.session.state.economy,id),"portrait fixture unlock "+id)

@@ -1,5 +1,5 @@
 extends SceneTree
-## Body impacts remain audible and independent inside the shared contact budget.
+## Os impactos em corpos continuam audíveis e independentes dentro do orçamento compartilhado de contatos.
 const AUDIO := preload("res://audio/VehicleCrashAudio.gd")
 var checks := 0
 var failures := 0

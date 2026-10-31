@@ -1,5 +1,5 @@
 extends SceneTree
-## Drafts never spend or mutate the authoritative loadout. Only Apply emits intent.
+## Rascunhos nunca gastam nem alteram o loadout de autoridade. Só o Apply emite intenção.
 const PANEL := preload("res://gameplay/desert_cars/DesertTuningPanel.gd")
 var failures: Array[String] = []
 

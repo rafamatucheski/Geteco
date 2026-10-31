@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Main: authorized crane cargo -> physical drive -> explicit handback.
-## Use --capture only during the coordinated visual window, never as an FPS test.
+## Main real: carga autorizada do guindaste -> direção física -> devolução explícita.
+## Use --capture só durante a janela visual coordenada, nunca como teste de FPS.
 const FREIGHT := preload("res://gameplay/urban_v1/PortFreightDelivery.gd")
 const URBAN := preload("res://gameplay/urban_v1/UrbanOperations.gd")
 const HAUL := preload("res://gameplay/urban_v1/PortHaulRoutes.gd")
@@ -15,8 +15,8 @@ func _initialize() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--out="): OUTPUT = argument.trim_prefix("--out=").trim_suffix("/") + "/"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT))
-	# The remote depot adds roughly 1 km of physical driving (~4–6 minutes),
-	# plus crane loading, boarding, a fresh Main reload and handback checks.
+	# O depósito distante acrescenta cerca de 1 km de direção física (~4–6 minutos),
+	# mais o carregamento pelo guindaste, o embarque, uma recarga nova do Main e as checagens de devolução.
 	create_timer(900,true,false,true).timeout.connect(func(): push_error("FREIGHT timeout"); quit(3))
 	run.call_deferred()
 func frames(count: int) -> void:
@@ -59,8 +59,8 @@ func drive_route(truck, route: Curve3D) -> bool:
 	var endpoint := route.get_point_position(route.point_count-1)
 	var progress := 0.0
 	var began := Time.get_ticks_msec()
-	# Bound the trip by its actual authored length: 2.5 m/s average allowance
-	# plus 90 seconds for junction queues, never more than nine real minutes.
+	# Limita a viagem pelo comprimento autoral real: tolerância média de 2.5 m/s
+	# mais 90 segundos para filas em cruzamentos, nunca mais de nove minutos reais.
 	var limit_ms := int(minf(540.0,length/2.5+90.0)*1000.0)
 	var frame := 0
 	var photographed := false
@@ -69,8 +69,8 @@ func drive_route(truck, route: Curve3D) -> bool:
 		var final_offset: Vector3 = endpoint-truck.global_position
 		final_offset.y = 0
 		if progress > length-8.0 and final_offset.length()<1.4: return true
-		# Pure pursuit samples the real directed route. Physics, steering and
-		# streaming still move the occupied vehicle; no transforms are assigned.
+		# A perseguição pura amostra a rota dirigida real. Física, esterço e
+		# streaming ainda movem o veículo ocupado; nenhuma transformação é atribuída.
 		var closest := route.get_closest_offset(truck.global_position)
 		progress = maxf(progress,minf(closest,progress+6.0))
 		var target := route.sample_baked(minf(length,progress+4.0),true)
@@ -132,14 +132,14 @@ func run() -> void:
 	world.player.automatic_direction = Vector3.ZERO
 	world.player.input_locked = false
 	session.weather.time_of_day = .4
-	# Keep the fixture's business-hour clock in the persisted state too;
-	# otherwise a fresh Main restores the original 07:41 closed-company time.
+	# Mantém também no estado persistido o relógio de horário comercial da fixture;
+	# senão um Main novo restaura o horário original de 07:41 com a empresa fechada.
 	session.state.world_state.time = .4
 	session.weather.set_process(false)
 	var ops = session.urban_operations
 	var cargo = ops.cargo_handling
 	var freight = ops.freight
-	# Pay through the existing guard action, not by setting permission flags.
+	# Paga pela ação existente do guarda, não definindo flags de permissão.
 	await place_actor(Vector3(3390.0 / 16, .08, 3340.0 / 16 + .8))
 	check(session.state.economy.grant_reward("video_phase4_funds", 500), "fixture funded through economy")
 	check(session.interact() and session.modal, "existing port guard conversation opens")
@@ -209,8 +209,8 @@ func run() -> void:
 	check(entry.phase == "freight", "player boarding no longer strands authorized cargo in interrupted phase")
 	await photograph("loaded")
 	world.camera.clear_store_focus()
-	# Follow the same current street graph and rural access used by the fleet.
-	# Every metre still uses the occupied Vehicle's steering and collision.
+	# Segue o mesmo grafo de ruas atual e o acesso rural usados pela frota.
+	# Cada metro ainda usa o esterço e a colisão do Vehicle ocupado.
 	var route: Curve3D = HAUL.journey(world.production.traffic_routes,truck.global_position,bay,false)
 	check(route != null and route.get_point_position(route.point_count-1).distance_to(depot)<.01,"directed freight route ends at the remote company's real dock")
 	if not failures.is_empty(): await finish(); return
@@ -227,8 +227,8 @@ func run() -> void:
 	check(truck.is_on_floor() and truck.health > 0 and entry.loaded, "arrival preserves floor support, truck and physical cargo")
 	check(not freight.perform("south_port_freight_deliver"), "payment requires explicit handback outside the vehicle")
 	check(not session.save_game(), "in-vehicle freight cannot save outside the quay")
-	# Explicit legacy fixture: older mid-freight saves remain loadable, even
-	# though gameplay can no longer publish them under the checkpoint policy.
+	# Fixture legada explícita: saves antigos no meio de um frete continuam carregáveis, mesmo
+	# que o jogo não possa mais publicá-los sob a política de checkpoint.
 	session.controller.capture_player_vehicle()
 	var saved_game: Dictionary = JSON.parse_string(JSON.stringify(session.state.snapshot()))
 	saved_game.world.erase("pedestrian")
@@ -243,8 +243,8 @@ func run() -> void:
 	world.set_meta("skip_arrival", true)
 	world.set_meta("skip_dispatch", true)
 	root.add_child(world)
-	# ProductionWorld.build is deferred by World._ready. Seed the new session
-	# before that build, without ever reading or replacing the personal save.
+	# ProductionWorld.build é adiado por World._ready. Semeia a sessão nova
+	# antes desse build, sem nunca ler nem substituir o save pessoal.
 	check(world.production.state.restore_snapshot(saved_game), "new Main accepts the complete saved game")
 	for _i in 2400:
 		await physics_frame
@@ -298,10 +298,10 @@ func run() -> void:
 	legacy.erase("freight")
 	check(URBAN.validate_snapshot(legacy), "legacy urban saves remain accepted without freight field")
 	check(ops.restore_snapshot(legacy) and not freight.bay_available(bay), "legacy world markers reconcile completed economy receipts")
-	# Separate lifecycle branch: remove a different active truck, then replay its
-	# resulting save. No explosions or protected characters are used by this test.
-	# A fresh session at the remote company has not spawned the other port
-	# slots yet; visit their actual activation area before testing their loss.
+	# Ramo separado de ciclo de vida: remove outro caminhão ativo e depois repete o
+	# save resultante. Nenhuma explosão nem personagem protegido é usado por este teste.
+	# Uma sessão nova na empresa distante ainda não criou os outros slots
+	# do porto; visita a área real de ativação deles antes de testar a perda.
 	await place_actor(Vector3(298,.1,219))
 	for _i in 600:
 		await physics_frame

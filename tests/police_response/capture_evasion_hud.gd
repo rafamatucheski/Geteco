@@ -1,5 +1,5 @@
 extends SceneTree
-## Directed HUD inspection in Main; no performance or end-to-end pursuit claim.
+## Inspeção dirigida do HUD no Main; não afirma nada sobre desempenho nem perseguição de ponta a ponta.
 var out := "res://evidence/police-balance-20261002/hud"
 var failures: Array[String] = []
 func _initialize() -> void: run.call_deferred()

@@ -1,6 +1,6 @@
 extends SceneTree
-## Real guard, native body and real Gameplay ballistic sweep on a physics fixture.
-## Calendar/radio ownership remains in the transport integration tests.
+## Guarda real, corpo nativo e varredura balística real do Gameplay numa fixture física.
+## A posse de calendário/rádio continua nos testes de integração do transporte.
 const GUARD := preload("res://gameplay/armored/ArmoredGuard.gd")
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
 class State extends RefCounted:

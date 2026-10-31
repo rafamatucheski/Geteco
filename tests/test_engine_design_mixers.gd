@@ -1,6 +1,6 @@
 extends SceneTree
-## Adapter integration with real vehicle instances and real playback nodes.
-## Vehicle motion is held by this fixture; rendered driving has its own runner.
+## Integração do adaptador com instâncias reais de veículo e nós reais de reprodução.
+## O movimento do veículo é segurado por esta fixture; a direção renderizada tem o próprio runner.
 const BANKS := preload("res://audio/EngineDesignBanks.gd")
 const LEGACY_BANKS := preload("res://audio/EngineBankCache.gd")
 const CATALOG := preload("res://audio/FleetEngineDesign.gd")
@@ -188,9 +188,9 @@ func run() -> void:
 		check(is_instance_valid(sound._design_voice) and sound._design_voice.snapshot().profile == "jz2_i6_turbo", "desert adapter binds Supra's authored six-cylinder turbo")
 		check(sound._layers.all(func(layer): return not layer.playing) and not sound._shift.playing, "desert design adapter stops duplicated legacy engine and blowoff")
 		check(foreground.design_voice.snapshot().motor_voices == 0 and not nearby._eligible(desert), "desert engine is not also mixed by foreground or nearby")
-		# Exercise a registered NPC, not an occupied driver already excluded by
-		# the service player's ownership rule. A nearby camera enables its normal
-		# spatial DesertCarAudio path without forcing the adapter's range state.
+		# Exercita um NPC registrado, não um motorista ocupado já excluído pela
+		# regra de posse do player de serviço. Uma câmera próxima liga o caminho espacial
+		# normal do DesertCarAudio sem forçar o estado de alcance do adaptador.
 		var camera := Camera3D.new()
 		world.add_child(camera)
 		camera.position = Vector3(0, 10, 0)

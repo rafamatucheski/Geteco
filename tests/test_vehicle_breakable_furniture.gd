@@ -38,11 +38,11 @@ func run() -> void:
 			var item: Dictionary = benches[0]
 			var point: Vector3 = item.point
 			var vehicle := car(1200,Vector3(2,1.4,4),point+Vector3(0,.04,3.8))
-			if kind == "harbor": vehicle.position.x += 2.8 # actual outer end of the wide bench
+			if kind == "harbor": vehicle.position.x += 2.8 # ponta externa real do banco largo
 			await physics_frame
 			if kind == "village":
-				# Station benches sit behind structural solids: test their ownership
-				# directly; the road-facing banks exercise the real car sweep.
+				# Os bancos da estação ficam atrás de sólidos estruturais: testa a posse deles
+				# diretamente; os bancos voltados para a rua exercitam a varredura real do carro.
 				FRAGILE.hit(item,12,Vector3.FORWARD,street)
 			else: street._hit_props(vehicle,Vector3(0,0,-12),Vector3(0,0,-3))
 			check(item.state == "down",kind+": impact breaks bench")
@@ -60,7 +60,7 @@ func run() -> void:
 		prop.free()
 		for body in street.find_children("*","RigidBody3D",true,false): body.free()
 	FRAGILE.cells.clear()
-	# Compound batches must release only the planter struck by the car.
+	# Lotes compostos precisam liberar só a jardineira atingida pelo carro.
 	var chunk := Node3D.new(); world.add_child(chunk)
 	var transform := Transform3D(Basis.IDENTITY,Vector3(20,0,20))
 	preload("res://world/city_look/CityChunkDressing.gd")._flush(chunk,{"planter":[transform,Transform3D(Basis.IDENTITY,Vector3(25,0,20))],"dumpster":[Transform3D(Basis.IDENTITY,Vector3(20,0,28))],"trash_bags":[Transform3D(Basis.IDENTITY,Vector3(20,0,32))]})

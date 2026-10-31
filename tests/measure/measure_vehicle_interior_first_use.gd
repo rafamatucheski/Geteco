@@ -1,9 +1,9 @@
 extends "res://tests/measure/measure_performance_plan.gd"
-## Directed first-use diagnostic. Main is rendered, but its process mode is disabled
-## after normal startup/settling. These frame statistics are NOT gameplay FPS.
-## Run in fresh processes with interior-control, interior-trigger or interior-stages
-## and HARBOR_PLAN_WARMUP_IDENTITY=1. Never clears resource caches. All directed arms
-## use 120 FPS to keep the bounded 12,000-interval observer below its limit.
+## Diagnóstico dirigido de primeiro uso. O Main é renderizado, mas o process mode dele é desligado
+## depois do início/assentamento normais. Estas estatísticas de quadro NÃO são FPS de jogo.
+## Rode em processos novos com interior-control, interior-trigger ou interior-stages
+## e HARBOR_PLAN_WARMUP_IDENTITY=1. Nunca limpa caches de recursos. Todos os braços dirigidos
+## usam 120 FPS para manter o observador limitado de 12,000 intervalos abaixo do limite.
 
 const FAMILY := "union_sedan"
 const VEHICLE_SOURCE := preload("res://scripts/Vehicle.gd")
@@ -36,8 +36,8 @@ func _record_event(event: String) -> void:
 		row["vehicle_instance_id"] = subject.get_instance_id()
 		row["vehicle_position"] = str(subject.global_position)
 	fixture_events.append(row)
-	# Keep event capture in memory: synchronous console/file output must not sit
-	# between the trigger timestamp and the operation being diagnosed.
+	# Mantém a captura de eventos em memória: saída síncrona de console/arquivo não pode ficar
+	# entre o timestamp do gatilho e a operação sendo diagnosticada.
 	row["capture_usec"] = Time.get_ticks_usec()-int(row.engine_usec)
 
 func _fail_fixture(reason: String) -> void:
@@ -46,7 +46,7 @@ func _fail_fixture(reason: String) -> void:
 	fixture_phase = "invalid"
 	_record_event("invalid:"+reason)
 	push_error("INTERIOR_FIRST_USE_INVALID: "+reason)
-	# The runner rejects the explicit error as well as this exit code.
+	# O runner rejeita o erro explícito e também este código de saída.
 	quit(7)
 
 func settle_load() -> bool:
@@ -60,9 +60,9 @@ func settle_load() -> bool:
 	if WARMUP_SOURCE._warmed.has(FAMILY) or WARMUP_SOURCE._warming.has(FAMILY):
 		_fail_fixture("family_already_warmed_or_pending")
 		return false
-	# Use the production Vehicle implementation, with identity and paint fixed before
-	# _ready. ProductionWorld.spawn_vehicle assigns a clock-derived identity first;
-	# changing it afterwards would leave VehicleUsage's original cosmetic variation.
+	# Usa a implementação de produção do Vehicle, com identidade e pintura fixadas antes do
+	# _ready. ProductionWorld.spawn_vehicle atribui primeiro uma identidade derivada do relógio;
+	# mudá-la depois deixaria a variação cosmética original do VehicleUsage.
 	subject = VEHICLE_SOURCE.new()
 	subject.archetype = FAMILY
 	subject.vehicle_id = VEHICLE_ID
@@ -74,8 +74,8 @@ func settle_load() -> bool:
 		_fail_fixture("fixed_spawn_position_not_clear")
 		return false
 	world.production.vehicles.append(subject)
-	# No await between construction and disabling Main: Driving cannot select the
-	# subject first. The fixed point is also outside its 5 m selection radius.
+	# Nenhum await entre a construção e desligar o Main: o Driving não pode selecionar o
+	# alvo primeiro. O ponto fixo também fica fora do raio de seleção de 5 m dele.
 	world.process_mode = Node.PROCESS_MODE_DISABLED
 	Engine.max_fps = 120
 	fixture_phase = "settled_frozen"
@@ -135,8 +135,8 @@ func _exercise_phase(which: String) -> void:
 			_fail_fixture("stage_first_missing_mesh")
 			return
 		_record_event(which+"_sync_end")
-		# No temporary glass or attached interior: observe deferred work caused by
-		# the normal spec/mesh construction across the following three frames.
+		# Sem vidro temporário nem interior anexado: observa o trabalho adiado causado pela
+		# construção normal de spec/malha nos três quadros seguintes.
 		for frame in 3: await process_frame
 	elif scenario == "interior-trigger" or scenario == "interior-stages":
 		await WARMUP_SOURCE.prewarm(subject)

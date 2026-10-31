@@ -24,5 +24,5 @@ func run() -> void:
 	print("CARGO_LAKE_READY ",folder)
 
 func finish() -> void:
-	# Route benchmark and the parent overview photographs use the same Main.
+	# O benchmark de rota e as fotografias gerais do pai usam o mesmo Main.
 	await super.finish()

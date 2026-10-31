@@ -1,5 +1,5 @@
 extends "res://tests/test_video_phase2_port.gd"
-## Actual rendered port interaction photos. This is not a frame-time benchmark.
+## Fotos renderizadas reais de interação no porto. Não é benchmark de tempo de quadro.
 const OUT := "res://evidence/video-review-phase2-20260924/"
 
 func run() -> void:

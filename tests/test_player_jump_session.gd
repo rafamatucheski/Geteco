@@ -10,7 +10,7 @@ func run() -> void:
 			definition = candidate
 			break
 	if not check(not definition.is_empty(),"authored tall roof selected"): finish(); return
-	# Use open pavement and verify full overhead clearance independently.
+	# Usa calçamento aberto e confere a folga completa acima de forma independente.
 	var outward := Basis(Vector3.UP,float(definition.exterior_rotation)) * Vector3.BACK
 	var snapshot := FIXTURE.full_snapshot(definition.return_position+outward*3.0+Vector3.UP*.08,true)
 	snapshot.campaign.aftermath = {"call_complete":true}
@@ -33,9 +33,9 @@ func run() -> void:
 	check(jump.is_action_pressed("jump"), "Space resolves the new remappable action")
 	print("JUMP_INPUT_CONTEXT ", JSON.stringify({"phase":world.player.air_movement.phase,"floor":world.player.is_on_floor(),"locked":world.player.input_locked,"modal":world.session.modal,"transition":world.session.transition_kind,"point":str(world.player.global_position)}))
 	Input.parse_input_event(jump)
-	# Input is delivered on a process tick. Several catch-up physics frames
-	# can precede that delivery, so observe actual lift instead of assuming
-	# six awaited physics signals mean six steps after the key was consumed.
+	# A entrada é entregue num tick de processo. Vários quadros de física de recuperação
+	# podem vir antes dessa entrega, então observa a subida real em vez de supor
+	# que seis sinais de física esperados significam seis passos depois de a tecla ser consumida.
 	var input_deadline := Time.get_ticks_msec()+2000
 	while world.player.global_position.y <= initial_y+.15 and Time.get_ticks_msec()<input_deadline: await physics_frame
 	print("JUMP_INPUT_RESULT ",JSON.stringify({"phase":world.player.air_movement.phase,"age":world.player.air_movement.age,"point":str(world.player.global_position),"velocity":str(world.player.velocity)}))

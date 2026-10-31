@@ -1,7 +1,7 @@
 extends "res://tests/measure/measure_desert.gd"
-## Run sequentially with --benchmark --no-save, once with --baseline and once
-## without. Same source/build/checkpoint/seed/camera; this isolates live event
-## content cost and is NOT a comparison with the source before implementation.
+## Rode em sequência com --benchmark --no-save, uma vez com --baseline e uma
+## sem. Mesmo código/build/checkpoint/semente/câmera; isto isola o custo do conteúdo
+## do evento ao vivo e NÃO é comparação com o código de antes da implementação.
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
 const RANDOM_SEED := 7102026
 const OBSERVER := Vector3(37.625,.12,18.875)
@@ -86,8 +86,8 @@ func run() -> void:
 	world.session.weather.weather_timer = 3600
 	world.session.weather.time_of_day = 9.0/24.0
 	world.session.weather._update()
-	# A fixed observer lens covers the whole bank formation in both invocations.
-	# Real scene, streaming, traffic, guards, physics and combat remain enabled.
+	# Uma lente de observador fixa cobre a formação inteira do banco nas duas invocações.
+	# Cena, streaming, trânsito, guardas, física e combate reais continuam ligados.
 	world.camera.set_process(false)
 	world.camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	world.camera.size = 65.0
@@ -101,8 +101,8 @@ func run() -> void:
 	var convoy = world.session.armored_transport
 	if not convoy.fleet.is_empty(): _fail("dormant checkpoint unexpectedly spawned fleet"); return
 	if "--before-parking" in args:
-		# Archived, unedited transport/guard source in the identical current Main.
-		# The dormant fixture has no fleet or crew to relocate during replacement.
+		# Código arquivado e não editado de transporte/guarda no Main atual idêntico.
+		# A fixture dormente não tem frota nem equipe para realocar durante a substituição.
 		convoy.queue_free()
 		await physics_frame
 		convoy = load("res://evidence/auditoria-viaria/2026-10-08-banco-transporte/ArmoredTransportBefore.gd").new()

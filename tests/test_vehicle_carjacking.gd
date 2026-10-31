@@ -75,7 +75,7 @@ func run() -> void:
 		victim.queue_free()
 		car.queue_free()
 		await process_frame
-	# Cancellation before contact must also release ownership of the held victim.
+	# Cancelar antes do contato também precisa liberar a posse da vítima segurada.
 	var car := spawn("sedan_classic",.0)
 	var victim := ACTOR.new()
 	stage.add_child(victim)
@@ -88,7 +88,7 @@ func run() -> void:
 	body.begin_entry(stage,car,actor,-1,false,theft)
 	check(body.reverse_entry_to_exit(), "occupied entry can be cancelled during approach")
 	check(theft.released and victim.is_physics_processing() and actor.visible, "cancellation releases both bodies without dangling timers")
-	# Removed vehicles must not strand their driver or leave disabled collision.
+	# Veículos removidos não podem deixar o motorista preso nem a colisão desligada.
 	car.free()
 	theft.release()
 	check(victim.collision_layer == 2, "release remains idempotent after vehicle removal")

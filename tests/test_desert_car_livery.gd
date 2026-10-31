@@ -1,5 +1,5 @@
 extends SceneTree
-## Regression for race vinyl through real fleet paint and animated door paths.
+## Regressão do vinil de corrida pela pintura real da frota e pelos caminhos animados das portas.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const CATALOG := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")

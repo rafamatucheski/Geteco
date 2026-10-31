@@ -1,5 +1,5 @@
 extends SceneTree
-## Reproducible exterior photographs in Main; never an FPS benchmark.
+## Fotografias externas reproduzíveis no Main; nunca benchmark de FPS.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const OUT := "res://evidence/video-review-phase2-20260924/"
 var world
@@ -61,7 +61,7 @@ func photograph(id: String, position: Vector3, focus: Vector3, size: float) -> v
 	for frame in 300:
 		await physics_frame
 		if world.production.region.prepare_collision_at(position): break
-	# Setup only: this photograph does not claim capsule/path admission.
+	# Só preparação: esta fotografia não afirma admissão de cápsula/caminho.
 	world.player.teleport(position)
 	world.player.input_locked = true
 	world.player.velocity = Vector3.ZERO

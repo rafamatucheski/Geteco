@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Main, no saves. Run -- --no-save --skip-arrival --population=24
-## --dante-label=before [--dante-capture]. Capture runs are NOT benchmarks.
+## Main real, sem saves. Rode -- --no-save --skip-arrival --population=24
+## --dante-label=before [--dante-capture]. Rodadas de captura NÃO são benchmarks.
 const IDS = ["smg", "pistol", "magnum", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower", "grenade", "knife", "axe", "bat", "knuckles", "fists"]
 var world
 var output := "res://evidence/dante-deformation-0922/"
@@ -29,8 +29,8 @@ func run() -> void:
 		if arg.begins_with("--dante-label="): label = arg.trim_prefix("--dante-label=")
 		if arg == "--dante-capture": capture = true
 		if arg == "--dante-baseline":
-			# Frozen pre-fix Actor, registered before Main loads its preloads.
-			# Never replace or roll back the shared working-tree file.
+			# Actor congelado de antes da correção, registrado antes de o Main carregar os preloads.
+			# Nunca substitua nem reverta o arquivo compartilhado da árvore de trabalho.
 			baseline_actor = load("res://evidence/dante-deformation-0922/Actor.before.gd")
 			baseline_actor.take_over_path("res://scripts/Actor.gd")
 	output += label + ("-capture" if capture else "-measure")
@@ -47,9 +47,9 @@ func run() -> void:
 	var player = world.player
 	var gameplay = world.gameplay
 	gameplay._rng.seed = 7
-	# Keep the presentation route alive while real NPCs/traffic/combat run.
-	# The original reproduction reached the hospital modal after police damage;
-	# comparing that modal with gameplay would not be a valid frame-time pair.
+	# Mantém a rota de apresentação viva enquanto NPCs/trânsito/combate reais rodam.
+	# A reprodução original chegava ao modal do hospital depois do dano policial;
+	# comparar esse modal com a jogabilidade não seria um par válido de tempo de quadro.
 	gameplay.health = 1000000.0
 	gameplay.state.economy.activate_arsenal_cheat()
 	world.camera.target_size = 12.0

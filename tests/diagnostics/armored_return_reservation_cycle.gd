@@ -1,11 +1,11 @@
 extends SceneTree
-## Reduced causal probe from armored-route-junction-exit-cobre-final.log.
-## HISTORICAL defect reproduction: assertions expect the pre-fix deadlock.
-## Acceptance coverage lives in tests/test_traffic_junction_completed_turn.gd.
-## Two real ordinary Vehicles, no convoy/controller/formation hold. Initial
-## transforms and already-committed entry reservations are explicit setup.
-## Local L-shaped routes reproduce the observed turning/next-approach relation;
-## this does not certify the full authored route, traffic demand or signal art.
+## Sonda causal reduzida a partir de armored-route-junction-exit-cobre-final.log.
+## Reprodução HISTÓRICA de defeito: as asserções esperam o deadlock de antes da correção.
+## A cobertura de aceitação fica em tests/test_traffic_junction_completed_turn.gd.
+## Dois Vehicles comuns reais, sem comboio/controlador/espera de formação. As transformações
+## iniciais e as reservas de entrada já comprometidas são preparação explícita.
+## Rotas locais em L reproduzem a relação observada entre a curva e a próxima aproximação;
+## isto não certifica a rota autoral completa, a demanda de trânsito nem a arte dos sinais.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const EAST := Vector3(382.5, 0, -262.5)

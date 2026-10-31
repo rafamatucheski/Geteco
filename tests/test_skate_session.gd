@@ -77,7 +77,7 @@ func run() -> void:
 		check(not npc_board.riding and actor.health < 100, "derrubar skatista deixa o skate disponível")
 		await frames(100)
 		world.player.teleport(npc_board.position + Vector3(.8, .1, 0))
-		# Mounting requires real floor contact; the teleport starts above the bowl.
+		# Montar exige contato real com o piso; o teleporte começa acima da bowl.
 		for i in 30:
 			await physics_frame
 			if world.player.is_on_floor(): break

@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure.gd"
-## Compare idle versus repeated real UI rounds at the same court, 8 s warmup +
-## 30 s samples. Screenshots are saved only after the measured interval.
+## Compara ocioso contra rodadas reais repetidas de UI na mesma quadra, 8 s de aquecimento +
+## amostras de 30 s. As capturas só são salvas depois do intervalo medido.
 const ART := preload("res://gameplay/urban_v1/TruckersVillageLeisureArt.gd")
 const SERVICE := preload("res://gameplay/urban_v1/TruckersVillageLeisure.gd")
 const FOLDER := "res://evidence/village-leisure-20260929"

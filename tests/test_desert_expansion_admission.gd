@@ -1,5 +1,5 @@
 extends SceneTree
-## A restored dune position must have matching support before deferred dressing.
+## Uma posição restaurada na duna precisa de apoio correspondente antes do acabamento adiado.
 const REGION := preload("res://world/desert/DesertRegion.gd")
 const LAND := preload("res://world/desert/expansion/DesertLandforms.gd")
 var checks:=0

@@ -106,8 +106,8 @@ func run() -> void:
 		var actor: CharacterBody3D=encounter.actors[index]
 		if not await defeat_with_player_weapon(actor): finish(1); return
 		check((int(world.session.state.world_state[ENCOUNTER.STATE_KEY].defeated_mask)&(1<<index))!=0,"real weapon kill persists its specific bandit slot")
-	# Isolate actual authored crate cover with the remaining living actor. This
-	# fixture placement is not evidence of walking around the crate or returning.
+	# Isola a cobertura real autoral de caixas com o ator vivo restante. Este
+	# posicionamento da fixture não é evidência de contornar a caixa nem de voltar.
 	var last: CharacterBody3D=encounter.actors[2]
 	var cover := CAMP.CENTER+Vector3(5,0,5)
 	var behind := cover+(cover-last.global_position).normalized()*5
@@ -124,8 +124,8 @@ func run() -> void:
 	await wait_seconds(2.2)
 	check(shots==shot_before and is_equal_approx(float(world.gameplay.health),health_before),"physical cover prevents bandit shots and damage")
 	await photo("camp-crate-cover")
-	# Probe the production death/drop branch synchronously with a deterministic
-	# random seed. The first two kills above already exercise real player weapons.
+	# Sonda o ramo de morte/drop da produção de forma síncrona com uma semente aleatória
+	# determinística. As duas primeiras mortes acima já exercitam armas reais do jogador.
 	var rng := RandomNumberGenerator.new()
 	var loot_seed := 1
 	for candidate in range(1,65):
@@ -152,7 +152,7 @@ func run() -> void:
 	var old_ids: Array[int]=[]
 	for actor in encounter.actors.values(): old_ids.append(actor.get_instance_id())
 	var old_camp: int=encounter.camp.get_instance_id()
-	# Streaming placements intentionally do not claim traversal of the access.
+	# Os posicionamentos de streaming de propósito não afirmam a travessia do acesso.
 	world.player.teleport(CAMP.CENTER+Vector3(0,.08,135))
 	await wait_seconds(.8)
 	var freed := not is_instance_id_valid(old_camp)
@@ -210,7 +210,7 @@ func collect_loot_by_walking(pickup: Node3D, source: CharacterBody3D) -> bool:
 	if not check(start.is_finite(),"loot approach starts with a clear physical player capsule"):
 		log.append(row)
 		return false
-	# Only establish the diagnostic start; thereafter Actor moves normally.
+	# Só estabelece o início do diagnóstico; daí em diante o Actor se move normalmente.
 	world.player.teleport(start)
 	await wait_seconds(.2)
 	start=world.player.global_position

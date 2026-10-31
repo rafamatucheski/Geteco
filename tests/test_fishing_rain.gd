@@ -1,9 +1,9 @@
 extends SceneTree
-## Isolated water/rain contracts. Requires renderer-backed MultiMesh readback;
-## the headless dummy renderer cannot verify contact transforms/custom data.
-## Does not certify integrated appearance or FPS.
-## The actual Site surface API runs with a small injected polygon; scenery/NPC
-## construction is intentionally excluded. RainGround still performs real rays.
+## Contratos isolados de água/chuva. Exige leitura de MultiMesh com renderizador real;
+## o renderizador dummy do headless não consegue conferir transformações de contato/dados personalizados.
+## Não certifica a aparência integrada nem FPS.
+## A API real de superfície do Site roda com um polígono pequeno injetado; a construção de
+## cenário/NPCs fica de fora de propósito. O RainGround ainda lança raios reais.
 const WATER := preload("res://world/places/fishing/FishingWaterDynamics.gd")
 const SITE := preload("res://world/places/fishing/FishingSite.gd")
 const RAIN := preload("res://runtime/atmosphere/RainGroundPresentation.gd")
@@ -160,7 +160,7 @@ func run() -> void:
 	check(site.water_dynamics.impact_count == 1 and peak(site.water_dynamics) > 0.0, "routed drop eventually changes actual water displacement")
 	check(absf(site.rain_surface_height_at(point) - initial_height) > .00000001, "surface height query follows the displaced field used by rain")
 
-	# A real solid roof above the same water point must win the first-hit ray.
+	# Um telhado sólido real acima do mesmo ponto de água precisa ganhar o raio do primeiro acerto.
 	add_box(stage, point + Vector3.UP * 3.0, Vector3(4,.2,4))
 	await physics_frame
 	await physics_frame

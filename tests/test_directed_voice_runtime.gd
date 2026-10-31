@@ -1,5 +1,5 @@
 extends SceneTree
-## Contract fixtures stay in memory and never publish or approve production takes.
+## As fixtures de contrato ficam em memória e nunca publicam nem aprovam tomadas de produção.
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
 const BANK := preload("res://audio/DirectedVoiceBank.gd")
 const SURFACE := preload("res://audio/VisibleDialogueVoice.gd")

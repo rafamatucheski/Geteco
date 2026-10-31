@@ -1,5 +1,5 @@
 extends "res://tests/desert_expansion_session.gd"
-## Real streamed Main captures. Overview camera is diagnostic, never an FPS claim.
+## Capturas reais do Main em streaming. A câmera de visão geral é diagnóstico, nunca afirmação de FPS.
 func run() -> void:
 	if not check(DisplayServer.get_name()!="headless" and "--no-save" not in OS.get_cmdline_user_args() and OS.get_environment("HARBOR_NO_CSHARP").is_empty(),"rendered native gallery with isolated save"):
 		finish(2); return
@@ -23,11 +23,11 @@ func run() -> void:
 			records=records.filter(func(record): return str(record.id) in names)
 	for record in records:
 		var p: Vector3=record.position
-		# Review the relic from its real ground approach, never place the fixture
-		# actor onto the wagon cargo or wreck roof via a ray from above its centre.
+		# Revisa a relíquia da aproximação real pelo chão; nunca põe o ator da fixture
+		# sobre a carga da carroça ou o teto do destroço por um raio vindo de cima do centro.
 		for site in SITES.secrets():
 			if str(site.id)=="desert_relic_"+str(record.id): p=site.position+Vector3(0,0,3)
-		# Avoid placing the actor inside a pillar when examining tall rocks.
+		# Evita pôr o ator dentro de um pilar ao examinar rochas altas.
 		if record.get("kind","") in ["hoodoo","basalt","balanced_rock"]: p+=Vector3(0,0,9)
 		await place(p)
 		var deadline:=Time.get_ticks_msec()+15000

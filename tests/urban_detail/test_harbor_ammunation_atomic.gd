@@ -1,7 +1,7 @@
 extends SceneTree
 
-## Guards the productive V1 Ammu-Nation address as one atomic contract:
-## catalog/access/return, streamed facade selection and displaced frontage name.
+## Protege o endereço produtivo da Ammu-Nation da V1 como um contrato atômico:
+## catálogo/acesso/retorno, seleção da fachada em streaming e nome de fachada deslocado.
 
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const REGION := preload("res://world/regions/NativeRegion.gd")

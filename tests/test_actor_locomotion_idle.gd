@@ -61,8 +61,8 @@ func _run() -> void:
 	actor.is_player = true
 	actor.controlled_automatically = true
 	stage.add_child(actor)
-	# The physical spawn can enter PlayerAirMovement's landing presentation.
-	# Observe idle only after that finite transition, without bypassing it.
+	# O spawn físico pode entrar na apresentação de pouso do PlayerAirMovement.
+	# Observa o ocioso só depois dessa transição finita, sem contorná-la.
 	var grounded := false
 	for _frame in 60:
 		await physics_frame

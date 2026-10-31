@@ -34,14 +34,14 @@ func run() -> void:
 	check(CONNECTION.tunnel_camera_weight(Vector3(CONNECTION.TUNNEL_END_X+25.0,0,CONNECTION.CENTER_Z))==0.0,"street camera restored beyond exit")
 	for side in [-1.0, 1.0]:
 		for i in 22:
-			# The flat walking strip starts beyond the entry/road-edge bevels.
+			# A faixa plana de caminhada começa depois dos chanfros da entrada/borda da rua.
 			var x := lerpf(CONNECTION.TUNNEL_START_X+.1, CONNECTION.TUNNEL_END_X-.1, float(i)/21.0)
 			for offset in [4.9, 5.7, 6.6]:
 				var point := Vector3(x, 1.0, CONNECTION.CENTER_Z+side*offset)
 				var query := PhysicsRayQueryParameters3D.create(point,point-Vector3.UP*2.0,1,[walker.get_rid()])
 				var hit := root.world_3d.direct_space_state.intersect_ray(query)
 				check(not hit.is_empty() and absf(hit.position.y-.07)<.005,"continuous supported pavement %s" % point)
-		# Halfway up each visible access ramp: the 10 cm rise has reached 5 cm.
+		# No meio de cada rampa de acesso visível: a subida de 10 cm chegou a 5 cm.
 		for point in [Vector3(middle,1.0,CONNECTION.CENTER_Z+side*4.575),Vector3(CONNECTION.TUNNEL_START_X-.275,1.0,CONNECTION.CENTER_Z+side*5.7),Vector3(CONNECTION.TUNNEL_END_X+.275,1.0,CONNECTION.CENTER_Z+side*5.7)]:
 			var query := PhysicsRayQueryParameters3D.create(point,point-Vector3.UP*2.0,1,[walker.get_rid()])
 			var hit := root.world_3d.direct_space_state.intersect_ray(query)
@@ -49,8 +49,8 @@ func run() -> void:
 		walker.position = Vector3(CONNECTION.TUNNEL_START_X-.45,.98,CONNECTION.CENTER_Z+side*5.7)
 		check(not walker.test_move(walker.transform,Vector3(CONNECTION.TUNNEL_END_X-CONNECTION.TUNNEL_START_X+.9,0,0)),"pedestrian corridor clear on side %s" % side)
 		check(walker.test_move(walker.transform,Vector3(0,0,side*3.0)),"wall blocks lateral escape on side %s" % side)
-	# Crossbeams must physically reach a support on both ends, even where the
-	# camera-facing wall is hidden. A gap leaves an unsupported end in gameplay.
+	# As vigas transversais precisam alcançar fisicamente um apoio nas duas pontas, mesmo onde a
+	# parede voltada para a câmera está escondida. Um vão deixa uma ponta sem apoio no jogo.
 	for rib in connection.get_children():
 		if not rib is MeshInstance3D or not is_equal_approx(rib.position.y,4.25): continue
 		for side in [-1.0,1.0]:

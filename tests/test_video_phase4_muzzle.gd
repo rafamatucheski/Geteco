@@ -1,5 +1,5 @@
 extends SceneTree
-## Production weapon geometry, flash/light and the actual outgoing tracer agree.
+## A geometria da arma de produção, o clarão/luz e o traçador real que sai concordam.
 const GAMEPLAY := preload("res://gameplay/Gameplay.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const STATE := preload("res://runtime/GameState.gd")
@@ -69,8 +69,8 @@ func run() -> void:
 			expected.z = bounds.position.z
 			check(absf(gameplay._muzzle_flash.position.z - expected.z) < .006, label + " flash starts at physical mouth")
 			if id == "m4a1":
-				# The authored barrel ends at -.390; the original effect anchor is
-				# -.400. The assembly must occupy that interval, not float ahead.
+				# O cano autoral termina em -.390; a âncora original do efeito é
+				# -.400. O conjunto precisa ocupar esse intervalo, não flutuar à frente.
 				check(_connected_m4_barrel(gameplay.gun, gameplay._muzzle_flash), label + " attachment meets physical barrel")
 		else:
 			if original == Vector3.ZERO: original = expected

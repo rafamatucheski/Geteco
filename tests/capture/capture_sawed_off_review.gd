@@ -1,6 +1,6 @@
 extends "res://tests/capture/capture_melee_filmstrip.gd"
-## Comparative rig filmstrips; the same capture works before the break-action
-## presentation module exists. Main.tscn supplies the integrated evidence.
+## Tiras de quadros comparativas do rig; a mesma captura funciona antes de existir o
+## módulo de apresentação de cano basculante. O Main.tscn fornece a evidência integrada.
 var _sawed_parts: Script
 
 func _run() -> void:

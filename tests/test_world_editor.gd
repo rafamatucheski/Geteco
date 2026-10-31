@@ -228,7 +228,7 @@ func find_editor_node(node: Node,id: String) -> Node3D:
 		if found != null: return found
 	return null
 
-# JSON numbers become floats; compare full structure and numeric values, not Variant storage tags.
+# Números JSON viram floats; compara a estrutura completa e os valores numéricos, não as tags de armazenamento Variant.
 func equivalent(a: Variant,b: Variant) -> bool:
 	if DATA.number(a) and DATA.number(b): return float(a) == float(b)
 	if a is Dictionary and b is Dictionary:

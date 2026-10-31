@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## A/B at the exit; baseline restores only the previous flat-paving shadow flag.
+## A/B na saída; a linha de base restaura só a antiga flag de sombra do calçamento plano.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args():
 		quit(2)

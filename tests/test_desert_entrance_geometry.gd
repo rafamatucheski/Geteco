@@ -7,7 +7,7 @@ func check(value: bool,label: String) -> void:
 	print("ENTRANCE_GEOMETRY ","PASS " if value else "FAIL ",label)
 	failed=failed or not value
 func run() -> void:
-	# The same closed ridge must face the viewer from either side, on both axes.
+	# A mesma serra fechada precisa encarar o observador de qualquer lado, nos dois eixos.
 	for vertical in [true,false]:
 		var parent:=Node3D.new()
 		BOUNDARY._strip(parent,Rect2(-20,-20,40,40),Vector2(0,-8) if vertical else Vector2(-8,0),Vector2(0,8) if vertical else Vector2(8,0),func(_p: Vector2): return 0.0,false)

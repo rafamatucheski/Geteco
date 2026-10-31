@@ -1,8 +1,8 @@
 extends SceneTree
-## Visual review of the motocross venue in the real Main scene (day, dry).
-## Gameplay framing: orthographic, 45 degree pitch, size 34 as while riding.
-## Review captures only, NOT a performance benchmark. --no-save is mandatory.
-## Usage: --script res://tests/capture/capture_motocross_raceday.gd -- --no-save --label=after
+## Revisão visual do local do motocross na cena real do Main (dia, seco).
+## Enquadramento de jogo: ortográfico, inclinação de 45 graus, tamanho 34 como ao pilotar.
+## Só capturas de revisão, NÃO benchmark de desempenho. --no-save é obrigatório.
+## Uso: --script res://tests/capture/capture_motocross_raceday.gd -- --no-save --label=after
 var world
 var label := "after"
 var camera: Camera3D
@@ -66,14 +66,14 @@ func run() -> void:
 	await shot("hairpin-east")
 	await frame(Vector3(-221,.2,-33),26)
 	await shot("paddock")
-	# Diagnostic close-ups: berm shoulder stakes and the bleacher base.
+	# Closes de diagnóstico: estacas do ombro da curva inclinada e a base da arquibancada.
 	await frame(Vector3(-175,4.5,-88),9,Vector3(9,6,9))
 	await shot("berm-stakes-close")
 	await frame(Vector3(-206,1,-66),11,Vector3(-9,7,12))
 	await shot("bleacher-close")
 	await frame(Vector3(-175,5,-94),125,Vector3(0,130,114))
 	await shot("overview")
-	# Race start seen through the real gameplay camera and HUD.
+	# Largada da corrida vista pela câmera de jogo e pelo HUD reais.
 	session.state.economy.grant_reward("mx_capture",1000)
 	world.player.teleport(Vector3(-224,.15,-37))
 	for i in 30: await physics_frame

@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_harbor_idle_regression.gd"
-## One normal Main startup/warm-up, then standing30s and physical walking30s.
+## Um início/aquecimento normal do Main, depois parado30s e caminhada física30s.
 const MOTION_PHASE_USEC := 30000000
 const MOTION_SNAPSHOT_USEC := 5000000
 var _motion_phases: Array[Dictionary] = []
@@ -27,7 +27,7 @@ func run() -> void:
 func settle_load() -> bool:
 	seconds = maxf(seconds,62.0)
 	var settled: bool = await super.settle_load()
-	# Override only this diagnostic's automatic input, before the inherited warm-up.
+	# Sobrescreve só a entrada automática deste diagnóstico, antes do aquecimento herdado.
 	_walk = false
 	scenario = "standing_then_walking"
 	world.player.automatic_direction = Vector3.ZERO
@@ -43,8 +43,8 @@ func apply_load(now: int) -> void:
 			return
 		_open_motion(now)
 	else:
-		# This completed interval occurred under the PREVIOUS input. Record it
-		# before switching to walking; never assign a standing interval to phase2.
+		# Este intervalo concluído ocorreu sob a entrada ANTERIOR. Registra-o
+		# antes de trocar para caminhada; nunca atribui um intervalo parado à phase2.
 		_motion_frames.append(float(now-_motion_previous)/1000.0)
 		_motion_previous = now
 		if DisplayServer.window_is_focused(): _motion_current.focused_intervals += 1
@@ -60,7 +60,7 @@ func apply_load(now: int) -> void:
 		elif now >= _motion_next_snapshot:
 			_motion_next_snapshot += MOTION_SNAPSHOT_USEC
 			_motion_current.snapshots.append({"engine_usec":Time.get_ticks_usec(),"state":state()})
-	# Phase2 uses the original normal Actor movement and obstacle handling.
+	# A phase2 usa o movimento normal original do Actor e o tratamento de obstáculos.
 	super.apply_load(now)
 
 func _open_motion(now: int) -> void:

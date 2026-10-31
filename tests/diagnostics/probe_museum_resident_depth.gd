@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Focused close photograph of the visitor behind the museum's ship exhibit.
-## Camera direction is the gameplay direction; only zoom changes for inspection.
+## Foto próxima e focada do visitante atrás da exposição do navio no museu.
+## A direção da câmera é a de jogo; só o zoom muda para a inspeção.
 func run() -> void:
 	if DisplayServer.get_name()=="headless": quit(2); return
 	var folder := preload("res://tests/fixtures/NorthGatewayFixtures.gd").output_dir("museum-resident-depth")

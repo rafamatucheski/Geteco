@@ -26,7 +26,7 @@ func run() -> void:
 				found = point.visual.position.is_equal_approx(item.local_position)
 		check(found, "reward remains at authored position: "+str(item.id))
 	for x in range(-19, 16): check(room.is_floor_clear(Vector3(x, 0, 0), .35), "central aisle x=%d" % x)
-	# Rays above the former two-metre walls, including the hidden front wall.
+	# Raios acima das antigas paredes de dois metros, incluindo a parede da frente escondida.
 	for target in [Vector3(0, 2.7, -7), Vector3(0, 2.7, 7), Vector3(-22, 2.7, 0), Vector3(22, 2.7, 0), Vector3(0, 5, 0)]:
 		var start := Vector3(0, 2.7, 0)
 		var hit: Dictionary = room.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(start, target, 1))

@@ -1,6 +1,6 @@
 extends SceneTree
-## Production prewarm helper + real fleet decorators/cache. Visual equivalence and
-## runtime spawn/lighting remain required integration; this fixture does not prove FPS.
+## Helper de pré-aquecimento de produção + decoradores/cache reais da frota. Equivalência visual e
+## spawn/iluminação em runtime continuam integração obrigatória; esta fixture não prova FPS.
 const COLD := preload("res://runtime/ProductionWorld.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const PASS := preload("res://runtime/FleetSpeedPass.gd")

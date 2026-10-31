@@ -17,7 +17,7 @@ func finger(index: int, position: Vector2, pressed: bool) -> void:
 	event.index = index
 	event.position = position
 	event.pressed = pressed
-	# Positions below are viewport coordinates, independent of window scaling.
+	# As posições abaixo são coordenadas de viewport, independentes da escala da janela.
 	root.push_input(event, true)
 	await process_frame
 	await process_frame
@@ -34,8 +34,8 @@ func run() -> void:
 		await process_frame
 		if world.session != null and world.session.ready_for_play: break
 	if world.session == null or not world.session.ready_for_play: quit(3); return
-	# Start away from the automatic garage entrance; real rendered frames let
-	# movement travel farther than a headless input-only check.
+	# Começa longe da entrada automática da garagem; quadros renderizados reais deixam
+	# o movimento ir mais longe do que uma checagem headless só de entrada.
 	world.player.teleport(Vector3(132, .15, 72))
 	for i in 12: await physics_frame
 	touch = world.find_child("AndroidControls", true, false)
@@ -93,8 +93,8 @@ func run() -> void:
 	await button("ui_cancel", 7, true)
 	await create_timer(.2).timeout
 	check(not paused, "Voltar retoma o jogo")
-	# Passenger/motocross deliberately lock the pedestrian; their mobile UI
-	# must remain reachable. Restore the fixture before simulation advances.
+	# Passageiro/motocross travam o pedestre de propósito; a UI móvel deles
+	# precisa continuar alcançável. Restaura a fixture antes de a simulação avançar.
 	world.player.input_locked = true
 	world.session.passenger_transport.riding = true
 	touch._refresh()
@@ -106,8 +106,8 @@ func run() -> void:
 	world.session.motocross.mounted = false
 	world.player.input_locked = false
 	touch._refresh()
-	# The activity's real input adapter is sufficient here; venue physics and
-	# paid tournament progression are exercised by test_fishing_session.gd.
+	# O adaptador de entrada real da atividade basta aqui; a física do local e a
+	# progressão do torneio pago são exercitadas por test_fishing_session.gd.
 	var fishing = world.session.get("fishing")
 	check(is_instance_valid(fishing), "sessão disponibiliza controlador de pesca para toque")
 	if is_instance_valid(fishing):
@@ -148,9 +148,9 @@ func run() -> void:
 	await create_timer(.2).timeout
 	check(not cargo_lock.active and not world.session.modal, "Voltar cancela gazua")
 	var bank_lock = world.session.robberies.lockpick
-	# This is the touch/minigame adapter fixture, opened outdoors. The heist's
-	# room lifecycle correctly closes any vault left outside harbor_bank; hold
-	# only that unrelated owner loop while the real dial and input keep running.
+	# Esta é a fixture do adaptador de toque/minijogo, aberta ao ar livre. O ciclo de vida
+	# da sala do assalto fecha com razão qualquer cofre deixado fora de harbor_bank; segura
+	# só esse laço de dono não relacionado enquanto o disco e a entrada reais continuam rodando.
 	var robbery_processing: bool = world.session.robberies.is_physics_processing()
 	world.session.robberies.set_physics_process(false)
 	var bank_cancellations := [0]
@@ -234,7 +234,7 @@ func run() -> void:
 		await button("more", 30, true)
 		check(controls.vehicle_input().x > .5 and controls.vehicle_input().y > .5, "abrir opções preserva direção e acelerador")
 		var audio = world.production.world_audio
-		audio._set_station(0) # Stable starting point for next/previous and off/on input checks.
+		audio._set_station(0) # Ponto de partida estável para as checagens de entrada próximo/anterior e desliga/liga.
 		var station: int = audio.radio_index
 		await button("radio_next",31,true)
 		await button("radio_next",31,false)

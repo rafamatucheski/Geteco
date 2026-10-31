@@ -1,6 +1,6 @@
 extends SceneTree
-## Real cat body and production furniture in one minimal native World3D.
-## This validates physical movement only; rendered depth/performance is separate.
+## Corpo real do gato e mobília de produção num World3D nativo mínimo.
+## Isto valida só o movimento físico; profundidade renderizada/desempenho são à parte.
 const CAT := preload("res://runtime/cats/HouseCat.gd")
 const FURNITURE := preload("res://runtime/cats/CatFurniture.gd")
 var scene: Node3D

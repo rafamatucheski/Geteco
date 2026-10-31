@@ -1,6 +1,6 @@
 extends SceneTree
-## Real room actors, swept collision, social escalation and combat; temporary controller
-## only for focused physics tests. Default mode uses Main and Gameplay's real melee.
+## Atores reais da sala, colisão varrida, escalada social e combate; controlador temporário
+## só para testes focados de física. O modo padrão usa o Main e o corpo a corpo real do Gameplay.
 const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
 const HOSTILITY := preload("res://world/places/sewers/SewerHostility.gd")
 var failures: Array[String] = []
@@ -98,7 +98,7 @@ func focused() -> void:
 		var actor = actors[0]
 		var origin: Vector3 = actor.position
 		var wall_hit: KinematicCollision3D = actor.move_and_collide(Vector3(0, 0, 40))
-		# Rect2.grow is conservative at corners; the real rounded capsule is authoritative.
+		# Rect2.grow é conservador nos cantos; a cápsula arredondada real é a autoridade.
 		var shape: CollisionShape3D = actor.get_child(0)
 		var overlap := PhysicsShapeQueryParameters3D.new()
 		overlap.shape = shape.shape

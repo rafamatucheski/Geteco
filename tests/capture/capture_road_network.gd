@@ -29,7 +29,7 @@ func run():
 		if world.session!=null and world.session.ready_for_play:break
 	if world.session==null or not world.session.ready_for_play:quit(3);return
 	world.player.controlled_automatically=true;world.player.automatic_direction=Vector3.ZERO
-	# An observer parked outdoors must not die of cold while the traffic is audited.
+	# Um observador estacionado ao ar livre não pode morrer de frio enquanto o trânsito é auditado.
 	world.session.cold.set_process(false)
 	world.camera.set_process_unhandled_input(false);world.camera.heading=0;world.camera.target_size=105
 	world.session.weather.time_of_day=.35;world.session.weather.weather_state=0
@@ -71,8 +71,8 @@ func run():
 	while Time.get_ticks_msec()-start<95000:
 		await RenderingServer.frame_post_draw
 		var elapsed=Time.get_ticks_msec()-start
-		# Consecutive native frames around each transition, including both sides.
-		# Keep the expensive image readback out of performance measurements.
+		# Quadros nativos consecutivos em volta de cada transição, incluindo os dois lados.
+		# Mantém a leitura cara de imagem fora das medições de desempenho.
 		if "--phase-frames" in OS.get_cmdline_user_args():
 			var half_cycle=SIGNALS.CYCLE*.5
 			var phase=fposmod(Time.get_ticks_msec()/1000.0+SIGNALS._offset(phase_center),half_cycle)
@@ -100,7 +100,7 @@ func run():
 		for id in seen.keys():
 			if not alive.has(id):
 				var record=seen[id].duplicate();record.id=id;record.end_ms=elapsed;record.reason="left_vehicle_list";completed.append(record);seen.erase(id)
-		# Compare the actual lens color and driver's decision in the same rendered frame.
+		# Compara a cor real da lente e a decisão do motorista no mesmo quadro renderizado.
 		for lens in SIGNALS._lenses:
 			var mesh=lens.mesh.get_ref()
 			if mesh==null or int(lens.index)>=mesh.instance_count:continue

@@ -1,5 +1,5 @@
 extends SceneTree
-## Ownership of threaded audio loads, including idle/stop, sharing and immediate unload.
+## Posse de carregamentos de áudio em thread, incluindo ocioso/parada, compartilhamento e descarga imediata.
 const RADIO := preload("res://gameplay/dispatch/PursuitRadioAudio.gd")
 var failures := 0
 var checks := 0
@@ -27,7 +27,7 @@ func released(paths: Array) -> bool:
 func run() -> void:
 	var settings: Node = root.get_node("V2Settings")
 	var old_language: String = settings.voice_language
-	settings.voice_language = "en" # Only the two squelches exist for this language in the bank.
+	settings.voice_language = "en" # Só os dois squelches existem para este idioma no banco.
 	var first := voice()
 	var second := voice()
 	var paths := paths_owned([first,second])

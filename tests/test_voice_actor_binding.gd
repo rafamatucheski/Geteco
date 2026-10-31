@@ -27,7 +27,7 @@ func _run() -> void:
 	root.add_child(actor)
 	var model := CIVILIAN.new()
 	model.wardrobe = {"female":true}
-	actor.visual = model # Resolver must use actual body data even before addition.
+	actor.visual = model # O resolvedor precisa usar os dados reais do corpo mesmo antes de ser acrescentado.
 	for personality in ["friendly", "reserved", "nervous"]:
 		actor.personality = personality
 		var binding := BINDING.resolve(actor, "building_social")
@@ -51,8 +51,8 @@ func _run() -> void:
 	for identity in 64:
 		var look := CIVILIAN._appearance_wardrobe(identity, Color.WHITE, Color.BLACK, Color.TRANSPARENT, {"female":true})
 		check(look.female and look.beard == 0, "Explicit female wardrobe must precede beard/hair roll")
-	# Missing matching imported assets must keep a visible procedural body of
-	# the correct sex, rather than borrowing an incompatible imported mesh.
+	# Sem recursos importados correspondentes, precisa manter um corpo procedural visível
+	# do sexo correto, em vez de pegar emprestada uma malha importada incompatível.
 	BODIES.enabled = true
 	BODIES._scanned = true
 	BODIES._available.assign([{"id":"male_only", "file":"male_only.glb", "female":false, "build":1}])
@@ -77,7 +77,7 @@ func _run() -> void:
 		if record.is_empty(): continue
 		var appearance: Dictionary = definition.get("appearance", {})
 		check(bool(appearance.get("is_female", false)) == (record[2] == "female"), "Authored gender matches sewer cast: " + str(definition.name))
-	# Two real models prove the is_female adapter reaches the rendered wardrobe.
+	# Dois modelos reais provam que o adaptador is_female chega ao guarda-roupa renderizado.
 	for female in [true, false]:
 		var resident := RESIDENT.new()
 		resident.is_female = female

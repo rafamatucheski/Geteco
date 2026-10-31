@@ -1,5 +1,5 @@
 extends SceneTree
-## Isolated art inspection only; does not certify integrated game performance.
+## Só inspeção isolada de arte; não certifica o desempenho integrado do jogo.
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 var output := "res://evidence/desert-cars"
 

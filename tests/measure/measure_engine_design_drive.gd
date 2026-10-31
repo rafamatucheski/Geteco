@@ -110,8 +110,8 @@ func run() -> void:
 	initial_fingerprint = fingerprint()
 	root.size = Vector2i(1280, 720)
 	seed(20261016)
-	# Erase external key bindings only in this measurement process; action_press
-	# still goes through GameInput and the real controller/gearbox.
+	# Apaga atalhos de tecla externos só neste processo de medição; action_press
+	# ainda passa pelo GameInput e pelo controlador/câmbio reais.
 	for action in INPUT_ACTIONS: InputMap.action_erase_events(action)
 	var initial := Vector3(64, .12, 82)
 	var snapshot: Dictionary = FIXTURE.full_snapshot(initial, false)
@@ -141,9 +141,9 @@ func run() -> void:
 	check(route != null and route.get_baked_length() > 30.0, "production road graph supplies a driving route")
 	if not failures.is_empty(): finish(); return
 	for index in route.point_count: route_points.append(str(route.get_point_position(index)))
-	# Query an unspawned hull first: the checkpoint player/traffic may occupy
-	# the route origin. A conservative 15% margin covers Fleet variant scales;
-	# spawn_vehicle still applies its exact production clearance check afterward.
+	# Consulta primeiro um casco não criado: o jogador/trânsito do checkpoint pode ocupar
+	# a origem da rota. Uma margem conservadora de 15% cobre as escalas das variantes da Fleet;
+	# spawn_vehicle ainda aplica depois a checagem exata de folga da produção.
 	var probe := ClearanceProbe.new()
 	var dimensions: Array = FLEET.spec(archetype).bounds_size
 	var hull := BoxShape3D.new()
@@ -193,7 +193,7 @@ func run() -> void:
 	await wait_seconds(8.0)
 	start_distance = float(car.distance_travelled)
 	set_phase("drive")
-	# One extra second ensures at least thirty full frame intervals are retained.
+	# Um segundo extra garante que pelo menos trinta intervalos completos de quadro sejam guardados.
 	await wait_seconds(31.0)
 	measured_distance = float(car.distance_travelled)-start_distance
 	check(measured_distance > 60.0, "measured route advances through real vehicle physics")
@@ -205,7 +205,7 @@ func run() -> void:
 	while absf(float(car.speed)) > .15 and Time.get_ticks_msec() < brake_deadline: await physics_frame
 	release_inputs()
 	check(absf(float(car.speed)) < .4, "real brakes stop the vehicle")
-	# Fault-state injection is deliberately outside the measured driving window.
+	# A injeção de estado de falha fica de propósito fora da janela de direção medida.
 	set_phase("disabled_engine_diagnostic")
 	car.engine_disabled = true
 	await wait_seconds(2.0)
@@ -231,8 +231,8 @@ func run_fixed_audio_abba() -> void:
 	design_flag_overridden = true
 	DESIGN_BANKS._enabled = true
 	set_phase("audio_prepare")
-	# Both caches remain resident across all four phases. Enable design during
-	# preparation so the normal mixers can allocate their bounded voice slots.
+	# Os dois caches ficam residentes nas quatro fases. Liga o design durante
+	# a preparação para que os mixers normais aloquem suas vagas de voz limitadas.
 	await LEGACY_BANKS.prewarm(self)
 	await DESIGN_BANKS.prewarm(self)
 	var legacy_resident := true
@@ -338,7 +338,7 @@ func _physics_process(_delta: float) -> bool:
 	if not capturing or not is_instance_valid(car): return false
 	release_inputs()
 	if fixed_audio_abba:
-		# Equal player inputs in every phase; no throttle or direct velocity writes.
+		# Entradas do jogador iguais em toda fase; sem escrita direta de acelerador ou velocidade.
 		Input.action_press("handbrake", 1.0)
 		return false
 	if phase in ["warmup", "drive", "coast"]:

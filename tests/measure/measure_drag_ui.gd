@@ -1,5 +1,5 @@
 extends SceneTree
-## Rendered Main benchmark. Setup uses an isolated checkpoint; races use real physics.
+## Benchmark renderizado no Main. A preparação usa um checkpoint isolado; as corridas usam física real.
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LAYOUT = preload("res://world/desert/DesertLayout.gd")
 var world

@@ -1,7 +1,7 @@
 extends SceneTree
-## Real Actor capsule walking the authored ramp, reverse route, railing and
-## vehicle-width sweeps. Dedicated fixture; integrated streaming/render review
-## remains the responsibility of the Main session test.
+## Cápsula real do Actor subindo a rampa autoral, rota inversa, guarda-corpo e
+## varreduras na largura de veículo. Fixture dedicada; a revisão integrada de streaming/render
+## continua responsabilidade do teste de sessão do Main.
 const LOOKOUT := preload("res://world/places/coastal_lookout/CoastalLookout.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 var actor: CharacterBody3D
@@ -40,8 +40,8 @@ func run() -> void:
 	current_scene = scene
 	var lookout := LOOKOUT.new()
 	scene.add_child(lookout)
-	# Existing street's flat landing ends at the ramp; no support is supplied to
-	# the climb or sea, so a missing ramp collision cannot pass this test.
+	# O patamar plano da rua existente termina na rampa; nenhum apoio é fornecido para
+	# a subida ou o mar, então uma colisão de rampa faltando não passa neste teste.
 	var ground := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()

@@ -1,6 +1,6 @@
 extends SceneTree
-## Diagnostic in the rendered game, with an isolated checkpoint and real car physics.
-## Debug measurements do not certify release performance.
+## Diagnóstico no jogo renderizado, com checkpoint isolado e física real de carro.
+## Medições em debug não certificam desempenho de release.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 var world
 var output := ""

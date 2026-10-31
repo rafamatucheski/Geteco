@@ -20,7 +20,7 @@ func run() -> void:
 	var initial_room := PLACES.create_place("harbor_hospital")
 	check(not original.is_empty() and initial_room!=null,"Existing service can create an interior")
 	if initial_room!=null: initial_room.free()
-	# Move the real facade and its entrance before removing it.
+	# Move a fachada real e a entrada dela antes de removê-la.
 	row.position = [float(row.position[0])+3,float(row.position[1])+2]
 	row.rotation = 15.0
 	var doc := DATA.empty_document()

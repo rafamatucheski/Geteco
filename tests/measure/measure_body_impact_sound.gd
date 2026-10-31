@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_body_impacts.gd"
-## Same real Main scene / vehicle sweeps as the body benchmark, with two audio
-## recordings. Recording overhead makes this diagnostic unsuitable as an FPS run.
+## Mesma cena real do Main / varreduras de veículo do benchmark de corpos, com duas
+## gravações de áudio. O custo da gravação torna este diagnóstico inadequado como rodada de FPS.
 const BODY_AUDIO := preload("res://audio/VehicleCrashAudio.gd")
 var master_record: AudioEffectRecord
 var contact_record: AudioEffectRecord
@@ -21,8 +21,8 @@ func run() -> void:
 	master_record.format = AudioStreamWAV.FORMAT_16_BITS
 	contact_record = AudioEffectRecord.new()
 	contact_record.format = AudioStreamWAV.FORMAT_16_BITS
-	# Append after existing effects: the contact recording includes its limiter,
-	# and Master includes the actual engine/city/SFX mix without muting anything.
+	# Acrescenta depois dos efeitos existentes: a gravação de contato inclui o limitador,
+	# e o Master inclui a mistura real de motor/cidade/SFX sem silenciar nada.
 	AudioServer.add_bus_effect(AudioServer.get_bus_index("Master"), master_record)
 	AudioServer.add_bus_effect(AudioServer.get_bus_index(contact_pool.bus_name), contact_record)
 	master_record.set_recording_active(true)

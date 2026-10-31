@@ -1,5 +1,5 @@
 extends RefCounted
-## Independent physical expectation for the narrow parked-car south passage.
+## Expectativa física independente para a passagem sul estreita junto ao carro estacionado.
 static func footprint(vehicle: CharacterBody3D) -> AABB:
 	var box := AABB(vehicle.global_position,Vector3.ZERO)
 	for x: float in [-float(vehicle.get("half_width")),float(vehicle.get("half_width"))]:

@@ -1,6 +1,6 @@
 extends SceneTree
-## A purchased weapon must be the same object shown in the store, including
-## reload pieces and the muzzle used to fit accessories. No scene/game save.
+## Uma arma comprada precisa ser o mesmo objeto mostrado na loja, incluindo as
+## peças de recarga e o cano usado para encaixar acessórios. Sem cena/save de jogo.
 const MODELS = preload("res://gameplay/ArsenalWeapon3D.gd")
 const SHOP = preload("res://assets/regions/source/guns/ammunation/AmmunationArt.gd")
 const LEGACY = preload("res://assets/regions/source/scripts/player/ArsenalWeapon3D.gd")

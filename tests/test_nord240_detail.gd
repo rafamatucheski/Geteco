@@ -1,7 +1,7 @@
 extends SceneTree
-## Nord 240 pilot: less geometry, working doors/lights/paint/damage, isolated from
-## the Touring variant. Rendered appearance and frame time are checked separately.
-## Run: godot --headless --path . --script res://tests/test_nord240_detail.gd
+## Piloto do Nord 240: menos geometria, portas/luzes/pintura/dano funcionando, isolado da
+## variante Touring. Aparência renderizada e tempo de quadro são conferidos à parte.
+## Rode: godot --headless --path . --script res://tests/test_nord240_detail.gd
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const FINISH := preload("res://runtime/VehicleFinish.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
@@ -22,8 +22,8 @@ func check(ok: bool, label: String) -> void:
 		push_error(label)
 
 func _original(id: String) -> Node3D:
-	# The unchanged baked source plus the pre-existing common finishing pass is
-	# the reference. Neither of these two IDs has HeavyDetail or TwoTone passes.
+	# A origem assada inalterada mais a passada comum de acabamento pré-existente é
+	# a referência. Nenhum destes dois IDs tem passadas HeavyDetail ou TwoTone.
 	var model := (load(FLEET.spec(id).scene) as PackedScene).instantiate() as Node3D
 	FINISH.decorate(id, model)
 	stage.add_child(model)
@@ -51,7 +51,7 @@ func _metrics(model: Node3D) -> Dictionary:
 
 func _wheel_signature(model: Node3D) -> Dictionary:
 	var centers := {}
-	# The driving factory discovers only direct children before making pivots.
+	# A fábrica de direção descobre só os filhos diretos antes de criar os pivôs.
 	for part in model.get_children():
 		if not part is MeshInstance3D or not part.has_meta("wheel_center"): continue
 		if not bool(part.get_meta("wheel_spins", true)): continue
@@ -127,8 +127,8 @@ func _body_at_door(model: Node3D, spec: Dictionary, side: int) -> bool:
 		(float(spec.zf) + float(spec.zr)) * .5)
 	var direction := Vector3(-side, 0, 0)
 	var inverse := model.global_transform.affine_inverse()
-	# Door leaves are nested below their hinge and excluded: this checks that
-	# the original static body actually loses the opening instead of duplicating it.
+	# As folhas das portas ficam aninhadas sob a dobradiça e excluídas: isto confere que
+	# o corpo estático original de fato perde a abertura em vez de duplicá-la.
 	for part in model.get_children():
 		if not part is MeshInstance3D or part.mesh == null or not part.visible: continue
 		var xf: Transform3D = inverse * part.global_transform
@@ -191,9 +191,9 @@ func run() -> void:
 	var original_wheels := _wheel_signature(original)
 	var touring_reference := _original("station_wagon")
 	var touring_fingerprint := _fingerprint(touring_reference)
-	# Shared fleet passes may evolve independently of this Nord pilot. Compare the
-	# production Touring factory before/after Nord use, and keep the raw source
-	# fingerprint separately to detect shared-resource mutation.
+	# As passadas compartilhadas da frota podem evoluir independente deste piloto do Nord. Compara a
+	# fábrica Touring de produção antes/depois do uso do Nord, e guarda à parte a impressão digital
+	# da origem crua para detectar mutação de recurso compartilhado.
 	var touring_factory_reference := FLEET.create("station_wagon")
 	stage.add_child(touring_factory_reference)
 	var touring_factory_fingerprint := _fingerprint(touring_factory_reference)
@@ -245,7 +245,7 @@ func run() -> void:
 	first.brake_input = false
 	equipment._refresh()
 	for material in equipment.tail_materials: check(not material.emission_enabled, "releasing brake extinguishes daytime brake lamps")
-	# Snapshot after equipment has made its own per-car lens copies.
+	# Snapshot depois que o equipamento fez as próprias cópias de lente por carro.
 	snapshots = _material_snapshots(first.visual)
 	first.receive_damage(first.max_health * .55)
 	check(not first.damage_look.burning and first.health > 0, "partial damage test remains below fire threshold")

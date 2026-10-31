@@ -1,5 +1,5 @@
 extends SceneTree
-## Production ferry movie is the opening actually selected by the game.
+## O filme de produção da balsa é a abertura de fato selecionada pelo jogo.
 const PRESENTATION := preload("res://runtime/OpeningPresentation.gd")
 var failures: Array[String] = []
 var completions: Array[bool] = []

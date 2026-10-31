@@ -157,8 +157,8 @@ func run() -> void:
 		if heli.mode == "rappel" and not heli.rappellers.is_empty():
 			var officer: CharacterBody3D = heli.rappellers[0].officer
 			airborne_seen = airborne_seen or (officer.global_position.y > 2.0 and not officer.is_physics_processing())
-			# Headless's dummy renderer returns identity for GPU instance readback.
-			# Inspect the same CPU transform submitted to MultiMesh instead.
+			# O renderizador dummy do headless devolve identidade na leitura de instâncias da GPU.
+			# Inspeciona em vez disso a mesma transformação de CPU enviada ao MultiMesh.
 			var current: Transform3D = heli.rope_transforms[0]
 			if initial_rope == Transform3D.IDENTITY: initial_rope = current
 			else: rope_moved = rope_moved or not current.is_equal_approx(initial_rope)
@@ -169,7 +169,7 @@ func run() -> void:
 				if controls.size() == 11:
 					glove_contacts_seen = glove_contacts_seen or (controls[2].distance_to(entry.contacts.upper_hand) < 0.005 and controls[3].distance_to(entry.contacts.harness) < 0.005 and controls[4].distance_to(entry.contacts.lower_hand) < 0.005)
 		await physics_frame
-		# Freeze delivered real officers only in the fixture to inspect landings.
+		# Congela policiais reais entregues só na fixture, para inspecionar os pousos.
 		for officer in gameplay.police: officer.set_physics_process(false)
 		if heli.dropped: break
 	check(airborne_seen, "officers descend physically with ground AI suspended")
@@ -203,8 +203,8 @@ func run() -> void:
 	for officer in gameplay.police: officer.queue_free()
 	gameplay.police.clear()
 	await frames(2)
-	# Evasion during insertion must not erase people in midair or deploy the
-	# remaining squad after the response has been called off.
+	# A evasão durante a inserção não pode apagar pessoas no ar nem desembarcar o
+	# resto do esquadrão depois que a resposta foi cancelada.
 	var recalled := HELICOPTER.new()
 	recalled.director = director
 	recalled.landing_zone = {"center": Vector3(0, 0.04, 0), "points": points}
@@ -275,7 +275,7 @@ func run() -> void:
 	gameplay.health = 3.0
 	dog._cooldown = 0.0
 	await frames(2)
-	# Allow facing, preparation and jaw contact; damage is no longer instant.
+	# Dá tempo para virar, preparar e encostar a mandíbula; o dano não é mais instantâneo.
 	for index in 40:
 		dog._physics_process(1.0 / 60.0)
 		await physics_frame

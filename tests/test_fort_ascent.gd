@@ -46,8 +46,8 @@ func run() -> void:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	# Production now prewarms regions before play; 420 physics ticks (7 s) can
-	# expire during that startup. Wait for real readiness with a wall-clock bound.
+	# A produção agora pré-aquece as regiões antes do jogo; 420 ticks de física (7 s) podem
+	# expirar durante esse início. Espera a prontidão real com um limite de tempo de parede.
 	var ready := await until(func(): return world.session != null and world.session.ready_for_play,60.0)
 	if not ready:
 		push_error("FORT_ASCENT Main did not become ready")

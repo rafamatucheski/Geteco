@@ -1,5 +1,5 @@
 extends SceneTree
-## Exterior inspection independent of Main; does not certify gameplay FPS.
+## Inspeção externa independente do Main; não certifica FPS de jogo.
 const MODEL := preload("res://runtime/transit/BiarticulatedModel.gd")
 func _initialize() -> void: run.call_deferred()
 func run() -> void:

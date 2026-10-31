@@ -16,7 +16,7 @@ func run():
 	SIGNALS.configure(graph,geometry.crossing_layout)
 	var center=Vector3(188,0,78.125)
 	var key=SIGNALS.key_of(center)
-	# Reproduce the northbound outer lane turning west from Quay into Market.
+	# Reproduz a faixa externa no sentido norte virando para o oeste do Quay para a Market.
 	var route=graph.route_near(Vector3(193.25,0,100),1)
 	check(route!=null,"Actual Quay to Market route exists")
 	if route!=null:

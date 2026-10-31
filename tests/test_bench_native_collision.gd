@@ -67,8 +67,8 @@ func run() -> void:
 								var moved = actor.move_and_collide(-outward*.05)
 								if moved != null:
 									print("BENCH_REAL_STEPS_BLOCK distance=",actor.global_position.distance_to(start)," collider=",moved.get_collider().get_path())
-									# The start is exactly .5m outside the authored corner.
-									# Actual movement must stop before reaching that corner.
+									# O início fica exatamente .5m fora do canto autoral.
+									# O movimento real precisa parar antes de chegar a esse canto.
 									gameplay_blocked = actor.global_position.distance_to(start) < .5 and bench.is_ancestor_of(moved.get_collider())
 									break
 						check(gameplay_blocked if hit == null else hit.get_travel().length() < .40,path+" diagonal corner blocks "+("player" if player else "npc")+" bench="+str(bench.position)+" start="+str(start))

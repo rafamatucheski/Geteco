@@ -23,7 +23,7 @@ func run():
 	floor_body.position = Vector3(400, -.5, 400)
 	street.add_child(floor_body)
 	street.player = Node3D.new()
-	# The production director spawns pedestrians at least 45 m away.
+	# O diretor de produção cria pedestres a pelo menos 45 m de distância.
 	street.player.position = Vector3(400, 0, 460)
 	street.add_child(street.player)
 	for i in 4:

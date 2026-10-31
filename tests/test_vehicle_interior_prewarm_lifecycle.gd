@@ -1,6 +1,6 @@
 extends SceneTree
-## Functional lifecycle contract with actual vehicles in a fresh process.
-## Never clears _warmed, _specs, _meshes or material caches. Not an FPS test.
+## Contrato funcional de ciclo de vida com veículos reais num processo novo.
+## Nunca limpa _warmed, _specs, _meshes nem os caches de material. Não é teste de FPS.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 var host: Node3D
@@ -25,7 +25,7 @@ func frames(count := 4) -> void:
 	for index in count: await process_frame
 
 func shared_material_contract() -> void:
-	# Shader preparation must not claim completion of any family's staged work.
+	# A preparação de shaders não pode afirmar a conclusão do trabalho preparado de nenhuma família.
 	var caches_before := [INTERIOR._warmed.duplicate(), INTERIOR._warming.duplicate(), INTERIOR._specs.duplicate(), INTERIOR._meshes.duplicate()]
 	var original_enabled: bool = INTERIOR.enabled
 	var original_material: StandardMaterial3D = INTERIOR._material
@@ -99,8 +99,8 @@ func on_node_added(node: Node) -> void:
 	warm_added[id] = int(warm_added.get(id, 0)) + 1
 	if id == cancellation_id and not cancellation_scheduled:
 		cancellation_scheduled = true
-		# Defer removal until add_child finishes. This is still before the next
-		# process_frame, while the real material prewarm is suspended.
+		# Adia a remoção até add_child terminar. Isto ainda é antes do próximo
+		# process_frame, enquanto o pré-aquecimento real de material está suspenso.
 		cancel_during_materials.call_deferred(car)
 
 func cancel_during_materials(car: Node3D) -> void:
@@ -141,8 +141,8 @@ func takeover_before_old_continuation() -> void:
 	var retry := new_vehicle(ID, "NewToken")
 	attempt(owner, "old_token_owner")
 	remove_vehicle(owner)
-	# The old coroutine has not resumed. A new request may take ownership, and
-	# the old continuation must not erase that newer request's completion.
+	# A corrotina antiga não retomou. Um pedido novo pode tomar posse, e
+	# a continuação antiga não pode apagar a conclusão desse pedido mais novo.
 	attempt(retry, "new_token_retry")
 	await frames(12)
 	check(bool(attempts.new_token_retry.done), "takeover finishes within a finite frame window")

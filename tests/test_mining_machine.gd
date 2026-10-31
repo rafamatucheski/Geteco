@@ -1,6 +1,6 @@
 extends SceneTree
-## Physics contracts with real fleet vehicles, colliders and hydraulic component.
-## This fixture does not claim rendered FPS or the production journey to the mine.
+## Contratos de física com veículos reais da frota, colisores e componente hidráulico.
+## Esta fixture não afirma FPS renderizado nem a jornada de produção até a mina.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const FLEET := preload("res://gameplay/mining/MiningFleet.gd")
 const OPERATION := preload("res://gameplay/mining/MiningOperation.gd")
@@ -47,8 +47,8 @@ func run() -> void:
 	check(rock.global_position.y > low+.7,"hydraulic arm physically raises rock")
 	controls.release_cargo()
 	check(not rock.freeze and not rock.has_meta("mining_carried_by"),"release restores rigid physics and clears ownership")
-	# A released object can rest on the solid scoop. Withdraw that support first;
-	# expecting it to pass through the bucket would certify broken collision.
+	# Um objeto solto pode repousar na pá sólida. Retira esse apoio primeiro;
+	# esperar que ele atravesse a caçamba certificaria uma colisão quebrada.
 	machine.position += Vector3.BACK*8
 	controls.operate(0.0,0.0)
 	for i in 100: await physics_frame

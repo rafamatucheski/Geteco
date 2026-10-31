@@ -1,6 +1,6 @@
 extends SceneTree
-## Main/.NET integration with an isolated authored checkpoint. Fixture teleports
-## locate the meet; this does not claim the highway approach was driven manually.
+## Integração Main/.NET com um checkpoint autoral isolado. Os teleportes da fixture
+## localizam o encontro; isto não afirma que a aproximação pela rodovia foi dirigida à mão.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 var world
@@ -109,14 +109,14 @@ func run() -> void:
 		check(not routine.diagnostics().talking and not session.modal,"Digo returns to his routine after dialogue")
 		await photo("digo-gameplay")
 		await check_service(session,routine)
-	# Leaving and returning exercises the production region transition and owner cleanup.
+	# Sair e voltar exercita a transição de região da produção e a limpeza do dono.
 	check(world.production.travel("harbor"),"ordinary regional travel leaves the meet")
 	await settle()
 	await frames(35)
 	check(get_nodes_in_group("desert_drag_crew").is_empty() and not is_instance_valid(routine.actor),"leaving releases crew and the working Digo")
 	check(get_nodes_in_group("desert_drag_meet_resident").is_empty() and int(meet.diagnostics().voices)==0,"leaving releases every resident and its spatial audio")
-	# The completed-campaign fixture legitimately delivers its Harbor epilogue
-	# on this first return. Finish it before testing calm re-entry at the meet.
+	# A fixture de campanha concluída entrega legitimamente o epílogo do Harbor
+	# nesta primeira volta. Termina-o antes de testar a reentrada calma no encontro.
 	for i in 12:
 		if not session.dialogue_open: break
 		session._advance_dialogue()

@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical/visual seams of the permanent bridge banks, without treating
-## ordinary unloaded terrain neighbours as coast or filling the bridge void.
+## Emendas físicas/visuais das margens permanentes da ponte, sem tratar
+## vizinhos comuns de terreno descarregados como costa nem preencher o vão da ponte.
 const REGION := preload("res://world/regions/NativeRegion.gd")
 const TERRAIN := preload("res://world/regions/MountainTerrain3D.gd")
 const SHORE := preload("res://world/regions/MountainBridgeShore.gd")
@@ -33,8 +33,8 @@ func build(key: Vector2i) -> MeshInstance3D:
 func run() -> void:
 	owners = REGION.new()
 	terrain = TERRAIN.new()
-	# Same physical pass width and axis as the authored connection. The separate
-	# bridge_approach_terrain test checks the production road catalogue/ownership.
+	# Mesma largura e eixo de passagem física da conexão autoral. O teste separado
+	# bridge_approach_terrain confere o catálogo/posse de ruas da produção.
 	terrain.configure([{"id":"mountain_pass","points":PackedVector3Array([Vector3(448,0,-285),Vector3(650,0,-285)]),"width":8.75,"surface":"asphalt"}],[],[])
 	var expected := {Vector2i(7,-6):Vector2.DOWN,Vector2i(8,-6):Vector2.DOWN,Vector2i(9,-5):Vector2.LEFT,Vector2i(7,-4):Vector2.UP,Vector2i(8,-4):Vector2.UP}
 	for x in range(4,11):
@@ -85,7 +85,7 @@ func run() -> void:
 					check(not hit.is_empty() and hit.position.distance_to(center)<.012 and str(hit.collider.name)=="MountainBridgeShoreSolid","visible rock and collision coincide: %s/%s/%s" % [key,step,ring])
 				var toe: Vector3 = SHORE.point_at(terrain,edge,float(step)*4.0,1.0)
 				check(toe.y<=-5.5,"bank reaches below the lowest bridge water: %s/%s" % [key,step])
-	# Shared straight boundary at x=512; shared miters at both eastern corners.
+	# Limite reto compartilhado em x=512; esquadrias compartilhadas nos dois cantos leste.
 	for pair in [[Vector2i(7,-6),64.0,Vector2i(8,-6),0.0],[Vector2i(7,-4),64.0,Vector2i(8,-4),0.0],[Vector2i(8,-6),64.0,Vector2i(9,-5),0.0],[Vector2i(8,-4),64.0,Vector2i(9,-5),64.0]]:
 		for fraction in SHORE.RINGS:
 			var first: Vector3 = SHORE.point_at(terrain,edges[pair[0]][0],pair[1],fraction)
@@ -94,7 +94,7 @@ func run() -> void:
 			var a: Vector3 = SHORE._normal(terrain,edges[pair[0]][0],pair[1],fraction)
 			var b: Vector3 = SHORE._normal(terrain,edges[pair[2]][0],pair[3],fraction)
 			check(a.distance_to(b)<.001,"seam/corner shading normals agree: %s/%s" % [pair,fraction])
-	# Keep the ocean span empty under the road; its original deck is independent.
+	# Mantém vazio o vão do oceano sob a rua; o deck original dele é independente.
 	for x in [396.0,430.0,470.0,520.0,550.0]:
 		for z in [-290.0,-285.0,-280.0]:
 			check(ray(Vector3(x,2,z),Vector3(x,-8,z)).is_empty(),"shore never fills bridge water/deck corridor: %s/%s" % [x,z])

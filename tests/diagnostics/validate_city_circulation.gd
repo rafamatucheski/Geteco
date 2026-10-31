@@ -1,6 +1,6 @@
 extends SceneTree
-## Rendered Main, native C# routing and live directors. Automated player walking
-## uses the normal capsule/streaming. Crime/fire are explicit scenario injections.
+## Main renderizado, roteamento C# nativo e diretores vivos. A caminhada automatizada
+## do jogador usa a cápsula/streaming normais. Crime/incêndio são injeções explícitas de cenário.
 var world
 var failures: Array[String] = []
 var rows: Array = []
@@ -96,15 +96,15 @@ func run() -> void:
 	await wait_seconds(10)
 	await snapshot("03_vila")
 	check(world.people.size()<=world.production.MAX_POPULATION,"shared ambient pedestrian budget preserved")
-	# Return physically to the vehicle access before provoking emergency response.
+	# Volta fisicamente ao acesso do veículo antes de provocar a resposta de emergência.
 	for point in [Vector3(-290,0,82),Vector3(-286,0,66),Vector3(-294,0,48),Vector3(-297,0,26)]:
 		check(await walk(point,16),"return village access to "+str(point))
 	await service_cases()
 
 func service_cases() -> void:
-	# Sustained incident fixture: the ordinary ground fire fades after 20 s,
-	# often before a rural response can arrive. Keep its age fresh until crew
-	# starts actual extinguishing, while leaving dispatch/traffic/collision live.
+	# Fixture de incidente sustentado: o fogo comum no chão some depois de 20 s,
+	# muitas vezes antes de uma resposta rural chegar. Mantém a idade fresca até a equipe
+	# começar a apagar de fato, deixando dispatch/trânsito/colisão vivos.
 	var fire = world.gameplay.emergency.ignite(Vector3(-292,0,20),null,1.5)
 	var deadline := Time.get_ticks_msec()+75000
 	var servicing := false

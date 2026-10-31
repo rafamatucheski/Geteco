@@ -1,7 +1,7 @@
 extends SceneTree
-## Native room and actual player/visitor CharacterBody3D capsules. This runner
-## verifies physical inventory, swept movement and usable floor separately
-## from the rendered occlusion runner and the Main session walkthrough.
+## Sala nativa e cápsulas CharacterBody3D reais de jogador/visitante. Este runner
+## confere o inventário físico, o movimento varrido e o piso utilizável à parte
+## do runner de oclusão renderizada e do percurso na sessão do Main.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 var checks := 0

@@ -19,8 +19,8 @@ func _initialize()->void:
 	run.call_deferred()
 
 func recheck_saved(directory:String)->void:
-	# Recheck the failed save assertion without replaying the already validated
-	# physical proofs and reload. Main legitimately grants first_grand (+50).
+	# Reconfere a asserção de save que falhou sem repetir as provas físicas já
+	# validadas e a recarga. O Main concede legitimamente first_grand (+50).
 	var saved:=STORE.read_valid(directory.path_join("borrowed-save.json"))
 	var pending:=STORE.read_valid(directory.path_join("pending-night.json"))
 	if not check(not saved.is_empty() and not pending.is_empty(),"both real checkpoints pass complete save validation"): await finish(); return
@@ -68,8 +68,8 @@ func run()->void:
 	var original_health:float=original.health
 	var had_pin:bool=original.has_meta("race_owned")
 	var old_pin:Variant=original.get_meta("race_owned",false)
-	# Startup's selected car can bypass the ambient review array. Enrol it in
-	# the ordinary parked-car lifecycle to exercise the 145 m streaming rule.
+	# O carro selecionado no início pode contornar o array de revisão do ambiente. Inscreve-o no
+	# ciclo de vida comum de carro estacionado para exercitar a regra de streaming de 145 m.
 	if original not in world.production.vehicles: world.production.vehicles.append(original)
 	if driving.occupied:
 		check(driving.leave(),"normal door exit before borrowing")
@@ -91,8 +91,8 @@ func run()->void:
 		if driving.occupied and not driving.is_body_transition_active() and not borrowed.input_locked: break
 	check(driving.car==borrowed and driving.occupied,"player controls the actual loaner")
 	check(not loan.return_car(),"cannot remove borrowed car beneath its driver")
-	# Save policy at a region boundary: only the state boundary is injected,
-	# not a claim that this fixture drove across the campaign bridge.
+	# Política de save num limite de região: só o limite de estado é injetado,
+	# não uma afirmação de que esta fixture dirigiu pela ponte da campanha.
 	session.state.region_id="harbor"
 	check(not loan.save_block_reason().is_empty(),"occupied loan blocks an out-of-region checkpoint")
 	loan.prepare_save()

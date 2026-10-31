@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_harbor_idle_regression.gd"
-## Diagnostic CPU accounting by consecutive native boundary samples, not FPS certification.
+## Contabilidade de CPU de diagnóstico por amostras nativas consecutivas de limite, não certificação de FPS.
 const PHASE_WORK := preload("res://runtime/StallWorkTrace.gd")
 const PHASE_DURATION := 30000000
 const PHASE_BIN := 5000000
@@ -73,8 +73,8 @@ func run() -> void:
 	_export_phases()
 
 func settle_load() -> bool:
-	# One second of parent margin permits a complete30s observer window, which
-	# begins after the parent's first complete measured frame (never in warm-up).
+	# Um segundo de margem no pai permite uma janela de observador completa de30s, que
+	# começa depois do primeiro quadro medido completo do pai (nunca no aquecimento).
 	seconds = maxf(seconds,31.0)
 	var settled: bool = await super.settle_load()
 	if settled: _audit_phase_priorities("before_warmup")
@@ -87,8 +87,8 @@ func _audit_phase_priorities(phase: String) -> void:
 		if node == _phase_end_node: continue
 		if node.process_priority != 0 or node.process_physics_priority != 0 or node.process_thread_group != Node.PROCESS_THREAD_GROUP_INHERIT:
 			_phase_priorities.append({"phase":phase,"path":str(node.get_path()),"process_priority":node.process_priority,"physics_priority":node.process_physics_priority,"thread_group":node.process_thread_group})
-		# Priority sorting is local to a process group; a separate MAIN_THREAD
-		# group also prevents this root sentinel from proving callback ordering.
+		# A ordenação por prioridade é local a um grupo de processamento; um grupo MAIN_THREAD
+		# separado também impede esta sentinela raiz de provar a ordem dos callbacks.
 		if node.process_priority >= PHASE_PRIORITY or node.process_physics_priority >= PHASE_PRIORITY or node.process_thread_group != Node.PROCESS_THREAD_GROUP_INHERIT:
 			_phase_error("callback_boundary_priority_or_thread_group: "+str(node.get_path()))
 		for child in node.get_children(): pending.append(child)

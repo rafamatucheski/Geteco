@@ -1,5 +1,5 @@
 extends SceneTree
-## Actual visible-rig hand/weapon and rope contact contracts, for every tier.
+## Contratos reais de mão/arma do rig visível e de contato com a corda, para todo nível.
 const MODEL := preload("res://gameplay/PoliceModel.gd")
 const OFFICER := preload("res://gameplay/PoliceAgent.gd")
 const RAPPLE := preload("res://gameplay/police_response/air_k9/PoliceRappelPose.gd")

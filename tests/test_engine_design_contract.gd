@@ -1,6 +1,6 @@
 extends SceneTree
-## Real fleet, authored WAV resources and native playback nodes. This is a
-## functional contract test; headless results do not approve sound quality/FPS.
+## Frota real, recursos WAV autorais e nós nativos de reprodução. É um
+## teste de contrato funcional; resultados headless não aprovam qualidade de som/FPS.
 const CATALOG := preload("res://audio/FleetEngineDesign.gd")
 const BANKS := preload("res://audio/EngineDesignBanks.gd")
 const VOICE := preload("res://audio/EngineDesignVoice.gd")
@@ -54,8 +54,8 @@ func run() -> void:
 		else:
 			check(LEGACY.bank_family(id) == dedicated, "dedicated electric/tank/motorcycle sound remains correct: " + id)
 		inventory.append({"id": id, "profile": profile, "dedicated": dedicated})
-	# Compatibility vehicles are real saved/controller IDs even when absent from
-	# FleetCatalog.all(). They must remain explicit, not fall through to a hatch.
+	# Veículos de compatibilidade são IDs reais salvos/de controlador mesmo ausentes de
+	# FleetCatalog.all(). Precisam continuar explícitos, não cair num hatch.
 	for pair in [["maciota_m8", "v8_twin_turbo"], ["maciota_350z", "vq35_v6_na"], ["supra_a80", "jz2_i6_turbo"], ["cargo_flatbed_truck", "truck_v12_diesel"]]:
 		check(CATALOG.profile(pair[0]) == pair[1], "specific powertrain identity: " + pair[0])
 		if not representatives.has(pair[1]): representatives[pair[1]] = pair[0]

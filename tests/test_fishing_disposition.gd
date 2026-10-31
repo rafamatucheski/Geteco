@@ -1,5 +1,5 @@
 extends "res://tests/test_fishing_redesign_edges.gd"
-## Real Main integration; fixture shortens the fight, not the choice/transactions.
+## Integração real no Main; a fixture encurta a briga, não a escolha/transações.
 const ITEMS := preload("res://activities/fishing/FishingCatchItems.gd")
 const SAVE := preload("res://runtime/SaveStore.gd")
 const GAME_STATE := preload("res://runtime/GameState.gd")
@@ -31,7 +31,7 @@ func run() -> void:
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	DisplayServer.window_set_size(Vector2i(1280,720))
 	root.size = Vector2i(1280,720)
-	Engine.max_fps = 30 # Frame capture only, not a performance measurement.
+	Engine.max_fps = 30 # Só captura de quadro, não medição de desempenho.
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
 	world.camera.set_process_unhandled_input(false)
@@ -116,7 +116,7 @@ func run() -> void:
 	if sale != null: sale.pressed.emit()
 	check(world.session.state.economy.balance == balance + ITEMS.sale_price(raw) and world.session.state.economy.inventory.get(raw,0) == 1, "sale pays and consumes exactly one fish")
 	world.session.close_menu()
-	# The production residence API supplies the real Kitchen and menu guards.
+	# A API de residência de produção fornece a Kitchen e as proteções de menu reais.
 	world.session.activities.residence.data.active_home = "westgate_garden"
 	check(await world.session.enter_place("westgate_garden", false), "enter owned home for cooking")
 	if world.session.room == null: await finish(); return

@@ -1,6 +1,6 @@
 extends "res://tests/desert_canyon_drive.gd"
-## Fixed-pose identification experiment, explicitly not a driving/performance test.
-## capture_existing() can also be awaited at the end of a real canyon run, preserving flock phase.
+## Experimento de identificação em pose fixa, explicitamente não um teste de direção/desempenho.
+## capture_existing() também pode ser aguardado no fim de uma rodada real no cânion, preservando a fase do bando.
 
 func _initialize() -> void:
 	create_timer(100).timeout.connect(func(): failures.append("100s diagnostic watchdog"); _finish(3))
@@ -64,7 +64,7 @@ static func capture_existing(tree: SceneTree,main: Node3D,destination: String) -
 	var was_paused := tree.paused
 	var was_visible := birds.visible
 	tree.paused=true
-	# Render-only awaits keep transforms, ordinary camera and weather frozen across the A/B/A set.
+	# Esperas só de render mantêm transformações, câmera comum e clima congelados no conjunto A/B/A.
 	await RenderingServer.frame_post_draw
 	await RenderingServer.frame_post_draw
 	var rows: Array[Dictionary]=[]

@@ -1,5 +1,5 @@
 extends SceneTree
-## Real Main collisions, production Vehicle and isolated save. No FPS claim in headless.
+## Colisões reais do Main, Vehicle de produção e save isolado. Sem afirmação de FPS no headless.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const PARK := preload("res://world/places/amusement_park/AmusementParkLayout.gd")
 const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")

@@ -61,11 +61,11 @@ func capture_arm() -> bool:
 	return true
 
 func _export_boundaries() -> void:
-	# This subclass exports its own clock and selected circular windows.
+	# Esta subclasse exporta o próprio relógio e as janelas circulares selecionadas.
 	pass
 
 func _audit_callback_order() -> bool:
-	# Probes are already armed during loading; exclude only those two owned nodes.
+	# As sondas já estão armadas durante o carregamento; exclui só esses dois nós próprios.
 	var pending: Array[Node] = [root]
 	while not pending.is_empty():
 		var node: Node = pending.pop_back()
@@ -153,7 +153,7 @@ func capture_interval(now: int, previous: int) -> void:
 	if not capture_probe_on: return
 	_capture_boundaries(now)
 	var row: Dictionary = boundary_rows.back()
-	# The inherited collector is bounded; retain only our circular/pinned windows.
+	# O coletor herdado é limitado; guarda só as nossas janelas circulares/fixadas.
 	boundary_rows.clear()
 	row["frame"] = Engine.get_process_frames()
 	row["phase"] = capture_phase
@@ -169,7 +169,7 @@ func capture_interval(now: int, previous: int) -> void:
 	capture_signal_usec = 0
 	capture_last_row = row
 	capture_ring.append(row)
-	# A long interval must keep context before its START, not just its end.
+	# Um intervalo longo precisa manter contexto antes do INÍCIO, não só do fim.
 	var ring_cutoff := previous-PRE_USEC if ms >= CAPTURE_MS else now-PRE_USEC
 	while not capture_ring.is_empty() and int(capture_ring[0].end_usec) < ring_cutoff:
 		capture_ring.pop_front()
@@ -242,16 +242,16 @@ func run() -> void:
 	if output.is_empty() or DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	if not ClassDB.class_exists(&"CSharpScript") or not OS.get_environment("HARBOR_NO_CSHARP").is_empty(): quit(3); return
 	create_timer(240.0).timeout.connect(func(): push_error("STALL_CAPTURE_TIMEOUT"); quit(4))
-	# Arm before Main's first productive frame. Loading stays a separate phase,
-	# supplying predecessor context for the first gameplay/physics burst.
+	# Arma antes do primeiro quadro produtivo do Main. O carregamento continua uma fase separada,
+	# fornecendo contexto anterior para a primeira rajada de jogo/física.
 	if not capture_arm(): push_error("STALL_CAPTURE_ARM_FAILED"); quit(6); return
 	capture_phase = "loading"
 	capture_startup_usec = Time.get_ticks_usec()
 	var previous := capture_startup_usec
 	capture_previous_physics = Engine.get_physics_frames()
 	capture_event("loading_start",{"clock_anchor":boundary_probe.ClockAnchor() if capture_probe_on else []})
-	# Request focus before admitting the world. Never refocus during gameplay or
-	# move an initial gameplay callback into a post-loading settling window.
+	# Pede foco antes de admitir o mundo. Nunca refoca durante o jogo nem
+	# move um callback inicial de jogo para uma janela de assentamento pós-carregamento.
 	DisplayServer.window_move_to_foreground()
 	var focus_deadline := Time.get_ticks_usec()+2000000
 	while not DisplayServer.window_is_focused() and Time.get_ticks_usec() < focus_deadline:
@@ -288,7 +288,7 @@ func run() -> void:
 		previous = loading_now
 	world.session.state.intro.stage = "complete"
 	world.player.controlled_automatically = false
-	world.player.teleport(Vector3(107,.1,23)) # Setup only, never in measured route.
+	world.player.teleport(Vector3(107,.1,23)) # Só preparação, nunca na rota medida.
 	world.camera.initialized = false
 	world.camera.set_process_unhandled_input(false)
 	var controls := root.get_node("GameInput")
@@ -302,14 +302,14 @@ func run() -> void:
 	world.gameplay.toggle_god_mode() # Isolated survival fixture, events remain active.
 	if not world.production.no_save or not world.dispatch.router.use_native:
 		push_error("STALL_CAPTURE_REQUIRES_NO_SAVE_AND_NATIVE_ROUTER_ENABLED"); quit(5); return
-	# Keep the productive router's lazy C# graph initialization inside the capture.
+	# Mantém dentro da captura a inicialização preguiçosa do grafo C# do roteador produtivo.
 	world.dispatch.dispatch_event.connect(func(kind, details):
 		capture_event("dispatch."+kind,{"unit":str(details.get("unit","")),"stars":world.gameplay.stars}))
 	if capture_probe_on:
 		if not _audit_callback_order(): push_error(boundary_error); quit(6); return
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(),true)
-	# Optional one-time foreground request after long loading, before the route.
-	# Never refocus inside gameplay; subsequent focus losses invalidate the run.
+	# Pedido opcional único de primeiro plano depois do carregamento longo, antes da rota.
+	# Nunca refoca dentro do jogo; perdas de foco seguintes invalidam a rodada.
 	if "--focus-after-load" in OS.get_cmdline_user_args():
 		DisplayServer.window_move_to_foreground()
 	capture_start = Time.get_ticks_usec()
@@ -335,8 +335,8 @@ func run() -> void:
 	for action in ["fire","aim","reload"]: Input.action_release(action)
 	var gameplay_end_usec := previous
 	capture_event("route_end",capture_context())
-	# A fixed tail supplies three seconds after every peak in the measured route.
-	# Peaks newly occurring in this tail may themselves have a truncated window.
+	# Uma cauda fixa fornece três segundos depois de cada pico na rota medida.
+	# Picos que surgirem nesta cauda podem ter a própria janela truncada.
 	capture_phase = "tail"
 	var tail_until := previous+POST_USEC
 	while Time.get_ticks_usec() < tail_until:

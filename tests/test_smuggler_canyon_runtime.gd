@@ -1,5 +1,5 @@
 extends SceneTree
-## Main production combat. Diagnostic placements are not access-route evidence.
+## Combate de produção no Main. Os posicionamentos de diagnóstico não são evidência de rota de acesso.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const CANYON := preload("res://runtime/desert/canyon/CanyonState.gd")
 const ENCOUNTER := preload("res://runtime/desert/canyon/CanyonEncounter.gd")
@@ -66,8 +66,8 @@ func run() -> void:
 		check(actor.is_on_floor() and absf(actor.global_position.y)<.2,"guard capsule supported by real mesa floor "+str(actor.slot))
 		check(actor.health>=150 and actor.weapon_id in ["ak47","m4a1","smg"],"resistant defender carries real long gun "+str(actor.slot))
 	check(shots==0,"defenders do not shoot distant bridge approach")
-	# Establish close approach diagnostically, then let actual LOS and moving
-	# projectiles cause damage. Travel/bridge/chicane are covered separately.
+	# Estabelece a aproximação de perto como diagnóstico e depois deixa a linha de visão e os
+	# projéteis reais em movimento causarem dano. Viagem/ponte/chicane são cobertos à parte.
 	if not place_near(encounter.actors[0],6.0): finish(1); return
 	world.camera.initialized=false
 	world.camera._process(1)
@@ -118,11 +118,11 @@ func run() -> void:
 	shot_before=shots
 	await wait_seconds(1.5)
 	check(shots==shot_before and is_equal_approx(float(world.gameplay.health),health_before),"cover prevents shots and damage with protection disabled")
-	# A new long gun requires a free carried long-gun slot, even with spare
-	# backpack cells. Store the test M4 through the normal inventory operation.
+	# Uma arma longa nova exige um slot livre de arma longa carregada, mesmo com células
+	# sobrando na mochila. Guarda a M4 do teste pela operação normal de inventário.
 	check(world.session.state.economy.grid_store_weapon("m4a1","storage"),"store M4 in backpack to free the long-gun slot before AK loot")
-	# Last kill uses direct production damage solely to choose a deterministic
-	# ordinary drop. Seven prior kills already exercised real player firearms.
+	# A última morte usa dano direto de produção só para escolher um drop comum
+	# determinístico. Sete mortes anteriores já exercitaram armas de fogo reais do jogador.
 	last.position=L.CENTER+Vector3(0,.06,5)
 	last.home=last.position
 	var rng := RandomNumberGenerator.new()
@@ -146,8 +146,8 @@ func run() -> void:
 	check(stored.save(world.session.state)==OK,"cleared state writes valid isolated disk save")
 	var restored := STATE.new()
 	check(stored.load_into(restored).get("ok",false) and int(restored.world_state[CANYON.KEY].defeated_mask)==255,"cold disk restore retains cleared camp")
-	# Compact approach is now inside the encounter retention radius. Leave it
-	# explicitly before checking that every resident and corpse is released.
+	# A aproximação compacta agora fica dentro do raio de retenção do encontro. Sai dela
+	# explicitamente antes de conferir que todo morador e cadáver é liberado.
 	var unload_point := L.CENTER+(L.APPROACH-L.CENTER).normalized()*(ENCOUNTER.DESPAWN_DISTANCE+20.0)
 	unload_point.y=.1
 	check(unload_point.distance_to(L.CENTER)>ENCOUNTER.DESPAWN_DISTANCE,"unload probe lies beyond encounter retention radius")
@@ -164,9 +164,9 @@ func run() -> void:
 	finish(0 if failures.is_empty() else 1)
 
 func verify_lethal_round_recovery(original: Dictionary) -> void:
-	# Load through a fresh production Main so inventory migration and runtime
-	# bindings run exactly as they do when the player loads a saved session.
-	# Mutating an already-bound GameState here would bypass that lifecycle.
+	# Carrega por um Main de produção novo para que a migração do inventário e as ligações
+	# de runtime rodem exatamente como quando o jogador carrega uma sessão salva.
+	# Alterar aqui um GameState já ligado contornaria esse ciclo de vida.
 	var partial := original.duplicate(true)
 	partial.world[CANYON.KEY].defeated_mask=1
 	var partial_path := FIXTURE.write_fixture(output,"partial-recovery-checkpoint.json",partial)
@@ -252,8 +252,8 @@ func collect_loot(pickup: Node3D) -> void:
 	var sphere := SphereShape3D.new(); sphere.radius=.04
 	query.shape=sphere; query.transform=Transform3D(Basis.IDENTITY,point+Vector3.UP*.15); query.collision_mask=1
 	check(world.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty(),"loot center stays outside solid props")
-	# The old fixed +Z start overlaps the ammunition cases at local z=8.05.
-	# Find a full supported capsule corridor, then use normal walking only.
+	# O antigo início fixo em +Z se sobrepõe às caixas de munição em z=8.05 local.
+	# Acha um corredor completo apoiado para a cápsula e depois usa só caminhada normal.
 	var walk_start := Vector3.INF
 	for direction in [Vector3.BACK,Vector3.LEFT,Vector3.RIGHT,Vector3.FORWARD,Vector3(-1,0,-1).normalized(),Vector3(1,0,-1).normalized()]:
 		var clear := true

@@ -73,8 +73,8 @@ func run() -> void:
 		if arrival.riding or arrival.phase == "tour_board": break
 	if not arrival.riding: push_error("Actual passenger boarding failed"); quit(1); return
 	print("CHAOS_BOARD route=",arrival.route.get_baked_length()," control_points=",arrival.route.point_count," intro=",world.session.state.intro.stage)
-	# Add ordinary production vehicles on the route, rather than removing
-	# traffic/collisions or placing the mission car past the blockage.
+	# Acrescenta veículos de produção comuns na rota, em vez de remover
+	# trânsito/colisões ou pôr o carro da missão depois do bloqueio.
 	if scenario != "normal":
 		for index in (1 if scenario == "motorcycle" else 6):
 			var offset := 22.0+float(index/2)*6.0
@@ -120,8 +120,8 @@ func run() -> void:
 	var mission_ok := false
 	if tour_ok and not baseline:
 		var entrance: Vector3 = world.maciota_place.entry_position+Vector3(0,0,1.0)
-		# Player controls remain normal. Walk around the facade through its open
-		# court rather than asking the foot grid for a diagonal through the shop.
+		# Os controles do jogador continuam normais. Contorna a fachada pelo pátio
+		# aberto em vez de pedir à grade a pé uma diagonal através da loja.
 		var court_z: float = world.maciota_place.exterior_origin.z+9.3
 		var walked: bool = await arrival._walk(world.player,Vector3(world.player.global_position.x,0,court_z),true)
 		if walked: walked = await arrival._walk(world.player,entrance,true)
@@ -134,8 +134,8 @@ func run() -> void:
 			print("CHAOS_ADMISSION place=",world.session.state.place_id," blocked=",world.session.is_transition_blocked()," player=",world.player.global_position)
 			var meeting: Vector3 = world.maciota_place.interaction_points.maciota+Vector3(0,0,.8)
 			var interior_origin: Vector3 = world.maciota_place.interior_origin
-			# The partition has its authored doorway at (2.4, 1.5). Stay
-			# inside and use that opening; walking toward the front triggers exit.
+			# A divisória tem a porta autoral em (2.4, 1.5). Fica
+			# dentro e usa essa abertura; andar para a frente dispara a saída.
 			var to_contact := true
 			for local in [Vector3(1.5,0,3.2),Vector3(1.5,0,1.5),Vector3(3.4,0,1.5)]:
 				if not await arrival._walk(world.player,interior_origin+local,true): to_contact = false; break
@@ -169,8 +169,8 @@ func _process(_delta: float) -> bool:
 	if now-last_capture>500000:
 		last_capture = now
 		frames.append({"seconds":float(now-started)/1000000,"position":arrival.car.global_position,"yaw":arrival.car.rotation.y,"speed":arrival.car.speed,"route":arrival.car.route_distance,"recovery":arrival.car.get("recovery_count")})
-	# Render readback/encoding is evidence overhead, not the game's frame time.
-	# Keep it out of the fixed 5s warmup + 30s measurement window.
+	# A leitura/codificação do render é custo de evidência, não o tempo de quadro do jogo.
+	# Mantém isso fora da janela fixa de 5s de aquecimento + 30s de medição.
 	if (capture_motion or now-started>35000000) and now-last_capture_image>2000000:
 		last_capture_image = now
 		capture.call_deferred()

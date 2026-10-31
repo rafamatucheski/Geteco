@@ -33,8 +33,8 @@ func _layout(chunk: Node3D) -> Array:
 
 
 func run() -> void:
-	# A real renderer is necessary to read the stored MultiMesh transforms;
-	# the Godot dummy renderer may return identity instead.
+	# Um renderizador real é necessário para ler as transformações guardadas do MultiMesh;
+	# o renderizador dummy do Godot pode devolver identidade no lugar.
 	if DisplayServer.get_name() == "headless": quit(2); return
 	var region := REGION.new()
 	region.harbor_road_geometry = GEOMETRY.new()
@@ -85,8 +85,8 @@ func run() -> void:
 	_check(bool(job.done) and slices>1,"incremental generation finishes across slices")
 	_check(_layout(reloaded)==layout,"unload/reload preserves transforms and colours")
 	reloaded.free()
-	# Denser long roads crossing a shared border: each origin belongs to exactly
-	# one chunk, even when the same source segment supplies both chunks.
+	# Ruas longas mais densas cruzando uma borda compartilhada: cada origem pertence a exatamente
+	# um chunk, mesmo quando o mesmo segmento de origem alimenta os dois chunks.
 	var many: Array[Dictionary] = []
 	for x in [8.0,22.0,36.0,50.0]:
 		for variation in 3: many.append(_road("dense/%s/%d"%[x,variation],x))

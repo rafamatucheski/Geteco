@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_harbor_idle_regression.gd"
-## Inclusive stage-cost diagnostic, not a clean FPS run. No script profiler.
-## Opt in by selecting this runner; regular gameplay keeps aggregation disabled.
+## Diagnóstico inclusivo de custo por etapa, não uma rodada limpa de FPS. Sem profiler de script.
+## Opte selecionando este runner; o jogo normal mantém a agregação desligada.
 const STAGE_WORK := preload("res://runtime/StallWorkTrace.gd")
 var _stage_started_usec := 0
 var _stage_stopped_usec := 0
@@ -43,9 +43,9 @@ func run() -> void:
 
 func apply_load(now: int) -> void:
 	super.apply_load(now)
-	# The base appends frames only after its ten-second warm-up boundary.
-	# Start on the next callback, excluding its first measured interval too.
-	# Export our exact window rather than pretending it matches the base clock.
+	# A base só anexa quadros depois do limite de aquecimento de dez segundos.
+	# Começa no próximo callback, excluindo também o primeiro intervalo medido.
+	# Exporta a nossa janela exata em vez de fingir que bate com o relógio da base.
 	if _stage_started_usec == 0 and not frames.is_empty():
 		_stage_started_usec = Time.get_ticks_usec()
 		_stage_start_frame = Engine.get_process_frames()
@@ -61,8 +61,8 @@ func apply_load(now: int) -> void:
 			_capture_stage_bin(sampled_usec,Engine.get_process_frames(),Engine.get_physics_frames())
 
 func stats(values: Array[float]) -> Dictionary:
-	# The base computes frame statistics immediately after its sample loop,
-	# before report serialization and screenshot capture. Close the sink here.
+	# A base calcula as estatísticas de quadro logo depois do laço de amostras,
+	# antes da serialização do relatório e da captura de tela. Fecha o coletor aqui.
 	_stop_stage_cost()
 	return super.stats(values)
 

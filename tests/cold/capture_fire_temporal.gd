@@ -1,6 +1,6 @@
 extends SceneTree
-## Every rendered frame is recorded (not sparse screenshots). Capture overhead
-## means these frame times are documentation of cadence, not an FPS benchmark.
+## Todo quadro renderizado é gravado (não capturas esparsas). O custo da captura
+## faz destes tempos de quadro um registro de cadência, não um benchmark de FPS.
 var world
 var folder := "res://evidence/fire-review-20261002/temporal"
 var report: Array = []

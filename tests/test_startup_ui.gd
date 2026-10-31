@@ -20,8 +20,8 @@ func run() -> void:
 	for menu in ["show_inventory","show_journal","show_map","show_controls"]:
 		world.session.call(menu)
 		await process_frame
-		# Each current view has its own presentation owner; only the journal
-		# still uses the legacy session panel.
+		# Cada vista atual tem o próprio dono de apresentação; só o diário
+		# ainda usa o painel de sessão legado.
 		match menu:
 			"show_inventory":
 				var inventory = world.session.field_inventory.ui

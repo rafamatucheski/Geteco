@@ -76,8 +76,8 @@ func run() -> void:
 		await create_timer(10).timeout
 		if not drive_only: await measure(id)
 		if not await world.session.leave_place(): push_error("Interior exit failed: "+id); quit(1); return
-	# The third scenario actually drives the kilometre highway; fixture placement
-	# only establishes its start. Normal vehicle handling and streaming remain live.
+	# O terceiro cenário dirige de fato a rodovia de um quilômetro; o posicionamento da fixture
+	# só estabelece o início. A dirigibilidade normal do veículo e o streaming continuam vivos.
 	var point:=Vector3(345,.1,-470)
 	world.production.region.set_focus(point)
 	world.production.region.prepare_collision_at(point)
@@ -90,11 +90,11 @@ func run() -> void:
 	var boarding_deadline:=Time.get_ticks_msec()+10000
 	while world.driving.is_body_transition_active() and Time.get_ticks_msec()<boarding_deadline: await physics_frame
 	if not world.driving.occupied or world.driving.car!=car or not car.controlled or car.input_locked: push_error("Highway boarding incomplete"); quit(1); return
-	# Normal traversal and ambush combat are separate workloads. Keep ordinary
-	# traffic live while parking only the scripted road-event admission timer.
+	# Travessia normal e combate de emboscada são cargas separadas. Mantém o trânsito
+	# comum vivo enquanto estaciona só o timer de admissão dos eventos de estrada roteirizados.
 	world.session.desert.frontier.roadside.events._next_at=INF
-	# Pay through the real toll interaction before sampling. An ambient car may
-	# otherwise leave its arm open by chance, making this traversal nondeterministic.
+	# Paga pela interação real do pedágio antes de amostrar. Senão um carro do ambiente
+	# pode deixar a cancela aberta por acaso, tornando esta travessia não determinística.
 	world.session.state.economy.grant_reward("desert_measure_toll_fixture",10)
 	var toll = world.session.desert.entrance_toll
 	if not toll.perform() or toll.paid_car!=car: push_error("Highway fixture could not pay the real toll"); quit(1); return

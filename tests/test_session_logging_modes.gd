@@ -1,6 +1,6 @@
 extends SceneTree
-## Run twice after the C# build: default environment, then HARBOR_SESSION_PROFILE=1.
-## Expected warning/error markers exercise retention; they are not fixture failures.
+## Rode duas vezes depois do build C#: ambiente padrão e depois HARBOR_SESSION_PROFILE=1.
+## Os marcadores esperados de aviso/erro exercitam a retenção; não são falhas da fixture.
 const OPS := preload("res://runtime/SessionOperations.gd")
 const WORK := preload("res://runtime/StallWorkTrace.gd")
 const MARKER := "SESSION_LOGGING_MODES"

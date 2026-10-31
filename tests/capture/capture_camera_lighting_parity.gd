@@ -1,7 +1,7 @@
 extends SceneTree
 
-## Rendered V2 reference at the productive CameraRig scale. Uses Main with the
-## --no-save contract and does not mutate player settings or personal saves.
+## Referência renderizada da V2 na escala produtiva do CameraRig. Usa o Main com o
+## contrato --no-save e não altera configurações do jogador nem saves pessoais.
 
 const OUTPUT_BASE := "C:/Users/rafae/.codex/visualizations/2026/09/21/01a0c5d4-0aa6-7ba0-819f-d0c3afa28d07/camera-lighting-0922"
 const GARAGE_CENTER := Vector3(750.0/16.0, .08, 1644.0/16.0)

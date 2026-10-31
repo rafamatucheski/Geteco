@@ -62,7 +62,7 @@ func run() -> void:
 				var material: Material = mesh.material_override
 				check(material is StandardMaterial3D and not (material as StandardMaterial3D).albedo_color.is_equal_approx(Color.WHITE), "%s debris keeps its colour (%s)" % [item.kind, material])
 		vehicle.free()
-		# Finish the collision-grace callback before freeing the test bodies.
+		# Termina o callback de tolerância de colisão antes de liberar os corpos de teste.
 		await create_timer(.4, false, true).timeout
 		for body in debris: body.free()
 		FRAGILE.cells = registry

@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Harbor data, isolated from player saves. Roadway/pedestrian clearance
-## and streamed ownership are independent of the visual review.
+## Dados reais do Harbor, isolados dos saves do jogador. A folga de pista/pedestre
+## e a posse em streaming independem da revisão visual.
 const REGION := preload("res://world/regions/NativeRegion.gd")
 var failures := 0
 

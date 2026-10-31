@@ -32,7 +32,7 @@ func floor_scene() -> Node3D:
 func seconds(time: float) -> void:
 	for frame in int(time*60): await physics_frame
 func run() -> void:
-	# A stopped police car inside the junction used to suppress all bypasses.
+	# Uma viatura parada dentro do cruzamento suprimia todos os desvios.
 	SIGNALS.configure({"vertices":[Vector3(0,0,-40),Vector3(30,0,-40),Vector3(-30,0,-40),Vector3(0,0,-10),Vector3(0,0,-70)],"edges":{0:[{"to":1},{"to":2},{"to":3},{"to":4}]}})
 	var scene:=floor_scene()
 	var police:=car(scene,Vector3(2.25,.08,-43))
@@ -86,7 +86,7 @@ func run() -> void:
 	check(is_instance_valid(police) and police.health>0,"retirement preserves the stopped police car")
 	scene.free()
 	await physics_frame
-	# Reproduce the service departure that could wait indefinitely in traffic.
+	# Reproduz a partida de serviço que podia esperar sem fim no trânsito.
 	var kit:=KIT.build(self,KIT.single_road(),Vector3(2.25,.1,6))
 	kit.controller.set_physics_process(false)
 	var cruiser:=preload("res://gameplay/dispatch/DispatchVehicle.gd").new()

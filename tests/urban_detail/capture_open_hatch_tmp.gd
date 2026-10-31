@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Render fixture used while tuning the animated V2 sewer hatch.
+## Fixture de render usada ao ajustar a tampa de esgoto animada da V2.
 
 func _initialize() -> void:
 	call_deferred("run")

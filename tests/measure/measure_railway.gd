@@ -1,6 +1,6 @@
 extends SceneTree
-## Production scene, isolated checkpoint, identical camera and 30s samples.
-## --railway-baseline omits only the new railway; no existing feature is disabled.
+## Cena de produção, checkpoint isolado, câmera idêntica e amostras de 30s.
+## --railway-baseline omite só a ferrovia nova; nenhum recurso existente é desligado.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 var world
 var output := ""
@@ -137,8 +137,8 @@ func run() -> void:
 	root.mode=Window.MODE_WINDOWED; root.size=Vector2i(1280,720)
 	world.gameplay.god_mode=true
 	world.player.controlled_automatically=true; world.player.automatic_direction=Vector3.ZERO
-	# Keep regional weather/atmosphere updating during travel. Freezing this Node
-	# manufactured a sky jump at the logical region seam in the first capture.
+	# Mantém clima/atmosfera regional atualizando durante a viagem. Congelar este Node
+	# fabricou um salto de céu na emenda lógica de região na primeira captura.
 	world.session.weather.weather_timer=10000
 	world.session.weather.time_of_day=.88 if "--railway-night" in args else .45
 	world.session.weather._update()
@@ -165,7 +165,7 @@ func run() -> void:
 			await capture(id)
 			if not visual_only: await sample(id)
 	if "--railway-coastal-loop" in args:
-		# Supplement the gameplay view with a real west-side architectural photo.
+		# Complementa a vista de jogo com uma foto arquitetônica real do lado oeste.
 		var saved_transform: Transform3D = world.camera.global_transform
 		var saved_size: float = world.camera.size
 		world.camera.set_process(false)

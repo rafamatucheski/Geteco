@@ -1,5 +1,5 @@
 extends SceneTree
-## Contract coverage for prepared breakaway panels on player and ambient cars.
+## Cobertura de contrato dos painéis destacáveis preparados nos carros do jogador e do ambiente.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const FLEET := preload("res://runtime/FleetState.gd")
 const DEBRIS := preload("res://gameplay/vehicle_effects/VehiclePanelDebris.gd")

@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical cemetery geometry and real service actors, independent of unrelated
-## world-editor imports. Complements test_cemetery_npcs (integrated Main).
+## Geometria física do cemitério e atores reais de serviço, independentes de importações
+## não relacionadas do editor de mundo. Complementa test_cemetery_npcs (Main integrado).
 const SERVICE := preload("res://gameplay/urban_v1/CemeteryOperations.gd")
 const GEOMETRY := preload("res://world/regions/OriginalCemetery3D.gd")
 

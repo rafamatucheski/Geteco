@@ -14,8 +14,8 @@ func _process(delta: float) -> bool:
 	return false
 
 func wait_exclusive() -> bool:
-	# A separate session can launch another engine while this scene is loading.
-	# Check before warm-up, never during a measured frame window.
+	# Uma sessão separada pode lançar outro motor enquanto esta cena carrega.
+	# Confere antes do aquecimento, nunca durante uma janela de quadros medida.
 	if OS.get_name() != "Windows": return true
 	for attempt in 30:
 		var output := []
@@ -82,8 +82,8 @@ func run() -> void:
 		fishing_driver._rng.seed = 71026
 		if not fishing_driver.start(-1): push_error("Cannot start fishing"); quit(6); return
 		if label == "after":
-			# The controlled A/B view preserves the original gameplay framing.
-			# The new closer camera is measured separately below.
+			# A vista A/B controlada preserva o enquadramento de jogo original.
+			# A câmera nova mais próxima é medida à parte abaixo.
 			await create_timer(.25).timeout
 			world.camera.locked = false
 			world.camera.initialized = false
@@ -132,7 +132,7 @@ func run() -> void:
 	quit()
 
 func capture_final() -> void:
-	# Measurements are complete and exported before any frame readback or resize.
+	# As medições terminam e são exportadas antes de qualquer leitura de quadro ou redimensionamento.
 	root.get_node("V2Settings").text_language = "pt_BR"
 	TranslationServer.set_locale("pt_BR")
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
@@ -165,7 +165,7 @@ func capture_final() -> void:
 	if not frames.is_empty(): FileAccess.open(folder.path_join("sequence.json"),FileAccess.WRITE).store_string(JSON.stringify({"frames":frames,"every_rendered_frame":true,"fps_cap_for_capture":30,"performance_evidence":false},"\t"))
 	fishing_driver.cancel_attempt()
 	await create_timer(.25).timeout
-	# Explicit visual edge fixture, not a natural-roll claim or performance sample.
+	# Fixture visual explícita de borda, não afirmação de rolagem natural nem amostra de desempenho.
 	fishing_driver.start(-1)
 	fishing_driver._rng.seed = 12345
 	var selected := false

@@ -1,7 +1,7 @@
 extends "res://tests/measure/measure.gd"
-## Rendered, finite benchmark for the two Harbor locations changed by the
-## V1 urban-operations migration. Functional validation lives in a separate
-## headless test; this script measures the integrated Main scene only.
+## Benchmark renderizado e finito para os dois locais do Harbor alterados pela
+## migração de operações urbanas da V1. A validação funcional fica num teste
+## headless separado; este script mede só a cena integrada do Main.
 
 var site := "port"
 var ablate_urban := false
@@ -41,9 +41,9 @@ func run() -> void:
 	world.session.state.world_state.time = BENCHMARK_TIME
 	world.session.state.world_state.weather = BENCHMARK_WEATHER
 	if ablate_urban:
-		# Same integrated scene and population, with only this delivery disabled.
-		# Used when an unrelated live Godot session makes an older wall-clock
-		# baseline incomparable to the current measurement.
+		# Mesma cena integrada e população, só com esta entrega desligada.
+		# Usado quando uma sessão viva não relacionada do Godot torna uma linha de base
+		# antiga de tempo de parede incomparável com a medição atual.
 		world.session.urban_operations.port.process_mode = Node.PROCESS_MODE_DISABLED
 		world.session.urban_operations.cemetery.process_mode = Node.PROCESS_MODE_DISABLED
 	world.camera.set_process_unhandled_input(false)

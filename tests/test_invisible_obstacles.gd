@@ -1,5 +1,5 @@
 extends SceneTree
-## Real physics regressions for removed props, streamed chunks and motocross rocks.
+## Regressões de física real para props removidos, chunks em streaming e rochas do motocross.
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 const REGION := preload("res://world/regions/NativeRegion.gd")
 const COURSE := preload("res://activities/motocross/MotocrossCourse.gd")
@@ -51,7 +51,7 @@ func run() -> void:
 	owner.free()
 	if is_instance_valid(chunk): chunk.free()
 	FRAGILE.cells.clear()
-	# Sweep every shared prop category, including the node and batched paths.
+	# Varre toda categoria de prop compartilhada, incluindo os caminhos por nó e em lote.
 	for kind in FRAGILE.KINDS:
 		var holder := Node3D.new()
 		root.add_child(holder)
@@ -91,8 +91,8 @@ func run() -> void:
 	root.add_child(course)
 	course.finish_build()
 	for i in 3: await physics_frame
-	# The visible quarry rocks are flattened ellipsoids: a sphere collider sticks
-	# above their tops and beyond their sides. Every rock must use its own mesh hull.
+	# As rochas visíveis da pedreira são elipsoides achatados: um colisor esférico fica
+	# acima do topo e além dos lados delas. Toda rocha precisa usar o próprio casco de malha.
 	var rock_shapes := 0
 	var oversized := 0
 	for shape in course.find_children("*","CollisionShape3D",true,false):

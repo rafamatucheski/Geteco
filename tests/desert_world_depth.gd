@@ -1,5 +1,5 @@
 extends "res://tests/test_vertice_depth.gd"
-## Real Actor player/NPC rigs, full-volume swept collision and native depth with visible controls.
+## Rigs reais de jogador/NPC do Actor, colisão varrida do volume inteiro e profundidade nativa com controles visíveis.
 const DESERT_LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const NATIVE_PLACE := preload("res://world/places/NativePlace.gd")
 var dest := "D:/geteco/artifacts/desert-20261006/depth"
@@ -49,9 +49,9 @@ func run() -> void:
 		var front := Vector3(-1.5,.04,-1.35) if bank else Vector3(8.4,.04,1.65)
 		var behind := Vector3(-1.5,.04,-3.45) if bank else Vector3(8.4,.04,-1.2)
 		var side := Vector3(7.9,.04,-2.6) if bank else Vector3(5.9,.04,0)
-		# The original workshop side probe falls under the projected roof truss.
-		# Keep that real overhead occlusion as its own case; measure unobstructed
-		# furniture-side visibility beside the front corner instead.
+		# A sonda lateral original da oficina cai sob a treliça projetada do telhado.
+		# Mantém essa oclusão real de cima como caso próprio; mede em vez disso a visibilidade
+		# desobstruída do lado da mobília ao lado do canto da frente.
 		var visible_side := side if bank else Vector3(5.9,.04,1.35)
 		for is_player in [true,false]:
 			var actor := ACTOR.new()

@@ -1,5 +1,5 @@
 extends SceneTree
-## Geometry/source contracts only. The parent run owns rendered panorama/FPS.
+## Só contratos de geometria/origem. A rodada pai é dona do panorama renderizado/FPS.
 const SEA := preload("res://world/places/coastal_lookout/LookoutDistantSea.gd")
 const CITY := preload("res://world/places/coastal_lookout/LookoutDistantCity.gd")
 const DESERT := preload("res://world/desert/DesertLayout.gd")

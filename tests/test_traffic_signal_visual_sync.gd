@@ -9,7 +9,7 @@ func visible_state(mesh:MultiMesh,index:int)->String:
 	var color=mesh.get_instance_color(index)
 	return "green" if color.g>.85 else ("amber" if color.g>.3 else "red")
 func _initialize():
-	# RendererDummy does not retain MultiMesh instance colors for readback.
+	# O RendererDummy não guarda as cores de instância do MultiMesh para leitura.
 	if DisplayServer.get_name()=="headless":
 		print("TRAFFIC_SIGNAL_VISUAL_SYNC requires a rendered run")
 		quit(2);return
@@ -23,7 +23,7 @@ func _initialize():
 	mesh.instance_count=2
 	SIGNALS.register_lens(mesh,0,Vector3.ZERO,Vector3.RIGHT)
 	SIGNALS.register_lens(mesh,1,Vector3.ZERO,Vector3.BACK)
-	# Pin the frame clock only in this fixture; no sleeping or production test hook.
+	# Fixa o relógio de quadros só nesta fixture; sem sleep nem gancho de teste na produção.
 	SIGNALS._phase_frame=Engine.get_process_frames()
 	for sample in [[0.0,"green","red"],[10.999,"green","red"],[11.01,"amber","red"],[14.01,"red","red"],[15.61,"red","green"],[26.61,"red","amber"],[29.61,"red","red"],[31.21,"green","red"]]:
 		SIGNALS._phase_time=sample[0]
@@ -39,7 +39,7 @@ func _initialize():
 	SIGNALS.register_lens(streamed,0,Vector3.ZERO,Vector3.BACK)
 	SIGNALS.update_lenses()
 	check(visible_state(streamed,0)=="red","Newly streamed signal initializes during stable phase")
-	# Changing the graph's axis invalidates the visual association immediately.
+	# Mudar o eixo do grafo invalida a associação visual na hora.
 	SIGNALS.configure(graph)
 	SIGNALS.axes[Vector3i.ZERO]=Vector2.DOWN
 	SIGNALS.update_lenses()

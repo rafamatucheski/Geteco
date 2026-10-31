@@ -1,5 +1,5 @@
 extends SceneTree
-## Directed native-3D contracts for surface contact, budgets, cooldown and cleanup.
+## Contratos dirigidos de 3D nativo para contato com superfície, orçamentos, cooldown e limpeza.
 
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const SURFACE := preload("res://gameplay/vehicle_effects/VehicleSurfaceProbe.gd")

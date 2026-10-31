@@ -1,6 +1,6 @@
 extends SceneTree
-## Immutable cache preparation; no Main or gameplay entity admission.
-## Baseline fixture preserves the original wardrobe and rig independently.
+## Preparação de cache imutável; sem Main nem admissão de entidades de jogo.
+## A fixture de linha de base preserva o guarda-roupa e o rig originais de forma independente.
 const MODEL := preload("res://assets/CivilianModel.gd")
 const ORIGINAL := preload("res://tests/fixtures/TerminalCivilianModelOriginal.gd")
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
@@ -53,8 +53,8 @@ func ineligible(controller, label: String) -> void:
 	operations.free()
 
 func run() -> void:
-	# StallLog's headless autoload queues its own deletion in _ready. Settle
-	# that bootstrap before measuring the fixture's immutable node inventory.
+	# O autoload headless do StallLog enfileira a própria exclusão no _ready. Assenta
+	# esse bootstrap antes de medir o inventário imutável de nós da fixture.
 	var queued_autoloads: Array[String] = []
 	for node in root.get_children():
 		if node.is_queued_for_deletion(): queued_autoloads.append(str(node.name))
@@ -67,7 +67,7 @@ func run() -> void:
 	var operations := OPS.new()
 	operations.configure(controller)
 	root.add_child(operations)
-	# This standalone process owns the cache; production has no cache reset.
+	# Este processo independente é dono do cache; a produção não tem reinício de cache.
 	KIT._meshes.clear()
 	var references: Array = []
 	for identity in range(80,96):

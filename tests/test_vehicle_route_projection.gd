@@ -1,5 +1,5 @@
 extends SceneTree
-## Real Curve3D projection equivalence after movement, reassignment and edits.
+## Equivalência real da projeção em Curve3D depois de movimento, reatribuição e edições.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 var checks := 0
 var failures: Array[String] = []

@@ -17,7 +17,7 @@ class HeistSession extends RefCounted:
 class Heist extends RefCounted:
 	var session: RefCounted
 class RobberyHarness extends "res://runtime/RobberyActor.gd":
-	# Only omit presentation; the actual death/restore entry point stays intact.
+	# Só omite a apresentação; o ponto de entrada real de morte/restauração fica intacto.
 	func _ready() -> void: set_physics_process(false)
 	func _present_fall(_restored: bool, _impact: Vector3) -> void: pass
 

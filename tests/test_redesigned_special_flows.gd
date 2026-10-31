@@ -1,6 +1,6 @@
 extends SceneTree
-## Production armored truck and ice-cream attachment: semantic bindings and
-## reversible visible states. Functional contracts; this does not measure FPS.
+## Carro-forte de produção e acessório do sorvete: ligações semânticas e
+## estados visíveis reversíveis. Contratos funcionais; isto não mede FPS.
 const TRUCK := preload("res://gameplay/armored/ArmoredTruck.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")

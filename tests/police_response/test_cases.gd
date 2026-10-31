@@ -72,7 +72,7 @@ func run() -> void:
 	caller.queue_free()
 	game.clear_wanted()
 	game.state = bundle.state
-	# Response fixture, not an escalation shortcut available to player crimes.
+	# Fixture de resposta, não um atalho de escalada disponível para crimes do jogador.
 	game.crime_points = 420
 	game._update_stars()
 	game.register_crime(1, observed, "reported")

@@ -1,11 +1,11 @@
 extends "res://tests/measure/measure.gd"
-## Rendered Main, .NET build required BEFORE launching (never builds itself).
+## Main renderizado, build .NET exigido ANTES de lançar (nunca compila sozinho).
 ## --script res://tests/measure/measure_lightning_storm.gd -- --no-save --benchmark
-## --out-dir=<NEW exclusive directory> --order=before
-## Run that baseline BEFORE changing StormPresentation; then use a NEW directory
-## with --order=after. Default order: before,after. Optional --include-movement,
-## --seconds=30 (minimum 30), --capture-temporal (outside all timing samples).
-## Forced strikes every six seconds are DIAGNOSTIC, not natural storm cadence.
+## --out-dir=<diretório exclusivo NOVO> --order=before
+## Rode essa linha de base ANTES de mudar o StormPresentation; depois use um diretório NOVO
+## com --order=after. Ordem padrão: before,after. Opcionais --include-movement,
+## --seconds=30 (mínimo 30), --capture-temporal (fora de todas as amostras de tempo).
+## Raios forçados a cada seis segundos são DIAGNÓSTICO, não a cadência natural da tempestade.
 
 const FIXED_SEED := 16102026
 const NIGHT := 0.93
@@ -124,7 +124,7 @@ func run() -> void:
 			round_index += 1
 	if capture_temporal or temporal_only:
 		active_scenario = "night-stationary"
-		# Explicit before-only invocation must also work before the patch exists.
+		# A invocação explícita só de antes precisa funcionar também antes de o patch existir.
 		var capture_variant := "after" if "after" in order.split(",") else "before"
 		if not await prepare_case(capture_variant): return
 		await sample_storm(WARMUP_SECONDS)
@@ -262,8 +262,8 @@ func sample_storm(duration: float) -> Dictionary:
 	return result
 
 func capture_strike(variant: String) -> bool:
-	# Continuous post-draw readbacks are deliberately AFTER all benchmark windows.
-	# Bounded 30s sequence, every rendered frame; capture cost is never FPS evidence.
+	# As leituras contínuas pós-desenho ficam de propósito DEPOIS de todas as janelas de benchmark.
+	# Sequência limitada de 30s, todo quadro renderizado; o custo da captura nunca é evidência de FPS.
 	var timeline: Array[Dictionary] = []
 	var triggers: Array[Dictionary] = []
 	var previous_draw := -1

@@ -122,8 +122,8 @@ func run() -> void:
 		var after_owner_free := create_model(tint)
 		compare(describe(after_owner_free), expected, "resource lifetime after first model removal " + tint.to_html())
 		after_owner_free.free()
-	# More unique exact colors than the cache capacity exercise eviction/rebuild.
-	# No test depends on whether a specific entry is retained or reconstructed.
+	# Mais cores exatas únicas que a capacidade do cache exercitam despejo/reconstrução.
+	# Nenhum teste depende de uma entrada específica ser retida ou reconstruída.
 	for index in 10:
 		var custom := create_model(Color(float(index + 1) / 17.0, .231, .517, 1.0))
 		custom.free()

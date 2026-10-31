@@ -1,6 +1,6 @@
 extends SceneTree
-## Isolated presentation preview, not a gameplay/performance acceptance test.
-## Run rendered with the project's Godot 4.7.2 .NET after building Harbor.csproj.
+## Prévia de apresentação isolada, não um teste de aceitação de jogabilidade/desempenho.
+## Rode renderizado com o Godot 4.7.2 .NET do projeto depois de compilar Harbor.csproj.
 
 const CAT := preload("res://runtime/cats/CatModel.gd")
 const FURNITURE := preload("res://runtime/cats/CatFurniture.gd")

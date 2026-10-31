@@ -1,10 +1,10 @@
 extends "res://tests/measure/measure_full.gd"
-## Rendered production scene. Never run with --headless except --check-only.
+## Cena de produção renderizada. Nunca rode com --headless, exceto --check-only.
 ## --no-save --skip-arrival --population=40 --scenario=ammunation
 ## --label=before-ammunation --evidence-dir=res://evidence/video-review-20260924
-## Scenarios: street, ammunation, bank, port. Add --drive for the street route.
-## 5 seconds of warm-up and 30 seconds of steady sampling; room construction
-## and the following 2 seconds are recorded separately as first-entry evidence.
+## Cenários: street, ammunation, bank, port. Acrescente --drive para a rota de rua.
+## 5 segundos de aquecimento e 30 segundos de amostragem estável; a construção da sala
+## e os 2 segundos seguintes são gravados à parte como evidência de primeira entrada.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 var scenario := "street"
 var entry_samples: Array[float] = []
@@ -36,7 +36,7 @@ func run() -> void:
 	started = 0
 	if not is_instance_valid(world) or world.session == null or not world.session.ready_for_play: return
 	startup_elapsed_ms = float(Time.get_ticks_usec() - load_started) / 1000.0
-	# Apply only to this process. Do not persist settings.cfg.
+	# Aplica só a este processo. Não persiste o settings.cfg.
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	DisplayServer.window_set_size(Vector2i(1280, 720))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
@@ -56,14 +56,14 @@ func run() -> void:
 		world.player.speed = 0.0
 		world.player.automatic_direction = Vector3.ZERO
 		world.production.region.set_focus(definition.entry_position)
-		# A teleport is setup, excluded from the first-entry and steady samples.
+		# Um teleporte é preparação, excluído das amostras de primeira entrada e estáveis.
 		world.player.teleport(definition.entry_position + Vector3.UP * 0.08)
 		for frame in 120: await physics_frame
 		entry_previous = Time.get_ticks_usec()
 		entry_started = entry_previous
 		entry_recording = true
-		# This invokes the real room admission/physics contract. The exterior
-		# walk-up zoom is not measured; it needs a separate end-to-end capture.
+		# Isto invoca o contrato real de admissão/física da sala. O zoom externo de
+		# chegada a pé não é medido; precisa de uma captura de ponta a ponta separada.
 		entry_success = await world.session.enter_place(place_id, false, place_id)
 		entry_elapsed_ms = float(Time.get_ticks_usec() - entry_started) / 1000.0
 		var tail_started := Time.get_ticks_usec()

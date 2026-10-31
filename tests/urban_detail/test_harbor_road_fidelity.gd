@@ -1,6 +1,6 @@
 extends SceneTree
-## Directed Harbor road/streaming validator. Requires --no-save and never
-## resolves a save path. Collision is checked independently from rendering.
+## Validador dirigido de ruas/streaming do Harbor. Exige --no-save e nunca
+## resolve um caminho de save. A colisão é conferida independente da renderização.
 
 const TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const SOURCE_PATH := "res://world/regions/OriginalWorldData.json"
@@ -172,8 +172,8 @@ func _run() -> void:
 
 
 func check_source_roads(roads: Array[Dictionary]) -> void:
-	# Independent source input: compare every ID, point and width, instead of
-	# freezing a count that became stale when the authored road list changed.
+	# Entrada de origem independente: compara cada ID, ponto e largura, em vez de
+	# congelar uma contagem que ficou obsoleta quando a lista autoral de ruas mudou.
 	var decoded: Variant = JSON.parse_string(FileAccess.get_file_as_string(SOURCE_PATH))
 	check(decoded is Dictionary, "productive road source is a readable dictionary")
 	if not decoded is Dictionary: return
@@ -210,7 +210,7 @@ func _open_tunnel_ramp(point: Vector3) -> bool:
 
 
 func _tunnel_normal(x: float) -> Vector3:
-	# Analytic derivative of the authored parabolic/linear floor profile.
+	# Derivada analítica do perfil autoral parabólico/linear do piso.
 	var west := x - TUNNEL.W_TOP
 	var east := TUNNEL.E_TOP - x
 	var u := minf(west, east)
@@ -230,9 +230,9 @@ func _correct_tunnel_floor(hit: Dictionary, point: Vector3) -> bool:
 	while owner != null and not owner.is_in_group("canal_tunnel"): owner = owner.get_parent()
 	var height_error := absf(float(hit.position.y) - TUNNEL.floor_y(point.x))
 	var normal_error := (hit.normal as Vector3).distance_to(_tunnel_normal(point.x))
-	# Curved sections are physically tessellated in <=1 m spans: their analytic
-	# tangent can differ by <=0.01042; linear ramps (both formerly failing points)
-	# are exact. A solid at the old street height or a wall cannot satisfy this.
+	# Trechos curvos são tesselados fisicamente em vãos <=1 m: a tangente analítica
+	# pode diferir em <=0.01042; rampas lineares (os dois pontos que falhavam antes)
+	# são exatas. Um sólido na altura antiga da rua ou uma parede não satisfaz isto.
 	var ok := owner != null and height_error < .01 and normal_error < .012
 	print("TUNNEL_FLOOR point=%s hit=%s normal=%s expected_y=%.7f expected_normal=%s owner=%s valid=%s" % [
 		point, hit.position, hit.normal, TUNNEL.floor_y(point.x), _tunnel_normal(point.x),

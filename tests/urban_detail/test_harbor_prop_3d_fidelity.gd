@@ -1,5 +1,5 @@
 extends SceneTree
-## Directed check for V1-authored trees, rocks, benches and lamp housings.
+## Checagem dirigida de árvores, rochas, bancos e carcaças de poste autorais da V1.
 
 const REGION:=preload("res://world/regions/NativeRegion.gd")
 const PROP:=preload("res://world/urban_detail/HarborProp3D.gd")

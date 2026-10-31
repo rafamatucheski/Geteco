@@ -1,7 +1,7 @@
 extends SceneTree
-## The coupe's authored roof meets the side glass at x=±.60, y=1.25,
-## between the A pillar (z=-.30) and the rear roof edge (z=.64).
-## Interior upper side trim must fit below that envelope after boarding.
+## O teto autoral do cupê encontra o vidro lateral em x=±.60, y=1.25,
+## entre a coluna A (z=-.30) e a borda traseira do teto (z=.64).
+## O acabamento lateral superior interno precisa caber abaixo desse envelope depois do embarque.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
@@ -40,8 +40,8 @@ func run() -> void:
 			if colors[i].is_equal_approx(INTERIOR.C_DIAL): dial_points += 1
 			if point.y > .64 and point.z < -.50:
 				front_points += 1
-				# Lower windshield edge: y=.82, z=-.88. The upper edge at
-				# z=-.30 reaches at least y=1.25 across the curved glass.
+				# Borda inferior do para-brisa: y=.82, z=-.88. A borda superior em
+				# z=-.30 chega pelo menos a y=1.25 no vidro curvo.
 				var glass_height := .82 + (point.z + .88) * (.43 / .58)
 				behind_windshield = behind_windshield and point.y <= glass_height - .01
 			if point.y < 1.18 or absf(point.x) < .50 or not colors[i].is_equal_approx(INTERIOR.C_TRIM): continue

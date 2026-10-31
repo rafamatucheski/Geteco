@@ -1,8 +1,8 @@
 extends SceneTree
-## Isolated differential probe, not a gameplay/FPS benchmark. Both variants
-## compile the current Actor source in memory; only grounded vertical velocity
-## differs. The real Actor, capsule, stepping, steering and move_and_slide run.
-## --fixed-fps 60 can accelerate this headless functional diagnostic.
+## Sonda diferencial isolada, não um benchmark de jogabilidade/FPS. As duas variantes
+## compilam o código atual do Actor em memória; só a velocidade vertical no chão
+## difere. O Actor, a cápsula, os degraus, a direção e o move_and_slide reais rodam.
+## --fixed-fps 60 pode acelerar este diagnóstico funcional headless.
 const ACTOR_PATH := "res://scripts/Actor.gd"
 const PROPS := preload("res://world/harbor_route_detail/HarborRouteProps.gd")
 const GROUNDED_LINE := "velocity.y = -1.0 if is_on_floor() else velocity.y - 20.0 * delta"
@@ -76,7 +76,7 @@ func run() -> void:
 		{"id":"flat_walk","start":Vector3(-3,.04,0),"direction":Vector3.RIGHT,"ticks":150},
 		{"id":"ramp_up","start":Vector3(-5,.04,0),"direction":Vector3.RIGHT,"ticks":240},
 		{"id":"ramp_down","start":Vector3(3,1.6,0),"direction":Vector3.LEFT,"ticks":240},
-		# Same physical speed cap used by MountainProgression.motion.
+		# Mesmo limite físico de velocidade usado por MountainProgression.motion.
 		{"id":"ramp_down_ski_speed","start":Vector3(3,1.6,0),"direction":Vector3.LEFT,"ticks":24,"speed":455.0/16.0},
 		{"id":"curb_up","start":Vector3(-3,.04,0),"direction":Vector3.RIGHT,"ticks":70},
 		{"id":"curb_down","start":Vector3(-.7,.16,0),"direction":Vector3.LEFT,"ticks":100},

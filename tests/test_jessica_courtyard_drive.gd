@@ -1,9 +1,9 @@
 extends "res://tests/test_jessica_foundry_route.gd"
 const COURT_PATH := preload("res://tests/fixtures/JessicaCourtyardFootpath.gd")
 const CABIN := preload("res://gameplay/VehicleInterior.gd")
-## The real Main courtyard and M8, driven by the production Jetta controller.
-## One pre-test placement initializes Quay before both access arcs. There are
-## no position/velocity writes during driving, no bank/receipt/wanted fixtures.
+## O pátio real do Main e o M8, dirigidos pelo controlador do Jetta de produção.
+## Um posicionamento antes do teste inicializa o Quay antes dos dois arcos de acesso. Não há
+## escrita de posição/velocidade durante a direção, nem fixtures de banco/recibo/procurado.
 
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): push_error("Courtyard drive requires --no-save"); quit(2); return
@@ -47,7 +47,7 @@ func run() -> void:
 	check(not depot_present,"removed pharmacy model and attached collision stay absent from the real courtyard")
 	check(world.session.controller.vehicle_position_clear(car,start+Vector3.UP*.12,start_yaw),"Quay start is physically admitted")
 	if not failures.is_empty(): await finish(); return
-	# This is the explicit initialization before the measured physical drive.
+	# Esta é a inicialização explícita antes da direção física medida.
 	car.call("place",start+Vector3.UP*.12,start_yaw)
 	car.set("route",road)
 	runtime.route = road

@@ -1,6 +1,6 @@
 extends "res://tests/test_roadside_parking_layout.gd"
-## Complements regional geometry checks with every parking slot in Main,
-## including transit stations and the separately owned bridge/tunnel shell.
+## Complementa as checagens de geometria regional com toda vaga de estacionamento no Main,
+## incluindo estações de transporte e a casca de ponte/túnel com dono separado.
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
 var capture_enabled := false
@@ -105,8 +105,8 @@ func _capture_site(world: Node3D,site: Dictionary,folder: String) -> void:
 	var target := Node3D.new()
 	world.add_child(target)
 	target.global_position = site.position
-	# Productive exterior camera and pitch; only hold its framing for the two
-	# completed submissions so a prior site's GPU frame cannot be captured.
+	# Câmera externa e inclinação produtivas; só segura o enquadramento dela pelas duas
+	# submissões concluídas para que o quadro de GPU de um local anterior não seja capturado.
 	camera.target = target
 	camera.locked = true
 	camera.set_process(false)

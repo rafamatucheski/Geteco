@@ -1,7 +1,7 @@
 extends SceneTree
-## Directed contract for native 3D conversion of the productive V1 buildings.
-## The offline source atlas is evidence only: it must never be mounted as a
-## horizontal facade/roof projection at runtime.
+## Contrato dirigido para a conversão 3D nativa dos prédios produtivos da V1.
+## O atlas de origem offline é só evidência: nunca pode ser montado como
+## projeção horizontal de fachada/telhado em tempo de execução.
 
 const DATA_PATH := "res://world/regions/OriginalWorldData.json"
 const ATLAS_ROOT := "res://assets/regions/source/world/harbor/building_atlas"

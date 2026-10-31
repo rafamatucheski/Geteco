@@ -1,5 +1,5 @@
 extends SceneTree
-## Swept real player/NPC bodies, parking envelopes and the open street entrance.
+## Corpos reais de jogador/NPC varridos, envelopes de estacionamento e a entrada aberta da rua.
 const SITE := preload("res://world/places/classic_meet/ClassicMeetSite.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const CAR := preload("res://gameplay/classic_meet/ClassicMeetCar.gd")

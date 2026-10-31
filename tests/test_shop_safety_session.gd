@@ -26,8 +26,8 @@ func run() -> void:
 		world.gameplay._damage(actor, 10000.0, world.player)
 		check(PROTECTION.is_protected(actor) and actor.health == before and not actor.dead, str(actor.get_meta("interior_npc_id")) + " survives real lethal damage paths")
 	await photo("protected-luisa-nelson")
-	# --no-save protects the user's default slot; this fixture explicitly owns
-	# the separate file and must enable writes to exercise disk restoration.
+	# --no-save protege o slot padrão do usuário; esta fixture é explicitamente dona
+	# do arquivo separado e precisa ligar as gravações para exercitar a restauração em disco.
 	world.production.no_save = false
 	check(world.production.store.path == save_path, "save store owns only isolated fixture")
 	check(world.session.save_game(), "safe shop saves to isolated disk")

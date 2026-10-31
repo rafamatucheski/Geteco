@@ -1,6 +1,6 @@
 extends SceneTree
-## Rendered regression: the real passenger train moves through the room's
-## camera rays while its physical bodies and all uncut PBR pixels are retained.
+## Regressão renderizada: o trem de passageiros real passa pelos raios da câmera
+## da sala enquanto os corpos físicos dele e todos os pixels PBR sem corte são mantidos.
 const SIGHTLINE := preload("res://world/places/harbor_buildings/HarborBuildingSightline.gd")
 const TRAIN := preload("res://world/railway/TrainModel.gd")
 var scene: Node3D

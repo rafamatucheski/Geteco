@@ -158,8 +158,8 @@ func run() -> void:
 			if not is_instance_valid(car): break
 			var narration: Dictionary = arrival.narration_hold_info()
 			if before.distance_to(car.global_position) < .001 and narration.holding:
-				# Only the demonstrated, finite audio/caption hold at the endpoint
-				# is intentional. Physical driving stalls retain the same deadline.
+				# Só a espera finita demonstrada de áudio/legenda no ponto final
+				# é intencional. Travadas da direção física mantêm o mesmo prazo.
 				stalled = 0
 				if not reported_narration:
 					print("ARRIVAL_PLANNED_NARRATION_HOLD ",narration)

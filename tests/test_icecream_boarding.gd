@@ -1,5 +1,5 @@
 extends "res://tests/test_vehicle_doors.gd"
-## Reuse the actual entry/exit, hand, head, body and door-clearance assertions.
+## Reaproveita as asserções reais de entrada/saída, mão, cabeça, corpo e folga da porta.
 func spawn(id: String, yaw: float) -> CharacterBody3D:
 	var car := super.spawn(id,yaw)
 	car.vehicle_id = "street_icecream_boarding"

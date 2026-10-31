@@ -1,5 +1,5 @@
 extends SceneTree
-## Focused checks for the room support and counter interaction seen in 24/09 video.
+## Checagens focadas do apoio da sala e da interação com o balcão vistos no vídeo de 24/09.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const ROBBERY_ACTOR := preload("res://runtime/RobberyActor.gd")

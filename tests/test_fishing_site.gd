@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical admission, swept pond guards, native people and visit lifecycle.
-## Rendered depth, landscaping and performance are checked in the real session.
+## Admissão física, proteções varridas do lago, pessoas nativas e ciclo de vida da visita.
+## Profundidade renderizada, paisagismo e desempenho são conferidos na sessão real.
 const SITE := preload("res://world/places/fishing/FishingSite.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 var scene: Node3D
@@ -21,7 +21,7 @@ func run() -> void:
 	scene = Node3D.new()
 	root.add_child(scene)
 	current_scene = scene
-	# Exactly the same flat land support used by Harbor; no bespoke helper path.
+	# Exatamente o mesmo apoio de terra plana usado pelo Harbor; nenhum caminho de helper sob medida.
 	var ground := StaticBody3D.new()
 	ground.position = SITE.ANCHOR + Vector3(0,-.15,5)
 	var shape := CollisionShape3D.new()
@@ -68,7 +68,7 @@ func run() -> void:
 		actor.automatic_direction = Vector3.ZERO
 		check(not site.contains_water(actor.global_position),"player cannot walk onto pond %d" % index)
 		check(actor.global_position.y>-.05,"player remains supported beside pond %d" % index)
-	# Native civilian capsules use the same guards and occupy clear dry stations.
+	# Cápsulas nativas de civis usam as mesmas proteções e ocupam estações secas livres.
 	for npc in site.anglers:
 		check(_clear(npc.global_position,[npc.get_rid(),actor.get_rid()]),"native angler clear spawn "+str(npc.name))
 		var toward: Vector3 = npc.water_target-npc.global_position
@@ -87,7 +87,7 @@ func run() -> void:
 		query.collision_mask = 1
 		var forward: Vector3 = solid.basis.z
 		query.transform = Transform3D(Basis.IDENTITY,site.to_global(solid.position)+forward*(solid.size.z*.5+1)+Vector3.UP*.86)
-		# Place feet at ground level, separately from the prop's centre height.
+		# Põe os pés no nível do chão, separado da altura central do prop.
 		query.transform.origin.y = site.global_position.y+.88
 		query.motion = -forward*(solid.size.z+2)
 		var result := scene.get_world_3d().direct_space_state.cast_motion(query)

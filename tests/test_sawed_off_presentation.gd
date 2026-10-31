@@ -1,6 +1,6 @@
 extends "res://tests/test_firearm_rig.gd"
-## Focused regression on the compact grip and articulated reload, using Dante's
-## actual skeleton and meshes. No FPS or visual-quality claim from headless.
+## Regressão focada na empunhadura compacta e na recarga articulada, usando o esqueleto
+## e as malhas reais do Dante. Nenhuma afirmação de FPS ou qualidade visual a partir do headless.
 const SAWED = preload("res://gameplay/SawedOffPresentation.gd")
 var _model: Node3D
 

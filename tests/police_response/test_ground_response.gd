@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Vehicle/Dispatch integration plus collision and high-speed tire sweep.
-## Headless evidence verifies behavior only; rendered frame-time is separate.
+## Integração real de Vehicle/Dispatch mais colisão e varredura do furador de pneus em alta velocidade.
+## A evidência headless confere só comportamento; o tempo de quadro renderizado é à parte.
 const KIT := preload("res://tests/dispatch/DispatchTestKit.gd")
 const RULES := preload("res://gameplay/dispatch/DispatchRules.gd")
 const TIRES := preload("res://gameplay/police_response/ground/TirePuncture.gd")
@@ -118,7 +118,7 @@ func roadblock_and_tires() -> void:
 	await physics_frame
 	var ray := PhysicsRayQueryParameters3D.create(roadblock.to_global(Vector3(2.6,.5,-2)),roadblock.to_global(Vector3(2.6,.5,2)),1)
 	var hit := controller.get_world_3d().direct_space_state.intersect_ray(ray)
-	# The 01/10 design removed concrete barriers; the tire strip must leave a bypass.
+	# O desenho de 01/10 removeu as barreiras de concreto; a tira de pregos precisa deixar um desvio.
 	check(hit.is_empty(),"tire strip leaves the side passage physically clear")
 	check(BLOCK.wheel_crosses_strip(Vector3(0,.1,-5),Vector3(0,.1,5),3.6),"swept tire contact catches a fast crossing")
 	check(not BLOCK.wheel_crosses_strip(Vector3(3,.1,-5),Vector3(3,.1,5),3.6),"passing around strip does not puncture tires")

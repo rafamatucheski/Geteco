@@ -1,6 +1,6 @@
 extends "res://tests/test_transition_modal_save.gd"
-## Blocker is a fixed map solid installed before the loaded Main enters the tree.
-## This isolates occupied saved-pose behavior without mocking admission queries.
+## O bloqueador é um sólido fixo do mapa instalado antes de o Main carregado entrar na árvore.
+## Isto isola o comportamento da pose salva ocupada sem simular as consultas de admissão.
 var saved_car_point := Vector3.ZERO
 var add_load_blocker := false
 func build(saved := false) -> void:

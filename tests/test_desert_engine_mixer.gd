@@ -59,8 +59,8 @@ func run() -> void:
 			drive.rpm = 2400.0
 			for i in 30: sound._process(.1)
 			check(not sound._recorded_idle.playing,id+": idle recording fades out before high revs")
-		# Reverse engagement/braking may jump physical RPM, but both audible
-		# bands must glide together and settle back to the authoritative value.
+		# O engate da ré/frenagem pode fazer o RPM físico saltar, mas as duas faixas
+		# audíveis precisam deslizar juntas e assentar de volta no valor de autoridade.
 		drive.rpm = 900.0
 		for tick in 30: sound._process(.1)
 		drive.rpm = 3000.0

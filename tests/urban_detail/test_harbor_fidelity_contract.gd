@@ -32,8 +32,8 @@ func run() -> void:
 	var seam_ray := PhysicsRayQueryParameters3D.create(Vector3(gap_point.x,2,gap_point.y),Vector3(gap_point.x,-.2,gap_point.y),1)
 	var seam_hit := fixture.get_world_3d().direct_space_state.intersect_ray(seam_ray)
 	check(not seam_hit.is_empty() and absf(seam_hit.position.y)<.001,"Convergence has support at road level")
-	# The structural deck is also at y=0 here; a ray may return either of
-	# those coplanar supports. Isolate the gap to verify its own collider.
+	# O deck estrutural também está em y=0 aqui; um raio pode devolver qualquer um
+	# desses apoios coplanares. Isola o vão para conferir o próprio colisor.
 	var other_supports: Array[RID] = []
 	for body in connection.find_children("*","StaticBody3D",true,false):
 		if body.name != "HarborConnectorGapBody": other_supports.append(body.get_rid())

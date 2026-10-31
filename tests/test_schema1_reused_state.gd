@@ -1,6 +1,6 @@
 extends SceneTree
-## Exercise the real SaveStore migration boundary against an already populated
-## GameState. All files are inside a newly created, unique temporary directory.
+## Exercita o limite real de migração do SaveStore contra um GameState já
+## preenchido. Todos os arquivos ficam dentro de um diretório temporário único recém-criado.
 const STATE := preload("res://runtime/GameState.gd")
 const INTRO := preload("res://systems/Progression.gd")
 const STORE := preload("res://runtime/SaveStore.gd")

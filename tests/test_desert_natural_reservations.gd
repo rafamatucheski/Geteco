@@ -1,6 +1,6 @@
 extends SceneTree
-## Pure geometry regression: actual landforms stay protected, adjacent unused
-## broad-phase space remains available to the unchanged authored salt works.
+## Regressão pura de geometria: os relevos reais continuam protegidos, o espaço de broad-phase
+## adjacente sem uso continua disponível para a salina autoral inalterada.
 const LAND := preload("res://world/desert/expansion/DesertLandforms.gd")
 const NORTH := preload("res://world/desert/north_pass/DesertNorthPassLayout.gd")
 const ROADSIDE := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
@@ -68,7 +68,7 @@ func run() -> void:
 	var sampled := 0
 	var blocked_land: Array[Vector2] = []
 	var blocked_north: Array[Vector2] = []
-	# Keep all 104x76m of the original test footprint, with its original 2m grid.
+	# Mantém todos os 104x76m da área de teste original, com a grade original de 2m.
 	for x in range(-52,53,2):
 		for z in range(-40,37,2):
 			var at := ROADSIDE.at(salt,Vector3(x,0,z))

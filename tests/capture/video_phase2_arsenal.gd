@@ -1,6 +1,6 @@
 extends "res://tests/test_claude_arsenal_ui_state.gd"
-## Keep Claude's behavior checks intact, but let Main finish its loading curtain
-## before photographing the UI. Captures are not a performance benchmark.
+## Mantém intactas as checagens de comportamento do Claude, mas deixa o Main terminar a cortina
+## de carregamento antes de fotografar a UI. Capturas não são benchmark de desempenho.
 func capture(label: String) -> void:
 	if "--capture" not in OS.get_cmdline_user_args() or DisplayServer.get_name() == "headless": return
 	for frame in 600:

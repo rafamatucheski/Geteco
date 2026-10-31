@@ -37,7 +37,7 @@ func run() -> void:
 		check(candidate.paint_color.is_equal_approx(Color("ffc526")),"taxi yellow paint")
 		check(world.production.vehicle_position_clear(candidate,candidate.position,candidate.rotation.y),"parked taxi has physical clearance")
 	check(registrations.size()==4,"distinct registrations")
-	# The four drivers stand outside solids and remain independently damageable.
+	# Os quatro motoristas ficam fora de sólidos e continuam podendo levar dano de forma independente.
 	for resident in taxis.rank.drivers.values():
 		var query := PhysicsShapeQueryParameters3D.new()
 		query.shape = resident.get_child(0).shape
@@ -65,8 +65,8 @@ func run() -> void:
 		check(not world.player.visible and world.player.collision_layer==0,"passenger body safely stowed")
 		check(not car.visual.get_node("TaxiLivery").available,"occupied sign off")
 		check(not car.is_in_group("drivable"),"occupied taxi cannot be stolen midride")
-		# A cab may reach the stop line just after green. Allow two complete
-		# signal cycles, including braking and the actual departure movement.
+		# Um táxi pode chegar à linha de parada logo depois do verde. Permite dois ciclos
+		# completos de sinal, incluindo a frenagem e o movimento real de partida.
 		var departure_deadline:=Time.get_ticks_msec()+65000
 		var departure_frame:=0
 		while Time.get_ticks_msec()<departure_deadline:
@@ -86,18 +86,18 @@ func run() -> void:
 		check(not is_instance_valid(driver),"rank driver boarded")
 	else: session.close_menu()
 	if not transport.riding:
-		# A real destination on the same street exercises automatic arrival.
+		# Um destino real na mesma rua exercita a chegada automática.
 		world.player.teleport(car.driver_door_anchor(1))
-		# Disembark requests braking; wait for the actual stop before opening a
-		# modal, which pauses the car. Four frames can leave it still decelerating.
+		# Desembarcar pede frenagem; espera a parada real antes de abrir um
+		# modal, que pausa o carro. Quatro quadros podem deixá-lo ainda desacelerando.
 		for i in 240:
 			await physics_frame
 			if absf(car.speed)<.05:break
 		check(absf(car.speed)<.05,"released taxi brakes before a new booking")
 		var offered: bool = taxis.offer(car)
 		print("REBOOK offer=",offered," eligible=",transport._eligible()," stars=",world.gameplay.stars," distance=",world.player.position.distance_to(car.position)," available=",taxis.available(car))
-		# Use a road destination: extrapolating the current yaw while the cab
-		# is turning can put the target several metres into the neighbouring lot.
+		# Usa um destino na rua: extrapolar o yaw atual enquanto o táxi
+		# está virando pode pôr o alvo vários metros dentro do lote vizinho.
 		var goal:=Vector3(110,0,76.08)
 		taxis.request(goal,"Rodoviária")
 		print("REBOOK riding=",transport.riding," modal=",session.modal," goal=",goal," notice=",session.notice.text)
@@ -124,13 +124,13 @@ func run() -> void:
 		check(stolen.get_meta("taxi_stolen",false) and not taxis.available(stolen),"stolen taxi no longer offers fares")
 		check(not stolen.visual.get_node("TaxiLivery").available,"stolen roof sign off")
 		check(taxis.rank.drivers[2].frightened,"owner reacts to theft")
-		# Civilian testimony enters the real police case before it produces pursuit.
+		# O testemunho civil entra no caso policial real antes de produzir perseguição.
 		var evidence:Dictionary=world.gameplay.police_case.snapshot()
 		check(world.gameplay.crime_points>0 or float(evidence.evidence)>0 or evidence.pending.any(func(report):return report.kind=="theft"),"taxi theft creates witnessed police evidence")
 		var saved: Dictionary = preload("res://runtime/FleetState.gd").capture(stolen,"harbor")
 		check(preload("res://runtime/FleetState.gd").validate(saved),"stolen taxi valid for normal fleet persistence")
 		check(saved.vehicle_id==stolen.vehicle_id and saved.paint==stolen.paint_color.to_html(true),"save retains taxi identity and paint")
-	# Leaving the area unloads rank NPCs and decoration, preserving the stolen car.
+	# Sair da área descarrega os NPCs e a decoração do ponto, preservando o carro roubado.
 	world.player.teleport(Vector3(400,.1,25))
 	taxis.rank._unload()
 	await process_frame

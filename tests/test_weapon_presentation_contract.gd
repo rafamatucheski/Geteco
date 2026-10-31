@@ -1,6 +1,6 @@
 extends SceneTree
-## Pure presentation contracts: every productive weapon has a model, a finite
-## pose, grip-consistent placement and imported audio where the catalog asks.
+## Contratos puros de apresentação: toda arma produtiva tem modelo, pose
+## finita, posicionamento coerente com a empunhadura e áudio importado onde o catálogo pede.
 const IDS := ["fists", "knuckles", "knife", "bat", "axe", "pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "rpg", "flamethrower", "grenade", "hunting_rifle"]
 var failures: Array[String] = []
 var checks := 0

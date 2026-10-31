@@ -1,6 +1,6 @@
 extends SceneTree
-## Main + native pavement + live vehicle physics. --no-save is mandatory.
-## Samples theft and exit, including a real rear-end impact before the theft.
+## Main + calçamento nativo + física viva de veículo. --no-save é obrigatório.
+## Amostra roubo e saída, incluindo uma batida traseira real antes do roubo.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const OUTPUT := "res://evidence/video-review-20260924/"
 var world

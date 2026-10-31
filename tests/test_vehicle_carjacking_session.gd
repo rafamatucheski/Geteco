@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Main, no save writes. Fixtures place traffic vehicles beside Dante;
-## Driving.interact and motocross.steal_bike execute the production transitions.
+## Main real, sem gravar save. As fixtures põem veículos de trânsito ao lado do Dante;
+## Driving.interact e motocross.steal_bike executam as transições de produção.
 var world: Node3D
 var checks := 0
 var failures: Array[String] = []
@@ -85,7 +85,7 @@ func run() -> void:
 		world.player.teleport(pose.origin + Vector3(12,0,12))
 		await process_frame
 		await physics_frame
-	# Abort the moving grab before it can start a boarding tween.
+	# Aborta a pegada em movimento antes que ela possa começar um tween de embarque.
 	var bike: CharacterBody3D = world.production.spawn_vehicle("bike_urban",pose.origin,pose.basis.get_euler().y)
 	check(is_instance_valid(bike),"moving bike fixture spawns on a clear surface")
 	if not is_instance_valid(bike): world.free(); quit(1); return
@@ -97,8 +97,8 @@ func run() -> void:
 	check(not world.driving.occupied and world.player.is_physics_processing() and world.player.collision_layer != 0,"cancelled moving theft restores Dante")
 	bike.queue_free()
 	await process_frame
-	# The authored motocross rider must remain in the world, rather than being
-	# renamed Dante in place. Use the physical course to support its landing.
+	# O piloto autoral do motocross precisa continuar no mundo, em vez de ser
+	# renomeado Dante no lugar. Usa o percurso físico para apoiar o pouso dele.
 	var course := preload("res://activities/motocross/MotocrossCourse.gd")
 	world.player.teleport(course.ENTRY + Vector3.UP * .1)
 	world.production.region.set_focus(world.player.position)

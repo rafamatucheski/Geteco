@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_desert.gd"
-## Real Main and production drag camera. Fixture poses are NOT a traversal test.
+## Main real e câmera de arrancada de produção. As poses da fixture NÃO são teste de travessia.
 var race
 var save_path := ""
 var errors: Array[String] = []
@@ -33,8 +33,8 @@ func run() -> void:
 	root.size=Vector2i(1280,720)
 	output=FIXTURE.output_dir("desert-car-style-measure")
 	if output.is_empty(): fail("Cannot create isolated evidence folder"); return
-	# Freeze the initial list of paths: unreferenced staged files added later do
-	# not invalidate a run. Changes/deletions to an initially present path do.
+	# Congela a lista inicial de caminhos: arquivos preparados sem referência acrescentados depois
+	# não invalidam uma rodada. Mudanças/exclusões num caminho presente no início invalidam.
 	fingerprint=source_fingerprint()
 	if "--baseline-relief" in OS.get_cmdline_user_args():
 		for filename in ["DesertHorizonRelief.gd","DesertTerrainRelief.gd","DesertTerrainMesh.gd","desert_relief.gdshader"]:
@@ -87,8 +87,8 @@ func run() -> void:
 		fail("Real boarding did not complete"); return
 	if world.session.modal: world.session.close_menu()
 	if not race.perform("start"): fail("Real nearby night race start rejected: "+race.start_block_reason()); return
-	# Only the race controller is suspended. Main, population, weather, lights,
-	# audio, streaming and ordinary physics remain alive throughout measurement.
+	# Só o controlador da corrida é suspenso. Main, população, clima, luzes,
+	# áudio, streaming e física comum continuam vivos durante toda a medição.
 	race.set_physics_process(false)
 	for scenario in [{"id":"grid-night","hour":.9},{"id":"grid-day","hour":.45}]:
 		world.session.weather.time_of_day=float(scenario.hour)
@@ -136,7 +136,7 @@ func measure_grid(id: String) -> void:
 	print("DESERT_HORIZON_CASE ",id," ",JSON.stringify(reports[-1].summary))
 
 func fixture_pose(distance: float) -> void:
-	# Explicit fixture placement for angle/occlusion review, not physical traversal.
+	# Posicionamento explícito da fixture para revisão de ângulo/oclusão, não travessia física.
 	for i in 2:
 		var pose: Transform3D=race.grid(i)
 		pose.origin+=race.direction*distance+Vector3.UP*.08

@@ -1,6 +1,6 @@
 extends SceneTree
-## Directed chunk-boundary validator for the productive Harbor inventory.
-## It focuses every lot and its far visible edge; no save path is resolved.
+## Validador dirigido de limites de chunk para o inventário produtivo do Harbor.
+## Ele foca cada lote e sua borda visível distante; nenhum caminho de save é resolvido.
 
 const REGION := preload("res://world/regions/NativeRegion.gd")
 const SCALE := 1.0 / 16.0
@@ -43,8 +43,8 @@ func _run() -> void:
 			check(building.find_children("*", "SubViewport", true, false).is_empty(), "%s never creates a projection viewport while streamed" % building_id)
 			check(meshes.size() >= 4, "%s keeps its composed native 3D model while streamed" % building_id)
 			check(not building.find_children("*", "StaticBody3D", true, false).is_empty(), "%s keeps its 3D collision while streamed" % building_id)
-		# Stand beyond the far visible edge. The centre chunk may change here, but
-		# a still-visible source building must remain in one of the neighbour cells.
+		# Fica além da borda visível distante. O chunk central pode mudar aqui, mas
+		# um prédio de origem ainda visível precisa continuar numa das células vizinhas.
 		var edge_focus := center + Vector3(minf(size.x * 0.5 + 8.0, 30.0), 0.0, 0.0)
 		region.set_focus(edge_focus)
 		for frame in 4: await process_frame

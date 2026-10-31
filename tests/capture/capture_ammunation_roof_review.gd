@@ -1,22 +1,22 @@
 extends "res://tests/test_harbor_service_roofs.gd"
-## Focused integrated review: the original roof runner owns isolated persistence;
-## this adds Vance's real service before returning through the authored aisle.
+## Revisão integrada focada: o runner original do telhado cuida da persistência isolada;
+## este acrescenta o serviço real do Vance antes de voltar pelo corredor autoral.
 func recovery_scenarios(_target: Dictionary) -> void:
 	# Peaceful shops correctly reject the runner's environmental lethal hit.
 	# Takeshi's house exercises the same runtime under its real damage policy.
 	await super.recovery_scenarios(CATALOG.find("cobra_leader_house"))
 
 func normal_jump(_target: Dictionary) -> void:
-	# This inherited scenario expects survival. Takeshi's 9.2 m roof produces
-	# a lethal fall; the low shop roof exercises the intended nonlethal case.
+	# Este cenário herdado espera sobrevivência. O telhado de 9.2 m do Takeshi produz
+	# uma queda letal; o telhado baixo da loja exercita o caso não letal pretendido.
 	await super.normal_jump(CATALOG.find("harbor_ammunation"))
 
 func approach_owner(target: Dictionary) -> bool:
 	if not await super.approach_owner(target): return false
 	if str(target.id)!="harbor_ammunation": return true
 	var runtime = world.session.service_roofs
-	# The real player must contact the ladder itself before the masonry behind
-	# it. A wall alone would not prove the visible ladder has physical coverage.
+	# O jogador real precisa encostar na própria escada antes da alvenaria atrás
+	# dela. Só uma parede não provaria que a escada visível tem cobertura física.
 	world.player.automatic_direction = runtime.access_frame*Vector3.BACK
 	for frame in 30: await physics_frame
 	world.player.automatic_direction = Vector3.ZERO

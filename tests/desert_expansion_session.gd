@@ -57,8 +57,8 @@ func run() -> void:
 		var before: int=world.session.state.economy.balance
 		var earned_first_grand: bool="first_grand" in world.session.state.economy.snapshot().achievements
 		check(world.session.interact(),"ordinary interaction accepted "+str(site.id))
-		# Saving refreshes ordinary achievements. The second cache legitimately
-		# crosses R$1000 and grants the existing first_grand bonus as well.
+		# Salvar atualiza as conquistas comuns. O segundo esconderijo legitimamente
+		# passa de R$1000 e também concede o bônus first_grand existente.
 		var achievement_bonus:=int(preload("res://data/catalogs/AchievementCatalog.gd").CASH_REWARDS.first_grand) if not earned_first_grand and before+int(site.amount)>=1000 else 0
 		expected+=int(site.amount)+achievement_bonus
 		check(STATE.collected(world.session.state.world_state,str(site.id)) and world.session.state.economy.balance==before+int(site.amount)+achievement_bonus,"one real reward with legitimate achievement "+str(site.id))
@@ -79,7 +79,7 @@ func run() -> void:
 	for id in STATE.REWARDS: check(STATE.collected(world.session.state.world_state,id),"cold reload marker "+id)
 	await place(SITES.secrets()[0].position)
 	check(world.session.nearest().get("target","")!="discovery:"+str(SITES.secrets()[0].id),"return after cold reload has no repeated cache action")
-	# Physical paths use actual CharacterBody movement; fixture placement only sets start.
+	# Caminhos físicos usam movimento real de CharacterBody; o posicionamento da fixture só define o início.
 	Engine.max_fps=30
 	RenderingServer.frame_post_draw.connect(capture_temporal)
 	for route in LAND.walk_paths():
@@ -151,8 +151,8 @@ func place(at: Vector3) -> void:
 
 func walk_to(target: Vector3,label: String) -> bool:
 	var begin: Vector3=world.player.global_position
-	# Automatic Actor walking uses its configured speed (1.6m/s), whereas
-	# player-input walking uses3.5. Budget this fixture from the actual mode.
+	# A caminhada automática do Actor usa a velocidade configurada (1.6m/s), enquanto
+	# a caminhada pela entrada do jogador usa3.5. Orça esta fixture pelo modo real.
 	var deadline:=Time.get_ticks_msec()+int(begin.distance_to(target)/maxf(float(world.player.speed)*.85,.1)*1000)+6000
 	var min_height: float=world.player.global_position.y
 	var max_height: float=min_height

@@ -284,7 +284,7 @@ func grandstand() -> void:
 	await act("timekeeper", "cronometrista da arquibancada")
 
 func parking() -> void:
-	# Keep identities of every admitted place, including nearby authored dressings.
+	# Mantém as identidades de todo lugar admitido, incluindo acabamentos autorais próximos.
 	var admitted: Dictionary = {}
 	var authored: Dictionary = {}
 	for definition in LAYOUT.all_sites(): authored[str(definition.id)] = true
@@ -370,8 +370,8 @@ func natural_event() -> void:
 	var events: Node3D = roadside.events
 	events.release_all()
 	var stretch: Dictionary = event_stretch("route66_north")
-	# Give the ordinary sedan acceleration room before the 55m event window;
-	# this is still on the level road after the bridge ramp ends at z=-445.
+	# Dá espaço de aceleração ao sedã comum antes da janela de evento de 55m;
+	# isto ainda fica na estrada plana depois que a rampa da ponte termina em z=-445.
 	var start := Vector3(float(stretch.a.x)+4.5, 0, float(stretch.a.y)+120)
 	start.y = HM.surface_height(Vector2(start.x, start.z)) + .12
 	await stand(start + Vector3(9, 0, 0))
@@ -402,8 +402,8 @@ func natural_event() -> void:
 	autopilot.finish()
 	if not check(started, "evento nasce sozinho dirigindo (até %.1f m/s, carro em %s)" % [fastest, driven_to]): return
 	var point: Vector3 = events.event.point
-	# Compact roads now use a 100m look-ahead. Preserve the front-of-car and
-	# authored-stretch requirements without retaining the old 240m expectation.
+	# As estradas compactas agora usam antecipação de 100m. Preserva os requisitos de
+	# frente do carro e de trecho autoral sem manter a expectativa antiga de 240m.
 	check(absf(point.x - float(stretch.a.x)) < .5 and absf(point.z-(driven_to.z-100.0)) < 20.0 and point.z > minf(stretch.a.y,stretch.b.y) and point.z < maxf(stretch.a.y,stretch.b.y), "evento nasce 100m à frente, no trecho route66_north (%s, carro em %s)" % [point, driven_to])
 	check(await until(func(): return events.event.is_empty() or events.event.pending.is_empty(), 10.0), "peças do evento natural montam")
 

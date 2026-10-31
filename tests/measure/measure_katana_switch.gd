@@ -50,7 +50,7 @@ func run() -> void:
 	var compact := summary.duplicate()
 	compact.erase("samples_ms")
 	print("KATANA_SWITCH_MEASURE ", compact)
-	# Temporal evidence is separate from frame-time measurement.
+	# A evidência temporal é separada da medição de tempo de quadro.
 	var detail := Camera3D.new()
 	world.add_child(detail)
 	detail.look_at_from_position(world.player.global_position + Vector3(2.2, 1.6, 2.2), world.player.global_position + Vector3.UP)
@@ -80,8 +80,8 @@ func verify_garage() -> void:
 	var player = world.player
 	gameplay.god_mode = false
 	gameplay._sync_god_mode()
-	# A bare grant marks takeshi_honor discovered but lacks its save contract.
-	# Use the real award API before exercising restore, even for an owned sword.
+	# Uma concessão simples marca takeshi_honor como descoberto, mas não tem o contrato de save.
+	# Usa a API real de prêmio antes de exercitar a restauração, mesmo para uma espada possuída.
 	preload("res://runtime/TakeshiHonor.gd").record_finish(state.world_state, true, 8.0)
 	check(preload("res://runtime/TakeshiHonor.gd").claim_state(state, "katana").ok, "fixture recebe katana pelo prêmio persistente de Takeshi")
 	state.grant_weapon("pistol")

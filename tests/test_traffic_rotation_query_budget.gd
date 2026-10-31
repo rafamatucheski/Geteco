@@ -1,6 +1,6 @@
 extends SceneTree
-## Straight traffic has no rotation sweep to validate. Every real turn still
-## requests collision clearance, and a denied turn must keep its prior heading.
+## Trânsito em linha reta não tem varredura de rotação a validar. Toda curva real ainda
+## pede folga de colisão, e uma curva negada precisa manter o rumo anterior.
 
 class QueryProbe extends "res://scripts/Vehicle.gd":
 	var rotation_queries := 0
@@ -42,7 +42,7 @@ func prepare(car: QueryProbe, curve: Curve3D, speed_value := 3.0) -> void:
 	car.speed = speed_value
 	car.blocked = false
 	car.junction_wait = false
-	# Isolate the heading decision between the ordinary 10 Hz obstacle scans.
+	# Isola a decisão de rumo entre as varreduras comuns de obstáculos a 10 Hz.
 	car.sensor_clock = 1.0
 	car.rotation_queries = 0
 	car.queried_yaw = NAN

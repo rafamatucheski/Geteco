@@ -1,6 +1,6 @@
 extends SceneTree
-## Finite score lifetime, native bus routing, phase balance and spatial handoff.
-## PCM balance is covered separately by capture_drag_audio_identity.gd in Main.
+## Vida finita da trilha, roteamento nativo de bus, equilíbrio de fases e passagem espacial.
+## O equilíbrio do PCM é coberto à parte por capture_drag_audio_identity.gd no Main.
 const SCORE := preload("res://runtime/desert/drag_meet/DragMeetScore.gd")
 const AMBIENCE := preload("res://runtime/desert/drag_meet/DragMeetAmbience.gd")
 const BARKS := preload("res://runtime/desert/drag_meet/DragMeetBarks.gd")
@@ -30,8 +30,8 @@ func run() -> void:
 	var initial_music_bus := AudioServer.get_bus_index("Music")
 	var initial_music_db := AudioServer.get_bus_volume_db(initial_music_bus)
 	var initial_music_mute := AudioServer.is_bus_mute(initial_music_bus)
-	# This isolated process exercises both enabled and disabled settings without
-	# writing a preference file or assuming the developer's current sliders.
+	# Este processo isolado exercita as configurações ligadas e desligadas sem
+	# gravar arquivo de preferências nem supor os controles atuais do desenvolvedor.
 	AudioServer.set_bus_volume_db(initial_music_bus,0.0)
 	AudioServer.set_bus_mute(initial_music_bus,false)
 	for identity in BARKS.LINES:
@@ -49,7 +49,7 @@ func run() -> void:
 	current_scene=scene
 	var camera := Camera3D.new()
 	scene.add_child(camera)
-	# Follow the authored encounter after the desert layout moved north.
+	# Segue o encontro autoral depois que o layout do deserto foi para o norte.
 	var at: Vector3 = SCORE.SPEAKERS[0] + Vector3(2,-1.3,0)
 	camera.position=at+Vector3.UP*5.0
 	camera.make_current()
@@ -143,8 +143,8 @@ func run() -> void:
 	ambience.update(Vector3.ZERO,false,11.0,true,"idle")
 	check(ambience.voices.any(func(v): return v.playing),"leaving a sound island begins a fade instead of abrupt stop")
 	settle(ambience)
-	# settle() advances loop fades synchronously, not the native one-shot clock.
-	# A previously emitted workshop detail may finish its tail independently.
+	# settle() avança os fades de laço de forma síncrona, não o relógio nativo de disparo único.
+	# Um detalhe de oficina emitido antes pode terminar a cauda de forma independente.
 	check(ambience.voices.slice(0,AMBIENCE.LOOP_BUDGET).all(func(v): return not v.playing),"departed spatial loops release after the fade")
 	ambience.update(courtyard,false,12.0,true,"racing")
 	settle(ambience)

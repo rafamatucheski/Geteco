@@ -117,7 +117,7 @@ func run() -> void:
 	paused = false
 	controls.touch_aim = Vector2.ZERO
 	check(world.driving.leave(),"player can leave tank normally")
-	# Truck boarding uses a 2.5s body tween followed by door closing.
+	# O embarque no caminhão usa um tween de corpo de 2.5s seguido do fechamento da porta.
 	for index in 240:
 		await physics_frame
 		if not world.driving.is_body_transition_active(): break

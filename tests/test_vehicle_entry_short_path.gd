@@ -1,5 +1,5 @@
 extends "res://tests/test_vehicle_doors.gd"
-## A nearby door must not send Dante around the nose/rear of the entire car.
+## Uma porta próxima não pode mandar o Dante contornar a frente/traseira do carro inteiro.
 func run() -> void:
 	stage = Node3D.new()
 	root.add_child(stage)

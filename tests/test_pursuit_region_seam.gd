@@ -190,8 +190,8 @@ func _cross_seam() -> bool:
 		travelled += step
 		previous = car.global_position
 		handling_frames += int(car._handling_frame)
-		# Keep the last graph observation before the logical callback as well as
-		# its post-refresh graph. Restrict the detailed sampling to the seam.
+		# Mantém a última observação do grafo antes do callback lógico e também
+		# o grafo pós-atualização. Restringe a amostragem detalhada à emenda.
 		last_observation = _snapshot(absf(car.global_position.x-CONNECTION.SEAM.x) <= 1.0)
 		if Time.get_ticks_msec() >= sample_clock:
 			trace.append(last_observation)

@@ -72,14 +72,14 @@ func _run() -> void:
 	button(MOUSE_BUTTON_RIGHT, true)
 	await frames(6)
 	check(gameplay.scope_active(), "Scope activates with right button")
-	# Button-edge behaviour was tested above. Pin the held action at the physics
-	# boundary for this long stability observation (desktop focus may change).
+	# O comportamento na borda do botão foi testado acima. Fixa a ação segurada no limite
+	# de física para esta longa observação de estabilidade (o foco do desktop pode mudar).
 	var hold_aim := func() -> void: Input.action_press("aim")
 	physics_frame.connect(hold_aim)
 	var tracking := {"last": world.camera.focus - world.player.get_global_transform_interpolated().origin, "max_step": 0.0, "all_scoped": true}
 	var record := func(seconds: float) -> void:
-		# Pin the stimulus throughout the observation, as the sweep benchmark
-		# does. A desktop pointer can otherwise move during a long unattended run.
+		# Fixa o estímulo durante toda a observação, como o benchmark de varredura
+		# faz. Senão um ponteiro do desktop pode se mover durante uma rodada longa sem supervisão.
 		root.warp_mouse(screen)
 		var focus: Vector3 = world.camera.focus
 		var player_position: Vector3 = world.player.get_global_transform_interpolated().origin

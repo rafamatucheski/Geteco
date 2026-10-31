@@ -3,8 +3,8 @@ var world
 var failures: Array[String]=[]
 func _initialize() -> void: run.call_deferred()
 func safe_place(player_point: Vector3,npc_point: Vector3,npc: CharacterBody3D) -> void:
-	# Godot publishes moved body transforms at the next physics boundary.
-	# Vacate each old position before letting the other actor occupy it.
+	# O Godot publica as transformações de corpos movidos no próximo limite de física.
+	# Desocupa cada posição antiga antes de deixar o outro ator ocupá-la.
 	npc.global_position=Vector3(-350,.1,108)
 	npc.velocity=Vector3.ZERO
 	for i in 2: await physics_frame

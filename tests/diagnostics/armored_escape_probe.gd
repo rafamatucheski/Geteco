@@ -1,19 +1,19 @@
 extends "res://tests/test_armored_combat_session.gd"
-## DIRECTED MAIN DIAGNOSTIC — corridor scenario passed 20/20 on 2026-10-07.
-## Scope: daytime Cobre loading robbery, initial armor100, normal on-foot sprint,
-## real police pursuit and normal wanted decay; R$40000 receipt paid only once.
-## Evidence: evidence/armored-escape-cobre-corridor.log and
+## DIAGNÓSTICO DIRIGIDO NO MAIN — o cenário do corredor passou 20/20 em 2026-10-07.
+## Escopo: roubo diurno no carregamento do Cobre, armor100 inicial, corrida normal a pé,
+## perseguição policial real e decaimento normal de procurado; recibo de R$40000 pago uma vez só.
+## Evidência: evidence/armored-escape-cobre-corridor.log e
 ## evidence/armored-escape-cobre-33400-5731331/escape-wallet.json.
-## Remains a directed diagnostic, outside the routine automated suite.
-## The first route remained visible to police; the prior extension at x=-210
-## was rejected by preflight at z=-1024. DesertLayout home_03 spans x[-220,-206],
-## z[-1035.5,-1024.5], explaining that obstruction by authored geometry.
-## Revised corridor x=-228 passed full geometry/props preflight and 282.4 m of
-## real movement in Main. Both earlier failed runs remain historical evidence;
-## this passing route does not certify arbitrary escape routes or all tiers.
-## Diagnostics retain collider identity and resident cell for any new obstruction.
-## Uses service interaction, normal sprint and police response. Only initial
-## player placement uses teleport; no wanted/contact timer is edited.
+## Continua um diagnóstico dirigido, fora da suíte automatizada de rotina.
+## A primeira rota ficava visível para a polícia; a extensão anterior em x=-210
+## foi rejeitada pela pré-checagem em z=-1024. O home_03 do DesertLayout cobre x[-220,-206],
+## z[-1035.5,-1024.5], o que explica essa obstrução por geometria autoral.
+## O corredor revisto x=-228 passou na pré-checagem completa de geometria/props e em 282.4 m de
+## movimento real no Main. As duas rodadas anteriores que falharam continuam como evidência histórica;
+## esta rota aprovada não certifica rotas de fuga arbitrárias nem todos os níveis.
+## O diagnóstico guarda a identidade do colisor e a célula residente de qualquer obstrução nova.
+## Usa interação de serviço, corrida normal e resposta policial. Só o posicionamento
+## inicial do jogador usa teleporte; nenhum timer de procurado/contato é editado.
 
 func _walk_toward(point: Vector3) -> void:
 	var controls := root.get_node("GameInput")
@@ -69,9 +69,9 @@ func _preflight_residency(point: Vector3) -> Dictionary:
 	return result
 
 func _escape_route_clear(route: Array[Vector3]) -> bool:
-	# A long preflight reaches beyond the player's current 3x3 streaming window.
-	# Use the region's normal admission path, then await its authored/scatter jobs;
-	# querying only freshly admitted floor could falsely approve missing buildings.
+	# Uma pré-checagem longa vai além da janela de streaming 3x3 atual do jogador.
+	# Usa o caminho normal de admissão da região e depois espera seus jobs autorais/de espalhamento;
+	# consultar só o piso recém-admitido poderia aprovar falsamente prédios faltando.
 	var region: Node = world.production.region
 	var cells: Dictionary = {}
 	var prior: Vector3 = world.player.global_position
@@ -192,13 +192,13 @@ func run() -> void:
 	world.gameplay.crime_reported.connect(_reported)
 	world.gameplay.player_died.connect(func(): _death_observed = true)
 	for frame in 3: await physics_frame
-	# The authored bank is x[-220,-200], z[-927,-913]. Its rear shelters the
-	# initial retreat, but Digo Street at z=-980 can bring police into view again.
-	# Continue beyond Digo through the gap between house columns, not through
-	# home_03. At z=-1030 left house ends x=-232.8 (wall thickness included),
-	# right house's outer yard post begins x=-221.66. At z=-1067 the narrower
-	# common corridor is x[-233.8,-223.66]. x=-228 clears both, including props.
-	# Deterministic scattered rocks/cacti still require the actual physics preflight.
+	# O banco autoral é x[-220,-200], z[-927,-913]. Os fundos dele abrigam a
+	# retirada inicial, mas a Rua Digo em z=-980 pode pôr a polícia à vista de novo.
+	# Continua além da Digo pelo vão entre as colunas de casas, não por dentro do
+	# home_03. Em z=-1030 a casa da esquerda termina em x=-232.8 (com a espessura da parede),
+	# o poste externo do quintal da casa da direita começa em x=-221.66. Em z=-1067 o corredor
+	# comum mais estreito é x[-233.8,-223.66]. x=-228 passa livre dos dois, incluindo props.
+	# Rochas/cactos espalhados de forma determinística ainda exigem a pré-checagem física real.
 	var route: Array[Vector3] = [Vector3(-239, 0, -889), Vector3(-239, 0, -939), Vector3(-210, 0, -939), Vector3(-210, 0, -971), Vector3(-228, 0, -971), Vector3(-228, 0, -1105)]
 	if not check(await _escape_route_clear(route), "escape route has real floor/static clearance and ends beyond all four vehicles"): finish(1); return
 	var before: Dictionary = session.state.economy.snapshot()
