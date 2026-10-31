@@ -1,5 +1,5 @@
 extends RefCounted
-## Local presentation for legacy merchant menus; no economic or gameplay state.
+## Apresentação local para os menus antigos de comerciante; sem estado de economia ou de jogo.
 const STYLE=preload("res://ui/GameStyle.gd")
 static func apply(root: Control, primary: Button=null) -> void:
 	for node in root.find_children("*","Button",true,false):

@@ -1,5 +1,5 @@
 extends Control
-## Functional conversation controls; the session owns input and the live world.
+## Controles funcionais de conversa; a sessão cuida da entrada e do mundo vivo.
 signal action_requested(action_id: String)
 signal close_requested
 const STYLE := preload("res://ui/GameStyle.gd")
@@ -86,8 +86,8 @@ func activate_focused() -> void:
 	if focused is Button and card.is_ancestor_of(focused) and not focused.disabled: focused.pressed.emit()
 
 func set_conversation_anchor(screen_point: Vector2) -> void:
-	# Keep both people visible while they gesture and respond. The viewport owns
-	# projection; this surface only selects the free side of the conversation.
+	# Mantém as duas pessoas visíveis enquanto gesticulam e respondem. A viewport cuida
+	# da projeção; esta superfície só escolhe o lado livre da conversa.
 	var dock_left := screen_point.x >= get_viewport_rect().size.x * .5
 	if _dock_left == dock_left: return
 	_dock_left = dock_left

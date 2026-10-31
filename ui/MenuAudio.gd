@@ -169,7 +169,7 @@ static func get_music_stream() -> AudioStream:
 	var looped := original.duplicate() as AudioStreamWAV
 	looped.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	looped.loop_begin = 0
-	# Imported WAV data may be compressed: byte count is not PCM frame count.
+	# Dados WAV importados podem estar comprimidos: contagem de bytes não é contagem de quadros PCM.
 	looped.loop_end = roundi(looped.get_length() * looped.mix_rate)
 	_cached_music = looped
 	return _cached_music
@@ -211,9 +211,9 @@ static func _play_sfx(context_node: Node, player_name: String, stream: AudioStre
 		player.name = player_name
 		player.bus = get_sfx_bus_name()
 		player.process_mode = Node.PROCESS_MODE_ALWAYS
-		# Initial focus may fire while the root is adding the menu scene.
-		# Queue insertion and playback in that order; reuse the pending player
-		# when several focus events arrive in the same frame.
+		# O foco inicial pode disparar enquanto a raiz adiciona a cena do menu.
+		# Enfileira inserção e reprodução nessa ordem; reaproveita o player pendente
+		# quando vários eventos de foco chegam no mesmo quadro.
 		var pending: Variant = tree.root.get_meta(player_name) if tree.root.has_meta(player_name) else null
 		if is_instance_valid(pending):
 			player.free()

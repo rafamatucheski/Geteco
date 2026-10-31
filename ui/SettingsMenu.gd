@@ -213,8 +213,8 @@ func _layout() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
-		# Dynamic action names and controller hints are assembled by GameInput.
-		# Refresh only when the locale changes, including while the menu is open.
+		# Nomes de ação dinâmicos e dicas de controle são montados pelo GameInput.
+		# Atualiza só quando o idioma muda, inclusive com o menu aberto.
 		_refresh_controls.call_deferred()
 		_refresh_help.call_deferred()
 
@@ -667,7 +667,7 @@ func _refresh_controls() -> void:
 
 func _restore_binding_focus(focus_key: String) -> void:
 	if not is_visible_in_tree() or is_queued_for_deletion(): return
-	# Another binding change may have rebuilt the list again before this callback.
+	# Outra mudança de ligação pode ter reconstruído a lista de novo antes deste callback.
 	for button in _controls_list.find_children("*", "Button", true, false):
 		if str(button.get_meta("binding_key", "")) != focus_key: continue
 		if button.is_visible_in_tree() and not button.is_queued_for_deletion() and not button.disabled:

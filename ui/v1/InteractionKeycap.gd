@@ -1,5 +1,5 @@
 extends Control
-## Production V1 interaction keycap, reused by the 3D HUD adapter.
+## Tecla de interação de produção da V1, reaproveitada pelo adaptador do HUD 3D.
 const INK := Color("f4eddf")
 static var _face: StyleBoxFlat
 static var _base: StyleBoxFlat

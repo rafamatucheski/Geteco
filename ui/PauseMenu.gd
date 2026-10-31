@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-## Original V1 scene and theme, adapted to the single V2 session/save.
+## Cena e tema originais da V1, adaptados à sessão/save única da V2.
 const STYLE = preload("res://ui/GameStyle.gd")
 const COLLECTION = preload("res://ui/CollectionPresentation.gd")
 var world: Node

@@ -23,7 +23,7 @@ var radio_label: Label
 var _wanted_clock := 0.0
 var _wanted_phase := "clear"
 var speed_label: Label
-# Stable public references used by transitions and existing integration tooling.
+# Referências públicas estáveis usadas por transições e pelas ferramentas de integração existentes.
 var weapon_icon: Control
 var ammo_label: Label
 var health_bar: ProgressBar
@@ -117,7 +117,7 @@ func _process(delta: float) -> void:
 	if not _bound: _try_bind()
 	if not _bound: return
 	_status_clock+=delta / maxf(Engine.time_scale, 0.001)
-	# Text/state projection is bounded. No UI tree rebuild or styling every frame.
+	# A projeção de texto/estado é limitada. Sem reconstruir árvore de UI nem estilizar a cada quadro.
 	if _status_clock>=.08:
 		var elapsed := _status_clock; _status_clock=0
 		_sync_channels(); _sync_status(elapsed); _style_modal_if_needed()
@@ -145,7 +145,7 @@ func _sync_channels() -> void:
 	for source in _legacy_sources:
 		if is_instance_valid(source): source.hide()
 	var active := not bool(_session.modal) and not get_tree().paused and not bool(_session.rescue_pending) and not bool(_session.arrest_pending)
-	# The drag presents its own instruments and controls while it owns driving.
+	# O arrancadão apresenta os próprios instrumentos e controles enquanto é dono da direção.
 	var drag_active: bool = _session.desert != null and is_instance_valid(_session.desert.drag) and _session.desert.drag.active
 	var wheel_active: bool = _session.equipment_wheel != null and _session.equipment_wheel.active
 	root_control.visible=active and not drag_active and not wheel_active
@@ -161,8 +161,8 @@ func _sync_channels() -> void:
 		current_objective.visible=not text.is_empty()
 		current_objective.size=Vector2.ZERO
 		_queue_layout()
-		# The persistent card already presents the new objective. Do not repeat
-		# the same instruction as a second transient panel over the play area.
+		# O cartão persistente já apresenta o novo objetivo. Não repete
+		# a mesma instrução como um segundo painel passageiro sobre a área de jogo.
 	var feedback := ""
 	if float(_session.notice_time)>0 and not bool(_session.get("speech_active")): feedback=str(_session.notice.text).strip_edges()
 	elif float(_driving.status_time)>0: feedback=str(_driving.status).strip_edges()
@@ -276,20 +276,20 @@ func _layout() -> void:
 	_anchor(player_status,Control.PRESET_TOP_LEFT,Rect2(margin,top,160,0))
 	_anchor(_upper_right,Control.PRESET_TOP_RIGHT,Rect2(-224-margin,top,224,0))
 	var bottom := view.y-margin
-	# Non-modal speech owns a full lower row. Raise the lower HUD above it instead
-	# of painting the subtitle over navigation, ammunition and interaction hints.
+	# Fala não modal ocupa uma linha inferior inteira. Sobe o HUD inferior acima dela em vez
+	# de pintar a legenda sobre navegação, munição e dicas de interação.
 	var caption: Control = _session.get("speech_caption") if _bound else null
 	if is_instance_valid(caption) and caption.is_visible_in_tree():
 		bottom=minf(bottom,caption.get_global_rect().position.y-12)
 	var lower_height := maxf(72,_lower_right.get_combined_minimum_size().y)
 	_anchor(_lower_right,Control.PRESET_TOP_LEFT,Rect2(view.x-264-margin,bottom-lower_height,264,lower_height))
 	_anchor(minimap,Control.PRESET_TOP_LEFT,Rect2(margin,bottom-minimap.size.y,minimap.size.x,minimap.size.y))
-	# The boarding introduction gets its own row while the destination stays visible.
+	# A apresentação do embarque ganha linha própria enquanto o destino continua visível.
 	vehicle_name.position=Vector2(0,-56 if minimap.caption.visible else -40)
 	var navigation_gap := 72 if vehicle_name.visible else 40
 	_anchor(current_objective,Control.PRESET_TOP_LEFT,Rect2(margin,minimap.position.y-navigation_gap-current_objective.get_combined_minimum_size().y,minimap.size.x,current_objective.get_combined_minimum_size().y))
 	_anchor(speed_label,Control.PRESET_TOP_LEFT,Rect2(view.x-220-margin,_lower_right.position.y-38,220,30))
-	# Symmetric clearance keeps the radio truly centered while the corner stacks grow.
+	# Folga simétrica mantém o rádio realmente centrado enquanto as pilhas dos cantos crescem.
 	var side := maxf(player_status.get_rect().end.x+12,view.x-_upper_right.position.x+12)
 	var feed_width := minf(360,view.x-2*side)
 	var feed_top := top
@@ -298,7 +298,7 @@ func _layout() -> void:
 		feed_top=maxf(player_status.get_rect().end.y,_upper_right.get_rect().end.y)+12
 	var touch := OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args()
 	if touch:
-		# Reserve both lower corners for thumbs; keep navigation and ammo readable.
+		# Reserva os dois cantos inferiores para os polegares; mantém navegação e munição legíveis.
 		backpack.get_parent().hide()
 		minimap.weekday_label.add_theme_font_size_override("font_size",11)
 		minimap.weekday_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
@@ -338,8 +338,8 @@ func _style_modal_if_needed() -> void:
 	var signature := ",".join(ids)
 	if signature==_last_modal_signature: return
 	_last_modal_signature=signature
-	# FullSession assigns initial focus when opening the menu. A later styling
-	# poll must preserve the button the player has already selected.
+	# O FullSession define o foco inicial ao abrir o menu. Uma consulta de estilo
+	# posterior precisa preservar o botão que o jogador já escolheu.
 	STYLE.apply(_session.panel); STYLE.trap_focus.call_deferred(_session.panel, false); _layout_modal()
 
 func _layout_modal() -> void:

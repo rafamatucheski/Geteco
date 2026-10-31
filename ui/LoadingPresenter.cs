@@ -7,9 +7,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-// Windows presentation only. The game, resources and scene tree stay on Godot's
-// main thread. An owned, non-activating window has its own draw loop, so a synchronous
-// world constructor cannot stop the loading artwork. No Godot API runs there.
+// Só apresentação no Windows. O jogo, os recursos e a árvore de cena ficam na thread
+// principal do Godot. Uma janela própria e que não ativa tem o próprio laço de desenho, então um
+// construtor síncrono do mundo não para a arte de carregamento. Nenhuma API do Godot roda ali.
 public partial class LoadingPresenter : Node
 {
     private Presenter presenter;
@@ -30,12 +30,12 @@ public partial class LoadingPresenter : Node
         return true;
     }
 
-    // Finish all Vulkan texture readbacks before creating the independent D3D
-    // device. Concurrent driver initialization/readback can lock startup.
+    // Termina todas as leituras de textura Vulkan antes de criar o dispositivo D3D
+    // independente. Inicialização/leitura concorrente no driver pode travar a partida.
     public void StartPresentation() => presenter?.Start();
 
-    // Called exclusively on Godot's main thread. Transfer owned bytes, never a
-    // Texture/Image/Node reference, to the presenter thread.
+    // Chamado só na thread principal do Godot. Transfere bytes próprios, nunca uma
+    // referência de Texture/Image/Node, para a thread do apresentador.
     public bool AddImage(int index, Texture2D texture)
     {
         if (presenter == null || presenter.Failure != null) return false;
@@ -108,8 +108,8 @@ public partial class LoadingPresenter : Node
             ["scope"] = "Opaque loading presentation; completed Direct2D EndDraw calls, not gameplay frames or GPU/compositor timings"
         };
     }
-    // Reparenting the curtain during the menu/world handoff exits the tree
-    // temporarily. Only actual destruction may stop presentation.
+    // Trocar o pai da cortina na passagem menu/mundo sai da árvore
+    // temporariamente. Só a destruição de fato pode parar a apresentação.
     public override void _Notification(int what) { if (what == NotificationPredelete) presenter?.Stop(); }
 
     private sealed record Pixels(int Index, int Width, int Height, byte[] Bytes);
@@ -185,8 +185,8 @@ public partial class LoadingPresenter : Node
         {
             nuint token = 0;
             try {
-                // Godot can set DPI awareness on its main thread. Match its window
-                // before creating a child or reading client coordinates here.
+                // O Godot pode definir o DPI awareness na thread principal. Acompanha a janela dele
+                // antes de criar um filho ou ler coordenadas de cliente aqui.
                 Native.SetThreadDpiAwarenessContext(Native.GetWindowDpiAwarenessContext(parent));
                 var input = new Native.GdiStartup { Version = 1 };
                 if (Native.GdiplusStartup(out token, ref input, 0) != 0) throw new InvalidOperationException("GDI+ startup failed");
@@ -196,9 +196,9 @@ public partial class LoadingPresenter : Node
                 Native.GetClientRect(parent, out var rect);
                 var origin = new Native.Point();
                 Native.ClientToScreen(parent, ref origin);
-                // Godot's host manifest lacks Windows 8 compatibility, which
-                // forbids layered CHILD windows. An owned popup supports alpha
-                // without modifying the engine or entering Alt-Tab/taskbar.
+                // O manifesto do host do Godot não tem compatibilidade com Windows 8, o que
+                // proíbe janelas FILHAS em camadas. Um popup próprio suporta alpha
+                // sem modificar o motor nem entrar no Alt-Tab/barra de tarefas.
                 window = Native.CreateWindowExW(0x080800a0, klass.Name, "", 0x80000000, origin.X, origin.Y, rect.Right, rect.Bottom, parent, 0, klass.Instance, 0);
                 if (window == 0) throw new InvalidOperationException("Loading owned window creation failed: " + Marshal.GetLastWin32Error());
                 Windows[window] = this;
@@ -251,7 +251,7 @@ public partial class LoadingPresenter : Node
                     if (opacity <= 0 || ParentMinimized || !ParentVisible || !ParentForeground) {
                         if (Shown) Native.ShowWindow(window, 0);
                         Shown = false; previousPaint = previousAnyPaint = previousTick = 0;
-                        // Prepare the first frame even while the menu fades in.
+                        // Prepara o primeiro quadro mesmo enquanto o menu entra em fade.
                         if (!Ready) { Draw(0); Ready = true; }
                         continue;
                     }

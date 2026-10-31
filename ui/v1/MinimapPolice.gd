@@ -78,7 +78,7 @@ static func _cone(target: Control, minimap: Control, point: Vector2, forward: Ve
 
 static func _cone_texture() -> Texture2D:
 	if _vision_cone == null:
-		# Cache only the presentation; the angle still comes from pursuit rules.
+		# Guarda em cache só a apresentação; o ângulo ainda vem das regras de perseguição.
 		var edge := Vector2.from_angle(PURSUIT.VISION_HALF_ANGLE)
 		var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="-1.01 -1.01 2.02 2.02"><path fill="white" d="M0 0L%f %fA1 1 0 0 1 %f %fZ"/></svg>' % [edge.x,-edge.y,edge.x,edge.y]
 		var image := Image.new()

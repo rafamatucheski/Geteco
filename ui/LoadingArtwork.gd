@@ -1,5 +1,5 @@
 extends Control
-## Two flat image layers; no world, shaders or offscreen viewport of its own.
+## Duas camadas de imagem planas; sem mundo, shaders nem viewport offscreen próprios.
 const ART: Array[Texture2D] = [
 	preload("res://ui/art/loading/ink/garage.png"),
 	preload("res://ui/art/loading/ink/lighthouse.png"),
@@ -33,7 +33,7 @@ var _incoming: TextureRect
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	clip_contents = true
-	# Local RNG does not change the world's procedural/random gameplay sequence.
+	# O RNG local não muda a sequência procedural/aleatória do jogo no mundo.
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	for i in ART.size(): _order.append(i)
@@ -81,7 +81,7 @@ func _process(delta: float) -> void:
 	if blend >= 1.0:
 		_position = (_position + 1) % _order.size()
 		current_index = _order[_position]
-		# Swap the layers themselves so the incoming framing continues without a jump.
+		# Troca as próprias camadas para o enquadramento que entra continuar sem salto.
 		var previous := _front
 		_front = _incoming
 		_incoming = previous
@@ -92,8 +92,8 @@ func _process(delta: float) -> void:
 		transitions += 1
 
 func _move_image(image: TextureRect, index: int, age: float) -> void:
-	# Overscan keeps every edge covered, including ultrawide and resized windows.
-	# Framing belongs to each art index and survives the crossfade layer swap.
+	# O overscan mantém toda borda coberta, incluindo ultrawide e janelas redimensionadas.
+	# O enquadramento pertence a cada índice de arte e sobrevive à troca de camada do crossfade.
 	var progress := clampf(age / MOTION_SECONDS, 0.0, 1.0)
 	var zoom := lerpf(1.06, 1.12, progress)
 	var direction := Vector2(1.0 if index % 2 == 0 else -1.0,

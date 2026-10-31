@@ -111,7 +111,7 @@ func _layout() -> void:
 		offset_top = icon_top
 		offset_bottom = icon_top+36.0
 	else:
-		# This independent layer remains readable while gameplay HUD is hidden.
+		# Esta camada independente continua legível enquanto o HUD do jogo está escondido.
 		set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 		offset_left = -58.0
 		offset_top = -58.0

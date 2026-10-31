@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Angle + torque, with an undisclosed sweet spot. No random success roll.
+## Ângulo + torque, com um ponto certo não revelado. Sem sorteio aleatório de sucesso.
 signal resolved(result: String)
 const SWEET_SPOT := 7.0
 const BREAK_SECONDS := 1.25
@@ -91,7 +91,7 @@ func step(delta: float, direction: float, torque: bool) -> void:
 
 func _input(event: InputEvent) -> void:
 	if not active: return
-	# Raw touches belong to the mobile controls; their actions arrive separately.
+	# Toques crus pertencem aos controles móveis; as ações deles chegam à parte.
 	if event is InputEventScreenTouch or event is InputEventScreenDrag: return
 	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause_game"):
 		finish("cancelled")
@@ -118,7 +118,7 @@ func _refresh() -> void:
 
 func _draw_lock() -> void:
 	var center := view.size*.5+Vector2(0,-3)
-	# Steel escutcheon, screws and a brass cylinder; feedback lives in the tools.
+	# Espelho de aço, parafusos e um cilindro de latão; o retorno fica nas ferramentas.
 	view.draw_style_box(_plate(),Rect2(center-Vector2(119,115),Vector2(238,230)))
 	for x in [-1,1]:
 		for y in [-1,1]:

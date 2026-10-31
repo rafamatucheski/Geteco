@@ -1,5 +1,5 @@
 extends Control
-## Static diagram: redraw only when bindings, layout or size change.
+## Diagrama estático: redesenha só quando ligações, layout ou tamanho mudam.
 const FONT: Font = preload("res://assets/fonts/manrope/Manrope-Regular.ttf")
 const INK := Color("e9e5dc")
 const MUTED := Color("a6b0b8")

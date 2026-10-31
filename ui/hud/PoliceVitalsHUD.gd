@@ -1,5 +1,5 @@
 extends Control
-## Shield-only overlay for equipped officers. Health remains private to combat.
+## Sobreposição só de escudo para policiais equipados. A vida continua privada ao combate.
 ## No per-officer Controls or scene scan per frame.
 const STYLE := preload("res://ui/GameStyle.gd")
 const MAX_DISTANCE_SQUARED := 45.0 * 45.0
@@ -35,7 +35,7 @@ func _process(delta: float) -> void:
 	if _occlusion_clock <= 0.0:
 		_occlusion_clock = OCCLUSION_INTERVAL
 		_update_occlusion(camera)
-	# Camera motion needs smooth projection; physics visibility work is bounded separately.
+	# O movimento da câmera pede projeção suave; o trabalho de visibilidade de física é limitado à parte.
 	queue_redraw()
 
 func _clear_overlay() -> void:
@@ -66,8 +66,8 @@ func _eligible(actor: Node3D, camera: Camera3D) -> bool:
 	return recent_hit or bool(actor.get("sees_player")) or float(actor.get("response_aggression")) > 0.0
 
 func _update_occlusion(camera: Camera3D) -> void:
-	# Four static-world traces per tick at most, shared by all heavy officers.
-	# Bodies use layer 2; tracing layer 1 prevents bars revealing actors through solids.
+	# No máximo quatro traçados no mundo estático por tick, compartilhados por todos os policiais pesados.
+	# Corpos usam a camada 2; traçar a camada 1 evita que as barras revelem atores através de sólidos.
 	var remaining := OCCLUSION_BUDGET
 	for offset in _officers.size():
 		var index := (_occlusion_cursor + offset) % _officers.size()

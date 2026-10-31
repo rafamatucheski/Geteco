@@ -98,7 +98,7 @@ func _ready() -> void:
 	_layout()
 	_select("Alimentos")
 	_layout.call_deferred()
-	# Mouse starts without an arbitrary highlighted card; controller has a real focus.
+	# O mouse começa sem cartão destacado arbitrário; o controle tem foco real.
 	categories[0].grab_focus.call_deferred()
 
 func _layout() -> void:
@@ -213,7 +213,7 @@ func refresh() -> void:
 	for id in cards:
 		var row: Dictionary = cards[id]
 		var reason := _reason(id)
-		# Keep blocked cards focusable so keyboard/controller users can hear/read why.
+		# Mantém cartões bloqueados focáveis para quem usa teclado/controle ouvir/ler o porquê.
 		row.content.modulate.a = 1.0 if reason.is_empty() else .78
 		row.action.text = ("Equipar" if id == "armor" else "Comprar 1") if reason.is_empty() else reason
 		row.action.add_theme_color_override("font_color",STYLE.ACCENT if reason.is_empty() else STYLE.MUTED)

@@ -1,5 +1,5 @@
 extends Control
-## Multitouch owns only fingers starting on controls; menus retain normal touch clicks.
+## O multitoque só cuida de dedos que começam nos controles; menus mantêm cliques de toque normais.
 var world: Node
 var controls: Node
 var fingers: Dictionary = {}
@@ -69,13 +69,13 @@ func _refresh() -> void:
 			safe = safe.intersection(Rect2(inverse * Vector2(physical.position), inverse.basis_xform(Vector2(physical.size))))
 	var context := str([active, in_car, riding, on_bike, on_motorcycle, on_skate, on_fishing, can_fight, paused, session.modal, session.dialogue_open, lockpick, bank_lock, safe])
 	if context == _context and extra == _layout_extra: return
-	# Expanding options must not release a finger still steering or accelerating.
+	# Expandir opções não pode soltar um dedo que ainda esterça ou acelera.
 	if context != _context: release_all()
 	_layout_extra = extra
 	_context = context
 	playable = active
-	# Gameplay consumes raw multitouch. Mouse emulation is only for menus, so
-	# touching a joystick cannot also press the desktop fire binding.
+	# O jogo consome o multitoque cru. A emulação de mouse é só para menus, então
+	# tocar um joystick não pode também apertar a ligação de tiro do desktop.
 	Input.emulate_mouse_from_touch = not active and not lockpick and not bank_lock
 	driving = in_car
 	passenger = riding
@@ -84,7 +84,7 @@ func _refresh() -> void:
 	skating = on_skate
 	fishing = on_fishing
 	_safe = safe
-	# Fold cover/portrait and near-square inner displays need larger thumb targets.
+	# Telas externas/retrato de dobráveis e telas internas quase quadradas precisam de alvos maiores para o polegar.
 	compact = safe.size.x < safe.size.y * 1.4
 	unit = minf(safe.size.x / 720.0, safe.size.y / 900.0) if compact else minf(safe.size.x / 1280.0, safe.size.y / 720.0)
 	radius = 76.0 * unit
@@ -114,8 +114,8 @@ func _refresh() -> void:
 		queue_redraw()
 		return
 	if fishing:
-		# Keep the right side clear for the tension/ranking HUD. Fishing consumes
-		# the same held/released interact action used by keyboard and controller.
+		# Mantém o lado direito livre para o HUD de tensão/ranking. A pesca consome
+		# a mesma ação de interagir segurada/solta usada no teclado e no controle.
 		var fishing_bottom := safe.position + Vector2(safe.size.x * .42, safe.size.y - 60 * unit)
 		_button("interact", "Pescar", fishing_bottom - Vector2(86, 0) * unit, Vector2(146, 82))
 		_button("exit_vehicle", "Sair", fishing_bottom + Vector2(76, 0) * unit, Vector2(120, 82))
@@ -213,8 +213,8 @@ func _drag(index: int, point: Vector2) -> void:
 	if action == "move_stick":
 		var vector := _stick_vector(point, move_center)
 		controls.touch_move = Vector2(vector.x, 0) if driving and not motocross else vector
-		# Inner travel walks; outer travel runs with the same thumb. Hysteresis
-		# prevents walk/run flicker near the boundary while aiming with the other hand.
+		# Curso interno anda; curso externo corre com o mesmo polegar. A histerese
+		# evita piscar entre andar/correr perto da fronteira enquanto mira com a outra mão.
 		controls.touch_sprint = not driving and vector.length() >= (.72 if controls.touch_sprint else .85)
 	elif action == "aim_stick":
 		controls.touch_aim = _stick_vector(point, aim_center)
@@ -242,7 +242,7 @@ func _send(action: String, pressed: bool) -> void:
 	var event := InputEventAction.new()
 	event.action = action
 	event.pressed = pressed
-	# Dispatch after the original touch so handled state cannot consume the action.
+	# Dispara depois do toque original para o estado tratado não consumir a ação.
 	Input.parse_input_event.call_deferred(event)
 
 func release_all() -> void:

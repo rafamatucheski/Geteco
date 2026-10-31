@@ -1,5 +1,5 @@
 extends Control
-## Presentation only. The runtime owns input, inventory transactions and time scale.
+## Só apresentação. O runtime cuida da entrada, das transações de inventário e da escala de tempo.
 const STYLE := preload("res://ui/GameStyle.gd")
 const MAX_SECTORS := 8
 var _entries: Array[Dictionary] = []
@@ -65,7 +65,7 @@ func _rebuild_geometry() -> void:
 	_accents.clear()
 	_anchors.clear()
 	var step := TAU / float(_slots)
-	# One physical pixel of coverage at the edge, including scaled windows.
+	# Um pixel físico de cobertura na borda, incluindo janelas escaladas.
 	var screen_scale := get_viewport().get_screen_transform().get_scale().abs()
 	var fringe := 1.0 / maxf(minf(screen_scale.x, screen_scale.y), .5)
 	for index in _slots:

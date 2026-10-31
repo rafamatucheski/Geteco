@@ -1,5 +1,5 @@
 extends Control
-## Static main menu with V2 save routing and covered startup.
+## Menu principal estático com roteamento de save V2 e partida coberta.
 const STYLE = preload("res://ui/GameStyle.gd")
 const AUDIO = preload("res://ui/MenuAudio.gd")
 const V1_IMPORT = preload("res://migration/v1/V1SaveImport.gd")
@@ -301,9 +301,9 @@ func _show_loading(id: String, new_game: bool) -> void:
 	if not new_game:
 		for row in V2Launch.list_slots():
 			if row.id == id: region = str(row.get("region", "harbor"))
-	# New game and failed previews already have an opaque, running presenter.
-	# Transfer that same curtain instead of opening two native windows (and two
-	# independent slideshow clocks) over one another during the scene handoff.
+	# Novo jogo e prévias falhas já têm um apresentador opaco rodando.
+	# Transfere essa mesma cortina em vez de abrir duas janelas nativas (e dois
+	# relógios de slideshow independentes) uma sobre a outra na troca de cena.
 	var curtain: CanvasLayer
 	if sky != null and is_instance_valid(sky.curtain):
 		curtain = sky.curtain
@@ -338,7 +338,7 @@ func _start(id: String, new_game: bool) -> void:
 	if sky != null:
 		await sky.begin_continue()
 		if not new_game:
-			# Draw the fully opaque loading screen before any world loading starts.
+			# Desenha a tela de carregamento totalmente opaca antes de qualquer carga do mundo.
 			await get_tree().process_frame
 			await get_tree().process_frame
 			var path: String = V2Launch.selected_path
@@ -347,7 +347,7 @@ func _start(id: String, new_game: bool) -> void:
 				sky.boot_path(path)
 			shade.hide()
 			if await sky.continue_game(): return
-		# New game retains its opening; failed preloads use the normal loading flow.
+		# Novo jogo mantém a abertura; pré-cargas falhas usam o fluxo normal de carregamento.
 		await sky.discard_preview()
 	# Só o clique leve do botão: o acorde de partida soava alto demais; a música vem com a tela de carregamento.
 	shade.show()

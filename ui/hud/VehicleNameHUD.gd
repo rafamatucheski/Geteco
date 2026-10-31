@@ -1,5 +1,5 @@
 extends Label
-## One restrained introduction per completed boarding, attached to the minimap.
+## Uma apresentação contida por embarque concluído, presa ao minimapa.
 const STYLE := preload("res://ui/GameStyle.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const FADE_IN := .45
@@ -38,7 +38,7 @@ func sync(driving: Node) -> void:
 	_vehicle_id = identity
 	text = str(FLEET.spec(str(vehicle.archetype)).get("label", "")).strip_edges()
 	if text.is_empty(): return
-	# Keep long authored names within the map width without abbreviating them.
+	# Mantém nomes escritos longos dentro da largura do mapa sem abreviá-los.
 	var font_size := 15
 	while font_size > 12 and STYLE.STRONG.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > size.x:
 		font_size -= 1

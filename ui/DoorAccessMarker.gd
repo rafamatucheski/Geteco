@@ -3,6 +3,6 @@ extends Node2D
 ## Doorways no longer draw a ground rectangle.
 var update_position: Callable
 func _ready() -> void:
-	process_priority = 1100 # After the camera and the rest of the HUD.
+	process_priority = 1100 # Depois da câmera e do resto do HUD.
 func _process(_delta: float) -> void:
 	if update_position.is_valid(): update_position.call()

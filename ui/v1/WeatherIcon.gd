@@ -1,5 +1,5 @@
 extends Control
-## Weather authority selects the state; presentation uses cached vector art.
+## A autoridade do clima escolhe o estado; a apresentação usa arte vetorial em cache.
 const GLYPHS := preload("res://ui/hud/VectorGlyphs.gd")
 var state := "sun"
 

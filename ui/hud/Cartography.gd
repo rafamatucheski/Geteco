@@ -1,8 +1,8 @@
 extends RefCounted
 const STYLE := preload("res://ui/GameStyle.gd")
 const GLYPHS := preload("res://ui/hud/VectorGlyphs.gd")
-## Cartographic texture, deliberately unlabeled: not surveyed elevation data.
-## World anchored contours, capped at 28 x 38 samples, shared by both maps.
+## Textura cartográfica, de propósito sem rótulos: não são dados de elevação medidos.
+## Curvas ancoradas no mundo, limitadas a 28 x 38 amostras, compartilhadas pelos dois mapas.
 static func contours(canvas: Control, extent: Vector2, center: Vector2, zoom: float) -> void:
 	var step := maxf(18.0,extent.y/24.0)
 	var phase := fposmod(center.y*zoom,step)

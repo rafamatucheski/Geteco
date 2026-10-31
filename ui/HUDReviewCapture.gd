@@ -1,2 +1,2 @@
 extends "res://tests/test_contextual_ui.gd"
-## Compatibility tool entry point; uses the validated contextual UI contract.
+## Ponto de entrada de ferramenta por compatibilidade; usa o contrato de UI contextual validado.

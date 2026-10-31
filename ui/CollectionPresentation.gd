@@ -1,5 +1,5 @@
 extends RefCounted
-## Read-only collection presentation. Never grants rewards or writes the save.
+## Apresentação de coleção só de leitura. Nunca concede recompensas nem grava o save.
 const STYLE = preload("res://ui/GameStyle.gd")
 const ICONS := {
 	"collectibles":"search", "races":"flag-check", "bests":"stopwatch",

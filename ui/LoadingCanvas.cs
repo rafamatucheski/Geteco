@@ -1,8 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
 
-// Small, thread-confined Direct2D adapter. Only owned pixel buffers cross from
-// Godot; no engine objects or render device are used on this thread.
+// Adaptador Direct2D pequeno e confinado à thread. Só buffers de pixel próprios vêm
+// do Godot; nenhum objeto do motor nem dispositivo de render é usado nesta thread.
 internal sealed class LoadingCanvas : IDisposable
 {
     private nint factory, target;

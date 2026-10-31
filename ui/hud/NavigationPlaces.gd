@@ -1,5 +1,5 @@
 extends RefCounted
-## Same named entrances on both maps, cached with prepared region geography.
+## As mesmas entradas nomeadas nos dois mapas, em cache com a geografia regional preparada.
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 static var _definitions: Dictionary = {}
 

@@ -1,6 +1,6 @@
 extends RefCounted
-## Ambient readout derived from the same regional weather and clock as the sky.
-## Celsius is an authored ambient estimate, separate from body heat (0–100%).
+## Leitura ambiente derivada do mesmo clima regional e relógio do céu.
+## Celsius é uma estimativa ambiente escrita, separada do calor do corpo (0–100%).
 static func text(day: int, time: float, region: String, weather: int, mountain: Dictionary = {}) -> String:
 	var minutes := posmod(int(floor(time * 1440.0)), 1440)
 	var daylight := sin((time - .25) * TAU)

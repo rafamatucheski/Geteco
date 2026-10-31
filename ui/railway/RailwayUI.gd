@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Presentation only. RailwayTransit owns admission, campaign gates and player locks.
+## Só apresentação. O RailwayTransit cuida da admissão, travas da campanha e bloqueios do jogador.
 
 const STYLE := preload("res://ui/GameStyle.gd")
 const NETWORK := preload("res://world/railway/RailwayNetwork.gd")
@@ -223,7 +223,7 @@ func open_station(station_id: String, stations: Array) -> void:
 		button.custom_minimum_size.y = 54
 		button.toggle_mode = true
 		button.clip_text = true
-		# Locked destinations remain focusable so their reason is readable on a pad.
+		# Destinos travados continuam focáveis para o motivo ser legível no controle.
 		button.add_theme_color_override("font_color", STYLE.TEXT if available else STYLE.MUTED)
 		button.tooltip_text = title if available else str(destination.get("locked_reason", "Estação indisponível"))
 		button.pressed.connect(select_destination.bind(id))

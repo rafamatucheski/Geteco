@@ -1,5 +1,5 @@
 extends Control
-## Full-world cartography. All map geometry is a read-only production snapshot.
+## Cartografia do mundo inteiro. Toda geometria do mapa é um snapshot de produção só de leitura.
 const PRESENTATION := preload("res://ui/HarborMenuPresentation.gd")
 const STYLE := preload("res://ui/GameStyle.gd")
 const ART := preload("res://ui/hud/Cartography.gd")
@@ -240,7 +240,7 @@ func _cache() -> void:
 		_legend_buttons[kind].visible=_markers.any(func(marker): return marker.kind==kind)
 
 func _cache_city_label() -> void:
-	# Authored services locate the city independently of its long north bridge.
+	# Os serviços escritos localizam a cidade independente da longa ponte norte.
 	var xs: Array[float] = []; var ys: Array[float] = []
 	for marker in _markers:
 		if marker.region == "harbor" and marker.kind not in ["lock","train","bus"]:
@@ -261,8 +261,8 @@ func _layout() -> void:
 	var narrow := panel_size.x<900
 	_clear_button.custom_minimum_size=Vector2(140,34)
 	var footer_height := maxf(46.0, _clear_button.get_combined_minimum_size().y + 8.0)
-	# Development overlays are always above modal UI. Keep their dedicated line
-	# clear so the build identifier and optional frame counter remain readable.
+	# As sobreposições de desenvolvimento ficam sempre acima da UI modal. Mantém a linha
+	# dedicada delas livre para o identificador do build e o contador de quadros opcional seguirem legíveis.
 	_top_safe=22.0 if has_node("/root/BuildWatermark") else 0.0
 	_header.position=_frame.position; _header.size=Vector2(panel_size.x,58+_top_safe)
 	_brand.position=Vector2(24,12+_top_safe); _map_title.position=Vector2(150,19+_top_safe); _map_title.visible=not narrow
@@ -319,7 +319,7 @@ func _restore_view() -> void:
 	focus_region(str(controller.state.region_id))
 	if not controller.world is Node: return
 	var saved: Dictionary=controller.world.get_meta("map_view",{})
-	if saved.get("layout",0)!=2: return # Reset old relief framing on the first opening of the printed atlas.
+	if saved.get("layout",0)!=2: return # Zera o enquadramento antigo do relevo na primeira abertura do atlas impresso.
 	if saved.get("actor_region","")!=str(controller.state.region_id): return
 	var saved_center: Vector2=saved.get("center",Vector2.INF)
 	var saved_scale: float=float(saved.get("scale",0))
@@ -389,8 +389,8 @@ func focus_region(id: String) -> void:
 			for marker in _markers:
 				if marker.region==_region and marker.id!="north_gate": extent=extent.expand(marker.point)
 	target_center=extent.get_center()
-	# Regional tabs share one pixels/metre ratio. Only the centre changes;
-	# explicit zoom remains available. Geography and picking stay unwarped.
+	# As abas regionais dividem uma razão pixels/metro. Só o centro muda;
+	# o zoom explícito continua disponível. Geografia e seleção ficam sem distorção.
 	var frame_size := extent.size
 	if _region != "world":
 		frame_size = Vector2.ZERO
@@ -436,8 +436,8 @@ func _redraw() -> void:
 		view3d.sync(center,factor,_yaw)
 	for layer in [terrain,geography]:
 		layer.position=_area.size*.5-center*factor; layer.scale=Vector2.ONE*factor
-	# Retained draw commands: panning never retriangulates land or road strokes.
-	# Rebuild screen-space casings only when the zoom changes meaningfully.
+	# Comandos de desenho retidos: arrastar nunca retriangula terra nem traços de rua.
+	# Reconstrói os contornos em espaço de tela só quando o zoom muda de forma relevante.
 	if _geometry_scale==0 or absf(factor/_geometry_scale-1)>.08:
 		_geometry_scale=factor; geography.queue_redraw()
 	canvas.queue_redraw()
@@ -498,13 +498,13 @@ func _input(event: InputEvent) -> void:
 			if focus==null or focus==canvas:
 				_cycle_marker(); get_viewport().set_input_as_handled()
 		elif event is InputEventJoypadMotion and event.axis in [JOY_AXIS_LEFT_X,JOY_AXIS_LEFT_Y]:
-			# GameInput also maps the left stick to UI directions. Here the stick
-			# pans; the D-pad/Tab own button focus, without competing each frame.
+			# O GameInput também mapeia o analógico esquerdo para direções de UI. Aqui o analógico
+			# arrasta; o D-pad/Tab cuidam do foco dos botões, sem competir a cada quadro.
 			get_viewport().set_input_as_handled()
 
 func _cycle_marker() -> void:
-	# Navigation order is independent of paint priority and collision suppression.
-	# A crowded location becomes visible when selected, so every visible destination is reachable.
+	# A ordem de navegação independe da prioridade de pintura e da supressão por colisão.
+	# Um local lotado fica visível quando selecionado, então todo destino visível é alcançável.
 	var candidates: Array[int]=[]
 	for i in _marker_order:
 		var marker: Dictionary=_markers[i]
@@ -538,8 +538,8 @@ func _position_selection() -> void:
 	if is_instance_valid(sidebar): sidebar.position.y=_area.position.y+_area.size.y-maxf(76,sidebar.size.y)-16
 
 func _fit_selection() -> void:
-	# Word wrapping settles after the HBox assigns the final text width. Shrink
-	# again when that minimum changes instead of keeping the first tall layout.
+	# A quebra de linha assenta depois que o HBox define a largura final do texto. Encolhe
+	# de novo quando esse mínimo muda em vez de manter o primeiro layout alto.
 	if is_instance_valid(sidebar):
 		sidebar.reset_size()
 		_position_selection()

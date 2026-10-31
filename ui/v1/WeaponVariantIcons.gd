@@ -1,7 +1,7 @@
 extends RefCounted
-## Shared, cached vector artwork for the field inventory, HUD and weapon wheel.
-## The outlines distinguish the integral suppressor, compact receiver, stock and
-## semi-automatic magazine tube even when the HUD applies its silhouette shader.
+## Arte vetorial compartilhada e em cache para o inventário de campo, o HUD e a roda de armas.
+## Os contornos distinguem o supressor integrado, o receptor compacto, a coronha e
+## o tubo de carregador semiautomático mesmo quando o HUD aplica o shader de silhueta.
 const SVG := {
 	"pistol_suppressed": '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="100" viewBox="0 0 240 100"><path d="M21 25H143V45H32Z" fill="#839096" stroke="#c2cbd0" stroke-width="2"/><path d="M143 28H226V44H143Z" fill="#344147" stroke="#a1adb0" stroke-width="2"/><path d="M155 29V43M164 29V43M207 29V43M216 29V43" stroke="#62777c" stroke-width="2"/><path d="M29 45H138V53H105L100 69H70L59 88H23L36 52Z" fill="#384c51" stroke="#8fa2a7" stroke-width="2"/><path d="M73 52H96L92 63H71Z" fill="#142529"/><path d="M39 55H65L54 86H26Z" fill="#273b40"/><path d="M35 64L58 67M31 73L55 76" stroke="#698187" stroke-width="3"/><path d="M28 22H37V27M126 22H134V27" stroke="#4a6067" stroke-width="4"/><path d="M28 32V41M35 32V41M42 32V41M49 32V41" stroke="#41575f" stroke-width="3"/></svg>',
 	"smg_compact": '<svg xmlns="http://www.w3.org/2000/svg" width="190" height="115" viewBox="0 0 190 115"><path d="M30 24H137V54H30Z" fill="#626f73" stroke="#bbc4c6" stroke-width="2"/><path d="M137 33H174V47H137Z" fill="#2e3e43" stroke="#9baeb4" stroke-width="2"/><path d="M49 54H78L69 81H41Z" fill="#30474d" stroke="#879a9f" stroke-width="2"/><path d="M54 80H69L65 107H50Z" fill="#8c7e61" stroke="#b9ac8f" stroke-width="2"/><path d="M82 56H113V70H78Z" fill="#25383e" stroke="#9bacae" stroke-width="2"/><path d="M34 17H48V25M120 18H131V25" stroke="#53686e" stroke-width="5"/><path d="M37 34H99M106 34H124M107 43H126" stroke="#9caaac" stroke-width="3"/><path d="M22 33H30V47H16V60" fill="none" stroke="#879497" stroke-width="4"/><path d="M57 87H66M55 95H65" stroke="#3f4f52" stroke-width="2"/></svg>',

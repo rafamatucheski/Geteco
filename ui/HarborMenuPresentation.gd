@@ -1,5 +1,5 @@
 extends RefCounted
-## Presentation only. Existing buttons retain their owners, signals and rules.
+## Só apresentação. Os botões existentes mantêm donos, sinais e regras.
 const STYLE := preload("res://ui/GameStyle.gd")
 const TEXT_SIZE := 18
 static var _font: FontFile

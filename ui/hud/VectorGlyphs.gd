@@ -1,6 +1,6 @@
 extends RefCounted
-## Shared small pictograms: smooth vector masters, rasterized once at 4x.
-## Mipmaps preserve thin details when the UI is scaled; no live viewports.
+## Pictogramas pequenos compartilhados: matrizes vetoriais suaves, rasterizadas uma vez em 4x.
+## Mipmaps preservam detalhes finos quando a UI é escalada; sem viewports vivas.
 const PATHS := {
 	"heart": '<path d="M12 21S2.5 15 2.5 8.5C2.5 5.5 4.7 3.5 7.4 3.5 9.3 3.5 11 4.5 12 6.1 13 4.5 14.7 3.5 16.6 3.5 19.3 3.5 21.5 5.5 21.5 8.5 21.5 15 12 21 12 21Z"/>',
 	"shield": '<path d="M12 2 21 5v6c0 5.1-4.4 8.7-9 11-4.6-2.3-9-5.9-9-11V5Z"/>',

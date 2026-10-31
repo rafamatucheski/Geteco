@@ -150,16 +150,16 @@ func refresh() -> void:
 		hide()
 		return
 	var was_visible := visible
-	# Boarding temporarily owns movement but remains in the same outdoor world.
-	# Keep navigation stable through approach/door/seat, without revealing it in
-	# menus, rescue or unrelated scripted movement locks.
+	# O embarque assume o movimento temporariamente, mas continua no mesmo mundo externo.
+	# Mantém a navegação estável durante aproximação/porta/assento, sem revelá-la em
+	# menus, resgate ou travas de movimento roteirizadas sem relação.
 	var boarding: bool = is_instance_valid(world.driving) and world.driving.is_body_transition_active()
 	var skate: Variant = world.session.get("skate")
 	var skating: bool = is_instance_valid(skate) and skate.controls_locked()
 	var blocked := bool(world.session.get("modal")) or get_tree().paused or bool(world.session.get("rescue_pending")) or bool(world.session.get("arrest_pending")) or (bool(world.player.get("input_locked")) and not boarding and not skating) or not str(world.session.state.place_id).is_empty()
 	visible = not blocked
 	if not visible: return
-	# The existing persisted calendar starts on day 2; its first day is Monday.
+	# O calendário persistido existente começa no dia 2; o primeiro dia é segunda-feira.
 	if _conditions_tick >= 1.0 or weekday_label.text.is_empty() or not was_visible:
 		_conditions_tick = 0.0
 		var weather: Variant = world.session.weather
@@ -205,7 +205,7 @@ func _sync_navigation(actor: Node3D) -> void:
 	if has_target:
 		var distance := center.distance_to(objective_target)
 		caption.text = "%s · %s" % [destination.title,"Chegou" if distance < 3 else ("%.1f km" % (distance/1000.0) if distance >= 1000 else "%d m" % roundi(distance))]
-	# Keep destination identity above the map and weather below it without resizing.
+	# Mantém a identidade do destino acima do mapa e o clima abaixo, sem redimensionar.
 	var extent := PANEL_SIZE
 	if size != extent:
 		custom_minimum_size = extent
@@ -236,8 +236,8 @@ func _cache_region() -> void:
 	if not _harbor_places_cached:
 		_places.append_array(PLACES.harbor(world.session))
 		_harbor_places_cached=true
-	# Keep lightweight geography after streaming unloads its 3D region. The map
-	# must not replace half the crossing when the logical region changes.
+	# Mantém a geografia leve depois que o streaming descarrega a região 3D. O mapa
+	# não pode trocar metade da travessia quando a região lógica muda.
 	for region: Node in world.production.regions.values():
 		if not is_instance_valid(region) or _cached_regions.has(region.region_id): continue
 		_cached_regions[region.region_id] = true
@@ -321,8 +321,8 @@ func edge_marker(point: Vector2) -> Vector2:
 	return MAP_SIZE * 0.5 + offset / maxf(1.0, factor)
 
 func draw_map(target: Control) -> void:
-	# Keep the navigation background quiet while panning and changing zoom.
-	# Decorative contours are reserved for the full-size map.
+	# Mantém o fundo da navegação calmo ao arrastar e mudar o zoom.
+	# Curvas decorativas ficam reservadas para o mapa em tamanho cheio.
 	if not is_instance_valid(world) or not is_instance_valid(world.production) or not is_instance_valid(world.production.region): return
 	var map_area := Rect2(center - MAP_SIZE / (2.0 * map_scale), MAP_SIZE / map_scale)
 	for rect in _buildings:
@@ -342,7 +342,7 @@ func draw_map(target: Control) -> void:
 			if not bounds.intersects(Rect2(a, Vector2.ZERO).expand(b).grow(4), true): continue
 			target.draw_line(a, b, STYLE.INK, 4, true)
 			target.draw_line(a, b, STYLE.WAYPOINT, 1.5, true)
-	# Bounded nearby service icons; the selected mission remains on top.
+	# Ícones de serviço próximos limitados; a missão escolhida fica por cima.
 	drawn_places.clear()
 	var nearby: Array[Dictionary] = []
 	var icons: Array[Vector2] = []

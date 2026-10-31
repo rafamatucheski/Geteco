@@ -59,8 +59,8 @@ func _load_textures() -> void:
 		icon_textures[id] = ImageTexture.create_from_image(image)
 
 static func artwork_image(id: String) -> Image:
-	# Clean the legacy backing before filtering. Removing it in a shader after
-	# texture sampling turned partially covered edge pixels into hard cutouts.
+	# Limpa o fundo antigo antes de filtrar. Removê-lo num shader depois da
+	# amostragem da textura transformava pixels de borda parcialmente cobertos em recortes duros.
 	var image := Image.new()
 	var sword_svg := '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="64" viewBox="0 0 160 64"><path d="M44 42 Q97 28 151 7 Q116 39 48 48 Z" fill="#d5e3ed"/><path d="M8 50 L40 41 L44 49 L12 59 Z" fill="#303943"/><path d="M38 34 L46 32 L53 56 L45 58 Z" fill="#c3a469"/><path d="M15 48 L19 57 M25 46 L29 54 M34 43 L38 52" stroke="#b9a88b" stroke-width="2"/></svg>'
 	# Espada reta atrás de um escudo redondo com a cruz de ferro.
@@ -89,9 +89,9 @@ static func artwork_image(id: String) -> Image:
 			image.load_svg_from_string(artwork, SVG_SCALE)
 		else:
 			image.load_png_from_buffer(bytes)
-			# The old 256x128 exports encode the card with alpha 80/220/230,
-			# while every weapon pixel is opaque. Strip only those known card
-			# layers; preserve any other partial coverage and the complete canvas.
+			# Os exports antigos de 256x128 codificam o cartão com alpha 80/220/230,
+			# enquanto todo pixel da arma é opaco. Remove só essas camadas conhecidas
+			# do cartão; preserva qualquer outra cobertura parcial e a tela completa.
 			if image.get_size() == Vector2i(256, 128):
 				image.convert(Image.FORMAT_RGBA8)
 				var pixels := image.get_data()

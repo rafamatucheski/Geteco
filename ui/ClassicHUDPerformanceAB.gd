@@ -1,2 +1,2 @@
 extends "res://tests/measure/measure_ui_refactor.gd"
-## Compatibility tool entry point; uses the validated contextual UI contract.
+## Ponto de entrada de ferramenta por compatibilidade; usa o contrato de UI contextual validado.

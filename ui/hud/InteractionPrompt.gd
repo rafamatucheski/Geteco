@@ -27,8 +27,8 @@ func follow_actor(_actor: Node3D, _camera: Camera3D, extent: Vector2) -> void:
 
 func layout_in_rect(area: Rect2) -> void:
 	if not visible: return
-	# Reserve the real keycap width before wrapping the action. Width comes from
-	# the HUD's free area, while longer text is allowed to grow upward.
+	# Reserva a largura real da tecla antes de quebrar a ação. A largura vem
+	# da área livre do HUD, e texto mais longo pode crescer para cima.
 	var padding := get_theme_stylebox("panel").get_minimum_size().x
 	var gap := float(_row.get_theme_constant("separation")) if key.visible else 0.0
 	var available := maxf(1, area.size.x-padding-gap)

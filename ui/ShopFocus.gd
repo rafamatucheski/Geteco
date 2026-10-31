@@ -1,5 +1,5 @@
 extends RefCounted
-## Explicit, cyclic order; disabled and hidden actions never trap the controller.
+## Ordem explícita e cíclica; ações desativadas e escondidas nunca prendem o controle.
 static func rebuild(container: Control) -> void:
 	var buttons: Array[Button] = []
 	for node in container.find_children("*", "Button", true, false):

@@ -1,7 +1,7 @@
 extends RefCounted
-## Retained cartographic relief: only 2D meshes, polygons and line batches.
-## Heights/footprints come from production data. No region is mounted, no
-## physics is created, and no navigation coordinate is moved for presentation.
+## Relevo cartográfico retido: só malhas 2D, polígonos e lotes de linha.
+## Alturas/pegadas vêm dos dados de produção. Nenhuma região é montada, nenhuma
+## física é criada e nenhuma coordenada de navegação é movida para a apresentação.
 const DESERT := preload("res://world/desert/DesertLayout.gd")
 const HORIZON := preload("res://world/desert/DesertHorizonRelief.gd")
 const CANYON := preload("res://world/desert/DesertTerrainRelief.gd")
@@ -11,8 +11,8 @@ const LANDFORMS := preload("res://world/desert/expansion/DesertLandforms.gd")
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const PALETTE := {"city":Color("414641"),"forest":Color("36433b"),"mountain":Color("515957"),"desert":Color("82765e"),"water":Color("16262a")}
 const LIGHT := Vector3(-.55,.72,-.42)
-# These are the authored horizon profiles in DesertHorizonRelief.build(). The
-# same production sampler below provides their eroded footprint and normals.
+# Estes são os perfis de horizonte escritos em DesertHorizonRelief.build(). O
+# mesmo amostrador de produção abaixo fornece a pegada erodida e as normais deles.
 const RANGES := [
 	{"side":"north","from":DESERT.BOUNDS.position.x-220.0,"to":DESERT.BOUNDS.end.x+240.0,"width":360.0,"seed":73,"profile":[Vector2(0,.05),Vector2(.055,.30),Vector2(.10,.86),Vector2(.20,.89),Vector2(.24,.38),Vector2(.32,.31),Vector2(.36,.73),Vector2(.46,.77),Vector2(.50,.36),Vector2(.58,.40),Vector2(.62,.94),Vector2(.75,.91),Vector2(.80,.51),Vector2(.88,.56),Vector2(.94,.22),Vector2(1,.06)]},
 	{"side":"west","from":DESERT.BOUNDS.position.y-250.0,"to":DESERT.BOUNDS.end.y+68.5,"width":310.0,"seed":29,"profile":[Vector2(0,.06),Vector2(.10,.44),Vector2(.21,.92),Vector2(.28,.72),Vector2(.42,.33),Vector2(.53,.67),Vector2(.65,.91),Vector2(.78,.36),Vector2(.90,.68),Vector2(1,.04)]},
@@ -47,8 +47,8 @@ func prepare(lands: Array, regions: Dictionary, navigation_bounds: Dictionary) -
 		visual_bounds=extent if first else visual_bounds.merge(extent); first=false
 	if regions.has("desert") and regions.desert is Node:
 		_desert_relief(lands)
-	# Contextual exterior ridges sit behind the authored playable footprints of
-	# Harbor and the mountain. Their silhouette cannot occlude another region.
+	# As cristas exteriores contextuais ficam atrás das pegadas jogáveis escritas do
+	# Harbor e da montanha. A silhueta delas não pode cobrir outra região.
 	for land in _presentation_lands(lands):
 		var polygon: PackedVector2Array=land.polygon
 		if polygon.size()<3 or land.biome in ["water","desert"]: continue
@@ -58,8 +58,8 @@ func prepare(lands: Array, regions: Dictionary, navigation_bounds: Dictionary) -
 		if land.biome=="mountain" and regions.has("mountain") and regions.mountain is Node:
 			var terrain: Variant=regions.mountain.get("terrain")
 			if terrain!=null:
-				# _calculate_height is the production read-only sampler; unlike
-				# height_at it does not churn the gameplay streaming height cache.
+				# _calculate_height é o amostrador de produção só de leitura; ao contrário de
+				# height_at, não mexe no cache de alturas do streaming do jogo.
 				_height_patch(extent,8.0,terrain._calculate_height,"mountain",polygon,1.5)
 		elif land.biome in ["city","forest"]:
 			_height_patch(extent,12.0,_flat_height,str(land.biome),polygon,0.0)
@@ -67,7 +67,7 @@ func prepare(lands: Array, regions: Dictionary, navigation_bounds: Dictionary) -
 			_polygon(polygon,PALETTE.get(land.biome,PALETTE.city))
 	for id in ["harbor","mountain"]:
 		if regions.has(id) and regions[id] is Node: _tree_canopies(regions[id],id)
-	# Lakes cover terrain facets and contours but do not change any land record.
+	# Lagos cobrem facetas e curvas do terreno mas não mudam nenhum registro de terra.
 	for polygon in _water:
 		_polygon(polygon,PALETTE.water)
 		_closed_line(polygon,Color("6a7874"),.8)
@@ -95,9 +95,9 @@ func _desert_relief(lands: Array = []) -> void:
 			visual_bounds = visual_bounds.merge(_desert_visual_bounds)
 			_desert_detail()
 			return
-	# One continuous geological base includes the entire playable basin and the
-	# authored exterior ranges. Only the OUTSIDE of this union dissolves to ink.
-	# There is no transparency boundary at the rectangular runtime extent.
+	# Uma base geológica contínua inclui a bacia jogável inteira e as
+	# cordilheiras exteriores escritas. Só o LADO DE FORA dessa união se dissolve em tinta.
+	# Não há fronteira de transparência na extensão retangular do runtime.
 	var outline := _rectangle(DESERT.BOUNDS)
 	for definition in RANGES:
 		var footprint := _range_footprint(definition,definition.side in ["north","west"])
@@ -120,7 +120,7 @@ func _desert_detail() -> void:
 	if GORGE.enabled():
 		_height_patch(GORGE.BOUNDS,6.0,GORGE.analytic_height,"gorge",PackedVector2Array(),12.0)
 	_landforms()
-	# Footprints shown here belong to visible landforms, not invented roads.
+	# As pegadas mostradas aqui pertencem a formas de relevo visíveis, não a ruas inventadas.
 	for location in LANDFORMS.locations():
 		if location.kind in ["dunes","dry_wash","salt_flat"]: continue
 		var at := Vector2(location.position.x,location.position.z)
@@ -160,9 +160,9 @@ func _rectangle(rect: Rect2) -> PackedVector2Array:
 	return PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
 
 func _range_footprint(definition: Dictionary, distant: bool) -> PackedVector2Array:
-	# The outer row of the production horizon uses section.x=1 / section.y=0.
-	# Reusing that exact front/depth calculation gives an irregular outer edge;
-	# its authored endpoints taper into the datum and join the common basin.
+	# A linha externa do horizonte de produção usa section.x=1 / section.y=0.
+	# Reaproveitar exatamente esse cálculo de frente/profundidade dá uma borda externa irregular;
+	# as pontas escritas afinam até o datum e se juntam à bacia comum.
 	var points := PackedVector2Array()
 	var inner := PackedVector2Array()
 	var count := ceili((float(definition.to)-float(definition.from))/24.0)
@@ -186,9 +186,9 @@ func _range_footprint(definition: Dictionary, distant: bool) -> PackedVector2Arr
 	return points
 
 func _soft_polygon(polygon: PackedVector2Array, color: Color, feather: float) -> void:
-	# One regular mesh cannot overlap itself at concave perimeter vertices.
-	# Opacity comes from the true perimeter distance, never an extruded normal.
-	# The polygon keeps its input opacity; only its exterior has a soft edge.
+	# Uma malha regular não pode se sobrepor nos vértices côncavos do perímetro.
+	# A opacidade vem da distância real ao perímetro, nunca de uma normal extrudada.
+	# O polígono mantém a opacidade de entrada; só o exterior tem borda suave.
 	var step := maxf(4.0,feather/5.0)
 	var rect := _bounds(polygon).grow(feather+step)
 	var columns := ceili(rect.size.x/step)
@@ -200,8 +200,8 @@ func _soft_polygon(polygon: PackedVector2Array, color: Color, feather: float) ->
 	for y in range(rows+1):
 		for x in range(columns+1):
 			positions.append(rect.position+Vector2(minf(float(x)*step,rect.size.x),minf(float(y)*step,rect.size.y)))
-	# Restrict distance sampling to each segment's finite feather neighbourhood.
-	# Most interior vertices need only the native point-in-polygon query.
+	# Restringe a amostragem de distância à vizinhança finita de esfumado de cada segmento.
+	# A maioria dos vértices internos precisa só da consulta nativa de ponto no polígono.
 	for i in polygon.size():
 		var a := polygon[i]; var b := polygon[(i+1)%polygon.size()]
 		var vicinity := Rect2(a,b-a).abs().grow(feather)
@@ -247,16 +247,16 @@ func _presentation_lands(lands: Array) -> Array[Dictionary]:
 	return result
 
 func _context_envelope(polygon: PackedVector2Array, biome: String) -> void:
-	# Unstroked, translucent terrain context, explicitly separate from the exact
-	# playable footprint. It hides a source-cell/hull cut without inventing a coast.
+	# Contexto de terreno translúcido e sem contorno, explicitamente separado da pegada
+	# jogável exata. Esconde um corte de célula-fonte/casco sem inventar costa.
 	var spread := 76.0 if biome=="mountain" else 32.0 if biome=="forest" else 12.0
 	var tint := Color("47524b") if biome!="mountain" else Color("56605b")
 	tint.a=.17 if biome=="mountain" else .11
 	_soft_polygon(polygon,tint,spread)
 
 func _landforms() -> void:
-	# Reuse the exact authored polygons, including all four dunes. _prepare
-	# populates a finite data cache; it does not build streamed 3D geometry.
+	# Reaproveita os polígonos escritos exatos, incluindo as quatro dunas. _prepare
+	# preenche um cache de dados finito; não monta geometria 3D em streaming.
 	LANDFORMS._prepare()
 	for feature in LANDFORMS._features:
 		var polygon: PackedVector2Array=feature.polygon
@@ -322,8 +322,8 @@ func _height_patch(rect: Rect2, step: float, sampler: Callable, kind: String, cl
 				if not all_inside:
 					parts=Geometry2D.intersect_polygons(corners,clipping); clipped=true
 			if not clipped:
-				# Interior cells reuse their four shaded samples. Only boundary
-				# fragments need clipping/triangulation or interpolated colours.
+				# Células internas reaproveitam as quatro amostras sombreadas. Só fragmentos
+				# da fronteira precisam de recorte/triangulação ou cores interpoladas.
 				for index in [a,b,d,a,d,c]:
 					vertices.append(Vector3(positions[index].x,positions[index].y,0)); colors.append(tints[index])
 			else:

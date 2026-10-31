@@ -1,6 +1,6 @@
 extends RefCounted
-## Read-only snapshot of prepared production geography. Never mounts a region,
-## creates a physics body, modifies the route graph or changes campaign state.
+## Snapshot só de leitura da geografia de produção preparada. Nunca monta uma região,
+## cria corpo de física, modifica o grafo de rotas nem muda o estado da campanha.
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const DESERT := preload("res://world/desert/DesertLayout.gd")
 const GATE := preload("res://world/north_gateway/NorthGatewayLayout.gd")
@@ -63,10 +63,10 @@ func collect(controller, prepare_relief := true) -> void:
 		var rect: Rect2=region_bounds[id]
 		if _first: bounds=rect; _first=false
 		else: bounds=bounds.merge(rect)
-	# Presentation is prepared once from this snapshot. Navigation bounds and
-	# the authoritative land/road/marker arrays remain independent of the relief.
-	# Only the immutable presentation package is reused. Roads and markers above
-	# are still collected afresh, including editor geometry and quest discovery.
+	# A apresentação é preparada uma vez a partir deste snapshot. Os limites de navegação e
+	# os arrays oficiais de terra/rua/marcador ficam independentes do relevo.
+	# Só o pacote imutável de apresentação é reaproveitado. Ruas e marcadores acima
+	# ainda são coletados do zero, incluindo geometria do editor e descoberta de missões.
 	if not prepare_relief: return
 	var signature_parts: Array=[lands,roads,region_bounds]
 	for id in regions:
@@ -81,8 +81,8 @@ func collect(controller, prepare_relief := true) -> void:
 		relief_cache_hit=true
 	else:
 		relief.prepare(lands,regions,region_bounds)
-		# The world owns at most one package; ending the session releases its
-		# meshes. The package never retains the world/terrain nodes themselves.
+		# O mundo tem no máximo um pacote; encerrar a sessão libera as
+		# malhas dele. O pacote nunca retém os próprios nós de mundo/terreno.
 		if owner_node!=null: owner_node.set_meta("map_relief_cache",{"signature":signature,"relief":relief})
 
 func _read_region(id: String, region) -> void:
@@ -116,8 +116,8 @@ func _read_region(id: String, region) -> void:
 		if island.is_empty(): lands.append({"polygon":rectangle(DESERT.BOUNDS),"biome":"desert"})
 		else: lands.append({"polygon":island,"biome":"desert","shape":true})
 	elif id=="mountain":
-		# The terrain is continuous east of the bridge. Its cartographic extent
-		# follows authored records, excluding the sea-spanning entry road.
+		# O terreno é contínuo a leste da ponte. A extensão cartográfica
+		# segue os registros escritos, excluindo a estrada de entrada sobre o mar.
 		var points := PackedVector2Array()
 		for key in region.records:
 			if key.x<9 or key.y>=-2: continue
@@ -175,8 +175,8 @@ func _mountain_markers(region) -> void:
 		var line := PackedVector3Array([CATALOG._at(course.start,"mountain")])
 		for point in course.points: line.append(CATALOG._at(point,"mountain"))
 		_add_road({"id":id,"points":line,"width":1.0,"surface":"ski"},"mountain")
-	# Ski terrain extends beyond the road/forest record cells. Include its real
-	# activity corridors in the land footprint instead of painting them at sea.
+	# O terreno de esqui vai além das células de registro de rua/floresta. Inclui os
+	# corredores reais de atividade na pegada de terra em vez de pintá-los no mar.
 	for land in lands:
 		# A ilha da forma do mundo já cobre as pistas e o teleférico: o envoltório convexo apagaria a curva.
 		if land.biome!="mountain" or land.get("shape",false): continue

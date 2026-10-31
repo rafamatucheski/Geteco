@@ -1,5 +1,5 @@
 extends Control
-## Firearm sight and melee direction/reach, driven by their actual contact rules.
+## Mira de arma de fogo e direção/alcance de corpo a corpo, guiadas pelas regras de contato reais.
 var gameplay: Node
 var blocked := false
 var world_point := Vector3.ZERO
@@ -34,8 +34,8 @@ func _process(_delta: float) -> void:
 	if not is_instance_valid(camera):
 		hide()
 		return
-	# FullSession resolves mouse input during render processing. Query after
-	# it (priority 100), so the marker uses this frame's cursor and muzzle.
+	# O FullSession resolve a entrada do mouse no processamento de render. Consulta depois
+	# dele (prioridade 100), para o marcador usar o cursor e o cano deste quadro.
 	var feedback: Dictionary = gameplay.melee_feedback() if melee else gameplay.aim_feedback()
 	var next_confirmed: bool = bool(feedback.get("confirmed", false)) if melee else gameplay.hitmarker_active()
 	if confirmed != next_confirmed:
@@ -75,13 +75,13 @@ func _project_melee_reach(camera: Camera3D, feedback: Dictionary) -> void:
 func _draw_melee() -> void:
 	var ink := Color("ffb568") if blocked else (Color("d8f5b3") if in_range else Color("c7cbd0"))
 	if _reach_visible and not _contact_visible:
-		# Only the endpoint: no moving tether across the scene.
+		# Só o ponto final: sem linha móvel atravessando a cena.
 		draw_line(_reach_to - _reach_tick, _reach_to + _reach_tick, Color(0.02, 0.03, 0.04, 0.4), 2.5, true)
 		draw_line(_reach_to - _reach_tick, _reach_to + _reach_tick, Color(ink, 0.65), 1.0, true)
 	if _contact_visible:
 		draw_arc(_contact_point, 4.0, 0.0, TAU, 16, Color(0.02, 0.03, 0.04, 0.4), 2.5, true)
 		draw_arc(_contact_point, 4.0, 0.0, TAU, 16, Color(ink, 0.8), 1.0, true)
-	# The cursor stays under the mouse even when its target is out of reach.
+	# O cursor fica sob o mouse mesmo quando o alvo está fora de alcance.
 	for sign_side in [-1.0, 1.0]:
 		var corner := Vector2(sign_side * 4.0, 0)
 		draw_line(corner, Vector2(0, -4), Color(0.02, 0.03, 0.04, 0.5), 2.5, true)

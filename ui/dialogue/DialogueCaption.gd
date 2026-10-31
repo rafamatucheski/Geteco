@@ -1,6 +1,6 @@
 extends PanelContainer
-## Shared, event-driven presentation for spoken captions and conversation cards.
-## Producers own timing, audio and input; this surface only displays their line.
+## Apresentação compartilhada e por evento para legendas faladas e cartões de conversa.
+## Os produtores cuidam de tempo, áudio e entrada; esta superfície só mostra a fala deles.
 const STYLE := preload("res://ui/GameStyle.gd")
 const VOICE_ACCENT := Color("dfa96a")
 

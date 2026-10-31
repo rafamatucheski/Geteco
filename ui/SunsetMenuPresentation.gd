@@ -89,7 +89,7 @@ func install(menu: Control) -> void:
 		button.add_theme_color_override("font_focus_color", Color("111b23"))
 		button.add_theme_color_override("font_pressed_color", Color("111b23"))
 		button.add_theme_stylebox_override("disabled", normal)
-	# Keep migration available on the save screen without crowding the main menu.
+	# Mantém a migração disponível na tela de save sem lotar o menu principal.
 	menu.btn_import.reparent(menu.get_node("%LoadPanel").get_node("Margin/VBox/Actions"))
 	menu.btn_import.custom_minimum_size = Vector2(180, 36)
 	footer = Label.new()
@@ -100,7 +100,7 @@ func install(menu: Control) -> void:
 	main_content.add_child(footer)
 	resized.connect(arrange)
 	arrange()
-	# Only opacity changes. The opaque backdrop always covers the warming world.
+	# Só a opacidade muda. O fundo opaco sempre cobre o mundo aquecendo.
 	var intro := create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE)
 	for child in get_children():
 		if child == background: continue

@@ -1,5 +1,5 @@
 extends Node
-## Loads the selected session only after the click, under the opaque loading screen.
+## Carrega a sessão escolhida só depois do clique, sob a tela de carregamento opaca.
 signal boot_finished
 signal released
 const MAIN := "res://Main.tscn"
@@ -30,8 +30,8 @@ func install(source: Control) -> void:
 		if child is Control: child.reparent(ui_layer)
 	loading_cover = menu.presentation.background
 	set_process(false)
-	# Listing saves must not instantiate or warm the world behind an idle menu.
-	# MainMenu starts boot_path only after begin_continue has covered the interface.
+	# Listar saves não pode instanciar nem aquecer o mundo atrás de um menu ocioso.
+	# O MainMenu só inicia boot_path depois que begin_continue cobriu a interface.
 
 static func fingerprint(path: String) -> String:
 	var result := ""
@@ -61,7 +61,7 @@ func boot_path(path: String) -> void:
 	if packed == null:
 		_boot_failed()
 		return
-	# Finish immutable artwork transfer before constructors can block the motor.
+	# Termina a transferência da arte imutável antes que construtores possam travar o motor.
 	if is_instance_valid(curtain): await curtain.prepare_presentation()
 	world = packed.instantiate()
 	world.set_meta("menu_preview", self)
@@ -74,7 +74,7 @@ func _boot_failed() -> void:
 	failed = true
 	boot_finished.emit()
 
-## Fade the static loading cover in before hiding menu controls.
+## Faz o fade da capa estática de carregamento antes de esconder os controles do menu.
 func begin_continue() -> void:
 	if continuing: return
 	continuing = true
@@ -121,7 +121,7 @@ func hold_world(scene: Node3D) -> void:
 	world.player.controlled_automatically = false
 	world.reset_physics_interpolation()
 	world.camera.make_current()
-	# Warm the real saved camera under an opaque cover, then stop hidden drawing.
+	# Aquece a câmera salva real sob uma capa opaca e depois para o desenho escondido.
 	for i in 3: await get_tree().process_frame
 	world.hide()
 	loading = false
@@ -164,7 +164,7 @@ func continue_game() -> bool:
 	if progress != null: progress.queue_free()
 	for layer in hidden_layers:
 		if is_instance_valid(layer) and layer != progress: layer.show()
-	# Fade reveals the exact gameplay camera; controls stay locked until it ends.
+	# O fade revela a câmera exata do jogo; os controles ficam travados até ele acabar.
 	await curtain.lift(0)
 	for entry in held_nodes:
 		if is_instance_valid(entry.node): entry.node.process_mode = entry.mode

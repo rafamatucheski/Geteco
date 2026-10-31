@@ -29,7 +29,7 @@ func _ready() -> void:
 	cold_label = STYLE.label("",14,STYLE.TEXT); cold_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; column.add_child(cold_label); cold_label.hide()
 	rage_bar = _row(column,"rage",Color("e35469"))
 	rage_row = rage_bar.get_parent(); rage_row.hide()
-	# The bar is the activation target; no extra label or empty row in the HUD.
+	# A barra é o alvo da ativação; sem rótulo extra nem linha vazia no HUD.
 	rage_action = Button.new(); rage_action.name="ActivateRage"; rage_action.flat=true
 	rage_action.focus_mode=Control.FOCUS_NONE
 	for state in ["normal","hover","pressed","focus","disabled"]:

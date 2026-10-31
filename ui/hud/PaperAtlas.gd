@@ -1,6 +1,6 @@
 extends RefCounted
-## Printed street atlas from the same world coordinates used for navigation.
-## Retained vector polygons, with no raster terrain, height facets or camera capture.
+## Atlas de ruas impresso a partir das mesmas coordenadas do mundo usadas na navegação.
+## Polígonos vetoriais retidos, sem terreno raster, facetas de altura nem captura de câmera.
 const WATER := Color("91a5a8")
 const COAST := Color("667c7c")
 const PALETTE := {"city":Color("d3d0c4"),"forest":Color("b7c1ac"),"mountain":Color("c9cdc3"),"desert":Color("dbcdb1"),"water":WATER}
@@ -9,8 +9,8 @@ var polygons: Array[Dictionary] = []
 
 func prepare(lands: Array) -> void:
 	regions.clear()
-	# Union adjacent city cells once, so their internal streaming seams never look
-	# like coasts. This only changes the presentation copy, never the source lands.
+	# Une as células vizinhas da cidade uma vez, para que as costuras internas do streaming nunca pareçam
+	# costas. Isso só muda a cópia de apresentação, nunca as terras de origem.
 	polygons = preload("res://ui/hud/MapRelief.gd").new()._presentation_lands(lands)
 	for row in polygons:
 		var points: PackedVector2Array = row.polygon
@@ -33,7 +33,7 @@ func draw_land(target: CanvasItem) -> void:
 			var closed: PackedVector2Array = row.polygon.duplicate()
 			closed.append(closed[0])
 			target.draw_polyline(closed, ring[0], ring[1], true)
-	# Water polygons always cover land; collection order must not fill lakes in.
+	# Polígonos de água sempre cobrem a terra; a ordem de coleta não pode preencher lagos.
 	for water_pass in [false,true]:
 		for row in polygons:
 			if (row.biome=="water")!=water_pass or row.polygon.size()<3: continue

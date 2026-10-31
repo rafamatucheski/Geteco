@@ -1,6 +1,6 @@
 extends RefCounted
-## Read-only navigation over the existing directed road graph. No physics queries,
-## no invented cross-block links, and no second O(n²) road-intersection builder.
+## Navegação só de leitura sobre o grafo dirigido de ruas existente. Sem consultas de física,
+## sem ligações inventadas entre quarteirões e sem um segundo montador O(n²) de interseções de rua.
 var graph := AStar3D.new()
 var signature := ""
 var points := PackedVector2Array()
@@ -12,8 +12,8 @@ class RoadSnapshot extends RefCounted:
 	var vertices: Array[Vector3] = []
 	var edges: Dictionary = {}
 
-## The loading curtain already prepares the complete directed graph. Read that
-## snapshot instead of making GPS depend on the chunks visible to the camera.
+## A cortina de carregamento já prepara o grafo dirigido completo. Lê esse
+## snapshot em vez de fazer o GPS depender dos chunks visíveis à câmera.
 static func source(production: Node) -> Dictionary:
 	var cache: Dictionary = production.get("_route_cache")
 	var key := ""
@@ -31,8 +31,8 @@ static func source(production: Node) -> Dictionary:
 		return retained
 	return {"routes":production.traffic_routes, "revision":production._route_key()}
 
-## A clicked 2D destination has no altitude. Recover the road's authored height,
-## otherwise a destination on the mountain is incorrectly searched at sea level.
+## Um destino 2D clicado não tem altitude. Recupera a altura escrita da rua;
+## senão um destino na montanha é buscado errado no nível do mar.
 static func goal_on_surface(routes: RefCounted, point: Vector2) -> Vector3:
 	var best := INF
 	var height := 0.0
@@ -69,7 +69,7 @@ func update(routes: RefCounted, revision: String, start: Vector3, goal: Vector3,
 	var first := _nearest(routes, start, facing if driving else Vector3.ZERO)
 	var last := _nearest(routes, goal, Vector3.ZERO)
 	if first.is_empty() or last.is_empty(): return true
-	# Outside the road network, keep a destination bearing rather than fake GPS.
+	# Fora da rede de ruas, mantém um rumo ao destino em vez de um GPS falso.
 	if first.distance > 18.0 or last.distance > 24.0: return true
 	var best_cost := INF
 	for departure in _directions(first):

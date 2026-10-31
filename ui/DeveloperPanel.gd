@@ -42,7 +42,7 @@ func _input(event: InputEvent) -> void:
 			open_panel()
 		elif event.is_action_pressed("camera_left") or event.is_action_pressed("camera_right"):
 			world.camera._unhandled_input(event)
-		# Input's pressed state remains available for flight, but gameplay callbacks do not run.
+		# O estado pressionado do Input continua disponível para o voo, mas os callbacks do jogo não rodam.
 		get_viewport().set_input_as_handled()
 
 func open_panel() -> void:
