@@ -222,6 +222,7 @@ func show_journal_information() -> void:
 	var village: Dictionary = {}
 	if g.urban_operations != null and is_instance_valid(g.urban_operations.village_quest): village = g.urban_operations.village_quest.data
 	var entries: Array = JOURNAL_ARCS.lines(g.state.world_state, g.state.campaign.snapshot(), village)
+	entries.append_array(preload("res://data/catalogs/PilotTapes.gd").journal_lines(g.state.economy.snapshot().collectibles))
 	for line in entries: g._menu_information(str(line), 16, records)
 	if entries.is_empty(): g._menu_information("Nenhuma informação registrada ainda.", 16, records)
 	var secret_file: Variant = g.urban_operations.get("secret_file") if g.urban_operations != null else null

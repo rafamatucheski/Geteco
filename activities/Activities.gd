@@ -27,6 +27,9 @@ var _gate: Node3D
 var _status: Label
 var _tow_recovered := false
 var _tow_retry_clock := 0.0
+## Portão do galpão do piloto: a porta de enrolar física do Digo (DigoVehicleGate), sem arte nova.
+## Montado uma vez na primeira passagem por Harbor e estacionado fora dele (escondido e sem colisão).
+var _hideout_gate
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -93,7 +96,30 @@ func _physics_process(delta: float) -> void:
 				area.set_meta("grounded",true)
 		area.visible = near
 		area.set_deferred("monitoring",near)
+	_update_hideout_gate()
 	residence.restore_deployed()
+
+func _update_hideout_gate() -> void:
+	var in_harbor: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty()
+	if not in_harbor and not is_instance_valid(_hideout_gate): return
+	if not is_instance_valid(_hideout_gate):
+		_hideout_gate = preload("res://world/desert/DigoVehicleGate.gd").new()
+		_hideout_gate.name = "PilotHideoutGate"
+		_hideout_gate.position = TAPES.HIDEOUT_POINT
+		session.world.add_child(_hideout_gate)
+		# Fora dos grupos do Digo: FullSession._set_digo_vehicle_gate fecharia este portão também.
+		for group in [_hideout_gate.GROUP, _hideout_gate.INTERIOR_GROUP]: _hideout_gate.remove_from_group(group)
+	if in_harbor and not _hideout_gate.has_meta("grounded") and _hideout_gate.position.distance_to(session.world.player.position) < 55:
+		var ray := PhysicsRayQueryParameters3D.create(TAPES.HIDEOUT_POINT+Vector3.UP*12,TAPES.HIDEOUT_POINT-Vector3.UP*3,1)
+		ray.exclude = [_hideout_gate._barrier.get_rid()]
+		var hit: Dictionary = session.world.get_world_3d().direct_space_state.intersect_ray(ray)
+		if not hit.is_empty():
+			_hideout_gate.position.y = float(hit.position.y)
+			_hideout_gate.set_meta("grounded",true)
+	_hideout_gate.visible = in_harbor
+	# Escondido fora de Harbor: abre a colisão para não virar parede invisível em outra região.
+	var opened: bool = not in_harbor or TAPES.hideout_open(session.state.economy)
+	if _hideout_gate.is_open() != opened: _hideout_gate.set_vehicle_access(opened,func(): return true)
 
 func nearest_action() -> Dictionary:
 	if session == null or session.modal or not session.state.place_id.is_empty(): return {}
@@ -122,6 +148,8 @@ func nearest_action() -> Dictionary:
 				for slot in ["car","motorcycle"]:
 					if residence._record(slot).get("status", "") == "stored":
 						options.append(_action("home_retrieve:"+slot,"Retirar moto" if slot == "motorcycle" else "Retirar carro",residence.parking(residence.data.active_home,slot),5.5))
+			if not TAPES.hideout_open(session.state.economy):
+				options.append(_action("pilot_hideout_gate","Abrir portão",TAPES.HIDEOUT_POINT,3.0))
 			options.append(_action("tow_accept" if _data.tow_contract.is_empty() else "tow_deliver","Serviço de guincho" if _data.tow_contract.is_empty() else "Entregar reboque",_tow_service_position(),4.5))
 	var closest := {}
 	var distance := INF
@@ -152,6 +180,9 @@ func perform(target: Variant) -> bool:
 		var success: bool = residence.retrieve_vehicle(id.trim_prefix("home_retrieve:"))
 		if success: _commit()
 		session.show_message("Veículo retirado." if success else "Mantenha a vaga e a saída livres.")
+		return true
+	if id == "pilot_hideout_gate":
+		session.show_message(TAPES.LOCKED_MESSAGE)
 		return true
 	if id == "tow_accept": return _accept_tow()
 	if id == "tow_deliver": return _deliver_tow()
@@ -381,15 +412,18 @@ func _read_letter(id: String) -> void:
 		session.save_game()
 	session.show_dialogue(lines)
 
-## Contador "Fitas X/10" pelo aviso comum; na décima, abre o galpão (recibo único) e salva.
+## Contador "Fitas X/10" e a dica da próxima fita mais perto pelo aviso comum; na décima, abre o
+## galpão (recibo único), sobe o portão e salva.
 func _tape_found() -> void:
 	var economy = session.state.economy
-	var found := TAPES.found(economy.snapshot().collectibles)
+	var collectibles: Array = economy.snapshot().collectibles
+	var found := TAPES.found(collectibles)
 	if TAPES.try_unlock(economy):
 		session.show_message("Fitas %d/10. O galpão do piloto, no Pátio dos Armazéns, está aberto." % found)
+		_update_hideout_gate()
 		session.save_game()
 	else:
-		session.show_message("Fitas %d/10" % found)
+		session.show_message(TAPES.found_message(collectibles,session.state.region_id,session.world.player.position))
 
 func _beacon(point: Vector3, color: Color, gate: bool = false) -> Node3D:
 	var root := Node3D.new()

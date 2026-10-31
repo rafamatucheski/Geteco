@@ -122,6 +122,9 @@ passam; a ida casa → QG completa a pé. **Não medido:** frame time (as fotos 
   incidente → 9, fita rotulada → 4 (também registra `audio_sealed_sector`). O teclado do
   cofre só aceita com os quatro e a energia; `can_unlock_final_door` passou a exigir a
   fita, e o restore do save rejeita a porta final sem ela.
+- **Gravações 01–03** (`AUDIO_PICKUPS`, 31/10/2026): "Pegar fita junto à cama" (QG),
+  "do quadro de turnos" (galeria) e "do quadro de disjuntores" (ramal de energia). Cada uma
+  registra o id em `audio_logs` uma vez só e aparece no Arquivo; sem stream ainda.
 - **Cofre:** porta circular no fundo do setor; ao abrir recua para dentro da parede e
   revela o vão. "Atravessar o cofre" leva ao lugar oculto `mountain_fort`
   (`MountainFort.gd`, `MountainFortPlace.gd`); a saída volta ao pedestal.
