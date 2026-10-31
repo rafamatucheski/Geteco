@@ -57,8 +57,8 @@ func run() -> void:
 	if not await walk(bridge_mid+Vector3.UP*.12,30): finish(); return
 	await photo("bridge-gameplay")
 	for side in [-1.0,1.0]:
-		# Geology narrows while the walking deck keeps its3.8m width. Sample
-		# outside the deck at the same relative floor/scarp/rim locations.
+		# A geologia estreita enquanto o deck de caminhada mantém a largura de3.8m. Amostra
+		# fora do deck nas mesmas posições relativas de piso/escarpa/borda.
 		var floor_offset := maxf(L.BRIDGE_WIDTH*.5+.6,10.0*lateral_scale)
 		var at := Vector3(L.CENTER.x+side*floor_offset,2,bridge_mid.z)
 		region.prepare_collision_at(at)

@@ -1,5 +1,5 @@
 extends SceneTree
-## Main: drive along the sidewalk over lids, then exercise the shared F input.
+## Main: dirige pela calçada por cima das tampas e depois exercita a entrada F compartilhada.
 const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 var world
@@ -23,7 +23,7 @@ func drive_lid(id: String, direction: float) -> void:
 	var finish := at+Vector3(3*direction, .04, 0)
 	world.production.region.prepare_collision_at(start)
 	world.production.region.prepare_collision_at(finish)
-	# The observer stays away from this route, not in front of the car.
+	# O observador fica longe desta rota, não na frente do carro.
 	world.player.teleport(at+Vector3(0, .1, 20))
 	await frames(40)
 	var hatch: Node3D = world.session._find_sewer_hatch(id)
@@ -69,8 +69,8 @@ func run() -> void:
 	if not failures.is_empty(): world.free(); quit(1); return
 	world.player.controlled_automatically = true
 	world.camera.set_process_unhandled_input(false)
-	# The general passage runner crosses curbs, a tree and a coastal barrier at
-	# other sites. These three routes isolate the lid in the integrated city.
+	# O runner geral de passagem cruza meios-fios, uma árvore e uma barreira costeira em
+	# outros locais. Estas três rotas isolam a tampa na cidade integrada.
 	var sites: Array = SEWERS.ids() if "--all-manholes" in OS.get_cmdline_user_args() else ["harbor_sewer", "sewer_quay", "sewer_warehouse"]
 	if "--input-only" in OS.get_cmdline_user_args(): sites = []
 	for id in sites:
@@ -112,8 +112,8 @@ func run() -> void:
 	check(await session.leave_place(), "subida retorna à rua e fecha tampa")
 	check(not world.player.input_locked and world.player.is_physics_processing(), "controles restaurados na saída")
 	await snapshot("returned")
-	# Existing saves can store the player inside the underground room. Restoring
-	# that location must not sweep a street approach from these distant coordinates.
+	# Saves existentes podem guardar o jogador dentro da sala subterrânea. Restaurar
+	# esse local não pode varrer uma aproximação de rua a partir destas coordenadas distantes.
 	session.state.place_id = "harbor_sewer"
 	session.ready_for_play = false
 	world.player.teleport(Vector3(0,.04,-2400))

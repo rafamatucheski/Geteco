@@ -12,8 +12,8 @@ func check(ok: bool, message: String) -> void:
 		push_error(message)
 
 func run() -> void:
-	# Let autoload initialization and the first monitor sample finish before
-	# comparing the node count across an asynchronous warmup.
+	# Deixa a inicialização dos autoloads e a primeira amostra do monitor terminarem antes de
+	# comparar a contagem de nós ao longo de um aquecimento assíncrono.
 	await process_frame
 	await process_frame
 	var api := AUDIO.new()
@@ -37,7 +37,7 @@ func run() -> void:
 	check(AudioServer.get_bus_count() == buses,"prewarm does not create a mixer bus")
 	var nodes_after := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	check(nodes_after == nodes,"prewarm does not spawn contact voices or world nodes (%d -> %d)" % [nodes,nodes_after])
-	# Inspect actual authored assets rather than only the warmup manifest.
+	# Inspeciona os recursos autorais reais em vez de só o manifesto de aquecimento.
 	var paths: Array[String] = []
 	for file in DirAccess.get_files_at("res://audio/vehicle_crashes"):
 		if file.ends_with(".wav"): paths.append("res://audio/vehicle_crashes/"+file)

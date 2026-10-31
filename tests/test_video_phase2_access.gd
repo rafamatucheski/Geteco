@@ -81,7 +81,7 @@ func _walk_place(id: String) -> void:
 	check(session.nearest().get("id", "") != "enter", id + " has no E entry")
 	check(session.state.place_id.is_empty(), id + " standing near door does not enter")
 	await capture(id + "-approach")
-	# Moving across the doorway must not transfer, even at the exact threshold.
+	# Atravessar a porta não pode transferir, mesmo exatamente no limiar.
 	world.player.teleport(door - inward * .4 + Vector3.UP * .08)
 	world.player.velocity = Vector3(-inward.z, 0, inward.x) * 3.0
 	access.update(.016)
@@ -209,8 +209,8 @@ func _check_cancelled_zoom() -> void:
 		else: world.gameplay.health = 0
 		access.update(.016)
 		check(not world.camera._store_focus_active, reason + " cancels entry focus immediately")
-		# Model the external owner completing before the zoom timer: the old
-		# request must remain cancelled, even once gameplay is available again.
+		# Modela o dono externo terminando antes do timer do zoom: o pedido
+		# antigo precisa continuar cancelado, mesmo quando o jogo fica disponível de novo.
 		session.modal = false
 		session.arrest_pending = false
 		world.gameplay.health = 100

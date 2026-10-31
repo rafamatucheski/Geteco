@@ -1,6 +1,6 @@
 extends SceneTree
-## Actual exterior geometry and actual Vehicle hulls. Physical aperture checks
-## complement the Main drive-in fixture; they do not certify rendered occlusion.
+## Geometria externa real e cascos reais de Vehicle. As checagens físicas da abertura
+## complementam a fixture de entrar dirigindo no Main; não certificam a oclusão renderizada.
 const ARCH := preload("res://world/desert/DesertArchitecture.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")

@@ -55,7 +55,7 @@ func run() -> void:
 		check(covered,"authored physical coverage: "+id)
 	check(relevant >= 45,"new furniture has complete independently classified solid inventory")
 	for actor in [player,clowns[0]]:
-		# Static circulation is independent of a mobile resident occupying the lane.
+		# A circulação estática independe de um morador móvel ocupando a faixa.
 		actor.collision_mask = 1
 		var who := "Dante" if actor == player else "native clown"
 		for local in [Vector3(40,.08,16),Vector3(-7,.16,15),Vector3(20,.08,-2.2),Vector3(29,.08,20),Vector3(-31,.08,27),Vector3(28,.08,27),Vector3(-2,.08,-28),Vector3(31,.08,-3),VENDING.MACHINES.drinks.approach,VENDING.MACHINES.snacks.approach]:

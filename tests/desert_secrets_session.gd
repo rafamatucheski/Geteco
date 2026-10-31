@@ -1,6 +1,6 @@
 extends SceneTree
-## Actual Main, walking and interaction input, rendered depth and cold save load.
-## Bandits are explicitly pre-defeated; their combat has its own separate fixture.
+## Main real, entrada de caminhada e interação, profundidade renderizada e load frio de save.
+## Os bandidos são explicitamente derrotados antes; o combate deles tem a própria fixture separada.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
@@ -80,7 +80,7 @@ func _run() -> void:
 	var recovered: Dictionary=SECRET.claim(missing_marker,session.state.economy,SITE.HOUSE_ID,true)
 	_check(bool(recovered.get("ok",false)) and not bool(recovered.get("reward_changed",true)) and session.state.economy.balance==after_house,"durable receipt repairs a missing world marker without paying twice")
 	_check(not bool(SECRET.claim({},session.state.economy,SITE.CABIN_ID,false).ok),"dead player cannot claim an unseen cache")
-	# The table's entire footprint blocks both a large sweep and sustained walking.
+	# A área inteira da mesa bloqueia tanto uma varredura grande quanto uma caminhada sustentada.
 	_check(world.player.test_move(world.player.global_transform,Vector3(5,0,0)),"large player sweep cannot cross the table footprint")
 	world.player.automatic_direction=Vector3.RIGHT
 	await _frames(75)

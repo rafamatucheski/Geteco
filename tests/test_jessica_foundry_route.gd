@@ -1,7 +1,7 @@
 extends SceneTree
-## Read-only Main/.NET preflight of the candidate Foundry->Quay itinerary.
-## It proves directed searches, joins and existing ground; actual driving,
-## traffic/controls and safe exit remain the Main integration's responsibility.
+## Pré-checagem só leitura no Main/.NET do itinerário candidato Foundry->Quay.
+## Prova buscas dirigidas, junções e chão existente; direção real,
+## trânsito/controles e saída segura continuam responsabilidade da integração no Main.
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
@@ -71,8 +71,8 @@ func run() -> void:
 	check(only_expected,"itinerary follows actual Foundry and Quay roads without Market/Medical detours")
 	var road: Curve3D = plan.curve
 	var region = world.session.controller.regions.harbor
-	# Admit actual production chunks. No player/car transform or fabricated
-	# floor is used to approve the candidate's street/access support.
+	# Admite chunks reais de produção. Nenhuma transformação de jogador/carro nem piso
+	# fabricado é usado para aprovar o apoio de rua/acesso do candidato.
 	var samples: Array[Vector3] = []
 	var cursor: float = 0
 	while cursor < road.get_baked_length():

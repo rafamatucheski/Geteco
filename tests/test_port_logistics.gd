@@ -42,7 +42,7 @@ func run() -> void:
 	var state: Dictionary = cargo.work_trucks[0]
 	var first_id: int = state.truck.get_instance_id()
 	if "--cooldown-only" in OS.get_cmdline_user_args():
-		# Clear the spawn bay by driving to the crane before leaving a wreck.
+		# Libera a vaga de spawn dirigindo até o guindaste antes de deixar um destroço.
 		for i in 3600:
 			await physics_frame
 			if state.phase in ["loading", "securing"]: break
@@ -76,8 +76,8 @@ func run() -> void:
 		if truck.global_position.distance_to(last_progress) > 1 or state.phase not in ["departed","returning"]:
 			stalled_since = Time.get_ticks_msec()
 			last_progress = truck.global_position
-		# Traffic lights use real wall time, even when physics is accelerated.
-		# Allow a complete signal cycle before diagnosing a blocked convoy.
+		# Os semáforos usam tempo de parede real, mesmo com a física acelerada.
+		# Permite um ciclo completo de sinal antes de diagnosticar um comboio bloqueado.
 		if Time.get_ticks_msec()-stalled_since > 60000:
 			for item in cargo.work_trucks:
 				var other = item.truck

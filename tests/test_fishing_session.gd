@@ -41,8 +41,8 @@ func walk(point: Vector3) -> bool:
 	return distance.length() < .35
 
 func residency_cycle() -> void:
-	# Exercise the real proximity owner while staying in Harbor's valid state.
-	# Each actor is admitted on a separate render frame, not a wall-clock timer.
+	# Exercita o dono real da proximidade enquanto fica no estado válido do Harbor.
+	# Cada ator é admitido num quadro de render separado, não num timer de tempo de parede.
 	var return_point: Vector3 = world.player.global_position
 	var away := Vector3(132,.15,72)
 	world.production.region.set_focus(away)
@@ -79,8 +79,8 @@ func run() -> void:
 	world.player.teleport(LOCATION.ENTRY+Vector3.UP*.1)
 	world.session.fishing_runtime.refresh()
 	await create_timer(2).timeout
-	# The completed-campaign fixture still has the final phone epilogue pending.
-	# A player must finish that dialogue before walking; exercise its actual input.
+	# A fixture de campanha concluída ainda tem o epílogo final do telefone pendente.
+	# Um jogador precisa terminar esse diálogo antes de andar; exercita a entrada real dele.
 	for line in 12:
 		if not world.session.dialogue_open: break
 		press("interact")
@@ -188,7 +188,7 @@ func run() -> void:
 	check(restored.restore_snapshot(STORE.read_valid(path)) and restored.economy.balance==expected,"disk restore keeps fishing result and wallet consistent")
 	check(FISH_STATE.data(restored.world_state).best==fishing.best,"best catch survives real JSON storage")
 	await capture("result")
-	# Reenter freely at the same physical station, then exercise input cancellation.
+	# Entra de novo livremente na mesma estação física e depois exercita o cancelamento pela entrada.
 	check(fishing.start(-1) and fishing.controls_locked(),"reenter after tournament without a stuck menu or actor")
 	press("exit_vehicle")
 	check(not fishing.active and not world.player.input_locked,"F cancellation restores controls")

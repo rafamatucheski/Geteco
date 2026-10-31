@@ -1,6 +1,6 @@
 extends SceneTree
-## Contact/timing regressions use real physics bodies. Not an audio listening
-## test or a rendered performance certificate.
+## As regressões de contato/tempo usam corpos de física reais. Não é teste de escuta
+## de áudio nem certificado de desempenho renderizado.
 const SURFACE := preload("res://gameplay/WeaponSurface.gd")
 const FX := preload("res://gameplay/CombatEffects.gd")
 const AUDIO := preload("res://gameplay/CombatAudio.gd")

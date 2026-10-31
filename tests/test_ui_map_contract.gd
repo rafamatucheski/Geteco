@@ -1,6 +1,6 @@
 extends SceneTree
-## Map navigation contracts. Visual composition and rendered performance have
-## separate checks in tests/measure/measure_world_map.gd.
+## Contratos de navegação do mapa. Composição visual e desempenho renderizado têm
+## checagens separadas em tests/measure/measure_world_map.gd.
 class Region extends RefCounted:
 	var entries := [
 		{"place_id":"harbor_clothing","id":"internal_01","position":Vector3(10,0,10)},
@@ -50,8 +50,8 @@ func run() -> void:
 	root.add_child(map); await process_frame
 	check(map._sea.mouse_filter==Control.MOUSE_FILTER_IGNORE,"ocean material never intercepts map input")
 	check(map._sea.get_index()<map.terrain.get_index(),"ocean remains behind authoritative land geography")
-	# A destination must keep the same world coordinate after desktop resizing;
-	# the bounded map surface must leave its controls on-screen on ultrawide too.
+	# Um destino precisa manter a mesma coordenada de mundo depois de redimensionar o desktop;
+	# a superfície limitada do mapa precisa deixar os controles na tela também em ultrawide.
 	for viewport in [Vector2i(800,600),Vector2i(1920,1080),Vector2i(2560,1080)]:
 		root.content_scale_size=viewport; root.size=viewport
 		await redraw(map)
@@ -89,7 +89,7 @@ func run() -> void:
 	map._clear_waypoint()
 	check(not map._waypoint.is_finite(),"clear removes the destination")
 
-	# Exercise the actual controls, including an explicit escape from a filter.
+	# Exercita os controles reais, incluindo uma saída explícita de um filtro.
 	map._filter_button.pressed.emit(); await process_frame
 	check(map._legend.visible and map._all_filter_button.is_visible_in_tree(),"Filters exposes a visible Todos action")
 	map._legend_buttons.clothing.pressed.emit()
@@ -104,7 +104,7 @@ func run() -> void:
 	map._set_filter("clothing"); map._set_filter("clothing")
 	check(map._filter.is_empty(),"pressing the active category again still restores all categories")
 
-	# Overlay input must never leak a double-click to the world beneath it.
+	# A entrada da sobreposição nunca pode vazar um clique duplo para o mundo embaixo dela.
 	var overlay_point: Vector2=map._legend.get_global_rect().get_center()-map.canvas.global_position
 	check(map._pointer_blocked(overlay_point),"an open filter panel owns its map-space footprint")
 	map.map_input(double_click(overlay_point))
@@ -115,9 +115,9 @@ func run() -> void:
 	check(not map._legend.visible,"Filters can collapse the panel")
 	check(recovered!=null and recovered.is_visible_in_tree() and recovered.focus_mode!=Control.FOCUS_NONE,"collapsing filters restores usable visible focus")
 
-	# Cover the regression where moving the selected icon to the front of draw
-	# order caused the controller to alternate between two icons forever. One
-	# additional destination shares a point and must also remain reachable.
+	# Cobre a regressão em que trazer o ícone selecionado para a frente da ordem de desenho
+	# fazia o controlador alternar entre dois ícones para sempre. Um
+	# destino adicional compartilha um ponto e também precisa continuar alcançável.
 	map.select_marker(-1)
 	map.focus_region("test"); map.center=map.target_center; map.zoom=map.target_zoom
 	await redraw(map)

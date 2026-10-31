@@ -1,7 +1,7 @@
 extends SceneTree
-## Reciprocal Market crossing: the real normal traffic owner waits on the
-## stopped Jetta. The only recovery is a supported physical reverse outside
-## the crossing. Main remains responsible for bank/wanted/streamed traffic.
+## Cruzamento recíproco na Market: o dono real do trânsito normal espera o
+## Jetta parado. A única recuperação é uma ré física apoiada fora
+## do cruzamento. O Main continua responsável por banco/procurado/trânsito em streaming.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const DRIVER := preload("res://gameplay/jessica/JessicaGetawayDriver.gd")
 const SIGNALS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
@@ -46,7 +46,7 @@ func run() -> void:
 	solid(stage,Vector3(90,.10,40),Vector3(135,-.05,80))
 	var car: CharacterBody3D = parked(stage,"jessica_jetta_gli","jessica_jetta_gli",Vector3(127.0854,.12,79.85149),-1.57385587692261)
 	var owner: CharacterBody3D = parked(stage,"sport_coupe","crossing_owner",Vector3(133.6629,.12,79.19783),1.76980602741241)
-	# Rear pose is an explicit local clearance fixture, not a missing trace fact.
+	# A pose traseira é uma fixture explícita de folga local, não um fato faltando no rastreio.
 	var rear: CharacterBody3D = parked(stage,"nimbus_minivan","rear_queue",rear_fixture_point,-PI*.5)
 	for i in 45: await physics_frame
 	var car_start: Vector3 = car.global_position
@@ -55,7 +55,7 @@ func run() -> void:
 	var graph: Dictionary = {"vertices":[CENTER,CENTER+Vector3(35,0,0),CENTER-Vector3(35,0,0),CENTER+Vector3(0,0,35),CENTER-Vector3(0,0,35)],
 		"edges":{0:[{"to":1},{"to":2},{"to":3},{"to":4}]}}
 	SIGNALS.configure(graph)
-	# Match the recorded stop-gap (~0.127m) at the recorded Jetta pose.
+	# Reproduz o vão de parada registrado (~0.127m) na pose registrada do Jetta.
 	SIGNALS.register_signal(CENTER,7.375)
 	var key: Vector3i = SIGNALS.key_of(CENTER)
 	var curve := Curve3D.new()
@@ -65,8 +65,8 @@ func run() -> void:
 	car.set("route",curve)
 	var driver = DRIVER.new()
 	driver.setup(car,curve)
-	# A smooth normal-traffic exit from the north arm into Market, tangent to
-	# the recorded owner pose. Historical prefix supplies its true arrival arm.
+	# Uma saída suave do trânsito normal do braço norte para a Market, tangente à
+	# pose registrada do dono. O prefixo histórico fornece o braço real de chegada dele.
 	var owner_curve := Curve3D.new()
 	owner_curve.bake_interval = .15
 	owner_curve.add_point(Vector3(139.5,0,62),Vector3.ZERO,Vector3(0,0,4))
@@ -131,9 +131,9 @@ func run() -> void:
 	else:
 		check(not owner_cleared and driver._yield_completed == 0 and car.global_position.x < car_start.x,"insufficient rear room preserves crossing retention instead of simulating passage")
 		check(driver._sensor_lease_diagnostic.get("reason","") == "owner_hull_overlap","whole owner hull explains the restricted-case refusal")
-		# Assess the existing deadline without spending another real cycle.
-		# Only this fixture's elapsed timestamp advances; bodies, curves, masks,
-		# native phases and reservations retain the observed physical state.
+		# Avalia o prazo existente sem gastar outro ciclo real.
+		# Só o timestamp decorrido desta fixture avança; corpos, curvas, máscaras,
+		# fases nativas e reservas mantêm o estado físico observado.
 		driver._traffic_wait_started -= ceili(SIGNALS.CYCLE*1000.0)
 		pin_phase(16.0)
 		driver.tick(1.0/60.0,false)

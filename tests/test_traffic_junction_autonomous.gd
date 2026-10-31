@@ -78,7 +78,7 @@ func run() -> void:
 	var owner_id := owner.get_instance_id()
 	var crossing_id := crossing.get_instance_id()
 	var core := query(FIRST,8)
-	# Independent physical oracle of the controller's existing protected volume.
+	# Oráculo físico independente do volume protegido existente do controlador.
 	var first_protected := query(FIRST,14)
 	var second_protected := query(SECOND,14)
 	var saw_first := false

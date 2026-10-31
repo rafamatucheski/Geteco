@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Actual native meshes + player/NPC rigs. Pixel masks verify the Mobile fade,
-## separately from swept physics, with unobstructed positive controls.
+## Malhas nativas reais + rigs de jogador/NPC. Máscaras de pixel conferem o fade Mobile,
+## separado da física varrida, com controles positivos desobstruídos.
 const PLACES = preload("res://world/places/PlaceCatalog.gd")
 var dest := "res://evidence/bank-gameplay-20261002/depth"
 
@@ -13,8 +13,8 @@ func run() -> void:
 	viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
 	root.add_child(viewport)
 	var stage := Node3D.new()
-	# Static probes must render at the measured pose, not an interpolated prior
-	# location from the swept-collision cases (3 render frames can be <1 tick).
+	# Sondas estáticas precisam renderizar na pose medida, não numa posição anterior interpolada
+	# dos casos de colisão varrida (3 quadros de render podem ser <1 tick).
 	stage.physics_interpolation_mode=Node.PHYSICS_INTERPOLATION_MODE_OFF
 	viewport.add_child(stage)
 	var room = PLACES.create_place("harbor_bank")

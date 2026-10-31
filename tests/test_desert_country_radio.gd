@@ -1,6 +1,6 @@
 extends SceneTree
-## Focused integration of the production receiver with real local OGG playback.
-## No gameplay/saves or additional engine/ambience mixers are needed here.
+## Integração focada do receptor de produção com reprodução local real de OGG.
+## Não precisa aqui de jogo/saves nem de mixers adicionais de motor/ambiente.
 
 class RadioWorld extends Node:
 	var driving := {"occupied": true, "car": null}

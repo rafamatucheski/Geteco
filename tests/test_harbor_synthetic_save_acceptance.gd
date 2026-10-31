@@ -29,9 +29,9 @@ func report_snapshot_difference(label:String, expected:Dictionary, actual:Dictio
 	print("SAVE DIFF ",label," actual=",JSON.stringify(actual))
 
 func storage_equivalent(expected:Dictionary,actual:Dictionary)->bool:
-	# Compare in the representation the JSON store actually guarantees. This
-	# permits only JSON's int/float normalization (for example 32 -> 32.0), not
-	# missing keys or changed values.
+	# Compara na representação que o armazenamento JSON de fato garante. Isto
+	# permite só a normalização int/float do JSON (por exemplo 32 -> 32.0), não
+	# chaves faltando nem valores alterados.
 	return JSON.parse_string(JSON.stringify(expected))==JSON.parse_string(JSON.stringify(actual))
 
 func _run()->void:

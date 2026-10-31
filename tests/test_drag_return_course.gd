@@ -40,7 +40,7 @@ func run() -> void:
 				check((car.global_position-course.start).dot(direction)<.1,"finish is back at the starting line")
 				print("RETURN_ROUTE hz=",hz," lane=",lane," seconds=",elapsed," progress=",entry.return_progress," gate=",entry.return_gate)
 				car.free()
-		# A shortcut from the launch to the return line must not count as a lap.
+		# Um atalho da largada para a linha de volta não pode contar como volta.
 		var fake_car=Node3D.new()
 		root.add_child(fake_car)
 		var shortcut={"car":fake_car,"drive":DRIVE.new()}

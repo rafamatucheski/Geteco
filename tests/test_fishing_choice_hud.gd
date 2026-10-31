@@ -1,6 +1,6 @@
 extends SceneTree
-## Rendered, standalone interaction/layout test for the production fishing HUD.
-## Uses viewport input dispatch, not direct pressed.emit() or HUD private callbacks.
+## Teste renderizado e independente de interação/layout para o HUD de pesca de produção.
+## Usa o despacho de entrada do viewport, não pressed.emit() direto nem callbacks privados do HUD.
 const HUD := preload("res://activities/fishing/FishingHUD.gd")
 var checks := 0
 var failures: Array[String] = []

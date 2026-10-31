@@ -1,6 +1,6 @@
 extends SceneTree
-## Owner resolution/cache regression only; physical ladder clearance is covered
-## by test_harbor_service_roofs.gd in the actual scene.
+## Só regressão de resolução/cache do dono; a folga física da escada é coberta
+## por test_harbor_service_roofs.gd na cena real.
 var checks := 0
 var failures: Array[String] = []
 
@@ -109,8 +109,8 @@ func run() -> void:
 	check(runtime.access_owner == garage and runtime.access_point.is_equal_approx(workshop.to_global(workshop.roof_access_point)+Vector3.UP*.04), "garage uses the workshop's authored wall access")
 	check(runtime.access_route.size()==2, "garage keeps the authored approach route")
 	session.room = room_a
-	# A furnished house or shop owns its architectural access, independently of
-	# the spawn. A blocked authored route must never fall back into the room.
+	# Uma casa ou loja mobiliada é dona do acesso arquitetônico, independente do
+	# spawn. Uma rota autoral bloqueada nunca pode recair para dentro da sala.
 	session.state.place_id = "cobra_leader_house"
 	var authored := AuthoredAccess.new()
 	room_a.add_child(authored)

@@ -1,6 +1,6 @@
 extends SceneTree
-## Focused contracts: real imported Actor rig, physical player compensation,
-## protected NPCs, bounded wounds and interruption of the global time owner.
+## Contratos focados: rig real importado do Actor, compensação física do jogador,
+## NPCs protegidos, ferimentos limitados e interrupção do dono global do tempo.
 const RAGE := preload("res://gameplay/KatanaRage.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const MODEL := preload("res://gameplay/KatanaModel.gd")

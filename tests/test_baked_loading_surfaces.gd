@@ -1,5 +1,5 @@
 extends SceneTree
-## Compare baked pixels AND all mip levels with the original deterministic recipe.
+## Compara os pixels assados E todos os níveis de mip com a receita determinística original.
 const GROUND := preload("res://assets/regions/source/world/harbor/UrbanGround.gd")
 func _initialize() -> void: run.call_deferred()
 func run() -> void:

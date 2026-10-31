@@ -1,7 +1,7 @@
 extends SceneTree
-## Actual streamed Main geometry. Fixture placement is only for scans and the
-## start of each access walk; the actor then climbs and descends under physics.
-## This cannot certify visual occlusion, temporal lighting or frame time.
+## Geometria real do Main em streaming. O posicionamento da fixture é só para as varreduras e o
+## início de cada caminhada de acesso; depois o ator sobe e desce sob a física.
+## Isto não certifica oclusão visual, iluminação temporal nem tempo de quadro.
 const NETWORK := preload("res://world/railway/RailwayNetwork.gd")
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const TRAIN := preload("res://world/railway/TrainModel.gd")
@@ -60,8 +60,8 @@ func run() -> void:
 		for candidate in world.find_children("RailwayWorld", "", true, false): railway_world = candidate; break
 	check(is_instance_valid(railway_world), "actual RailwayWorld installed")
 	if not is_instance_valid(railway_world): finish(); return
-	# Stop only orchestration that would fight scan focus; region builders, physics,
-	# station collision and the native Actor continue to run normally.
+	# Para só a orquestração que brigaria com o foco da varredura; montadores de região, física,
+	# colisão das estações e o Actor nativo continuam rodando normalmente.
 	world.production.set_process(false)
 	world.session.set_process(false)
 	world.player.controlled_automatically = true
@@ -71,8 +71,8 @@ func run() -> void:
 	for region_id in ["harbor", "mountain", "desert"]:
 		world.production._mount_region(region_id, initial)
 	if "--access-only" not in OS.get_cmdline_user_args():
-		# These cover both city approaches, both branches and the mountain/desert
-		# chord. Whole journeys retain the actual locomotive pose through junctions.
+		# Estes cobrem as duas aproximações da cidade, os dois ramais e a corda montanha/deserto.
+		# Viagens inteiras mantêm a pose real da locomotiva pelos entroncamentos.
 		for pair in [["harbor_central", "harbor_north"], ["harbor_central", "mountain_pines"], ["harbor_central", "desert_copper"], ["mountain_pines", "desert_copper"]]:
 			if argument("--route-pair=") == "harbor" and pair != ["harbor_central", "harbor_north"]: continue
 			for reverse in [false, true]:

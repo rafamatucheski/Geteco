@@ -1,7 +1,7 @@
 extends "res://tests/test_mining_session.gd"
-## Real Main: first damage is unprotected; subsequent fixture combat uses the
-## existing god-mode option to isolate guards, loot and lifecycle deterministically.
-## Player kills use Gameplay.fire_at. No guard health or death is injected.
+## Main real: o primeiro dano é sem proteção; o combate seguinte da fixture usa a
+## opção existente de god mode para isolar guardas, saque e ciclo de vida de forma determinística.
+## As mortes pelo jogador usam Gameplay.fire_at. Nenhuma vida ou morte de guarda é injetada.
 const RAID_STATE := preload("res://gameplay/mining/MiningRaidState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
 const GAME_STATE := preload("res://runtime/GameState.gd")
@@ -46,8 +46,8 @@ func _enter_gallery() -> bool:
 	deadline = Time.get_ticks_msec() + 9000
 	while raid.live_count() < 4 and Time.get_ticks_msec() < deadline: await physics_frame
 	if not check(raid.live_count() == 4 and raid.actors.size() == 4, "four armed bandits admitted without replacing dead slots"): return false
-	# Admission occurs on the process tick; allow the last capsule to execute
-	# real physics and settle the authored .05 m spawn lift before querying it.
+	# A admissão ocorre no tick de processo; deixa a última cápsula executar
+	# física real e assentar a elevação autoral de .05 m do spawn antes de consultá-la.
 	await wait_seconds(.25)
 	_guard_ids.clear()
 	for guard: CharacterBody3D in raid.actors.values():
@@ -80,8 +80,8 @@ func _shoot_guard(index: int) -> bool:
 
 func _fight_and_take_bag(prove_damage: bool) -> bool:
 	if not prove_damage and not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
-	# Clear the rock lip at x=16 before the turn; cutting this corner diagonally
-	# was correctly rejected by the physical gallery contract test.
+	# Passa da borda de rocha em x=16 antes da curva; cortar este canto na diagonal
+	# foi rejeitado com razão pelo teste de contrato físico da galeria.
 	if not await _walk_gallery([Vector3(9, 0, 3), Vector3(16.7, 0, 3), Vector3(16.7, 0, -.5)]): return false
 	var deadline := Time.get_ticks_msec() + 8000
 	while not raid.engaged and Time.get_ticks_msec() < deadline: await physics_frame
@@ -113,8 +113,8 @@ func _fight_and_take_bag(prove_damage: bool) -> bool:
 	if not check(world.session.state.equip_weapon("m4a1"), "fixture equips normal owned M4A1"): return false
 	for index in [1, 3, 2]:
 		if not await _shoot_guard(index): return false
-	# The western stack is genuine cover. Walk around its left edge instead of
-	# weakening that cover or directing an artificial damage event through it.
+	# A pilha oeste é cobertura genuína. Contorna a borda esquerda dela em vez de
+	# enfraquecer essa cobertura ou mandar um evento de dano artificial através dela.
 	if not await _walk_gallery([Vector3(16.7, 0, 6.3)]): return false
 	if not await _shoot_guard(0): return false
 	check(raid.live_count() == 0 and raid.actors.size() == 4, "all four defeated guards stay owned without replenishment")
@@ -242,8 +242,8 @@ func run() -> void:
 	if not _escape_only:
 		await photo("raid-bag-before-death")
 		var before_death: int = world.session.state.economy.balance
-		# Deliberate fatal production damage probes the actual death/rescue hook;
-		# it is separate from the enemy projectiles already observed above.
+		# Dano fatal de produção deliberado sonda o gancho real de morte/resgate;
+		# é separado dos projéteis inimigos já observados acima.
 		if world.gameplay.god_mode: world.gameplay.toggle_god_mode()
 		world.gameplay.damage_environment(1000)
 		check(world.gameplay.health <= 0 and not raid.pending_cash and not raid.completed(), "actual fatal damage discards carried money before rescue")
@@ -254,8 +254,8 @@ func run() -> void:
 		if not check(world.gameplay.health > 0 and world.session.state.place_id.is_empty() and not world.player.input_locked, "production death presentation and rescue restore exterior controls"): finish(1); return
 		check(world.session.state.economy.balance == before_death and not raid.completed(), "death and rescue credit no stolen money")
 		await _assert_released("death unload frees all owned guards and corpses")
-		# The return to the remote portal is a fixture relocation, not a claim that
-		# this test drove the exterior quarry road after rescue.
+		# A volta ao portal distante é realocação da fixture, não afirmação de que
+		# este teste dirigiu a estrada externa da pedreira depois do resgate.
 		world.production.region.set_focus(at)
 		world.production.region.prepare_collision_at(at)
 		world.player.teleport(at)
@@ -292,7 +292,7 @@ func run() -> void:
 		check(guard.get_meta("police_place_id", "wrong") == "" and guard.engaged, "ambushers use exterior visibility and active combat")
 	await photo("raid-exterior-ambush")
 	if not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
-	# Keep the normal controller and physical ground path around the spoil pile.
+	# Mantém o controlador normal e o caminho físico pelo chão em volta da pilha de rejeito.
 	if not check(await walk(LAYOUT.world(Vector3(-24,-28,3))), "walk clear of gallery mouth under ambush"): finish(1); return
 	if not await _shoot_guard(0): finish(1); return
 	if not check(await walk(LAYOUT.world(Vector3(-17,-28,8))), "flank around fixed mining workstations"): finish(1); return
@@ -339,8 +339,8 @@ func run() -> void:
 
 func _check_completed_reentry() -> void:
 	var paid: int = world.session.state.economy.balance
-	# The direct return diagonal clips the parked tractor at (-11,5). Pass
-	# south of its rear attachment, then return along the gallery approach.
+	# A diagonal direta de volta raspa o trator estacionado em (-11,5). Passa
+	# ao sul do engate traseiro dele e depois volta pela aproximação da galeria.
 	for point in [Vector3(-4,-28,13), Vector3(-17,-28,13), Vector3(-24,-28,3), LAYOUT.SECRET_ENTRY-LAYOUT.CENTER]:
 		if not check(await walk(LAYOUT.world(point)), "physical completed-raid return " + str(point)): return
 	if not check(await world.session.enter_place(COAL.PLACE_ID, false), "completed raid room permits ordinary reentry"): return
@@ -356,8 +356,8 @@ func _check_repopulation() -> void:
 	var wallet: Dictionary = world.session.state.economy.snapshot()
 	var near := LAYOUT.SECRET_ENTRY + Vector3.UP * .08
 	var far := Vector3(-180, .08, -1540)
-	# Fixture moves and deadline advances isolate policy; no claim of driving
-	# the quarry route or waiting five wall-clock minutes in this test.
+	# Os movimentos da fixture e os avanços de prazo isolam a política; não afirmam ter dirigido
+	# a rota da pedreira nem esperado cinco minutos de tempo de parede neste teste.
 	world.production.region.prepare_collision_at(far)
 	world.player.teleport(far)
 	await wait_seconds(.5)
@@ -403,9 +403,9 @@ func _check_repopulation() -> void:
 
 
 func _approach_escape_door(car: CharacterBody3D, target: Vector3) -> bool:
-	# The public interaction contract is a clear ray within 1.8m of the door.
-	# The old .24m waypoint forced the capsule against the ore stockpile even
-	# after the actual door could already be reached through normal interaction.
+	# O contrato público de interação é um raio livre a até 1.8m da porta.
+	# O antigo waypoint de .24m forçava a cápsula contra a pilha de minério mesmo
+	# depois que a porta real já podia ser alcançada pela interação normal.
 	var deadline := Time.get_ticks_msec() + 10000
 	var option: Dictionary = {}
 	while Time.get_ticks_msec() < deadline:
@@ -449,7 +449,7 @@ func _escape_hull_clear(car: CharacterBody3D) -> bool:
 	var overlaps: Array[Dictionary] = []
 	for hit in world.get_world_3d().direct_space_state.intersect_shape(query, 64):
 		var body: CollisionObject3D = hit.collider
-		# The continuous terrain is supporting contact, not an obstruction.
+		# O terreno contínuo é contato de apoio, não obstrução.
 		if body.get_meta("desert_continuous_ground", false) or body.has_meta("desert_ground_height"): continue
 		var shape_node: Object = body.shape_owner_get_owner(body.shape_find_owner(int(hit.shape)))
 		overlaps.append({"body":str(body.get_path()), "shape":str(shape_node.get_path()) if shape_node is Node else "", "solid":shape_node.get_meta("mining_solid", "") if shape_node is Node else ""})
@@ -459,8 +459,8 @@ func _escape_hull_clear(car: CharacterBody3D) -> bool:
 	return overlaps.is_empty()
 
 func _check_vehicle_escape() -> void:
-	# Diagnostic setup only: prior full run proved real combat, bag pickup and
-	# departure. This isolates the alternative exterior payout through driving.
+	# Só preparação de diagnóstico: a rodada completa anterior provou combate real, coleta da bolsa e
+	# partida. Isto isola o pagamento externo alternativo dirigindo.
 	if not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
 	raid.pending_cash = true
 	raid.ambush = true
@@ -475,7 +475,7 @@ func _check_vehicle_escape() -> void:
 		if is_instance_valid(candidate) and candidate.vehicle_id == "mineradora_escape": car = candidate; break
 	if not check(is_instance_valid(car), "persistent Bison escape pickup present"): return
 	if not check(await _escape_hull_clear(car), "escape pickup hull is clear of static props and neighboring vehicles"): return
-	# Walk around the spoil and western work station to the actual driver's door.
+	# Contorna o rejeito e a estação de trabalho oeste até a porta real do motorista.
 	for point in [Vector3(-24,-28,3), Vector3(-17,-28,8), Vector3(-16,-28,0), Vector3(-16,-28,-5), Vector3(-12,-28,-5)]:
 		if not check(await walk(LAYOUT.world(point)), "physical approach to escape pickup " + str(point)): return
 	var door: Vector3 = car.driver_door_anchor(1) + car.global_basis.x * .45
@@ -490,9 +490,9 @@ func _check_vehicle_escape() -> void:
 	var previous: Vector3 = start
 	var trace: Array[Dictionary] = []
 	var trace_clock := 0.0
-	# The old waypoint at (1.8,-7) delayed the north turn until the nose
-	# hit BeltSupport at (3.3,-8.7). Full-hull steering sweep puts the
-	# approach waypoint at (-2,-6), with .34m minimum analytical post margin.
+	# O waypoint antigo em (1.8,-7) atrasava a curva para o norte até a frente
+	# bater no BeltSupport em (3.3,-8.7). A varredura de esterço do casco inteiro põe o
+	# waypoint de aproximação em (-2,-6), com margem analítica mínima de .34m do poste.
 	var route := [Vector2(-9,-7), Vector2(-2,-6), Vector2(1.8,-20), Vector2(4,-28), Vector2(11,-34), Vector2(23,-34)]
 	var waypoint := 0
 	var progress_anchor: Vector3 = car.global_position

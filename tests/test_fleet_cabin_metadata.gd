@@ -1,7 +1,7 @@
 extends "res://tests/test_seated_driver.gd"
-## Reuse real-rig fit, hands, follow, restore and material checks. The added
-## assertion compares the seated pelvis to the independent authored door span,
-## which catches a driver placed in the cargo box or ahead of the cockpit.
+## Reaproveita as checagens de encaixe no rig real, mãos, acompanhamento, restauração e material. A
+## asserção acrescentada compara a pelve sentada com o vão autoral independente da porta,
+## o que pega um motorista posto na caixa de carga ou à frente da cabine.
 
 func selected_ids() -> Array:
 	return ["medic_box","beach_cabriolet"]

@@ -1,5 +1,5 @@
 extends "res://tests/test_video_phase3_access.gd"
-## Real Main/.NET traversal: approach is inert; walking against the leaf opens it.
+## Travessia real no Main/.NET: a aproximação é inerte; andar contra a folha a abre.
 var evidence := "res://output/door-push-20261010"
 
 func _run() -> void:

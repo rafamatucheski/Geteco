@@ -1,5 +1,5 @@
 extends SceneTree
-## Complements fleet contracts with authored door mesh reuse and cabin bounds.
+## Complementa os contratos da frota com reuso autoral de malha de porta e limites da cabine.
 const CATALOG = preload("res://runtime/NewCivilianFleet.gd")
 const VEHICLE = preload("res://scripts/Vehicle.gd")
 const DOORS = preload("res://gameplay/VehicleDoorPresentation.gd")

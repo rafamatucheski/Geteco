@@ -1,6 +1,6 @@
 extends SceneTree
-## Pure logical contracts; isolated user:// only. Concurrent-game timings are
-## scaling diagnostics, never frame-time or global performance evidence.
+## Contratos lógicos puros; só user:// isolado. Os tempos com jogo concorrente são
+## diagnósticos de escala, nunca evidência de tempo de quadro nem de desempenho global.
 const OLD := preload("res://tests/fixtures/EconomyV1ReceiptReference.gd")
 const V2 := preload("res://tests/fixtures/EconomyV2RaceReference.gd")
 const OLD_MOTO := preload("res://tests/fixtures/MotocrossProgressRaceReference.gd")
@@ -128,7 +128,7 @@ func _malformed() -> void:
 	b=valid.duplicate(true); b.transactions["spend:motocross_entry:1"]={"kind":"spend","item":"motocross_entry:1","amount":101}; bad.append(b)
 	for value in bad:
 		check(not wallet.restore_snapshot(value) and wallet.snapshot()==valid,"invalid page/codec/overlap rejected atomically")
-	# Different sides of one serial may be owned by different stores.
+	# Lados diferentes de um serial podem pertencer a armazenamentos diferentes.
 	b=valid.duplicate(true); b.transactions["reward:motocross_prize:1"]={"kind":"reward","item":"motocross_prize:1","amount":141}
 	check(wallet.restore_snapshot(b) and not wallet.grant_reward("motocross_prize:1",140),"opaque mismatch on the other side stays authoritative")
 
@@ -203,8 +203,8 @@ func _mixed_moto() -> void:
 			check(OLD_MOTO.validate_wallet(progress,old.snapshot())==MOTO.validate_wallet(progress,current.snapshot()) and MOTO.validate_wallet(progress,current.snapshot())==(prize==140),"mixed entry/prize exact or conflicting amount")
 			progress.active=0
 			check(not OLD_MOTO.validate_wallet(progress,old.snapshot()) and not MOTO.validate_wallet(progress,current.snapshot()),"mixed paid last serial cannot still be active")
-	# Preserve the original's handling of legacy numeric spellings, including
-	# its duplicate numeric aliases. This codec must not tighten that contract.
+	# Preserva o tratamento do original para grafias numéricas legadas, incluindo
+	# os apelidos numéricos duplicados dele. Este codec não pode apertar esse contrato.
 	var old=OLD.new(); old.grant_reward("funds",1000)
 	old.spend(100,"motocross_entry:01"); old.spend(100,"motocross_entry:1")
 	old.grant_reward("motocross_prize:1",140)
@@ -241,7 +241,7 @@ func _probe(state, progress, activities: int, batch_us: int) -> void:
 	var bytes:=JSON.stringify(saved,"\t").to_utf8_buffer().size()
 	check(valid and repeated and appended and MOTO.validate_wallet(progress.snapshot(),saved.economy),"scale snapshot/restore/retries at %d activities"%activities)
 	evidence.scaling.append({"activities":activities,"last_1000_activity_pairs_us":batch_us,"snapshot_us":snapshot_us,"restore_us":restore_us,"200_retries_us":retries_us,"100_appends_us":append_us,"save_bytes":bytes,"opaque_receipts":saved.economy.transactions.size(),"pages":saved.economy.receipt_ledger.events.pages})
-	# Evidence records counts, not the entire compact history.
+	# A evidência registra contagens, não o histórico compacto inteiro.
 	var page_counts:={}
 	for domain in saved.economy.receipt_ledger.events.pages: page_counts[domain]=saved.economy.receipt_ledger.events.pages[domain].size()
 	evidence.scaling[-1].pages=page_counts

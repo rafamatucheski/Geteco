@@ -1,5 +1,5 @@
 extends SceneTree
-## Native room physics; rendered presentation and Main transitions are separate gates.
+## Física da sala nativa; apresentação renderizada e transições do Main são portões separados.
 const CATALOG = preload("res://world/places/PlaceCatalog.gd")
 const ACTOR = preload("res://scripts/Actor.gd")
 var checks := 0

@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Real actor rigs and the production lighthouse materials. Architecture-hidden
-## controls distinguish visible actors from a cutaway that hides everything.
+## Rigs reais de ator e os materiais de produção do farol. Os controles com a arquitetura
+## escondida distinguem atores visíveis de um corte que esconde tudo.
 const SITE = preload("res://world/places/coastal_lookout/CoastalLookout.gd")
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 
@@ -18,8 +18,8 @@ func run() -> void:
 	viewport.add_child(stage)
 	var site := SITE.new()
 	stage.add_child(site)
-	# Mixing append_from indexed primitives with manual triangles previously
-	# left the entire curved cap orphaned while ribs still rendered.
+	# Misturar primitivas indexadas de append_from com triângulos manuais deixava antes
+	# a cúpula curva inteira órfã enquanto as nervuras ainda renderizavam.
 	var roof := site.get_node("Lighthouse_lighthouse_roof") as MeshInstance3D
 	var roof_arrays := roof.mesh.surface_get_arrays(0)
 	check(roof_arrays[Mesh.ARRAY_INDEX]==null or roof_arrays[Mesh.ARRAY_INDEX].is_empty(),"Curved roof and primitive details share non-indexed batches")

@@ -4,7 +4,7 @@ func run() -> void:
 	var world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	# Driving starts after admission, never against the temporary startup car.
+	# A direção começa depois da admissão, nunca contra o carro temporário do início.
 	var startup_deadline := Time.get_ticks_msec() + 90000
 	while Time.get_ticks_msec() < startup_deadline:
 		await physics_frame

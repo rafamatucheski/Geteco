@@ -1,5 +1,5 @@
 extends SceneTree
-## The simple original merge is an independent oracle for the optimized grouping.
+## A junção original simples é um oráculo independente para o agrupamento otimizado.
 class LegacySurface extends "res://world/urban_detail/HarborUrbanSurface3D.gd":
 	func _merge_neighbours() -> void:
 		var changed := true

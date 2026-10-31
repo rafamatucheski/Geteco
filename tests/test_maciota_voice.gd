@@ -6,7 +6,7 @@ const BANK := "res://audio/mission_voices/maciota_baritone/"
 var checks := 0
 var failures := 0
 
-# Keep the real dialogue controller/player; replace only the unrelated world UI.
+# Mantém o controlador/player real de diálogo; substitui só a UI de mundo não relacionada.
 class DialogueSession extends "res://runtime/FullSession.gd":
 	func _ready() -> void:
 		set_process(false)

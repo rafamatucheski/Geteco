@@ -1,5 +1,5 @@
 extends SceneTree
-## Physical and scene-contract checks. These do not certify rendered FPS.
+## Checagens físicas e de contrato da cena. Elas não certificam FPS renderizado.
 const COURSE := preload("res://activities/motocross/MotocrossCourse.gd")
 var checks := 0
 var failures: Array[String] = []
@@ -45,7 +45,7 @@ func connected_yard_checks(course: Node3D, paddock: Node3D) -> void:
 	check(seam_supported,"earth and deck meet with physical support on both sides of the seam")
 	var bike_support := true
 	for bike in paddock.parked_bikes:
-		# Both tire patches, not just the midpoint of the parked motorcycle.
+		# As duas áreas de contato dos pneus, não só o ponto médio da moto estacionada.
 		for wheel_z in [-.88, .83]:
 			var contact: Vector3 = bike.to_global(Vector3(0, 0, wheel_z))
 			var hit := ray(course, contact, .06, .3)
@@ -53,7 +53,7 @@ func connected_yard_checks(course: Node3D, paddock: Node3D) -> void:
 	check(bike_support, "both tires of every parked bike rest on the connected earth at their authored height")
 	var feet_supported := true
 	for person in paddock.drinkers:
-		# Standard seated IK plants feet 40 cm ahead of the pelvis, clear of bench.
+		# O IK sentado padrão planta os pés 40 cm à frente da pelve, livres do banco.
 		for side in [-1.0, 1.0]:
 			var foot: Vector3 = person.model.to_global(Vector3(side * .13, 0, .4))
 			var hit := ray(course, foot, .045, .3)
@@ -62,8 +62,8 @@ func connected_yard_checks(course: Node3D, paddock: Node3D) -> void:
 	var keeper_floor := ray(course, keeper.global_position, .045, .3)
 	feet_supported = feet_supported and not keeper_floor.is_empty() and absf(float(keeper_floor.position.y) - keeper.global_position.y) < .025
 	check(feet_supported, "seated riders' planted feet and rental keeper share supported ground height")
-	# A usable corridor beside the furniture, through service and parked bikes,
-	# then down the earth taper into the park access. No model-derived heights.
+	# Um corredor utilizável ao lado da mobília, passando pelo serviço e pelas motos estacionadas,
+	# depois descendo a rampa de terra até o acesso do parque. Sem alturas derivadas do modelo.
 	var route := PackedVector3Array([Vector3(-230,.13,-28), Vector3(-226,.13,-30), Vector3(-225.8,.13,-35), Vector3(-216,.13,-35), Vector3(-216,.13,-39), Vector3(-225,.13,-39), Vector3(-225,.004,-43)])
 	var continuous := true
 	var samples := 0

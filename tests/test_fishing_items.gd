@@ -1,5 +1,5 @@
 extends SceneTree
-## Transaction contracts only; does not certify rendered menus or lake access.
+## Só contratos de transação; não certifica menus renderizados nem acesso ao lago.
 const ITEMS := preload("res://activities/fishing/FishingCatchItems.gd")
 const RULES := preload("res://activities/fishing/FishingRules.gd")
 const GRID := preload("res://systems/inventory/GridInventory.gd")

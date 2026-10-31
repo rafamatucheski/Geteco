@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Every effective facade footprint, inhabited floor and roof. The rendered
-## branch records real actors and positive controls in the gameplay projection.
+## Toda área efetiva de fachada, andar habitado e telhado. O ramo
+## renderizado registra atores reais e controles positivos na projeção de jogo.
 const CATALOG = preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
 const PLACE = preload("res://world/places/harbor_buildings/HarborBuildingPlace.gd")
 const CONTENT = preload("res://world/places/harbor_buildings/HarborBuildingContent.gd")
@@ -15,20 +15,20 @@ var coverage: Array[Dictionary] = []
 func _accessible_depth_pose(room: Node3D, actor: CharacterBody3D) -> Vector3:
 	var height: float = room.floor_height(room.floor_index)
 	var candidates: Array = room.floor_room.solid_bounds.duplicate()
-	# Broad shallow faces cross the camera rays at the physical rear edge.
-	# A deep sofa's bounding height belongs to its distant backrest; an actor
-	# behind its low seat can correctly remain entirely visible from above.
+	# Faces largas e rasas cruzam os raios da câmera na borda física de trás.
+	# A altura envolvente de um sofá fundo pertence ao encosto distante; um ator
+	# atrás do assento baixo pode com razão continuar totalmente visível de cima.
 	candidates.sort_custom(func(a: AABB,b: AABB): return a.size.y/(1.0+a.size.z) > b.size.y/(1.0+b.size.z))
 	for bounds: AABB in candidates:
-		# A side-on partition cannot meaningfully occlude the actor from the
-		# aligned gameplay camera. Keep poses inside a broad projected face.
+		# Uma divisória vista de lado não consegue tampar de forma significativa o ator para a
+		# câmera de jogo alinhada. Mantém as poses dentro de uma face larga projetada.
 		if bounds.size.y < .75 or bounds.size.x < .7: continue
 		var side_offset := minf(.45,bounds.size.x*.25)
 		for offset in [0.0,side_offset,-side_offset]:
 			var point := Vector3(bounds.get_center().x+float(offset),height+.04,bounds.position.z-.45)
 			if absf(point.x) > room.definition.size.x*.5-.4 or absf(point.z) > room.definition.size.y*.5-.4 or not room.is_floor_clear(point): continue
-			# A locked secret chamber is not a valid depth fixture. Reach this
-			# pose from the public hall using real swept-body queries first.
+			# Uma câmara secreta trancada não é fixture de profundidade válida. Alcança esta
+			# pose a partir do salão público usando primeiro consultas reais de corpo varrido.
 			actor.position = Vector3(0,height+.04,1.45)
 			if actor.test_move(actor.global_transform,Vector3(0,0,point.z-1.45)): continue
 			actor.position.z = point.z
@@ -153,8 +153,8 @@ func run() -> void:
 					actor.reset_physics_interpolation()
 					check((await capture()).save_png(folder.path_join(who+"-natural.png")) == OK,who+" real photograph saved")
 					mask_meshes(actor.visual,diagnostic)
-					# An approachable solid supplies real native-depth occlusion;
-					# the unobstructed hall proves the actor is not simply hidden.
+					# Um sólido alcançável fornece oclusão real de profundidade nativa;
+					# o salão desobstruído prova que o ator não está simplesmente escondido.
 					var depth_poses := {"front":Vector3(-.65,altitude+.04,1.45)}
 					if not room.is_rooftop():
 						var behind := _accessible_depth_pose(room,actor)
@@ -176,8 +176,8 @@ func run() -> void:
 						actual.save_png(folder.path_join(who+"-"+pose+".png"))
 						records.append({"place":definition.id,"floor":floor_index,"actor":"Dante" if player else "NPC","pose":pose,"visible_ratio":ratio,"positive_control_pixels":count})
 				actor.free()
-			# Resident actors share the same collision world; no separate actor
-			# viewport or sprite layer can conceal an invalid occupied position.
+			# Os atores moradores compartilham o mesmo mundo de colisão; nenhum viewport separado
+			# de ator ou camada de sprite pode esconder uma posição ocupada inválida.
 			var inhabitants: Node3D = OCCUPANTS.populate(floor_room,definition,floor_index)
 			check(inhabitants.residents.size() == CONTENT.floor_spec(definition,floor_index).occupants.size(),label+" all authored resident stations admitted")
 			await physics_frame

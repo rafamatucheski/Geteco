@@ -1,6 +1,6 @@
 extends SceneTree
-## Resolve every authored take through the production loader in all four
-## subtitle/voice combinations; a manifest alone is not proof of playable audio.
+## Resolve cada tomada autoral pelo loader de produção nas quatro
+## combinações de legenda/voz; um manifesto sozinho não prova áudio tocável.
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
 const SERVICES := preload("res://data/catalogs/ServiceDialogue.gd")
 const ROUTINES := preload("res://gameplay/routines_v1/RoutineCatalog.gd")
@@ -14,8 +14,8 @@ func run() -> void:
 	var failures := 0
 	var catalog_keys: Dictionary = {}
 	for row in catalog.lines: catalog_keys[str(row.key)] = true
-	# Evaluate the real data-producing functions, independently of the Python
-	# extractor's regular expressions, so newly added residents cannot go silent.
+	# Avalia as funções reais que produzem os dados, independente das expressões
+	# regulares do extrator Python, para que moradores recém-acrescentados não fiquem mudos.
 	for definition in ROUTINES.definitions():
 		for text in definition.get("lines", []):
 			checks += 1

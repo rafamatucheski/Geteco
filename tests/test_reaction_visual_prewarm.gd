@@ -98,7 +98,7 @@ func run() -> void:
 	assert_clean(host, expected, camera_nodes, "camera skip")
 	other_camera.free()
 	host.camera.make_current()
-	# Cancel at the first real yield, after temporary models have been created.
+	# Cancela no primeiro yield real, depois que os modelos temporários foram criados.
 	process_frame.connect(cover.hide, CONNECT_ONE_SHOT)
 	await WARM.run(host, cover)
 	check(not WARM._drawn, "losing coverage cancels preparation")

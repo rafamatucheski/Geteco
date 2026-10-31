@@ -1,6 +1,6 @@
 extends SceneTree
-## Actual Main, ordinary player handling and CharacterBody3D.move_and_slide.
-## A finite analog-input controller steers; it never moves/rotates the car body.
+## Main real, dirigibilidade comum do jogador e CharacterBody3D.move_and_slide.
+## Um controlador finito de entrada analógica esterça; nunca move/gira o corpo do carro.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const L := preload("res://world/desert/DesertLayout.gd")
 const ROUTES := preload("res://gameplay/NativeTrafficRoutes.gd")
@@ -49,7 +49,7 @@ func _run() -> void:
 	world.gameplay.god_mode=true
 	world.session.weather.time_of_day=.45; world.session.weather.weather_state=0
 	world.session.weather.weather_timer=3600; world.session.weather._update()
-	# Emulate the existing analog action path, without altering bindings or physics.
+	# Emula o caminho existente de ação analógica, sem alterar atalhos nem física.
 	prior_gamepad=bool(root.get_node("GameInput").using_gamepad)
 	root.get_node("GameInput").using_gamepad=true
 	geometry=GEOMETRY.new(); geometry.configure(L.roads())
@@ -64,16 +64,16 @@ func _run() -> void:
 		if not _check(native!=null,"native guide exists: "+str(setup.id)): _finish(1); return
 		var guide := _extend(native,float(setup.lead),setup.incoming,setup.outgoing)
 		if not await _drive(setup,guide): _finish(1); return
-	# The new private diagonal connects actual vertices of Main Street and the
-	# drag access. Drive it through normal steering, including both junctions.
+	# A nova diagonal privada liga vértices reais da Main Street e do
+	# acesso da arrancada. Dirige por ela com esterço normal, incluindo os dois entroncamentos.
 	var private_graph := ROUTES.new()
 	private_graph.configure(L.roads())
 	var shortcut: Curve3D = private_graph.route_between(Vector3(-590,0,-540),Vector3(-935,0,-760))
 	if not _check(shortcut!=null and shortcut.get_baked_length()<450,"town-to-meet guide takes the compact private shortcut"):
 		_finish(1); return
 	var shortcut_setup := {"id":"town-meet-shortcut","car":"desert_coyote","speed":12.0,"seconds":80.0}
-	# The westbound road curves north just beyond this destination. Retain a
-	# short departure lead inside the actual road instead of extending into sand.
+	# A rua no sentido oeste curva para o norte logo depois deste destino. Mantém uma
+	# saída curta dentro da rua real em vez de avançar pela areia.
 	if not await _drive(shortcut_setup,_extend(shortcut,15.0,Vector3.LEFT,Vector3.LEFT,3.0)):
 		_finish(1); return
 	await _bank_walk()
@@ -136,8 +136,8 @@ func _drive(setup: Dictionary, guide: Curve3D) -> bool:
 		var toward := Vector2(target.x-at.x,target.z-at.z).normalized()
 		var steer := clampf(forward.angle_to(toward)*1.8,-1,1)
 		var target_speed := minf(float(setup.speed),maxf(2.0,(length-offset)*.65))
-		# A human driver brakes before a junction. The fixture must do the same,
-		# rather than asking the car to turn 90 degrees at a constant 12 m/s.
+		# Um motorista humano freia antes de um cruzamento. A fixture precisa fazer o mesmo,
+		# em vez de pedir ao carro que vire 90 graus a 12 m/s constantes.
 		var ahead := guide.sample_baked(minf(length,offset+maxf(12.0,absf(float(car.speed))*1.4)))
 		var future_direction := Vector2(ahead.x-target.x,ahead.z-target.z)
 		if future_direction.length()>.1:

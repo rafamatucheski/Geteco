@@ -70,8 +70,8 @@ func run() -> void:
 	check(world.driving.interact(),"enter actual car beside phone")
 	await create_timer(3).timeout
 	check(world.driving.occupied,"driver seated")
-	# Traffic can make another nearby vehicle the selected entry candidate.
-	# Exercise the phone with the actual occupied car, not the earlier candidate.
+	# O trânsito pode tornar outro veículo próximo o candidato de entrada selecionado.
+	# Exercita o telefone com o carro ocupado real, não com o candidato anterior.
 	car = world.driving.car
 	car.place(DEFINITIONS.at(spec.phone)+Vector3(0,.12,-2.3),PI/2)
 	car.speed = 0

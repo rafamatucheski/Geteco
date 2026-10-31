@@ -1,6 +1,6 @@
 extends SceneTree
-## Complete service over production roads. The observer follows on foot only to
-## retain streaming; the four convoy bodies are never moved or accelerated here.
+## Serviço completo por ruas de produção. O observador segue a pé só para
+## manter o streaming; os quatro corpos do comboio nunca são movidos nem acelerados aqui.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
@@ -63,8 +63,8 @@ func run() -> void:
 	if cobre_arrival_diagnostic:
 		point = Vector3(338,.12,-894)
 		_minimum_travel = 450.0
-	# The saved personal coupe parks eight metres north of this observer; keep
-	# that legal parked car beyond the convoy's bank-side unloading formation.
+	# O cupê pessoal salvo estaciona oito metros ao norte deste observador; mantém
+	# esse carro estacionado legalmente além da formação de descarga do comboio do lado do banco.
 	if _unloading_only: point = Vector3(-230,.12,-890.25)
 	var snapshot := FIXTURE.full_snapshot(point,true)
 	snapshot.campaign.aftermath = {"call_complete":true}
@@ -84,8 +84,8 @@ func run() -> void:
 		if gateway_diagnostic: event.route_offset = 560.0
 		if city_return_diagnostic: event.route_offset = 1280.0
 		if junction_exit_diagnostic: event.route_offset = 400.0
-		# Coverage starts beyond the independently recorded ambient reservation
-		# deadlock; this checkpoint does NOT approve passage through that return.
+		# A cobertura começa além do deadlock de reserva do ambiente registrado de forma
+		# independente; este checkpoint NÃO aprova a passagem por esse retorno.
 		if post_gateway_diagnostic: event.route_offset = 690.0
 		if cobre_arrival_diagnostic:
 			event.route_offset = 1300.0
@@ -204,8 +204,8 @@ func _follow(convoy) -> void:
 	var lead = convoy.fleet[2]
 	world.camera.target = lead
 	if world.player.global_position.distance_to(lead.global_position) < 28 and _observer_clear(world.player.global_position,convoy): return
-	# Find a supported observer foothold; moving this fixture never drives,
-	# unblocks, repairs, hides or teleports service vehicles or ambient traffic.
+	# Acha um ponto de apoio para o observador; mover esta fixture nunca dirige,
+	# desbloqueia, conserta, esconde nem teleporta veículos de serviço ou trânsito do ambiente.
 	for lateral in [8.0,-8.0,11.0,-11.0,15.0,-15.0,20.0,-20.0,26.0,-26.0]:
 		for along in [0.0,5.0,-5.0,10.0,-10.0]:
 			var point: Vector3 = lead.global_position+lead.global_basis.x*lateral+lead.global_basis.z*along
@@ -213,8 +213,8 @@ func _follow(convoy) -> void:
 				world.player.teleport(point)
 				return
 func _observer_clear(point: Vector3,convoy) -> bool:
-	# Standing on clear ground now is insufficient: remain outside the whole future
-	# route corridor, including the native driver's maximum lateral bypass envelope.
+	# Estar em chão livre agora não basta: fica fora de todo o corredor futuro
+	# da rota, incluindo o envelope máximo de desvio lateral do motorista nativo.
 	if not world.session.position_clear(point): return false
 	var nearest: Vector3 = convoy.road.get_closest_point(point)
 	if Vector2(point.x,point.z).distance_to(Vector2(nearest.x,nearest.z)) < 6.0: return false
@@ -284,10 +284,10 @@ func _hull_trace(car, driver) -> Dictionary:
 	return {"contacts":contacts,"rotation_hits":hits,"attempted_yaw":yaw,"goal":goal,"shape_size":car.rotation_shape.size}
 
 func _extend_service_wait(convoy) -> void:
-	# Follow the actual blocker anywhere in the formation. One fixed deadline per
-	# body includes the remaining lawful service and its existing departure policy;
-	# state changes never renew it. Departure still needs visibility/distance checks
-	# in DispatchUnit: the harness does not remove a car when this allowance expires.
+	# Segue o bloqueador real em qualquer ponto da formação. Um prazo fixo por
+	# corpo inclui o serviço legal restante e a política de partida existente;
+	# mudanças de estado nunca o renovam. A partida ainda precisa das checagens de visibilidade/distância
+	# no DispatchUnit: o arnês não remove um carro quando essa tolerância expira.
 	for car in convoy.fleet:
 		if not car.blocked or not is_instance_valid(car.blocker): continue
 		var body = car.blocker

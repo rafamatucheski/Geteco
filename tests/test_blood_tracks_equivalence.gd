@@ -1,6 +1,6 @@
 extends SceneTree
-## Run unchanged against original/candidate canonical scripts. CPU method timings
-## use fixed inputs; they do not certify gameplay frame times or GPU completion.
+## Rode sem mudanças contra os scripts canônicos original/candidato. Os tempos de método na CPU
+## usam entradas fixas; não certificam tempos de quadro de jogo nem a conclusão na GPU.
 const BLOOD := preload("res://gameplay/street_physics/GroundBlood3D.gd")
 const TRACKS := preload("res://gameplay/street_physics/BloodTracks3D.gd")
 var checks := 0
@@ -65,9 +65,9 @@ func query_contract(blood: Node3D) -> void:
 
 func color_after_draw(mesh: MultiMesh, expected: Color, label: String) -> void:
 	var before := mesh.get_instance_color(0)
-	# This fixture writes outside physics while the production MultiMesh keeps
-	# interpolation enabled. Let both physics buffers reach the requested state;
-	# a read after only one draw observes the valid transitional blend instead.
+	# Esta fixture escreve fora da física enquanto o MultiMesh de produção mantém
+	# a interpolação ligada. Deixa os dois buffers de física chegarem ao estado pedido;
+	# uma leitura depois de um desenho só observa em vez disso a mistura transicional válida.
 	for step in 2: await physics_frame
 	await RenderingServer.frame_post_draw
 	var actual := mesh.get_instance_color(0)
@@ -100,7 +100,7 @@ func fade_contract(tracks: Node3D) -> void:
 		tracks._clock += .25
 		tracks._fade()
 	await color_after_draw(mesh, faded, "expired mark remains transparent after repeated updates")
-	# Fill the rest of the ring, then exercise reuse of the expired first slot.
+	# Preenche o resto do anel e depois exercita o reuso do primeiro slot expirado.
 	for index in range(1, tracks.MAX_MARKS):
 		tracks._emit(Vector3(index, 0, 0), 0.0, Vector2(.2, .5), .7)
 	tracks._emit(Vector3(7, 1, 9), -.2, Vector2(.3, .8), .6)
@@ -165,7 +165,7 @@ func contact_contract(blood: Node3D) -> void:
 	person.add_child(person.visual)
 	director.members.append(person)
 	make_stain(blood, Vector3.ZERO, .5, 1.0)
-	# Integration uses the engine's normal callbacks, not a manually driven loop.
+	# A integração usa os callbacks normais do motor, não um laço acionado à mão.
 	for step in 4: await physics_frame
 	tracks.set_physics_process(false)
 	check(tracks._tracks.has(car.get_instance_id()), "vehicle contact acquires tire residue")

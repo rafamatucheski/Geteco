@@ -1,5 +1,5 @@
 extends SceneTree
-## Real drivers and collisions in Main, isolated low demand. Render for visual evidence.
+## Motoristas e colisões reais no Main, demanda baixa isolada. Renderize para evidência visual.
 const VEHICLE = preload("res://scripts/Vehicle.gd")
 const DATA = preload("res://world/editing/WorldEditData.gd")
 var world
@@ -101,16 +101,16 @@ func run():
 			if reverse:nodes.reverse()
 			var route: Curve3D=graph._curve(nodes,false)
 			route.set_meta("traffic_open",true)
-			# A driveway can finish at a pedestrian storefront. Test its vehicle
-			# approach, keeping the starting body clear of that terminal doorway.
+			# Uma entrada de garagem pode terminar numa loja de pedestres. Testa a aproximação
+			# do veículo, mantendo o corpo inicial longe dessa porta terminal.
 			var start_offset=8.0 if reverse else 1.0
 			var point=route.sample_baked(start_offset,true)+Vector3.UP*.12
 			var direction=route.sample_baked(start_offset+.5,true)-route.sample_baked(start_offset,true)
 			var yaw=atan2(-direction.x,-direction.z)
 			world.player.teleport(point+Vector3(0,0,12))
 			world.production._update_physical_residency(point)
-			# Admit each point in its owning region. Building a Harbor chunk at a
-			# mountain coordinate makes its later eviction suspend the nearby car.
+			# Admite cada ponto na região dona dele. Montar um chunk do Harbor numa
+			# coordenada da montanha faz o despejo posterior dele suspender o carro próximo.
 			for location in [point,center]:
 				var region_id=preload("res://world/regions/WorldConnection3D.gd").logical_region(location)
 				if world.production.regions.has(region_id):world.production.regions[region_id].prepare_collision_at(location)

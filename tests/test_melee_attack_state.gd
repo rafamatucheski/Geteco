@@ -1,6 +1,6 @@
 extends SceneTree
-## Regression: switching away from a heavy combo must not carry its hit-stop,
-## heavy flag or combo pitch step into knife, katana or firearms.
+## Regressão: trocar de um combo pesado não pode levar o hit-stop dele,
+## a flag de pesado nem o passo de tom do combo para faca, katana ou armas de fogo.
 const POSE = preload("res://gameplay/WeaponRigPose.gd")
 var failures: Array[String] = []
 

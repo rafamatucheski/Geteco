@@ -1,7 +1,7 @@
 extends SceneTree
-## Finite geometry/lifecycle checks with a real renderer (the dummy headless
-## server does not retain MultiMesh transforms). Main screenshots separately
-## establish the visual result in the real neighborhood.
+## Checagens finitas de geometria/ciclo de vida com renderizador real (o servidor dummy
+## headless não guarda transformações de MultiMesh). As capturas do Main estabelecem
+## à parte o resultado visual no bairro real.
 const SIGHTLINE = preload("res://world/places/harbor_buildings/HarborBuildingSightline.gd")
 class ChunkOwner:
 	extends Node3D

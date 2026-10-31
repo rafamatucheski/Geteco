@@ -96,8 +96,8 @@ func run() -> void:
 		if row.model == "urban_setback":
 			check(not hit(building.to_global(Vector3(building.building_size.x*.46,building.height*.92,0))),"Setback sky is not filled by collision")
 	region.release_chunks()
-	# This fixture disables region processing. Production retirement is sliced
-	# across frames; explicitly run that same drain before checking disposal.
+	# Esta fixture desliga o processamento da região. A aposentadoria de produção é fatiada
+	# ao longo dos quadros; roda explicitamente esse mesmo esvaziamento antes de conferir o descarte.
 	for frame in 120:
 		region._drain_retired()
 		await process_frame

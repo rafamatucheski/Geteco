@@ -1,5 +1,5 @@
 extends "res://tests/test_belt_lantern_occlusion.gd"
-## Actual fleet projectors must originate at the front lamps and stop at solids.
+## Os projetores reais da frota precisam nascer nos faróis da frente e parar em sólidos.
 
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return

@@ -1,5 +1,5 @@
 extends SceneTree
-## Reproduction only. Does not alter port production scripts or personal saves.
+## Só reprodução. Não altera scripts de produção do porto nem saves pessoais.
 var world
 var failures: Array[String] = []
 var output := "res://evidence/video-review-phase4-20260924/"

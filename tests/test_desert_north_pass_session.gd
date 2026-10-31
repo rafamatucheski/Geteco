@@ -1,6 +1,6 @@
 extends "res://tests/test_desert_community_session.gd"
-## Real rendered Main and real vehicle physics. Campaign states are valid test
-## fixtures; this does not claim to replay the entire desert campaign.
+## Main renderizado real e física real de veículo. Os estados de campanha são fixtures
+## de teste válidas; isto não afirma repetir a campanha inteira do deserto.
 const PASS_LAYOUT:=preload("res://world/desert/north_pass/DesertNorthPassLayout.gd")
 const STORY:=preload("res://runtime/desert/DesertStoryState.gd")
 const VEHICLE:=preload("res://scripts/Vehicle.gd")
@@ -20,7 +20,7 @@ func run() -> void:
 	var snapshot:=FIXTURE.full_snapshot(at,true)
 	snapshot.campaign.aftermath={"call_complete":true}
 	snapshot.region_id="desert"
-	# A legacy checkpoint could stand here before this worksite was authored.
+	# Um checkpoint legado podia ficar aqui antes de esta obra ser autorada.
 	snapshot.world.pedestrian={"region":"desert","position":[349,.08,-1900]}
 	var path:=FIXTURE.write_fixture(folder,"save.json",snapshot)
 	check(not path.is_empty(),"isolated closed-road checkpoint valid")
@@ -38,8 +38,8 @@ func run() -> void:
 	pass_runtime.refresh()
 	check(not PASS_LAYOUT.completed(world.session.state.world_state),"unfinished desert campaign keeps worksite")
 	await photo("north-highway-junction")
-	# Main already supplies PlayerCoupe here; a second spawn would overlap it.
-	# Only this isolated fixture sets its initial heading after normal admission.
+	# O Main já fornece o PlayerCoupe aqui; um segundo spawn se sobreporia a ele.
+	# Só esta fixture isolada define o rumo inicial dele depois da admissão normal.
 	var car: CharacterBody3D=world.driving.car
 	check(is_instance_valid(car),"production player car exists")
 	if not is_instance_valid(car): quit(1); return
@@ -83,7 +83,7 @@ func run() -> void:
 	await physics_frame
 	check(not gates[0].visible and not is_instance_valid(pass_runtime._workers),"validated final campaign state removes works and workers")
 	await photo("opened-road-gameplay")
-	# Sweep uses this real car's own collision shape, independently of speed.
+	# A varredura usa a própria forma de colisão deste carro real, independente da velocidade.
 	check(not car.test_move(car.global_transform,Vector3(0,0,-115)),"real car capsule clears released road")
 	Input.action_press("accelerate",.32)
 	for i in 1200:
@@ -102,7 +102,7 @@ func run() -> void:
 	await photo("north-turnaround-and-map-end")
 	await overview("north-cut-overview")
 	check(world.session.position_clear(Vector3(342.5,.08,-1934)),"supported turning space before final guardrail")
-	# Save/restore semantics use the same authored campaign condition.
+	# A semântica de salvar/restaurar usa a mesma condição autoral de campanha.
 	await stage_at(Vector3(349,.08,-1810))
 	check(world.session.save_game(),"completed pass checkpoint writes isolated disk")
 	var persisted:=STORE.read_valid(path)
@@ -118,8 +118,8 @@ func run() -> void:
 	await create_timer(.4).timeout
 	check(not is_instance_valid(pass_runtime._workers),"workers absent away from completed site")
 	await photo("north-highway-junction")
-	# Final visual follow-up to the community run: continuous pipe to the existing
-	# tower outlet, added after that run exposed a short disconnected inlet.
+	# Acompanhamento visual final da rodada da comunidade: cano contínuo até a saída
+	# existente da torre, acrescentado depois que essa rodada expôs uma entrada curta desconectada.
 	await stage_at(SITE.RADIO)
 	await create_timer(.5).timeout
 	await photo("community-connected-tower-pipe")
@@ -127,8 +127,8 @@ func run() -> void:
 	quit(0 if failures==0 else 1)
 
 func art_review() -> void:
-	# Focused recheck after the rock profile/material and utility-pole corrections;
-	# the prior full ordinary-input/cold-save run remains separate evidence.
+	# Reconferência focada depois das correções do perfil/material da rocha e do poste;
+	# a rodada completa anterior com entrada comum/save frio continua evidência à parte.
 	await stage_at(Vector3(349,.08,-1534))
 	var car: CharacterBody3D=world.driving.car
 	var virtual_pose:=car.global_transform
@@ -148,8 +148,8 @@ func art_review() -> void:
 		if not STORY.data(world.session.state.world_state)[flag]: check(STORY.mark(world.session.state.world_state,flag),"fixture final flag "+str(flag))
 	pass_runtime.refresh()
 	await physics_frame
-	# This is an unoccupied fixture car. Move Dante out of its virtual swept
-	# lane; otherwise the query correctly collides with the test's own actor.
+	# Este é um carro de fixture desocupado. Tira o Dante da faixa virtual varrida
+	# dele; senão a consulta colide com razão com o próprio ator do teste.
 	await stage_at(Vector3(349,.08,-1810))
 	virtual_pose.origin=Vector3(345,.08,-1786)
 	var collision:=KinematicCollision3D.new()

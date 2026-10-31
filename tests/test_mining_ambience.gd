@@ -1,5 +1,5 @@
 extends SceneTree
-## Audio lifecycle contract; does not certify the audible mix or rendered FPS.
+## Contrato de ciclo de vida do áudio; não certifica a mistura audível nem o FPS renderizado.
 const AMBIENCE := preload("res://audio/mining/MiningAmbience.gd")
 var failures: Array[String] = []
 var checks := 0
@@ -27,8 +27,8 @@ func _run() -> void:
 		_check(sound._bed.stream != null and sound._bed.stream.get_length() > 0, kind + " recorded bed loaded")
 		_check(sound._details.size() == 3 and not sound._details.has(null), kind + " structural cues loaded")
 		_check(sound._bed.playing and sound.get_child_count() == 2, kind + " starts with only two positional voices")
-		# Exercise a live detail at the exact moment of suspension, not only an
-		# already idle channel. This catches sounds leaking out of an empty room.
+		# Exercita um detalhe vivo exatamente no momento da suspensão, não só um
+		# canal já ocioso. Isso pega sons vazando de uma sala vazia.
 		sound._detail_clock = 0
 		sound._process(.3)
 		_check(sound._detail.playing, kind + " structural cue actually started")

@@ -1,6 +1,6 @@
 extends SceneTree
-## Local physical clearance at the recorded Market queue. This fixture tests
-## geometry and signal retention; Main owns live traffic chains and the bank.
+## Folga física local na fila registrada da Market. Esta fixture testa
+## geometria e retenção pelo sinal; o Main é dono das cadeias vivas de trânsito e do banco.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const DRIVER := preload("res://gameplay/jessica/JessicaGetawayDriver.gd")
 const SIGNALS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
@@ -33,8 +33,8 @@ func parked(parent: Node3D, archetype: String, id: String, point: Vector3, yaw: 
 	return car
 
 func pin_phase(center: Vector3, phase_time: float) -> void:
-	# Only this fixture pins the shared phase clock, as the existing signal
-	# visual-sync regression does. Product clocks and bodies are unchanged.
+	# Só esta fixture fixa o relógio de fases compartilhado, como faz a regressão
+	# existente de sincronia visual dos sinais. Os relógios e corpos do produto não mudam.
 	SIGNALS._phase_frame = Engine.get_process_frames()
 	SIGNALS._phase_time = phase_time-SIGNALS._offset(center)
 
@@ -46,8 +46,8 @@ func run() -> void:
 	solid(stage,Vector3(80,.30,.20),Vector3(130,.15,88))
 	var car: CharacterBody3D = parked(stage,"jessica_jetta_gli","jessica_jetta_gli",Vector3(109.6355,.12,79.75542),-1.5636568069458)
 	var front: CharacterBody3D = parked(stage,"cobra_v8","queue_front",Vector3(116.1219,.12,79.83942),-1.57066118717194)
-	# The trace did not record the rear archetype. A real Nimbus hull is a
-	# conservative 5.11x2.338m civilian envelope at the measured rear pose.
+	# O rastreio não registrou o arquétipo de trás. Um casco real de Nimbus é um
+	# envelope civil conservador de 5.11x2.338m na pose traseira medida.
 	var rear: CharacterBody3D = parked(stage,"nimbus_minivan","queue_rear",Vector3(102.672,.12,79.69102),-PI*.5)
 	for i in 45: await physics_frame
 	var front_start: Vector3 = front.global_position

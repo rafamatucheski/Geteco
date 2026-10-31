@@ -1,5 +1,5 @@
 extends "res://tests/desert_village_homes_session.gd"
-## Keep the inventory/save/Main benchmark coverage while using the current push doors.
+## Mantém a cobertura de inventário/save/benchmark do Main usando as portas de empurrar atuais.
 func enter(id: String) -> bool:
 	world.player.automatic_direction=world.session.weapon_shop_entrance._inward(id)
 	var deadline := Time.get_ticks_msec()+12000

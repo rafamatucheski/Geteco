@@ -1,8 +1,8 @@
 extends SceneTree
-## Targeted integration edges, not a replacement for the full normal fishing session.
-## Uses real production, paid entries, touch events and phase transitions. Explicit
-## fixtures select a 14 kg fish and shorten waiting/fight progress to reach edges.
-## Run with --no-save --touch-controls; all files stay in an isolated evidence folder.
+## Bordas de integração dirigidas, não substituto da sessão normal completa de pesca.
+## Usa produção real, inscrições pagas, eventos de toque e transições de fase. Fixtures
+## explícitas selecionam um peixe de 14 kg e encurtam a espera/briga para chegar às bordas.
+## Rode com --no-save --touch-controls; todos os arquivos ficam numa pasta de evidência isolada.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LOCATION := preload("res://runtime/FishingLocation.gd")
 const FISH_STATE := preload("res://activities/fishing/FishingState.gd")
@@ -69,13 +69,13 @@ func hook_large_fish(use_touch := false) -> bool:
 	if use_touch: await finger("interact", false)
 	else: press("interact", false)
 	check(fishing.phase == "casting", "release launches the real cast")
-	# Selection fixture: valid maximum specimen, chosen after the production roll.
+	# Fixture de seleção: espécime máximo válido, escolhido depois do sorteio de produção.
 	fishing.current_fish = {"id":"pirarara", "grams":14000}
 	if not (await until_phase("waiting")):
 		check(false, "cast reaches waiting")
 		return false
 	await create_timer(.2).timeout
-	# Skip only random bite delay. The normal waiting transition opens the bite.
+	# Pula só o atraso aleatório da fisgada. A transição normal de espera abre a fisgada.
 	fishing._phase_time = 0.0
 	if not (await until_phase("bite")):
 		check(false, "float opens the hook window")
@@ -92,8 +92,8 @@ func reach_landing() -> bool:
 	await create_timer(.25).timeout
 	fishing._update_hud()
 	await capture("large-fish-reeling-%d" % int(fishing.serial))
-	# Boundary fixture: full-session runner already covers the sustained fight.
-	# Keep actual Fight.update and the landing transition under test.
+	# Fixture de limite: o runner da sessão completa já cobre a briga sustentada.
+	# Mantém sob teste o Fight.update real e a transição de pouso do peixe.
 	fishing.fight.progress = .99
 	fishing.fight.tension = .45
 	press("interact")
@@ -129,7 +129,7 @@ func run() -> void:
 	while world.session == null or not world.session.ready_for_play or not world.production.startup_streaming_settled:
 		await physics_frame
 		if _finishing: return
-	# Apply after startup settings, which may restore the user's ultrawide window.
+	# Aplica depois das configurações do início, que podem restaurar a janela ultrawide do usuário.
 	root.get_node("V2Settings").text_language = "pt_BR"
 	TranslationServer.set_locale("pt_BR")
 	if DisplayServer.get_name() != "headless":
@@ -175,7 +175,7 @@ func run() -> void:
 	check(int(fishing.snapshot().catches) == count_before and fishing.snapshot().rewards.is_empty(), "cancelled hook awards neither fish nor prize")
 	check(world.session.state.economy.balance == 490, "cancelled hook costs only its entry")
 
-	# Cancellation during extraction must not persist the still-unlanded fish.
+	# Cancelar durante a retirada não pode persistir o peixe ainda não trazido.
 	if not (await start_attempt(0)) or not (await hook_large_fish()) or not (await reach_landing()): await finish(); return
 	await create_timer(.65).timeout
 	check(fishing.phase == "landing" and int(fishing.snapshot().catches) == count_before, "partially extracted fish has not been persisted")
@@ -185,7 +185,7 @@ func run() -> void:
 	check(int(fishing.snapshot().catches) == count_before and fishing.snapshot().rewards.is_empty(), "cancelled landing awards neither fish nor prize")
 	check(world.session.state.economy.balance == 480, "cancelled landing costs only its entry")
 
-	# Free catch stays on screen for inspection of the large model and result card.
+	# A captura livre fica na tela para inspecionar o modelo grande e o cartão de resultado.
 	if not (await start_attempt(-1)) or not (await hook_large_fish()) or not (await reach_landing()): await finish(); return
 	var fish_id: int = fishing._rod._fish.get_instance_id()
 	await create_timer(.9).timeout
@@ -207,7 +207,7 @@ func run() -> void:
 	expect_released("caught cancellation")
 	check(world.session.state.economy.balance == 470, "free fishing grants no tournament prize")
 
-	# Expiry preserves the earned fish, then waits for choice and its animation.
+	# A expiração preserva o peixe conquistado e depois espera a escolha e a animação dela.
 	if not (await start_attempt(0)) or not (await hook_large_fish()) or not (await reach_landing()): await finish(); return
 	fishing.remaining = .04
 	await create_timer(.3).timeout
@@ -256,7 +256,7 @@ func record_regime(regime: String, time_of_day: float) -> void:
 	var previous := started
 	var reel := false
 	while fishing.active and previous - started < 32000000:
-		# Same seed and inputs as the normal session: preserve naturally rolled size.
+		# Mesma semente e entradas da sessão normal: preserva o tamanho sorteado naturalmente.
 		match str(fishing.phase):
 			"ready": press("interact"); reel = true
 			"charging":

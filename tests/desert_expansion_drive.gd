@@ -1,6 +1,6 @@
 extends "res://tests/desert_curve_drive.gd"
-## Main .NET with ordinary player analog input and unchanged vehicle physics.
-## Only fixture starts are positioned; no car pose/velocity is written in a drive.
+## Main .NET com entrada analógica comum do jogador e física de veículo inalterada.
+## Só os inícios da fixture são posicionados; nenhuma pose/velocidade de carro é escrita durante a direção.
 const LAND := preload("res://world/desert/expansion/DesertLandforms.gd")
 var car: CharacterBody3D
 var source_start: Dictionary = {}
@@ -105,7 +105,7 @@ func _drive_path(setup: Dictionary) -> bool:
 	var guide: Curve3D=setup.guide
 	var length := guide.get_baked_length()
 	var cruise: float=setup.speed
-	# Budget allows average speed of only40% of cruise plus acceleration/braking.
+	# O orçamento permite velocidade média de só40% da de cruzeiro mais aceleração/frenagem.
 	var bound_seconds := 20.0+length/maxf(1.0,cruise*.4)
 	var began := Time.get_ticks_msec()
 	var last_progress_ms := began

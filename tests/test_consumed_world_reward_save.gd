@@ -1,6 +1,6 @@
 extends SceneTree
-## Collected food/drink remains collected after use, with durable grant evidence.
-## Disk writes use an isolated evidence path and never the user's progress.json.
+## Comida/bebida coletada continua coletada depois do uso, com evidência durável da concessão.
+## As gravações em disco usam um caminho de evidência isolado e nunca o progress.json do usuário.
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
 const HOMES := preload("res://world/desert/village/DesertVillageHomes.gd")

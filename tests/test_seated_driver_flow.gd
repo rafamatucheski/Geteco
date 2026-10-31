@@ -93,15 +93,15 @@ func run() -> void:
 		car.throttle_input = 0
 		car.external_input = false
 		if "--trace-prior-stop" in OS.get_cmdline_user_args():
-			# Reproduce only the previous stopping setup. Player handling overwrites
-			# brake_input, so this is coasting rather than a real brake command.
+			# Reproduz só a preparação de parada anterior. A dirigibilidade do jogador sobrescreve
+			# brake_input, então isto é deixar rolar, não um comando real de freio.
 			car.brake_input = true
 			for i in 300:
 				await physics_frame
 				if absf(car.speed) < .3: break
 			print("SEATED_FLOW_PRIOR_STOP ", JSON.stringify({"id": id, "speed": car.speed, "horizontal_speed": car.horizontal_velocity.length(), "would_bailout": car.horizontal_velocity.length() > BAILOUT.MIN_SPEED}))
-		# Drive the actual input path, then verify the velocity used by leave().
-		# Assigning speed=0 alone leaves horizontal momentum and can trigger a bail-out.
+		# Aciona o caminho real de entrada e então confere a velocidade usada por leave().
+		# Atribuir só speed=0 deixa momento horizontal e pode disparar um pulo para fora.
 		Input.action_press("handbrake")
 		var stopped_frames := 0
 		for i in 300:

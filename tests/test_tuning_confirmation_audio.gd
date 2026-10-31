@@ -1,6 +1,6 @@
 extends SceneTree
-## Drive the real authoritative workshop handler: refused purchases are silent,
-## successful paid/free installation gets one routed, reusable confirmation.
+## Aciona o handler real de autoridade da oficina: compras recusadas ficam em silêncio,
+## instalação paga/grátis bem-sucedida recebe uma confirmação roteada e reutilizável.
 const WORKSHOP := preload("res://runtime/MaciotaWorkshop.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")

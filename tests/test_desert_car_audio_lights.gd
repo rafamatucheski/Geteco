@@ -1,6 +1,6 @@
 extends SceneTree
-## Regression: all authored desert cars need independent headlights and an
-## audible driver's engine, including the normal elevated gameplay camera.
+## Regressão: todos os carros autorais do deserto precisam de faróis independentes e de um
+## motor audível para o motorista, inclusive na câmera de jogo elevada normal.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const CATALOG := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 var failures: Array[String] = []
@@ -59,7 +59,7 @@ func run() -> void:
 		for i in 30: sound._process(.05)
 		check(sound._bank.size() == 7 and sound._layers.all(func(p): return p.playing), id+": loaded engine bands play")
 		check(sound._layers.all(func(p): return p.attenuation_model == AudioStreamPlayer3D.ATTENUATION_DISABLED and p.max_distance == 0 and p.panning_strength == 0), id+": driver audio is foreground like the existing fleet")
-		# The same listener used by drag must hear the motor above tire squeal.
+		# O mesmo ouvinte usado na arrancada precisa ouvir o motor acima do chiado dos pneus.
 		sound.drivetrain.wheelspin = 1.0
 		for i in 20: sound._process(.05)
 		check(sound._tire.playing and sound._tire.volume_db <= -13.9 and sound._tire.volume_db >= -16.0 and sound._tire.max_db <= -10.0 and sound._tire.unit_size <= 4.0, id+": wheelspin remains below the engine with bounded near-listener gain")
@@ -82,7 +82,7 @@ func run() -> void:
 		tires._update_skid_audio(true, 20.0, 0.0)
 		check(not sound._tire.playing and tires.skid_audio.playing, id+": generic tire voice resumes when powertrain wheelspin stops")
 		tires._update_skid_audio(false, 0.0, 0.0)
-		# A detached cinematic/drag camera must not mute the occupied car.
+		# Uma câmera cinematográfica/de arrancada desligada não pode silenciar o carro ocupado.
 		camera.position = Vector3(0,100,100)
 		for i in 6: sound._process(.05)
 		check(sound._layers.all(func(p): return p.playing), id+": distant camera does not mute driver")

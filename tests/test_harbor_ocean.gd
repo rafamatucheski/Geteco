@@ -60,7 +60,7 @@ func run() -> void:
 		dry_geometry(boundary,ocean.shores)
 	ocean.configure([],[])
 	assert(is_equal_approx(dry_geometry(ocean.build_chunk(holder,Rect2(0,0,16,16)),[]),256.0),"Reconfigure does not retain stale dry land")
-	# The quay experiment must not replace canal/tunnel or distant sea materials.
+	# O experimento do cais não pode substituir os materiais do canal/túnel nem do mar distante.
 	var pilot := preload("res://world/regions/HarborWaterPilot.gd")
 	var prior_enabled: bool = pilot.enabled
 	pilot.enabled = true

@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Native room contracts: actual Actor capsules, complete authored solids,
-## valid walking paths, and rendered depth with unobstructed positive controls.
+## Contratos de sala nativa: cápsulas reais do Actor, sólidos autorais completos,
+## caminhos de caminhada válidos e profundidade renderizada com controles positivos desobstruídos.
 const ARCADE := preload("res://world/places/arcade/ArcadePlace.gd")
 const RESIDENTS := preload("res://world/places/OriginalResidents.gd")
 const EXPECTED_SOLIDS := ["PinballCabinet","BlocksCabinet","RacerCabinet","FighterCabinet",

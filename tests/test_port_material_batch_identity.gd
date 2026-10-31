@@ -34,7 +34,7 @@ func _check(materials: Array, expected: int, label: String) -> void:
 	for batch in fixture.get_node("BatchedStaticGeometry").get_children():
 		preserved.append(batch.material_override)
 	for source in materials:
-		# Object-null equals null, but Array.has compares their Variant types.
+		# Object-null é igual a null, mas Array.has compara os tipos Variant deles.
 		_expect(preserved.any(func(material): return material == source), label + ": material identity preserved")
 	fixture.free()
 

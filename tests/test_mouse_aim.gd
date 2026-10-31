@@ -1,5 +1,5 @@
 extends SceneTree
-## Real camera projection and physics, isolated from city simulation.
+## Projeção real da câmera e física, isoladas da simulação da cidade.
 var failures: Array[String] = []
 class Target extends CharacterBody3D:
 	var health := 100.0

@@ -1,8 +1,8 @@
 extends SceneTree
-## Finite actual-Main test: real doorway, focused GUI buttons, native wallet,
-## isolated disk SaveStore, cold reload, and owned-car distance despawn/restore.
-## Fixture seeds three verified-result prerequisites; it does not claim to test
-## those races (covered by the drag integration fixture).
+## Teste finito no Main real: porta real, botões de GUI com foco, carteira nativa,
+## SaveStore isolado em disco, recarga fria e despawn/restauração por distância do carro próprio.
+## A fixture semeia três pré-requisitos de resultado verificado; não afirma testar
+## essas corridas (cobertas pela fixture de integração da arrancada).
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
@@ -53,7 +53,7 @@ func _seed() -> Dictionary:
 	return state.snapshot()
 
 func _run() -> void:
-	# --no-save would make session.save_game return true without disk persistence.
+	# --no-save faria session.save_game devolver true sem persistência em disco.
 	if not _check(not "--no-save" in OS.get_cmdline_user_args(),"fixture requires real isolated disk writes, without --no-save"):
 		_finish(2); return
 	folder = FIXTURE.output_dir("desert-workshop-session")
@@ -97,7 +97,7 @@ func _run() -> void:
 	if DisplayServer.get_name()!="headless":
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(folder.path_join("tuning.png"))
-	# Exercise FullSession._input, not the panel's close signal directly.
+	# Exercita FullSession._input, não o sinal de fechar do painel diretamente.
 	var cancel := InputEventAction.new()
 	cancel.action = "ui_cancel"
 	cancel.pressed = true
@@ -120,7 +120,7 @@ func _run() -> void:
 		_finish(1); return
 	_check(session.state.economy.balance==before_money-int(CARS.spec("desert_faisca").price),"GUI car purchase charges its catalogue price")
 	_check(not purchased.get_meta("awaiting_ground",false),"paid delivery has an admitted physical bay")
-	# Native setters after _ready, then real persistence, protect model repaint.
+	# Setters nativos depois do _ready e depois persistência real protegem a repintura do modelo.
 	purchased.paint_color = PAINT
 	purchased.restore_health(purchased.max_health*.57)
 	var owned_health: float = purchased.health
@@ -246,8 +246,8 @@ func _press_button(button: Button) -> bool:
 	var callbacks: Array[String] = []
 	for connection in button.pressed.get_connections(): callbacks.append(str(connection.callable))
 	_trace_gui("requested",button.text+" "+str(button.get_path()),{"pressed_callbacks":callbacks})
-	# FullSession defers initial focus to its first menu button. Let that existing
-	# lifecycle finish before selecting the target for this real keyboard event.
+	# A FullSession adia o foco inicial para o primeiro botão do menu. Deixa esse ciclo de vida
+	# existente terminar antes de selecionar o alvo para este evento real de teclado.
 	await _frames(2)
 	gui_trace_phase = "selecting"
 	button.grab_focus()
@@ -306,7 +306,7 @@ func _diagnose_failed_delivery(before_money: int) -> void:
 	for car in world.production.vehicles:
 		if not is_instance_valid(car) or car.global_position.distance_to(point)>35.0: continue
 		report.nearby.append({"id":car.vehicle_id,"archetype":car.archetype,"position":str(car.global_position),"yaw":car.rotation.y,"half_width":car.half_width,"half_length":car.half_length,"layer":car.collision_layer,"mask":car.collision_mask,"queued":car.is_queued_for_deletion(),"awaiting_ground":car.get_meta("awaiting_ground",false)})
-	# Inspect the real candidate hull without invoking the purchase transaction.
+	# Inspeciona o casco candidato real sem chamar a transação de compra.
 	var candidate := preload("res://scripts/Vehicle.gd").new()
 	candidate.archetype="desert_faisca"
 	candidate.vehicle_id="test_delivery_probe"

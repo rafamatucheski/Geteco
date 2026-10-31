@@ -1,5 +1,5 @@
 extends SceneTree
-## Save admission for the combined pack, independent of scenes or personal saves.
+## Admissão de save do pacote combinado, independente de cenas ou saves pessoais.
 const PACK := preload("res://systems/campaign/MountainPackState.gd")
 const STORY := preload("res://systems/campaign/MountainStoryProgress.gd")
 const DOWNHILL := preload("res://systems/campaign/MountainDownhillProgress.gd")

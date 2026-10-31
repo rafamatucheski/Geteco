@@ -1,6 +1,6 @@
 extends SceneTree
-## Check the actual triangle winding and lens-to-body contact, independently of
-## render screenshots. A lens must be exposed, supported and close to its panel.
+## Confere o sentido real dos triângulos e o contato lente-carroceria, independente das
+## capturas de render. Uma lente precisa ficar exposta, apoiada e perto do painel dela.
 const CATALOG := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const MODEL := preload("res://gameplay/desert_cars/DesertCarModel.gd")
 var checks := 0
@@ -69,8 +69,8 @@ func _run() -> void:
 				var normal: Vector3 = (tri[2]-tri[0]).cross(tri[1]-tri[0]).normalized()
 				if normal.dot(outward)<.8: continue
 				var center: Vector3 = (tri[0]+tri[1]+tri[2])/3.0
-				# Include vertices near the rim: a supported centre alone misses
-				# the corner hanging beyond the bonnet or the trunk edge.
+				# Inclui vértices perto da borda: só um centro apoiado não pega
+				# o canto que sobra além do capô ou da borda do porta-malas.
 				for point: Vector3 in [center,center.lerp(tri[0],.98),center.lerp(tri[1],.98),center.lerp(tri[2],.98)]:
 					tested += 1
 					var origin := point+outward*.15

@@ -1,5 +1,5 @@
 extends SceneTree
-## Authored pieces must copy with collision, survive source deletion and stream independently.
+## As peças autorais precisam copiar com colisão, sobreviver à exclusão da origem e carregar em streaming de forma independente.
 const PIECES := preload("res://world/editing/WorldEditPieces.gd")
 const REGION := preload("res://world/editing/EditableRegion.gd")
 const DATA := preload("res://world/editing/WorldEditData.gd")

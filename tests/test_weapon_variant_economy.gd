@@ -109,8 +109,8 @@ func _legacy_save() -> void:
 	check(ECONOMY.validate_snapshot(restored.snapshot()), "legacy inventory migration retains valid ownership")
 
 func _purchase_with_existing_sidearm() -> void:
-	# Normal progression already carries the starter pistol. New SMGs and their
-	# included ammo must fit in the bag without forcing the short slot empty.
+	# A progressão normal já carrega a pistola inicial. As SMGs novas e a munição
+	# incluída precisam caber na mochila sem forçar o slot curto a ficar vazio.
 	for id: String in ["smg_compact", "smg_tactical", "smg"]:
 		var economy := ECONOMY.new()
 		economy.enable_grid_inventory()

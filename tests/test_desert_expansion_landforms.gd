@@ -1,6 +1,6 @@
 extends SceneTree
-## Finite physical contracts. The parent task owns serialized real-scene captures
-## and frame-time comparison; this test does not approve appearance or FPS.
+## Contratos físicos finitos. A tarefa pai é dona das capturas serializadas da cena real
+## e da comparação de tempo de quadro; este teste não aprova aparência nem FPS.
 const LANDFORMS := preload("res://world/desert/expansion/DesertLandforms.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const GEOMETRY := preload("res://world/desert/DesertGeometry.gd")
@@ -121,8 +121,8 @@ func _run() -> void:
 	quit(0 if failures.is_empty() else 1)
 
 func _dune_entry_sweep() -> void:
-	# Avertical ray allowed the former16mm skirt, but an ordinary upright vehicle
-	# box struck its open edge as a wall. Reproduce that physical entry directly.
+	# Um raio vertical permitia a antiga saia de16mm, mas uma caixa comum de veículo em pé
+	# batia na borda aberta dela como numa parede. Reproduz essa entrada física diretamente.
 	var body := CharacterBody3D.new()
 	body.name="BisonSizedDuneEntrySweep"
 	body.collision_layer=4

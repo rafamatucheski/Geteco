@@ -58,7 +58,7 @@ func run() -> void:
 		verify(lens.get_instance_transform(0).is_equal_approx(pose * offset), "signal lens follows pole")
 	verify(batch.get_instance_transform(1).is_equal_approx(Transform3D.IDENTITY), "neighbor signal stays intact")
 	PROPS.cells.clear()
-	# City trash cans use instancing; exercise that production representation.
+	# As lixeiras da cidade usam instancing; exercita essa representação de produção.
 	var loose := MultiMesh.new()
 	loose.transform_format = MultiMesh.TRANSFORM_3D
 	loose.mesh = CylinderMesh.new()

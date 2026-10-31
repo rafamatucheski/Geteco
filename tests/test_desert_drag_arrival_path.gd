@@ -1,6 +1,6 @@
 extends SceneTree
-## Lane geometry contracts. Rendered physical driving with visitors remains a
-## separate integration check; this test does not certify steering or FPS.
+## Contratos de geometria de faixa. A direção física renderizada com visitantes continua uma
+## checagem de integração à parte; este teste não certifica o esterço nem FPS.
 const ARRIVAL := preload("res://activities/desert_drag/DragArrivalPath.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const ROAD_GEOMETRY := preload("res://world/desert/DesertRoadGeometry.gd")

@@ -44,8 +44,8 @@ func run() -> void:
 		var initial_health: float = car.health
 		var parts := {"wheel_model":"wheel_mesh","wheel_size":"wheel_size_large","wheels":"wheels_bronze","spoiler":"spoiler_sport","taillights":"taillights_smoke"}
 		if TUNING.compatible("sunroof_glass",id): parts.sunroof = "sunroof_glass"
-		# Cover both a saved kit installed before boarding and the live workshop,
-		# where the driver/cabin already exist when the glass is previewed.
+		# Cobre tanto um kit salvo instalado antes do embarque quanto a oficina viva,
+		# onde o motorista/cabine já existem quando o vidro é pré-visualizado.
 		if id in ["desert_coyote","supra_a80"]:
 			car.controlled = true
 			INTERIOR.attach(car)
@@ -57,8 +57,8 @@ func run() -> void:
 			check(is_instance_valid(group.kit) and group.parts.all(func(p): return not p.visible),id+" kit replaces original wheel without doubled geometry")
 			check(group.kit.get_meta("alloy_material").albedo_color == Color("a58450"),id+" kit receives purchased alloy colour")
 		if id == "desert_coyote":
-			# PassengerDesign authors the rotor with #667177. Check those exact
-			# referenced triangles: dark hub pixels alone cannot prove rotor safety.
+			# O PassengerDesign desenha o rotor com #667177. Confere exatamente esses
+			# triângulos referenciados: só pixels escuros do cubo não provam a segurança do rotor.
 			var rotors_checked := 0
 			for group in kits.wheels:
 				var rotor_found := false
@@ -86,9 +86,9 @@ func run() -> void:
 		if parts.has("sunroof"):
 			check(kits.roof.cut_triangles>0 and is_instance_valid(kits.roof.glass_node),id+" glass replaces clipped opaque triangles")
 			for row in kits.roof.surfaces: check(row.part.mesh != row.original,id+" opaque roof mesh actually replaced")
-			# Production's current open_view records the cabin without calling its
-			# legacy _open_roof splitter. Exercise real boarding and the low camera,
-			# then leave/reboard: an opaque roof skin must never cover the aperture.
+			# O open_view atual da produção registra a cabine sem chamar o divisor legado
+			# _open_roof. Exercita o embarque real e a câmera baixa,
+			# depois sai/embarca de novo: uma pele de teto opaca nunca pode cobrir a abertura.
 			for boarding in 2:
 				car.controlled = true
 				INTERIOR.attach(car)
@@ -105,8 +105,8 @@ func run() -> void:
 		check(car.visual.find_children("*","MeshInstance3D",true,false).size()==count,id+" repeated identical preview does not duplicate kits")
 		for i in car.wheels.size(): check(car.wheels[i].transform==original_pivots[i],id+" steering/spin pivot was preserved")
 		check(car.max_forward_speed==initial_speed and car.health==initial_health,id+" preview preserves driving and condition")
-		# Boarding can lazily replace lens instances after a saved kit was applied.
-		# The next visual edit must follow the live material, not a stale reference.
+		# O embarque pode substituir preguiçosamente instâncias de lente depois que um kit salvo foi aplicado.
+		# A próxima edição visual precisa seguir o material vivo, não uma referência obsoleta.
 		for row in kits.tails:
 			var replacement: StandardMaterial3D = row.material.duplicate()
 			if row.part.material_override != null: row.part.material_override = replacement
@@ -195,8 +195,8 @@ func _tail_lens_inspection() -> void:
 	check(equipment.tail_materials.all(func(m): return m.albedo_color==Color("8c1737")),"Releasing physical brake restores installed lens finish")
 	world.free()
 
-## Cast a vertical ray through the middle of the actual opening. Test the
-## installed geometry/materials, including any cabin skin created on boarding.
+## Lança um raio vertical pelo meio da abertura real. Testa a
+## geometria/materiais instalados, incluindo qualquer pele de cabine criada no embarque.
 func _opaque_roof_hits(car: Node3D) -> int:
 	var cabin: Dictionary = car.visual.get_meta("vehicle_interior_spec",{})
 	var z: float = (float(cabin.wz1)+float(cabin.rear_top))*.5

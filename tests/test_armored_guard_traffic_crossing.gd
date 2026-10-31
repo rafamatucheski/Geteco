@@ -1,6 +1,6 @@
 extends "res://tests/test_armored_guard_service_path.gd"
-## Real Vehicle traffic controller and real guard locomotion/collisions.
-## Two directions of traffic cross the cash carrier's service path.
+## Controlador de trânsito real do Vehicle e locomoção/colisões reais do guarda.
+## Duas mãos de trânsito cruzam o caminho de serviço do carregador de dinheiro.
 
 func run() -> void:
 	for direction in [1.0, -1.0]:

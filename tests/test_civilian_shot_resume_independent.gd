@@ -1,6 +1,6 @@
 extends SceneTree
-## Production-connected shot -> perception -> flight -> routine resumption.
-## Requires --no-save --skip-arrival and uses the director owned by ProductionWorld.
+## Tiro ligado à produção -> percepção -> fuga -> retomada da rotina.
+## Exige --no-save --skip-arrival e usa o diretor que pertence ao ProductionWorld.
 
 var world: Node
 var director: Node
@@ -67,8 +67,8 @@ func _run() -> void:
 	check(world.production.no_save, "sessão produtiva está em --no-save")
 	director = world.production.civilian_reactions
 	check(is_instance_valid(director) and director.gameplay == world.gameplay, "ProductionWorld possui o diretor conectado ao Gameplay real")
-	# Population streaming begins after session readiness. Wait for the real
-	# producer instead of treating the first ready frame as an empty fixture.
+	# O streaming da população começa depois da prontidão da sessão. Espera o produtor
+	# real em vez de tratar o primeiro quadro pronto como fixture vazia.
 	await wait_until(func():
 		return world.people.any(func(person): return is_instance_valid(person) and person.route.size() > 1 and not person.controlled_automatically and posmod(int(person.identity), 20) < 11)
 	, 360)

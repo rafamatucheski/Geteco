@@ -11,7 +11,7 @@ func run() -> void:
 	region.set_process(false)
 	var safety = region.coastal_protection
 	check(safety.boundaries.size()>20,"Coastal inventory must include exposed banks")
-	region.free() # Isolate barrier sweeps from buildings and pre-existing rails.
+	region.free() # Isola as varreduras das barreiras dos prédios e dos trilhos pré-existentes.
 	var fixture := Node3D.new()
 	root.add_child(fixture)
 	var foundry := preload("res://world/urban_detail/HarborBridge3D.gd").new()
@@ -39,21 +39,21 @@ func run() -> void:
 		var outward := Vector3(edge.outward.x,0,edge.outward.y)
 		var midpoint: Vector2 = (edge.a+edge.b)*0.5
 		for actor in actors:
-			# Parallel hull starts on the dry side even on the 4.5m port walkway.
+			# O casco paralelo começa do lado seco mesmo na passarela de 4.5m do porto.
 			var origin := Vector3(midpoint.x,0.06,midpoint.y)-outward*1.7
 			var pose := Transform3D(Basis(Vector3.UP,atan2(outward.z,-outward.x)),origin)
 			var collision := KinematicCollision3D.new()
-			# At short concave corners a car already meets the neighbouring rail.
-			# Include recovery contacts, but only an actual coastal solid can pass.
+			# Em cantos côncavos curtos um carro já encontra o trilho vizinho.
+			# Inclui contatos de recuperação, mas só um sólido costeiro real pode passar.
 			var blocked := actor.test_move(pose,outward*4.0,collision,0.001,true)
 			check(blocked and str(collision.get_collider().name).begins_with("CoastalBarrierSolid"),"Unprotected coast %s actor %s"%[midpoint,actor.name])
 	check(styles.size()==4,"Four environmental protection styles")
 	var space := fixture.get_world_3d().direct_space_state
-	# A real dry sidewalk above the channel, beyond the asphalt collider.
+	# Uma calçada seca real acima do canal, além do colisor do asfalto.
 	var support := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(230,2,30),Vector3(230,-2,30),1))
 	check(not support.is_empty(),"Foundry bridge sidewalk must support actors before rail")
 	check(not car.test_move(Transform3D(Basis(Vector3.UP,PI*0.5),Vector3(269,0.06,25)),Vector3(12,0,0)),"Foundry east abutment must not block the full vehicle hull")
-	# Boarding portals and road connections must remain clear at torso height.
+	# Portais de embarque e ligações de rua precisam continuar livres na altura do tronco.
 	for route in [
 		[Vector3(198,0.7,110),Vector3(212,0.7,110)],
 		[Vector3(265.6,0.7,201),Vector3(265.6,0.7,194)],
@@ -68,7 +68,7 @@ func run() -> void:
 		if access.region != "harbor": continue
 		for point: Vector3 in [access.position,access.return_position]:
 			check(not actors[0].test_move(Transform3D(Basis.IDENTITY,point+Vector3.UP*0.06),Vector3.ZERO,null,0.001,true),"Coastal barrier obstructs access/return "+access.id)
-	# The shared bridge used to have a 12.5 m gap at its western guard join.
+	# A ponte compartilhada tinha um vão de 12.5 m na junção oeste da proteção.
 	var connection := preload("res://world/regions/WorldConnection3D.gd").new()
 	fixture.add_child(connection)
 	for i in 2: await physics_frame

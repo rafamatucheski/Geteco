@@ -1,5 +1,5 @@
 extends SceneTree
-## Ownership/persistence regression independent of truck physics and GPU timing.
+## Regressão de posse/persistência independente da física do caminhão e da cronometragem da GPU.
 const DELIVERY := preload("res://gameplay/urban_v1/PortFreightDelivery.gd")
 const FLEET := preload("res://runtime/FleetState.gd")
 
@@ -58,8 +58,8 @@ func run() -> void:
 	fixture.state.world_state.vehicles = []
 	delivery._restore_previous_selection()
 	check(fixture.world.driving.car == prior and fixture.state.world_state.vehicles[0].health == 44, "return preserves the live personal car without healing")
-	# A loaded saved car is allowed to remain unmaterialized until selected by
-	# the existing Fleet restore; keep its identity and position verbatim.
+	# Um carro salvo carregado pode ficar sem materializar até ser selecionado pela
+	# restauração existente da Fleet; mantém a identidade e a posição dele sem alteração.
 	fixture.world.driving.car = null
 	fixture.state.world_state.vehicles = []
 	delivery.previous_vehicle = record.duplicate(true)

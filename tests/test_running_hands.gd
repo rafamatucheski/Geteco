@@ -104,7 +104,7 @@ func run() -> void:
 			check(packet.visible and packet.right_grip, "loaded grenade held visibly at rest")
 			packet = pose.update(id, 1.0/60.0, false, false, 0, false, false, 0, {"loaded": false})
 			check(not packet.visible and not packet.right_grip, "empty hand hides grenade")
-	# Real inventory/state and production presentation, without saves or cheats.
+	# Inventário/estado reais e apresentação de produção, sem saves nem trapaças.
 	var world := Node3D.new()
 	root.add_child(world)
 	var state = preload("res://runtime/GameState.gd").new()

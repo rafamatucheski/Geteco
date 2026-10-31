@@ -21,7 +21,7 @@ func boot(path: String) -> void:
 	world.player.automatic_direction=Vector3.ZERO
 	await create_timer(1).timeout
 func stage_at(point: Vector3) -> void:
-	# Fixture relocation only: this does not certify the long driving routes.
+	# Só realocação da fixture: isto não certifica as rotas longas de direção.
 	world.production.region.set_focus(point)
 	world.production.region.prepare_collision_at(point)
 	await physics_frame
@@ -106,7 +106,7 @@ func run() -> void:
 	var wallet: Dictionary=world.session.state.economy.snapshot()
 	check(wallet.transactions.get("reward:desert_contract_parts",{}).get("amount")==1200,"parts receipt exact")
 	check(wallet.transactions.get("reward:desert_contract_rail",{}).get("amount")==2200,"rail receipt exact")
-	# Earning the first R$ 1,000 also awards the existing first_grand achievement.
+	# Ganhar os primeiros R$ 1,000 também concede a conquista first_grand existente.
 	check(wallet.transactions.get("reward:achievement:first_grand",{}).get("amount")==50,"existing achievement paid independently")
 	check(world.session.state.economy.balance==before+3450,"two payments plus existing achievement, no duplicates")
 	check(STATE.data(world.session.state.world_state).active=="","main story target restored")

@@ -41,7 +41,7 @@ class Session extends RefCounted:
 	var save_block := ""
 	var saves := 0
 	var messages: Array[String] = []
-	# Mirrors the relevant FullSession modal contract; no user save is touched.
+	# Espelha o contrato modal relevante da FullSession; nenhum save do usuário é tocado.
 	func _menu(_title: String) -> void:
 		modal = true
 		world.player.input_locked = true

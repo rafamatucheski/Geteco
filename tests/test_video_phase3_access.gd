@@ -1,5 +1,5 @@
 extends SceneTree
-## Harbor public walk-up doors. Capture the original geometry with --before.
+## Portas públicas de chegada a pé do Harbor. Captura a geometria original com --before.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const IDS := ["harbor_clothing", "harbor_fuel", "harbor_hospital"]
 var world: Node3D
@@ -155,7 +155,7 @@ func _check_access(id: String) -> void:
 	await capture(id + "-approach")
 	if id == "harbor_hospital":
 		check(is_equal_approx(facade.door_amount, 1.0), "ambulance door stays independent and open")
-	# Exercise the actual helper while an unrelated UI owns movement.
+	# Exercita o helper real enquanto uma UI não relacionada é dona do movimento.
 	world.player.teleport(door + Vector3(0, .08, .4))
 	world.player.velocity = Vector3.FORWARD * 2
 	session.modal = true
@@ -208,8 +208,8 @@ func _check_access(id: String) -> void:
 	await _check_cancel(id, door)
 
 func _returned_to_access(id: String, desired: Vector3) -> bool:
-	# The session can step around a pedestrian blocking the authored return.
-	# Accept only its documented candidates, not an arbitrary radius.
+	# A sessão pode contornar um pedestre bloqueando o retorno autoral.
+	# Aceita só os candidatos documentados dela, não um raio arbitrário.
 	var outward := desired - Vector3(PLACES.get_definition(id).exterior_position)
 	outward.y = 0
 	outward = outward.normalized()
@@ -278,7 +278,7 @@ func _check_cancel(id: String, door: Vector3) -> void:
 	access._reentry_remaining = 0.0
 	access.update(.016)
 	check(access._entering, id + " cancellation starts real zoom")
-	# Each newly added ID exercises a different owner that can interrupt zoom.
+	# Cada ID recém-acrescentado exercita um dono diferente que pode interromper o zoom.
 	if id == "harbor_clothing": session.modal = true
 	elif id == "harbor_fuel": session.arrest_pending = true
 	else: world.gameplay.health = 0

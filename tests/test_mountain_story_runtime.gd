@@ -1,8 +1,8 @@
 extends SceneTree
-## Real Main, native plane/cave and actor movement. Initial region placement and
-## room entry are fixture setup, not proof of the entire lake-to-cave route.
-## Run after the shared integration patch with .NET and isolated user-data dirs.
-## This verifies functionality/physics; it makes no visual or FPS claim.
+## Main real, avião/caverna nativos e movimento de ator. O posicionamento inicial na região e
+## a entrada na sala são preparação da fixture, não prova da rota inteira do lago à caverna.
+## Rode depois do patch de integração compartilhado com .NET e diretórios de dados de usuário isolados.
+## Isto confere funcionalidade/física; não faz afirmação visual nem de FPS.
 const STORY := preload("res://activities/mountain_story/MountainStory.gd")
 const PROGRESS := preload("res://systems/campaign/MountainStoryProgress.gd")
 const DEFINITIONS := preload("res://activities/ActivityDefinitions.gd")
@@ -117,7 +117,7 @@ func run() -> void:
 	world.driving.occupied = true
 	check(story.nearest_action().is_empty(),"seated player cannot investigate the cargo")
 	world.driving.occupied = false
-	# Real physics obstruction at the interaction boundary, not a mocked ray.
+	# Obstrução de física real no limite da interação, não um raio simulado.
 	var obstruction := StaticBody3D.new()
 	obstruction.collision_layer = 1
 	obstruction.collision_mask = 0

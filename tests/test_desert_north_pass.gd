@@ -50,7 +50,7 @@ func run() -> void:
 	for worker in L.workers(): check(absf(worker.position.x-L.X)>7.0 and worker.position.z>L.GATE.z+14,"Workers behind barrier and outside both traffic lanes")
 	var stage:=Node3D.new()
 	root.add_child(stage)
-	# Independent real-grid chunks cover the relocated gate and the entire end.
+	# Chunks independentes da grade real cobrem o portão realocado e o fim inteiro.
 	for cell_z in range(floori((L.END.z-16)/96),floori((L.GATE.z+32)/96)+1): ART.build_chunk(stage,Rect2(288,cell_z*96,96,96))
 	await physics_frame
 	await physics_frame

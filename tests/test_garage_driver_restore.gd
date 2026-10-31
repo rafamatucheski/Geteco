@@ -16,8 +16,8 @@ func observe_exit(place: String, car) -> void:
 	var inside_swing: bool = presentation._inside_swing(presentation._landing, .30)
 	var observation := {"event":"exit_phase", "place":place, "msec":now, "car_id":car.get_instance_id(), "presentation_id":presentation.get_instance_id(), "phase":phase, "inside_swing":inside_swing}
 	if phase == "close_outside" and inside_swing:
-		# Production schedules a 1.6 s callback in this exact branch. This is
-		# an observation deadline, not a delay or an alteration of that timer.
+		# A produção agenda um callback de 1.6 s exatamente neste ramo. Isto é
+		# um prazo de observação, não um atraso nem uma alteração desse timer.
 		exit_observation["expected_callback_msec"] = now+1600
 		exit_observation["side"] = int(presentation.side)
 		observation["expected_callback_msec"] = now+1600
@@ -64,7 +64,7 @@ func run() -> void:
 		exit_observation = {}
 		print("GARAGE_EXIT_OBSERVATION ", JSON.stringify({"event":"before_leave", "place":place, "msec":Time.get_ticks_msec(), "car_id":car.get_instance_id()}))
 		if world.driving.occupied: check(world.driving.leave(),place+" physical disembark")
-		# leave() admits an asynchronous body transition; do not destroy its car.
+		# leave() admite uma transição assíncrona do corpo; não destrói o carro dele.
 		var exit_deadline := Time.get_ticks_msec()+6000
 		while world.driving.is_body_transition_active() and Time.get_ticks_msec() < exit_deadline:
 			observe_exit(place, car)
@@ -84,8 +84,8 @@ func run() -> void:
 			var doors = car.door_presentation
 			var previous_motion: Tween = doors.motions.get(side)
 			var previous_motion_id: int = previous_motion.get_instance_id() if is_instance_valid(previous_motion) else 0
-			# Keep this vehicle alive for the authored 1.6 s callback and .32 s
-			# closing tween; the Maciota case below still frees before its timer.
+			# Mantém este veículo vivo durante o callback autoral de 1.6 s e o tween de
+			# fechamento de .32 s; o caso do Maciota abaixo ainda libera antes do timer dele.
 			while Time.get_ticks_msec() < callback_deadline+500:
 				await physics_frame
 			var close_motion: Tween = doors.motions.get(side)

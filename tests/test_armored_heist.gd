@@ -1,6 +1,6 @@
 extends SceneTree
-## Runtime, native lockpick and real economy in a controlled exterior fixture.
-## Vehicle travel, dispatch response and Main admission are deliberately separate.
+## Runtime, gazua nativa e economia real numa fixture externa controlada.
+## Viagem do veículo, resposta do dispatch e admissão no Main ficam de propósito separadas.
 const TRANSPORT := preload("res://gameplay/armored/ArmoredTransport.gd")
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
 class Player extends CharacterBody3D:
@@ -60,7 +60,7 @@ class Session extends RefCounted:
 	var modal := false
 	var messages: Array[String] = []
 	func is_transition_blocked() -> bool: return false
-	# This fixture does not admit crew; the real actor/ballistic fixture owns that.
+	# Esta fixture não admite a equipe; a fixture real de ator/balística cuida disso.
 	func position_clear(_point: Vector3) -> bool: return false
 	func show_message(message: String) -> void: messages.append(message)
 var checks := 0
@@ -87,7 +87,7 @@ func fixture(level := 0, urban := true, id := "1:0") -> Dictionary:
 	var event := TRANSPORT.new()
 	event.configure(session)
 	event.data = SCHEDULE.initial({"id":id, "origin":"harbor_bank", "destination":"desert_bank"}, level)
-	# Stopped on the road, with service doors closed: the lockpick applies here.
+	# Parado na rua, com as portas de serviço fechadas: a gazua se aplica aqui.
 	event.data.phase = "driving"
 	event.security_level = level
 	event.last_event = id

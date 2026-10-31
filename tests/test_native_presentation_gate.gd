@@ -1,5 +1,5 @@
 extends SceneTree
-## Benchmark infrastructure only: no window requests or gameplay scene.
+## Só infraestrutura de benchmark: sem pedidos de janela nem cena de jogo.
 const GATE := preload("res://tests/measure/NativePresentationGate.gd")
 var checks := 0
 var failures: Array[String] = []

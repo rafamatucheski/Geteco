@@ -25,7 +25,7 @@ func run() -> void:
 		check(not CRUSH.eligible(truck,car,speed),"cash carrier cannot instantly crush a healthy car at %s m/s" % speed)
 	check(CRUSH.eligible(tank,car,4.0),"tank retains its separate physical overrun mechanic")
 	var street := STREET.new()
-	# The normal impact response remains live; armor is not invulnerability.
+	# A resposta normal a impacto continua viva; blindagem não é invulnerabilidade.
 	var health_before := car.health
 	street._crash(truck,car,Vector3.BACK,4.0,Vector3(0,1,-3),Vector3.FORWARD*4.0)
 	check(car.health < health_before and car.health > health_before*.8,"low-speed collision damages without exploding the car")

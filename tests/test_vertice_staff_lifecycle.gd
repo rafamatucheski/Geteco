@@ -1,5 +1,5 @@
 extends SceneTree
-## Production staff must leave the company registry when corpse cleanup frees them.
+## Os funcionários de produção precisam sair do registro da empresa quando a limpeza de cadáveres os libera.
 var checks := 0
 var failures: Array[String] = []
 var world: Node
@@ -47,7 +47,7 @@ func run() -> void:
 		check(not is_instance_valid(entry.actor) and not is_instance_valid(entry.model), "cleanup freed actor and child model")
 		check(not depot.staff.has(entry), "removed body has no stale company registration")
 	check(depot.staff.size() == survivors.size(), "only surviving staff remain")
-	# Stop the failing baseline before exercising further stale consumers.
+	# Para a linha de base que falha antes de exercitar outros consumidores obsoletos.
 	if not failures.is_empty(): finish(); return
 	await visit(depot.ORIGIN + Vector3(0, .1, 250))
 	for entry in survivors:
@@ -61,7 +61,7 @@ func run() -> void:
 	await visit(speaker.global_position + Vector3(1, 0, 0))
 	check(depot.nearest_action().get("target", "") == "vertice_staff", "survivor still offers conversation")
 	check(depot.perform("vertice_staff"), "survivor conversation still works")
-	# External removal (e.g. emergency pickup) has the same ownership boundary.
+	# A remoção externa (por exemplo coleta de emergência) tem o mesmo limite de posse.
 	var removed: Dictionary = survivors[0]
 	removed.actor.queue_free()
 	await frames(3)

@@ -1,5 +1,5 @@
 extends SceneTree
-## UI geometry and real input/settings contracts; no render or personal save writes.
+## Contratos de geometria de UI e de entrada/configurações reais; sem render nem gravação de save pessoal.
 var failures: Array[String] = []
 var checks := 0
 class PreviewWorld extends Node3D:
@@ -124,7 +124,7 @@ func run() -> void:
 	controls.observe_event(joy)
 	reticle._process(0)
 	check(controls.using_gamepad and reticle.position.distance_to(feedback.camera.unproject_position(feedback.point))<.01,"gamepad retains projected feedback marker")
-	# The same actual input/controller path responds to its persisted opt-in setting.
+	# O mesmo caminho real de entrada/controlador responde à configuração opcional persistida.
 	var actor := CharacterBody3D.new()
 	stage.add_child(actor)
 	var target := DamageTarget.new()

@@ -1,5 +1,5 @@
 extends SceneTree
-## Physical agreement for both accessible terminal slabs and their walkup ramps.
+## Concordância física das duas lajes de terminal acessíveis e das rampas de acesso a pé.
 const LIFT := preload("res://world/environmental_parity/MountainChairliftParity3D.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const CAMERA := preload("res://scripts/CameraRig.gd")
@@ -123,8 +123,8 @@ func depth_cases(lift: Node3D) -> void:
 			person.set_physics_process(false)
 			for node in person.find_children("*","Node3D",true,false): node.set_process(false)
 			for mesh in person.find_children("*","MeshInstance3D",true,false): mesh.material_override = green
-			# Match the real orthographic gameplay angle. The roof projects over
-			# the ground behind the station, while the front platform stays visible.
+			# Segue o ângulo ortográfico real de jogo. O telhado se projeta sobre
+			# o chão atrás da estação, enquanto a plataforma da frente continua visível.
 			person.global_position = station.global_position+Vector3(0,.02,-6.0)
 			lift.hide()
 			var control: int = await green_pixels(label+"-behind-control")

@@ -1,5 +1,5 @@
 extends SceneTree
-## Pure gameplay contracts; the arcade session test covers its real screen and room.
+## Contratos puros de jogabilidade; o teste de sessão do fliperama cobre a tela e a sala reais.
 const Pinball := preload("res://activities/arcade/games/PinballGame.gd")
 const Blocks := preload("res://activities/arcade/games/BlocksGame.gd")
 const Racer := preload("res://activities/arcade/games/RacerGame.gd")
@@ -20,7 +20,7 @@ func ticks(game: RefCounted, count: int, controls: Dictionary = {}) -> void:
 		game.step(1.0 / 60.0, controls)
 
 func _run() -> void:
-	# Contract strings must not depend on the developer's saved language.
+	# As strings do contrato não podem depender do idioma salvo do desenvolvedor.
 	TranslationServer.set_locale("pt_BR")
 	_test_pinball()
 	_test_blocks()
@@ -44,7 +44,7 @@ func _test_pinball() -> void:
 	game.velocity = Vector2(0, 300)
 	game.step(0.025, {})
 	check(game.score == 100 and game.velocity.y < 0.0, "A bumper reflects the ball and awards points once")
-	# Meet the moving paddle at its current height, below the bumper field.
+	# Encontra a raquete em movimento na altura atual, abaixo do campo de bumpers.
 	game.ball = Vector2(350, 406)
 	game.velocity = Vector2(0, 180)
 	game.step(0.025, {"left": true})
@@ -54,7 +54,7 @@ func _test_pinball() -> void:
 	game.step(.016,{})
 	check(game.lives == 3 and game.velocity.y < 0, "Launch protection returns an early drain without consuming a ball")
 	for lost in range(3):
-		# Exercise a real drain after the existing five-second ball saver.
+		# Exercita uma perda de bola real depois do salva-bola existente de cinco segundos.
 		game._save_time = 0.0
 		game.waiting = false
 		game.ball = Vector2(400, 479)

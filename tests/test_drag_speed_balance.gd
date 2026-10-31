@@ -1,5 +1,5 @@
 extends SceneTree
-## Compare the authored engine simulation with actual race world motion.
+## Compara a simulação autoral do motor com o movimento real no mundo da corrida.
 const DRIVE := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
 var checks := 0
 var failures: Array[String] = []
@@ -14,7 +14,7 @@ func _initialize() -> void:
 				drive.configure(id)
 				drive.stage(1.0, .54)
 				drive.launch()
-			# The reference remains inside the engine's mechanical coordinate system.
+			# A referência fica dentro do sistema de coordenadas mecânico do motor.
 			mechanical._integrating = true
 			var factor := .75 if racing else 1.0
 			for tick in 1200:

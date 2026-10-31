@@ -1,6 +1,6 @@
 extends SceneTree
-## Real production capsules and swept physics; rendering/occlusion is a separate
-## Main-scene capture. This fixture deliberately has no terrain or gravity tick.
+## Cápsulas reais de produção e física varrida; renderização/oclusão é uma captura
+## separada na cena do Main. Esta fixture de propósito não tem terreno nem tick de gravidade.
 const VILLAGE := preload("res://gameplay/urban_v1/TruckersVillageVisuals.gd")
 const ART := preload("res://gameplay/urban_v1/TruckersVillageLeisureArt.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
@@ -86,13 +86,13 @@ func run() -> void:
 			continue
 		for point in [ART.PLAY_POINT,ART.CACHE_POINT,VILLAGE.ORIGIN+Vector3(28,0,-33.4),VILLAGE.ORIGIN+Vector3(26.4,0,-29),VILLAGE.ORIGIN+Vector3(29.6,0,-29)]:
 			check(_free(actor,point),person+" whole body fits leisure approach "+str(point))
-		# Connected approaches from the existing walking route, including the
-		# fully open front of the court; no direct teleport across the border.
+		# Aproximações ligadas a partir da rota de caminhada existente, incluindo a
+		# frente totalmente aberta da quadra; nenhum teleporte direto pela borda.
 		_walk(actor,[Vector3(26,0,-13),Vector3(34,0,-19),Vector3(34,0,-24),ART.PLAY_POINT-VILLAGE.ORIGIN,Vector3(28,0,-33.4)],person+" court entry")
 		_walk(actor,[Vector3(0,0,1),Vector3(0,0,-8),Vector3(-.5,0,-12),ART.CACHE_POINT-VILLAGE.ORIGIN],person+" windmill cache approach")
 		_walk(actor,[Vector3(28,0,-29),Vector3(26.4,0,-29),Vector3(26.4,0,-33),Vector3(29.6,0,-33),Vector3(29.6,0,-29)],person+" walk around the target")
-		# Existing central paths and each resident's complete patrol circuit remain
-		# valid with the new props present, using swept capsules instead of points.
+		# Os caminhos centrais existentes e o circuito completo de ronda de cada morador continuam
+		# válidos com os props novos presentes, usando cápsulas varridas em vez de pontos.
 		for path in [[Vector3(40,0,0),Vector3(-55,0,0)],[Vector3(-55,0,0),Vector3(-67,0,25)],[Vector3(40,0,0),Vector3(40,0,27)],[Vector3(40,0,27),Vector3(60,0,27)]]:
 			_walk(actor,path,person+" main village path")
 		for index in RESIDENTS.ROUTES.size():
@@ -102,8 +102,8 @@ func run() -> void:
 		for body in bodies:
 			_sweep_prop(actor,body,person)
 		actor.free()
-	# Let actual tweens run. The functional/UI test owns scoring and rewards;
-	# these checks guard bounded visual objects and unload cleanup.
+	# Deixa os tweens reais rodarem. O teste funcional/de UI é dono da pontuação e das recompensas;
+	# estas checagens protegem os objetos visuais limitados e a limpeza na descarga.
 	art.throw_finished.connect(func(): completed_throws+=1)
 	art.animate_throw(.7,true)
 	check(_visible_shoes(art)==1,"First launch shows one bounded horseshoe")
@@ -171,8 +171,8 @@ func _sweep_prop(actor: CharacterBody3D,body: StaticBody3D,label: String) -> voi
 	var collider: CollisionShape3D = body.get_child(0)
 	var size: Vector3 = collider.shape.size
 	var contacted := 0
-	# Choose reachable sides by real capsule clearance. A neighbouring crate or
-	# rail is allowed to occupy a side; every object must still block a free face.
+	# Escolhe lados alcançáveis pela folga real da cápsula. Uma caixa ou trilho vizinho
+	# pode ocupar um lado; todo objeto ainda precisa bloquear uma face livre.
 	for axis in [Vector3.RIGHT,Vector3.LEFT,Vector3.FORWARD,Vector3.BACK]:
 		var half: float = absf(axis.x)*size.x*.5+absf(axis.z)*size.z*.5
 		var direction: Vector3 = body.global_basis*axis

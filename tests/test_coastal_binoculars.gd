@@ -1,6 +1,6 @@
 extends SceneTree
-## Focused ownership/interrupt contract. Real access, horizon and FPS are measured
-## separately in the rendered production session, not certified by this fixture.
+## Contrato focado de posse/interrupção. Acesso real, horizonte e FPS são medidos
+## à parte na sessão de produção renderizada, não certificados por esta fixture.
 const BINOCULARS := preload("res://runtime/coastal_lookout/CoastalBinoculars.gd")
 
 class TestPlayer extends CharacterBody3D:

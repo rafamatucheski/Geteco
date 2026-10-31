@@ -1,5 +1,5 @@
 extends SceneTree
-## Isolated Main checkpoint; only initial placements/prerequisites are fixtures.
+## Checkpoint isolado no Main; só posicionamentos/pré-requisitos iniciais são fixtures.
 const F:=preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const S:=preload("res://runtime/secret_travel/SecretTravelState.gd")
 const T:=preload("res://runtime/secret_travel/SecretTravel.gd")
@@ -135,7 +135,7 @@ func run() -> void:
 		return
 	await choose("harbor")
 	if world.session.state.region_id!="harbor": quit(1); return
-	# Explore the third site using the existing authoritative travel as fixture.
+	# Explora o terceiro local usando a viagem de autoridade existente como fixture.
 	check(world.production.travel("mountain",T.arrival("mountain")),"mountain exploration fixture admitted")
 	while world.production.travel_busy: await process_frame
 	await create_timer(1).timeout
@@ -143,7 +143,7 @@ func run() -> void:
 	if world.session.state.region_id!="mountain": quit(1); return
 	if await open_menu(): world.session.close_menu()
 	check("mountain" in S.data(world.session.state.world_state).discovered,"mountain discovered through real interaction")
-	# Occupied destination must leave the source scene, controls and save intact.
+	# Um destino ocupado precisa deixar intactos a cena de origem, os controles e o save.
 	var blocker:=StaticBody3D.new()
 	var shape:=CollisionShape3D.new()
 	var box:=BoxShape3D.new()

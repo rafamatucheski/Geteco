@@ -1,6 +1,6 @@
 extends SceneTree
-## Candidate-only contract, separate from the unchanged before/after fixture.
-## Resource identity proves warm construction; timings are diagnostic, not FPS.
+## Contrato só do candidato, separado da fixture inalterada de antes/depois.
+## A identidade do recurso prova a construção aquecida; os tempos são diagnóstico, não FPS.
 const MODEL := preload("res://activities/skate/SkateModel.gd")
 const PALETTE := [Color("d36c3e"), Color("487d9b"), Color("c3a842"), Color("79559b"), Color("44866a")]
 const MATERIAL_FIELDS := ["vertex_color_use_as_albedo", "vertex_color_is_srgb", "albedo_color", "metallic",
@@ -116,9 +116,9 @@ func print_scene_delta(label: String, before: Dictionary, reported_before: int) 
 		"host_children":host.get_child_count(), "added":added, "removed":removed, "changed":changed}))
 
 func run() -> void:
-	# StallLog queues its own removal during autoload _ready when logging is off.
-	# Its confirmed 10 -> 9 scene-node transition belongs to startup, so finish
-	# deferred autoload cleanup before creating the fixture and its strict baseline.
+	# O StallLog enfileira a própria remoção durante o _ready do autoload quando o log está desligado.
+	# A transição confirmada de 10 -> 9 nós de cena pertence ao início, então termina a
+	# limpeza adiada do autoload antes de criar a fixture e a linha de base estrita dela.
 	await process_frame
 	await process_frame
 	host = Node3D.new()
@@ -129,7 +129,7 @@ func run() -> void:
 		var model := create_model(tint)
 		reference[tint] = describe(model)
 		model.free()
-	# Force genuine misses before the prewarm, and enforce the bound at every insert.
+	# Força falhas genuínas antes do pré-aquecimento e impõe o limite a cada inserção.
 	for index in 12:
 		var custom := create_model(Color(float(index + 1) / 19.0, .231, .517, 1.0))
 		custom.free()

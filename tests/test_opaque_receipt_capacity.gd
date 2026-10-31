@@ -79,7 +79,7 @@ func _cap_contract() -> void:
 	before=wallet.snapshot()
 	var generic: Dictionary=SKI.ski_settlement("unknown_course",{"reward":100,"bonus":40},30.0,null,before.transactions)
 	check(not SKI.apply_ski_settlement(wallet,generic) and wallet.snapshot()==before,"unknown Ski refuses unchanged when opaque history is full")
-	# The guard does not invent byte headroom or broaden nonreceipt dictionaries.
+	# A proteção não inventa folga de bytes nem amplia dicionários que não são de recibo.
 	check(ECONOMY.MAX_OPAQUE_RECEIPTS==10000,"receipt bound unchanged")
 
 func run() -> void:

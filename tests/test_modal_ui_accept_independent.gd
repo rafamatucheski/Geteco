@@ -1,6 +1,6 @@
 extends SceneTree
-## Independent acceptance for production modal focus/activation.
-## Requires --no-save --skip-arrival and never resolves the default save.
+## Aceitação independente para foco/ativação modal de produção.
+## Exige --no-save --skip-arrival e nunca resolve o save padrão.
 
 var world: Node
 var session: Node

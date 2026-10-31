@@ -50,8 +50,8 @@ func _run() -> void:
 	if not "--no-save" in OS.get_cmdline_user_args(): quit(2); return
 	folder = FIXTURE.output_dir("cats-session")
 	var fixture := FIXTURE.full_snapshot(Vector3(20,.08,16),false)
-	# Explore after the garage intro, with no active mission or final-quest
-	# aftermath dialogue. Both would legitimately block E and checkpoint saves.
+	# Explora depois da introdução da garagem, sem missão ativa nem diálogo de desfecho
+	# da missão final. Os dois bloqueariam legitimamente o E e os saves de checkpoint.
 	fixture.campaign = preload("res://systems/campaign/CampaignRuntime.gd").new().snapshot()
 	var path := FIXTURE.write_fixture(folder,"save.json",fixture)
 	world = load("res://Main.tscn").instantiate()
@@ -144,9 +144,9 @@ func _run() -> void:
 			check(cat.global_position.y>session.room.global_position.y-.1,id+" "+cat.cat_id+" permanece apoiado")
 		check(await session.leave_place(),id+" sai e recupera controle")
 		await frames(30)
-	# Write/read actual bytes at an isolated path; never touch personal saves.
-	# The port discovery exercised a real trespass alert. Establish the calm
-	# recovery fixture explicitly before verifying storage, not police evasion.
+	# Grava/lê bytes reais num caminho isolado; nunca toca saves pessoais.
+	# A descoberta do porto exercitou um alerta real de invasão. Estabelece a fixture de
+	# recuperação calma explicitamente antes de conferir o armazenamento, não a evasão da polícia.
 	if world.gameplay.stars > 0:
 		check(not session.save_game(),"procura preserva bloqueio de save após adoção")
 		world.gameplay.clear_wanted()

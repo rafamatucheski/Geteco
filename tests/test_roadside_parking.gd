@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Main + streamed bays + native Vehicle/Actor collision. Staging is explicit;
-## this protects admission/lifecycle, not natural-arrival frequency or rendered FPS.
+## Main real + vagas em streaming + colisão nativa de Vehicle/Actor. A preparação é explícita;
+## isto protege a admissão/ciclo de vida, não a frequência de chegada natural nem o FPS renderizado.
 const PARKING := preload("res://runtime/RoadsideParking.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
@@ -82,16 +82,16 @@ func check_region(region_id: String) -> void:
 	for index in 2400:
 		await physics_frame
 		if world.session != null and world.session.ready_for_play and world.production.startup_streaming_settled: break
-	# restore_location briefly sets session.ready before the startup coroutine
-	# settles chunks and populates bays under the curtain. Do not race that owner.
+	# restore_location define session.ready por um instante antes de a corrotina de início
+	# assentar os chunks e preencher as vagas sob a cortina. Não corre contra esse dono.
 	var startup_ready: bool = world.session != null and world.session.ready_for_play and world.production.startup_streaming_settled
 	check(startup_ready, "production ready and startup streaming settled " + region_id)
 	if not startup_ready:
 		world.queue_free()
 		await frames(3)
 		return
-	# Keep external keyboard/controller input from moving the staged player;
-	# traffic, pedestrian simulation, health and physical contacts remain active.
+	# Impede que a entrada externa de teclado/controle mova o jogador encenado;
+	# trânsito, simulação de pedestres, vida e contatos físicos continuam ativos.
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
 	world.session.set_process_input(false)
@@ -133,8 +133,8 @@ func check_region(region_id: String) -> void:
 		world.queue_free()
 		await frames(4)
 		return
-	# Explicit closed/no-visit fixture: random spawn visitation cannot decide
-	# whether the lock assertion runs while a passenger is opening the door.
+	# Fixture explícita fechada/sem visita: a visitação aleatória de spawn não pode decidir
+	# se a asserção da trava roda enquanto um passageiro abre a porta.
 	director._parked(record, false)
 	await frames(8)
 	check(world.production.vehicle_position_clear(car,car.global_position+Vector3.UP*.08,car.rotation.y),"chassis has four-wheel support and no solids " + region_id)
@@ -157,8 +157,8 @@ func check_region(region_id: String) -> void:
 			if neighbour!=null:
 				await frames(3)
 				check(not PARKING.blocks_departure(car,neighbour,at,direction),"parked neighbour outside traffic corridor cannot veto departure " + region_id)
-				# Explicit fixture relocation tests the same physical body on the lane.
-				# This is admission coverage, not a claim of having driven that route.
+				# A realocação explícita da fixture testa o mesmo corpo físico na faixa.
+				# Isto é cobertura de admissão, não afirmação de ter dirigido essa rota.
 				neighbour.place(at+direction.normalized()*8+Vector3.UP*.1,record.slot.yaw)
 				await frames(2)
 				check(PARKING.blocks_departure(car,neighbour,at,direction),"vehicle occupying merge lane retains priority " + region_id)
@@ -202,8 +202,8 @@ func check_region(region_id: String) -> void:
 		world.queue_free()
 		await frames(3)
 		return
-	# The departed car keeps driving normally. A separate, explicitly staged
-	# parked car now exercises theft/cancellation without undoing that journey.
+	# O carro que partiu continua dirigindo normalmente. Um carro estacionado separado,
+	# encenado explicitamente, agora exercita roubo/cancelamento sem desfazer essa viagem.
 	record.next_visit = director.seconds
 	check(director._spawn_parked(record),"independent parked theft fixture after departure " + region_id)
 	if not is_instance_valid(record.car):
@@ -223,8 +223,8 @@ func check_region(region_id: String) -> void:
 	car.queue_free()
 	await frames(4)
 	await check_arrivals(director,record,region_id)
-	# Obstacle is introduced after admission, like another car/person entering
-	# the bay. The physical motor must stop instead of completing its spline.
+	# O obstáculo é introduzido depois da admissão, como outro carro/pessoa entrando
+	# na vaga. O motor físico precisa parar em vez de completar a spline.
 	var obstacle := StaticBody3D.new()
 	obstacle.collision_layer = 1
 	var collider := CollisionShape3D.new()
@@ -267,8 +267,8 @@ func check_region(region_id: String) -> void:
 	await frames(4)
 
 func check_arrivals(director: Node, record: Dictionary, region_id: String) -> void:
-	# Force both entry variants through the real collision motor; fixtures only
-	# place the car on its proper lane. During each maneuver no position is assigned.
+	# Força as duas variantes de entrada pelo motor de colisão real; as fixtures só
+	# põem o carro na faixa correta. Durante cada manobra nenhuma posição é atribuída.
 	for backwards in [false,true]:
 		director._discover_regions()
 		var target: Dictionary = {}
@@ -308,8 +308,8 @@ func physical_departure(director: Node, record: Dictionary, car: CharacterBody3D
 		if neighbour==null: return false
 		await frames(4)
 		neighbour_start = neighbour.global_position
-	# Existing through traffic retains priority. Wait for a real gap; never
-	# delete traffic, disable collision, or teleport this car to manufacture one.
+	# O trânsito de passagem existente mantém a prioridade. Espera uma brecha real; nunca
+	# apaga trânsito, desliga colisão nem teleporta este carro para fabricar uma.
 	for step in 900:
 		await physics_frame
 		if step % 39 == 0: director._depart(record)
@@ -336,7 +336,7 @@ func physical_departure(director: Node, record: Dictionary, car: CharacterBody3D
 		var shifted := neighbour.global_position-neighbour_start
 		shifted.y = 0
 		check(not neighbour.is_queued_for_deletion() and shifted.length()<.08,"adjacent parked car preserved during departure " + region_id)
-		# Remove only the test-owned neighbour after the complete observed event.
+		# Remove só o vizinho que pertence ao teste depois do evento completo observado.
 		world.production.vehicles.erase(neighbour)
 		neighbour.queue_free()
 		await frames(3)
@@ -348,8 +348,8 @@ func capture(label: String, car: CharacterBody3D, record: Dictionary, progress :
 	var camera: Camera3D = world.camera
 	var previous := {"target":camera.target,"locked":camera.locked,"size":camera.size,"target_size":camera.target_size,
 		"focus":camera.focus,"initialized":camera.initialized,"transform":camera.global_transform,"offset":camera.offset,"heading":camera.heading}
-	# Same productive exterior camera, at a readable 20 m frame. Only presentation
-	# changes for these diagnostic frames; restore the normal target after each.
+	# Mesma câmera externa produtiva, num quadro legível de 20 m. Só a apresentação
+	# muda nestes quadros de diagnóstico; restaura o alvo normal depois de cada um.
 	camera.target = car
 	camera.locked = true
 	camera.size = 20.0

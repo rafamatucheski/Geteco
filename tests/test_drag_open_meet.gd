@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Main/.NET, real NPC and player motion. Only travel/checkpoint and input
-## are fixtures. Save path is isolated; no scripted crossing or fake result.
+## Main/.NET real, movimento real de NPC e jogador. Só viagem/checkpoint e entrada
+## são fixtures. O caminho de save é isolado; sem travessia roteirizada nem resultado falso.
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LAYOUT = preload("res://world/desert/DesertLayout.gd")
 var world
@@ -129,8 +129,8 @@ func run() -> void:
 		metrics.environment = {"engine":Engine.get_version_info().string,"gpu":RenderingServer.get_video_adapter_name(),"renderer":RenderingServer.get_current_rendering_method(),"size":str(root.size),"vsync":DisplayServer.window_get_vsync_mode(),"limit":Engine.max_fps}
 		await measure("before_open_meet")
 		meet.enabled = true
-		# Let the whole finite fleet arrive and complete its first heat before
-		# measuring the circulating steady state (initial admission is separate).
+		# Deixa a frota finita inteira chegar e completar a primeira bateria antes de
+		# medir o regime de circulação (a admissão inicial é à parte).
 		await create_timer(60.0).timeout
 		await measure("with_open_meet")
 		if "--benchmark-only" in OS.get_cmdline_user_args():

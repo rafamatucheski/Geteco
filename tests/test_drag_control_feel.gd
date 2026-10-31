@@ -1,6 +1,6 @@
 extends SceneTree
-## Directed contracts for the race-only pedal and continuous transmission.
-## Binary staging uses actual 0/1 inputs, never the old .54 analogue override.
+## Contratos dirigidos para o pedal só de corrida e a transmissão contínua.
+## A preparação binária usa entradas reais 0/1, nunca a antiga sobrescrita analógica de .54.
 const DRIVE := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
 const RACE := preload("res://activities/desert_drag/DesertDrag.gd")
 var failures: Array[String] = []
@@ -39,8 +39,8 @@ func _check_binary_staging(hz: int) -> void:
 	check(good_seconds >= .65,"keyboard has a readable good launch window at %d Hz"%hz)
 	check(held.rpm > held.redline*.9,"holding W can still over-rev; assistance does not auto-aim at perfect RPM")
 	var pulsed = _drive()
-	# Two deliberate presses with generous pauses: a human-scale action trace.
-	# This is not a feedback controller that knows the exact ideal RPM.
+	# Dois toques deliberados com pausas generosas: um rastro de ação em escala humana.
+	# Isto não é um controlador com realimentação que sabe o RPM ideal exato.
 	for i in hz*3:
 		var time := float(i)*dt
 		var pedal := 1.0 if time<1.35 or (time>=1.85 and time<2.55) else 0.0
@@ -120,8 +120,8 @@ func _run(id: String, parts: Dictionary, improved: bool, shift_ratio := .91, rea
 	drive.launch()
 	const DT := 1.0/120.0
 	var elapsed := 0.0
-	# Legacy is a mechanical reference without race world scaling. Compare the
-	# same engine distance: 1066.67 mechanical metres now cover 800 world metres.
+	# O legado é uma referência mecânica sem a escala de mundo da corrida. Compara a
+	# mesma distância do motor: 1066.67 metros mecânicos agora cobrem 800 metros do mundo.
 	var engine_distance := 800.0 if improved else 800.0 / .75
 	while elapsed<65.0 and drive.distance_m<engine_distance:
 		if drive.rpm>=drive.redline*shift_ratio: drive.shift_up()

@@ -103,8 +103,8 @@ func run() -> void:
 		check(arcade.ui.suspended and arcade.ui.game.score == paused_score,id+" pause freezes minigame")
 		arcade.ui.toggle_pause()
 		await photo("03-"+id)
-		# Deterministic result injection checks only record persistence; game
-		# mechanics are independently exercised in test_arcade_games.gd.
+		# A injeção determinística de resultado confere só a persistência do recorde; a mecânica
+		# dos jogos é exercitada de forma independente em test_arcade_games.gd.
 		arcade.ui.game.score = 1234
 		await press("ui_cancel")
 		check(not arcade.active and not session.modal and not world.player.input_locked,id+" Escape returns controls")
@@ -114,8 +114,8 @@ func run() -> void:
 	check(session.state.economy.balance == starting_cash,"arcades do not charge or mint money")
 	check(not session.arcade.perform("unknown"),"invalid cabinet rejected")
 	check(await walk(session.room.to_global(Vector3(0,0,.1))),"walk back to aisle")
-	# Stop in the interaction zone, before the walk-up door's transition
-	# threshold (exit.z - .55). This scenario explicitly tests pressing E.
+	# Para na zona de interação, antes do limiar de transição da porta de chegada a pé
+	# (exit.z - .55). Este cenário testa explicitamente apertar E.
 	check(await walk(session.room.exit_position+Vector3.FORWARD*.8),"walk to exit interaction zone")
 	check(session.nearest().get("id","") == "exit","exit action available at approach")
 	check(await session.interact(),"actual exit interaction")

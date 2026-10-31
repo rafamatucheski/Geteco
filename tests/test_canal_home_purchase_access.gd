@@ -1,5 +1,5 @@
 extends "res://tests/test_door_push_access.gd"
-## Regression: purchase at the door, traversal, return and reentry.
+## Regressão: compra na porta, travessia, volta e reentrada.
 func _run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	create_timer(240).timeout.connect(func(): push_error("CANAL_ACCESS timeout"); quit(3))

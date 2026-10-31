@@ -1,7 +1,7 @@
 extends SceneTree
 ## Mesh-consumer contracts: world-space tread geometry, sampled normals, fade and cleanup.
 const TIRES := preload("res://gameplay/vehicle_effects/VehicleTireEffects.gd")
-const COLOR_EPSILON := 1.0 / 255.0 + 0.0001 # Mesh colors are stored as RGBA8.
+const COLOR_EPSILON := 1.0 / 255.0 + 0.0001 # As cores da malha são guardadas como RGBA8.
 var checks := 0
 var failures: Array[String] = []
 
@@ -100,8 +100,8 @@ func run() -> void:
 	tire._redraw_marks()
 	var full: Array = tire.geometry.surface_get_arrays(0)
 	check((full[Mesh.ARRAY_VERTEX] as PackedVector3Array).size() == tire.MAX_MARK_SEGMENTS*6, "drawable respects the same bounded segment count")
-	# Same fixed geometry for either mesh implementation. CPU method timing only:
-	# this does not measure gameplay frame time or GPU completion.
+	# Mesma geometria fixa para qualquer implementação de malha. Só tempo de método na CPU:
+	# isto não mede tempo de quadro de jogo nem conclusão na GPU.
 	for iteration in 10: tire._redraw_marks()
 	var redraw_began := Time.get_ticks_usec()
 	for iteration in 100: tire._redraw_marks()

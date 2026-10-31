@@ -86,7 +86,7 @@ func run() -> void:
 	var center: Vector2 = ui.canvas.pivot(road)
 	at = ui.canvas.screen(center)
 	ui.canvas.grid = 1
-	# Click the arrow tip, away from the road vertex which now wins at overlap.
+	# Clica na ponta da seta, longe do vértice da rua, que agora ganha na sobreposição.
 	drag(at+Vector2(60,0),at+Vector2(72,9))
 	var road_after: Dictionary = ui.document.regions.harbor[road.id]
 	check((DATA.point(road_after.points[2])-DATA.point(road_after.points[0])).is_equal_approx(DATA.point(road.points[2])-DATA.point(road.points[0])),"Road-axis movement preserves every bend")

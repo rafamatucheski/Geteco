@@ -1,5 +1,5 @@
 extends SceneTree
-## Narrow physical fixture for the real hinged facade and Dante skeleton.
+## Fixture física estreita para a fachada articulada real e o esqueleto do Dante.
 class DrivingStub extends Node:
 	var occupied := false
 	func is_body_transition_active() -> bool: return false

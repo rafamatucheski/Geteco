@@ -1,6 +1,6 @@
 extends SceneTree
-## Regression: offline workers must carry, deliver and return continuously,
-## including the wrap between cycles, instead of holding a frozen mark.
+## Regressão: os trabalhadores offline precisam carregar, entregar e voltar sem parar,
+## incluindo a virada entre ciclos, em vez de ficar parados numa marca congelada.
 const ACTIVITY := preload("res://cutscenes/opening/ferry/FerryHarborActivity.gd")
 func _initialize() -> void:
 	var route := [Vector3.ZERO,Vector3(4,0,0),Vector3(4,0,2),Vector3(0,0,2)]

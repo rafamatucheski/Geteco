@@ -56,7 +56,7 @@ func run() -> void:
 		await physics_frame
 		probe.position = Vector3(-2,0,0)
 		check(probe.move_and_collide(Vector3(4,0,0),true)!=null, "Pole blocks pedestrian sweep")
-		# Sweep under the arm in the lamp's rotated local frame.
+		# Varre sob o braço no referencial local girado do poste.
 		probe.position = lamp.to_global(Vector3(-2,0,1))
 		var hit := probe.move_and_collide(lamp.basis * Vector3(4,0,0),true)
 		check((hit==null) == (float(row.height)>1.8), "Walk under a raised arm; a lowered arm stays solid")

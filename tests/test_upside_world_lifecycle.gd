@@ -1,6 +1,6 @@
 extends "res://tests/test_upside_world_session.gd"
-## Three real Main interruptions. Alcohol and paid stock are explicit boundary
-## fixtures; the ordinary session test already exercises four timed real drinks.
+## Três interrupções reais no Main. Álcool e estoque pago são fixtures explícitas
+## de limite; o teste comum de sessão já exercita quatro bebidas reais cronometradas.
 var lifecycle: Array[Dictionary] = []
 
 func run() -> void:
@@ -38,8 +38,8 @@ func run() -> void:
 	await photo("death-recovered")
 
 	if not await chaos_entry("arrest"): finish(); return
-	# The crime case is real; no private call to _on_arrest or _respawn bypasses
-	# the signal ordering that must keep the input lock during presentation.
+	# O caso de crime é real; nenhuma chamada privada a _on_arrest ou _respawn contorna
+	# a ordem dos sinais que precisa manter a trava de entrada durante a apresentação.
 	world.gameplay.register_crime(12,world.player.global_position,"theft")
 	check(world.gameplay.police_can_arrest(),"a real low-level case permits custody")
 	if not check(world.gameplay.arrest_player(),"actual arrest_player emits the real custody signal"): finish(); return
@@ -55,8 +55,8 @@ func run() -> void:
 	var deadline := Time.get_ticks_msec() + 26000
 	while runtime.busy() and not runtime._released and Time.get_ticks_msec() < deadline: await process_frame
 	if not check(runtime.busy() and runtime._released and world.session.transition_kind == "leave_place","ordinary duration reaches the live released-to-departure handoff"): finish(); return
-	# Reproduce a live occupancy race AFTER candidate approval, during the
-	# normal departure fade. The physical blocker covers local fallback offsets.
+	# Reproduz uma corrida viva de ocupação DEPOIS da aprovação do candidato, durante o
+	# fade normal de partida. O bloqueador físico cobre os offsets locais de fallback.
 	var blocked_destination: Vector3 = world.session.return_point
 	var blocker := StaticBody3D.new()
 	blocker.name = "ReturnRaceFixture"

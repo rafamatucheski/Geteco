@@ -1,6 +1,6 @@
 extends SceneTree
-## Rendered acceptance for "not everything reflects": a white reflection
-## must affect a minority of a fully wet road, and none of a dry road.
+## Aceitação renderizada para "nem tudo reflete": um reflexo branco
+## precisa afetar uma minoria de uma rua toda molhada, e nada de uma rua seca.
 var errors: Array[String] = []
 func _initialize() -> void: run.call_deferred()
 func run() -> void:

@@ -1,7 +1,7 @@
 extends SceneTree
-## Race-day venue and mechanics. Support is measured with rays against the real
-## collision of the built course (validar-terrenos-pisos: base apoiada, nada
-## flutuando, nada invadindo a pista). Does not certify visuals or FPS.
+## Local e mecânica de dia de corrida. O apoio é medido com raios contra a colisão
+## real do percurso montado (validar-terrenos-pisos: base apoiada, nada
+## flutuando, nada invadindo a pista). Não certifica visual nem FPS.
 const COURSE := preload("res://activities/motocross/MotocrossCourse.gd")
 const BIKE := preload("res://activities/motocross/MotocrossBike.gd")
 const PILOT := preload("res://activities/motocross/MotocrossPilot.gd")
@@ -37,7 +37,7 @@ func run() -> void:
 	var solids: StaticBody3D = trackside.get_node("TracksideSolids")
 	var stake_body: StaticBody3D = course.get_node("CourseStakes")
 	var own: Array[RID] = [solids.get_rid(),stake_body.get_rid()]
-	# Stakes: bottom under the real ground at every footprint corner, never deep.
+	# Estacas: base abaixo do chão real em cada canto da área, nunca funda.
 	var worst_float := -INF
 	var worst_bury := -INF
 	var worst_at := Vector3.ZERO
@@ -45,7 +45,7 @@ func run() -> void:
 	for row in course.stake_tops:
 		for base in row:
 			stakes += 1
-			# Stakes are world-aligned 16 cm posts: these are their true corners.
+			# As estacas são postes de 16 cm alinhados ao mundo: estes são os cantos reais deles.
 			for corner in [Vector3(.08,0,.08),Vector3(-.08,0,.08),Vector3(.08,0,-.08),Vector3(-.08,0,-.08)]:
 				var floor_y := ground(world,base+corner,own)
 				var bottom: float = base.y-.05
@@ -53,10 +53,10 @@ func run() -> void:
 				if floor_y-bottom > worst_bury: worst_at = base
 				worst_bury = maxf(worst_bury,floor_y-bottom)
 	print("MOTOCROSS_RACEDAY_STAKES count=",stakes," worst_float=",worst_float," worst_bury=",worst_bury," deepest_at=",worst_at)
-	# The deepest uphill corner is a post driven into the steep outer face of
-	# the hairpin berm (~57 deg over its 16 cm footprint); 0.5 m still shows.
+	# O canto mais fundo do lado da subida é um poste cravado na face externa íngreme da
+	# curva inclinada em grampo (~57 graus na área de 16 cm); 0.5 m ainda aparece.
 	check(stakes > 60 and worst_float <= .005 and worst_bury < .4, "every course stake stands on the shoulder surface, sunk but never floating")
-	# The replaced placement: berm-crest height at a fixed 7-point spacing.
+	# O posicionamento substituído: altura da crista da curva com espaçamento fixo de 7 pontos.
 	var old_float := 0.0
 	var old_floating := 0
 	var n: int = course.points.size()-1
@@ -72,7 +72,7 @@ func run() -> void:
 			old_float = maxf(old_float,edge.y-lowest)
 			if edge.y-lowest > .02: old_floating += 1
 	print("MOTOCROSS_RACEDAY_OLD_STAKES floating_over_2cm=",old_floating," worst_float=",old_float)
-	# Tape: straight runs between stakes never cross into the riding width.
+	# Fita: trechos retos entre estacas nunca entram na largura de pilotagem.
 	var tape_clear := true
 	var tape_min := INF
 	for row in course.stake_tops:
@@ -85,7 +85,7 @@ func run() -> void:
 				tape_clear = tape_clear and lateral > course.HALF_WIDTH+.15
 	print("MOTOCROSS_RACEDAY_TAPE nearest_lateral=",tape_min)
 	check(tape_clear, "course tape stays outside the riding width on every corner")
-	# Hay bales: all four bottom corners seated on the quarry ground.
+	# Fardos de feno: os quatro cantos de baixo assentados no chão da pedreira.
 	var bale_ok := true
 	var bale_clear := true
 	var bale_float := -INF
@@ -103,7 +103,7 @@ func run() -> void:
 	print("MOTOCROSS_RACEDAY_BALES count=",trackside.bale_transforms.size()," apexes=",trackside.apex_count," skipped=",trackside.bale_skips," worst_float=",bale_float," worst_bury=",bale_bury)
 	check(trackside.bale_transforms.size() >= 20 and bale_ok, "hay bales sit on the ground at all four corners (<=2 cm gap, <=12 cm seat)")
 	check(bale_clear, "hay bales stay on run-off, clear of the course and tree trunks")
-	# Bleacher: fans' planted feet on the treads; stand base below the soil.
+	# Arquibancada: pés plantados da torcida nos degraus; base da estrutura abaixo do solo.
 	var bleacher: Node3D = trackside.bleacher
 	var feet_ok := true
 	var bodies_clear := true
@@ -134,7 +134,7 @@ func run() -> void:
 			walkway_ok = walkway_ok and is_finite(top) and absf(top-point.y) < .01
 	check(walkway_ok, "bleacher walkway has collision at its visible top and the soil never pokes through it")
 	check(float(course.nearest(bleacher.global_position).lateral) > course.HALF_WIDTH+4.0, "bleacher stands back from the final straight")
-	# Found in review: a shade trunk stood inside the first bleacher site.
+	# Achado na revisão: um tronco de sombra ficava dentro do primeiro local de arquibancada.
 	var stand_clear := true
 	var nearest_trunk := INF
 	for tree in course.get_node("MotocrossScenery").tree_points:
@@ -144,7 +144,7 @@ func run() -> void:
 		stand_clear = stand_clear and outside > 3.3
 	print("MOTOCROSS_RACEDAY_STAND nearest_trunk_to_footprint=",nearest_trunk)
 	check(stand_clear, "no shade tree trunk or low canopy reaches the stand and its board")
-	# Found in review: a quarry boulder poked through the stand's east end.
+	# Achado na revisão: um matacão da pedreira furava a ponta leste da arquibancada.
 	var volume := PhysicsShapeQueryParameters3D.new()
 	var box := BoxShape3D.new()
 	box.size = Vector3(8.8,2.2,3.6)
@@ -154,18 +154,18 @@ func run() -> void:
 	volume.exclude = [solids.get_rid()]
 	var intruders := world.direct_space_state.intersect_shape(volume,8)
 	check(intruders.is_empty(), "no boulder, trunk or stake body intrudes into the stand's volume")
-	# Board and banner poles reach below the ground at both feet.
+	# Os postes do placar e da faixa chegam abaixo do chão nos dois pés.
 	check(trackside.banner_count >= 2 and is_instance_valid(trackside.board_title), "sponsor banners and the race-control board are built")
 	course.set_board("VOLTA 2/3","1º Lobo · 2º Dante")
 	check(trackside.board_title.text == "VOLTA 2/3" and trackside.board_detail.text.begins_with("1º"), "race-control board shows controller text")
-	# Start gate: lanes, grid spawns and bars that lie on the clay when dropped.
+	# Portão de largada: raias, spawns do grid e barras que ficam sobre o barro quando baixadas.
 	var gate: Node3D = course.start_gate
 	var bars_ok := true
 	var bar_error := 0.0
 	for index in gate._pivots.size():
 		var pivot: Transform3D = gate._pivots[index]
 		for corner in [Vector3(-.74,0,0),Vector3(.74,0,0),Vector3(-.74,0,.5),Vector3(.74,0,.5)]:
-			# Dropped: the bar's underside spans from the hinge back toward the riders.
+			# Baixada: a face de baixo da barra vai da dobradiça de volta na direção dos pilotos.
 			var point: Vector3 = pivot*corner
 			var clay := ground(world,point,[],.5,1.0)
 			bar_error = maxf(bar_error,absf(point.y-clay))
@@ -188,7 +188,7 @@ func run() -> void:
 		grid_ok = grid_ok and is_finite(clay) and pose.origin.y-clay > .1 and pose.origin.y-clay < .2
 		grid_ok = grid_ok and absf(lane)+.45 < course.HALF_WIDTH
 	check(grid_ok, "every grid slot spawns 10-20 cm above its own clay height inside the riding width")
-	# Mechanic tent legs on the yard floor at the authored 13 cm height.
+	# Pernas da tenda do mecânico no piso do pátio na altura autoral de 13 cm.
 	var paddock: Node3D = course.get_node("MotocrossPaddock")
 	var tent_ok := true
 	for x in [-1.45,1.45]:
@@ -197,7 +197,7 @@ func run() -> void:
 			var floor_y := ground(world,leg,[],.1,.4)
 			tent_ok = tent_ok and is_finite(floor_y) and absf(floor_y-.13) < .02
 	check(tent_ok and paddock.get_node_or_null("ToolChest") != null, "mechanic tent stands on the connected yard floor")
-	# Gameplay rules independent of the session.
+	# Regras de jogo independentes da sessão.
 	check(CONTROLLER.launch_quality(.7) == "holeshot" and CONTROLLER.launch_quality(.98) == "wheelie" and CONTROLLER.launch_quality(.1) == "bog" and CONTROLLER.launch_quality(.45) == "good", "gate result follows the rev zone")
 	var progress := PROGRESS.new()
 	check(not progress.record_lap(10.0) and progress.record_lap(40.0) and not progress.record_lap(45.0) and progress.record_lap(35.0) and is_equal_approx(float(progress.data.best_lap),35.0), "track record accepts only real, faster laps")

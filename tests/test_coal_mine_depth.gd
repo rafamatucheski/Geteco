@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Separate rendered evidence: the real player and NPC must remain visible in
-## front/beside the wagon while its solid body occludes legs behind it.
+## Evidência renderizada separada: o jogador e o NPC reais precisam continuar visíveis
+## na frente/ao lado do vagão enquanto o corpo sólido dele tampa as pernas atrás.
 const COAL := preload("res://world/mining/coal/CoalMinePlace.gd")
 const DEST := "res://evidence/mining-20261006/coal-depth"
 

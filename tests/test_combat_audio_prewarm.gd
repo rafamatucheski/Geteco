@@ -37,7 +37,7 @@ func run() -> void:
 	seed(10202);expected=randi();seed(10202)
 	await AUDIO.prewarm_gameplay_banks(self)
 	check(randi()==expected and AUDIO._last_gunfire_take==history,"full bank warmup preserves RNG and no-repeat history")
-	# Inventory of the actual authored assets, independent of the warmup manifest.
+	# Inventário dos recursos autorais reais, independente do manifesto de aquecimento.
 	var audio_files := DirAccess.get_files_at(AUDIO.AUDIO_DIR)
 	var authored := 0
 	for name in audio_files:

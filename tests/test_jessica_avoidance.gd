@@ -1,6 +1,6 @@
 extends SceneTree
-## Isolated real-physics regression for a pedestrian at the front-left bumper.
-## Main integration remains responsible for actual police AI and the bank flow.
+## Regressão isolada com física real para um pedestre no para-choque dianteiro esquerdo.
+## A integração no Main continua responsável pela IA real da polícia e pelo fluxo do banco.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const DRIVER := preload("res://gameplay/jessica/JessicaGetawayDriver.gd")
 var failures: Array[String] = []

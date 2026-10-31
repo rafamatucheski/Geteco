@@ -1,6 +1,6 @@
 extends SceneTree
-## Independent live sliders, silence, migration, save/cancel/defaults and routing.
-## Does not approve perceptual balance or rendered performance.
+## Controles deslizantes vivos independentes, silêncio, migração, salvar/cancelar/padrões e roteamento.
+## Não aprova o equilíbrio perceptual nem o desempenho renderizado.
 const SETTINGS := preload("res://runtime/Settings.gd")
 const DESIGN := preload("res://audio/EngineDesignVoice.gd")
 const DESERT := preload("res://audio/desert_cars/DesertCarAudio.gd")

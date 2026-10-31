@@ -26,7 +26,7 @@ func run() -> void:
 	check(worker.carried_crate.get_parent()==worker.model,"crate follows worker facing")
 	worker.receive_damage(NAN)
 	check(worker.health==100,"invalid damage rejected")
-	# The normal weapon ray hits the physical worker capsule.
+	# O raio normal da arma acerta a cápsula física do trabalhador.
 	var from: Vector3=worker.global_position+Vector3(0,1,3)
 	var query:=PhysicsRayQueryParameters3D.create(from,worker.global_position+Vector3.UP,2)
 	var hit: Dictionary=world.get_world_3d().direct_space_state.intersect_ray(query)

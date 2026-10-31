@@ -1,5 +1,5 @@
 extends SceneTree
-## The real settings/menu save cycle writes only the unique test file below.
+## O ciclo real de save de configurações/menu grava só o arquivo de teste único abaixo.
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
 const ARRIVAL := preload("res://runtime/ArrivalDialogue.gd")
 var failures: Array[String] = []
@@ -105,7 +105,7 @@ func run() -> void:
 	menu.queue_free()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(settings.test_path))
 	settings.queue_free()
-	# Use real banks and the real autoload for playback resolution.
+	# Usa bancos reais e o autoload real para resolver a reprodução.
 	runtime_settings.voice_language = "pt_BR"
 	var portuguese := VOICE.recorded_line("Alô?", "dante")
 	check(portuguese != null and not portuguese.resource_path.begins_with("res://audio/mission_voices/en/"), "Portuguese keeps its existing Dante take")

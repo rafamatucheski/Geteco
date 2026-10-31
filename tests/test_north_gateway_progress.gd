@@ -1,6 +1,6 @@
 extends SceneTree
-## Pure authority/migration tests; the real integration and rendered benchmark
-## are separate scripts. This test still uses the project's .NET Godot runner.
+## Testes puros de autoridade/migração; a integração real e o benchmark renderizado
+## são scripts separados. Este teste ainda usa o runner Godot .NET do projeto.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const POLICY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
 const CAMPAIGN := preload("res://systems/campaign/CampaignRuntime.gd")

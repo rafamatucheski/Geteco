@@ -75,7 +75,7 @@ func run() -> void:
 	await frames(2)
 	check(service.pending == null and service.picks() == 2 and not cargo.opened and not world.session.modal and not world.player.input_locked,"Cancel restores controls without charging")
 	check(world.session.interact(),"Retry starts")
-	# Adjust through the same movement function as keyboard/gamepad, then hold torque.
+	# Ajusta pela mesma função de movimento do teclado/gamepad e depois segura o torque.
 	for i in 120: service.minigame.step(1.0/60.0,-1.0 if service.minigame.target_angle > 0 else 1.0,false)
 	for i in 3: await process_frame
 	check(service.minigame.torque_armed,"Opening interaction released before applying torque")
@@ -96,7 +96,7 @@ func run() -> void:
 	Input.action_release("interact")
 	await frames(3)
 	check(cargo.opened and service.picks() == 1,"Correct angle opens without consuming tool")
-	# Walk through the actual doorway; no teleport across the entrance.
+	# Passa pela porta real; nenhum teleporte atravessando a entrada.
 	world.player.automatic_direction = Vector3.LEFT
 	await frames(90)
 	world.player.automatic_direction = Vector3.ZERO
@@ -121,7 +121,7 @@ func run() -> void:
 		var original: Transform3D = body.global_transform
 		var center: Vector3 = cargo.global_position+Vector3(0,.10,0)
 		var probe := Transform3D(Basis.IDENTITY,center)
-		# Move the other actor away so only authored cargo solids can stop the sweep.
+		# Afasta o outro ator para que só os sólidos autorais de carga possam parar a varredura.
 		if body == world.player: npc.position = cargo.door_point()+Vector3(4,0,0)
 		else: world.player.teleport(cargo.door_point()+Vector3(4,0,0))
 		await frames(2)
@@ -142,7 +142,7 @@ func run() -> void:
 	print("INSIDE_PROBE ",world.player.global_position," available=",service.available()," revealed=",cargo.revealed," occupied=",service.occupied," roof children=",cargo.roof.get_child_count())
 	await photo("two-actors")
 	npc.queue_free()
-	# Leave via actual motion, then restore camera/roof and re-enter.
+	# Sai por movimento real, depois restaura câmera/telhado e entra de novo.
 	world.player.teleport(cargo.to_global(Vector3(cargo.dimensions.x*.5-1,.1,0)))
 	world.player.automatic_direction = Vector3.RIGHT
 	await frames(50)
@@ -152,7 +152,7 @@ func run() -> void:
 	await create_timer(.7).timeout
 	check(not world.camera.has_meta("port_container_focus") and is_zero_approx(world.camera._container_blend),"Exit restores exterior camera angle and follow")
 	await photo("exit")
-	# Save through the real disk serializer, isolated from user saves.
+	# Salva pelo serializador real em disco, isolado dos saves do usuário.
 	var store := preload("res://runtime/SaveStore.gd").new()
 	# O runner fornece APPDATA temporário; só evidência visual fica em folder.
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://tests/port-container-cache"))
@@ -161,13 +161,13 @@ func run() -> void:
 	var restored := preload("res://runtime/GameState.gd").new()
 	check(store.load_into(restored).ok,"SaveStore reload succeeds")
 	check(restored.economy.inventory.lockpick == 1 and restored.world_state.port_containers[cargo.cargo_id].looted,"Save retains tools, opened door and collected loot")
-	# Streamed instance reconstruction exercises the same bind used by NativeRegion.
+	# A reconstrução da instância em streaming exercita a mesma ligação usada pela NativeRegion.
 	var rebuilt := preload("res://world/regions/LootablePortContainer.gd").new()
 	world.add_child(rebuilt)
 	rebuilt.build(cargo.position,cargo.dimensions)
 	check(rebuilt.opened and rebuilt.looted,"Rebuilt chunk restores cargo state before physics")
 	rebuilt.queue_free()
-	# Ammunition and empty cargo both use the real interaction/receipt paths.
+	# A munição e a carga vazia usam os caminhos reais de interação/recibo.
 	wallet.grant_weapon("pistol")
 	for index in [1,3]:
 		var other = containers[index]

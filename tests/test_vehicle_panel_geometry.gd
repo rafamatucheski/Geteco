@@ -1,6 +1,6 @@
 extends SceneTree
-## Offline assets keep the authored body/lamps/wheels while supplying removable
-## panels with finished backs and an exposed mechanical bay.
+## Os recursos offline mantêm a carroceria/lanternas/rodas autorais enquanto fornecem painéis
+## removíveis com fundos acabados e um compartimento mecânico exposto.
 const PANELS := preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd")
 const PAINT := preload("res://runtime/VehiclePaint.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")

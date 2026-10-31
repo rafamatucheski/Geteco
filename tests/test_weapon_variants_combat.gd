@@ -1,7 +1,7 @@
 extends SceneTree
-## Real Main session / physics / GameState / Gameplay / FullSession input.
-## The target is a large inert damage receiver in an isolated elevated test lane;
-## this validates shots, not city traversal, enemy AI or rendered presentation.
+## Sessão real do Main / física / GameState / Gameplay / entrada da FullSession.
+## O alvo é um grande receptor inerte de dano numa faixa de teste elevada isolada;
+## isto valida tiros, não travessia da cidade, IA inimiga nem apresentação renderizada.
 const STARTUP := preload("res://tests/fixtures/TravelBagScene.gd")
 const CATALOG := preload("res://gameplay/WeaponCatalog.gd")
 const IDS := ["pistol", "magnum", "pistol_suppressed", "smg", "smg_compact", "smg_tactical", "shotgun", "sawed_off", "shotgun_auto"]
@@ -40,7 +40,7 @@ func prepare(id: String) -> void:
 	gameplay._reload_audio.stop()
 	gameplay._handling.clear()
 	check(gameplay.equip_slot(id), id + " equips through Gameplay")
-	# Restore only spent fixture ammo through the real state API.
+	# Restaura só a munição gasta da fixture pela API real de estado.
 	state.add_ammo(id, 30)
 	state.reload_weapon(id)
 	await frames(12)
@@ -65,7 +65,7 @@ func run() -> void:
 	state = world.session.state
 	state.economy.activate_arsenal_cheat()
 	gameplay.health = 100000.0
-	# Physical isolation keeps traffic and scenery from invalidating shot geometry.
+	# O isolamento físico impede que trânsito e cenário invalidem a geometria do tiro.
 	world.player.teleport(Vector3(132, 50, 72))
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
@@ -120,9 +120,9 @@ func run() -> void:
 		await frames(2)
 		var used := before-int(state.get_ammo(id).magazine)
 		check(used >= 3 if CATALOG.get_weapon(id).automatic else used == 1, id + " honors held-trigger fire mode (%d rounds)" % used)
-	# Finishing a reload uses the same timer and state API as normal play.
-	# The arsenal cheat intentionally refills without spending its infinite
-	# reserve. Use a normal economy for these conservation assertions.
+	# Terminar uma recarga usa o mesmo timer e a mesma API de estado do jogo normal.
+	# A trapaça do arsenal recarrega de propósito sem gastar a reserva
+	# infinita. Usa uma economia normal para estas asserções de conservação.
 	var cheat_economy = state.economy
 	state.economy = preload("res://systems/economy/Economy.gd").new()
 	state.economy.enable_grid_inventory()

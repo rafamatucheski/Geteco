@@ -1,6 +1,6 @@
 extends SceneTree
-## Real night button/controller with a queue double: no physical engine loop
-## is needed to prove an abandoned ticket cannot dispatch a ranked race.
+## Botão/controlador real da noite com um dublê de fila: nenhum laço físico do motor
+## é necessário para provar que um bilhete abandonado não pode despachar uma corrida classificada.
 const NIGHT := preload("res://activities/desert_drag/DragNightProgress.gd")
 const CONTROLLER := preload("res://activities/desert_drag/DragNightController.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")

@@ -1,6 +1,6 @@
 extends SceneTree
-## Geometric/physical regression checks for the mountain facades. Rendered
-## inspection and frame-time comparison remain separate evidence.
+## Checagens de regressão geométrica/física das fachadas da montanha. A inspeção
+## renderizada e a comparação de tempo de quadro continuam evidência à parte.
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const DOOR := preload("res://world/places/WalkupFacadeDoor.gd")
 const SOURCE := "res://assets/regions/source/world/mountain_pass/"

@@ -75,9 +75,9 @@ func run() -> void:
 			{"id":"facade","camera":Vector3(70,3,135),"target":Vector3(70,1,125),"front":Vector3(70,.1,127),"behind":Vector3(70,.1,124)}]:
 			camera.position = item.camera
 			camera.look_at(item.target)
-			# This is a discrete diagnostic pose, not a camera movement. The
-			# actual and control images must use the same current transform even
-			# when three render frames finish before the next physics tick.
+			# É uma pose de diagnóstico discreta, não um movimento de câmera. As
+			# imagens real e de controle precisam usar a mesma transformação atual mesmo
+			# quando três quadros de render terminam antes do próximo tick de física.
 			camera.reset_physics_interpolation()
 			for pose in ["front","behind"]:
 				actor.teleport(item[pose])

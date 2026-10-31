@@ -35,9 +35,9 @@ func geometry(model: Node3D) -> PackedVector3Array:
 
 func same_triangles(before: PackedVector3Array, after: PackedVector3Array) -> bool:
 	if before.size() != after.size(): return false
-	# Mesh conversion changes representable positions by up to 0.082 mm here.
-	# Compare ordered triangle vertices within 0.1 mm, not rounded grid bins:
-	# arbitrarily close points can fall on opposite sides of a bin boundary.
+	# A conversão de malha muda as posições representáveis em até 0.082 mm aqui.
+	# Compara vértices ordenados dos triângulos dentro de 0.1 mm, não caixas arredondadas da grade:
+	# pontos arbitrariamente próximos podem cair em lados opostos do limite de uma caixa.
 	for index in before.size():
 		if before[index].distance_to(after[index]) > 0.0001: return false
 	return true

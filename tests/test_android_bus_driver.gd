@@ -1,5 +1,5 @@
 extends "res://tests/test_bus_driver_session.gd"
-## Reuse the real line/door/passenger/payment scenario with raw screen touches.
+## Reaproveita o cenário real de linha/porta/passageiro/pagamento com toques crus na tela.
 
 func button(action: String) -> void:
 	var touch = world.find_child("AndroidControls",true,false)

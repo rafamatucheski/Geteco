@@ -1,6 +1,6 @@
 extends SceneTree
-## Integrated physical route from the terminal exit to the M8 and its workshop
-## court. Tests ground support and real player movement, without certifying FPS.
+## Rota física integrada da saída do terminal até o M8 e o pátio da oficina
+## dele. Testa o apoio no chão e o movimento real do jogador, sem certificar FPS.
 var failures: Array[String] = []
 var checks := 0
 var world
@@ -12,8 +12,8 @@ func check(value: bool, label: String) -> void:
 	if not value: failures.append(label); push_error(label)
 
 func focus(point: Vector3) -> void:
-	# Production streaming follows the player every physics tick; keep its owner
-	# at the sampled location instead of fighting it with a synthetic focus.
+	# O streaming de produção segue o jogador a cada tick de física; mantém o dono dele
+	# no local amostrado em vez de brigar com ele usando um foco sintético.
 	world.player.teleport(point+Vector3.UP*.08)
 	world.production.region.set_focus(point)
 	var deadline := Time.get_ticks_msec()+15000
@@ -75,8 +75,8 @@ func run() -> void:
 		for x in [178.0,174.0,170.0,166.0,162.0,158.0]:
 			hull_query.transform = Transform3D(Basis(Vector3.UP,PI*.5),Vector3(x,1.0,111.0))
 			check(world.get_world_3d().direct_space_state.intersect_shape(hull_query,1).is_empty(),"full M8 hull fits between the workshop frontage and FreightDepot at x=%.1f" % x)
-		# A clear centreline or front sensor cannot prove the turning rear corner
-		# clears Depot. Sweep the full upper hull along the actual authored bend.
+		# Uma linha central livre ou um sensor da frente não prova que o canto traseiro na curva
+		# passa livre do Depot. Varre o casco superior completo ao longo da curva autoral real.
 		var bend_start := route.get_closest_offset(route.get_meta("court_access_start"))
 		var turn_clear := true
 		var sample := bend_start
@@ -94,8 +94,8 @@ func run() -> void:
 				break
 			sample += .2
 		check(turn_clear,"full M8 turning hull clears frontage, fences and Depot throughout the approach")
-		# The previous candidate consumed four live taxi bays and the drift circle.
-		# Their original contracts now remain intact beside the relocated workshop.
+		# O candidato anterior consumia quatro vagas de táxi vivas e o círculo de drift.
+		# Os contratos originais deles agora continuam intactos ao lado da oficina realocada.
 		await focus(preload("res://runtime/TaxiRank.gd").CENTER)
 		for slot: Vector3 in preload("res://runtime/TaxiRank.gd").SLOTS:
 			hull_query.transform = Transform3D(Basis(Vector3.UP,PI*.5),slot+Vector3.UP*.9)
@@ -115,8 +115,8 @@ func run() -> void:
 			var belongs_workshop: bool = world.maciota_place.is_ancestor_of(collider)
 			print("ARRIVAL_DRIFT_SOLID path=",collider.get_path()," name=",collider.name," class=",collider.get_class()," position=",collider.global_position if collider is Node3D else null," shape=",hit.shape," belongs_workshop=",belongs_workshop," parent_class=",collider.get_parent().get_class())
 			if belongs_workshop: workshop_drift_hits.append(hit)
-		# The existing CanalTunnel overlaps this broad activity cylinder. Preserve
-		# its geometry; this relocation must add no workshop solid to the drift.
+		# O CanalTunnel existente se sobrepõe a este cilindro largo de atividade. Preserva
+		# a geometria dele; esta realocação não pode acrescentar nenhum sólido de oficina ao drift.
 		check(workshop_drift_hits.is_empty(),"relocated workshop adds no solid to the original warehouse drift circle")
 		await focus(yard)
 		check(route.sample_baked(route.get_baked_length()).distance_to(yard) < .02, "trip ends inside the service court instead of a traffic lane")

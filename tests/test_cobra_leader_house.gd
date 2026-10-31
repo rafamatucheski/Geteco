@@ -1,6 +1,6 @@
 extends SceneTree
-## Integration after the won leader race. The consistent prefix is a fixture;
-## this test validates the actual house access, list, reward, save and garage.
+## Integração depois da corrida do líder vencida. O prefixo consistente é uma fixture;
+## este teste valida o acesso real à casa, a lista, a recompensa, o save e a garagem.
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const CAMPAIGN := preload("res://systems/campaign/CampaignRuntime.gd")
 const STORY := preload("res://systems/campaign/HarborStory.gd")
@@ -16,16 +16,16 @@ var depth_report: Array[Dictionary] = []
 func capture_frame(label: String) -> void:
 	if review_dir.is_empty() or DisplayServer.get_name() == "headless": return
 	Engine.max_fps = 60
-	# Transition fades use wall time; eight frames at an uncapped rate can
-	# still capture a black admission overlay instead of the real room.
+	# Os fades de transição usam tempo de parede; oito quadros a uma taxa sem limite ainda
+	# podem capturar uma sobreposição preta de admissão em vez da sala real.
 	await create_timer(.3).timeout
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(review_dir.path_join(label+".png"))
 
 func depth_pixels(actor: CharacterBody3D, image: Image) -> int:
-	# The diagnostic colour uniquely identifies this actor. Full framebuffer
-	# sampling avoids mixing logical UI projection coordinates with the scaled
-	# image coordinates (the first probe saw a visible actor outside its ROI).
+	# A cor de diagnóstico identifica só este ator. Amostrar o framebuffer
+	# inteiro evita misturar coordenadas lógicas de projeção da UI com as coordenadas
+	# da imagem escalada (a primeira sonda viu um ator visível fora da ROI dele).
 	image.convert(Image.FORMAT_RGBA8)
 	var pixels := image.get_data()
 	var count := 0
@@ -81,8 +81,8 @@ func finish_dialogue(session) -> String:
 	var spoken: Array[String] = []
 	var count := 0
 	while session.dialogue_open and count < 40:
-		# FullSession presents spoken lines in the shared DialogueCard; the
-		# service-menu column remains hidden and no longer contains this text.
+		# A FullSession apresenta as falas no DialogueCard compartilhado; a
+		# coluna do menu de serviço continua escondida e não contém mais este texto.
 		if is_instance_valid(session.dialogue_card): spoken.append(session.dialogue_card.message.text)
 		count += 1
 		session._advance_dialogue()
@@ -104,7 +104,7 @@ func install_post_race_prefix(session) -> bool:
 		for flag in MISSIONS.MISSIONS[id].sets_flags: value.flags[flag] = true
 		session.state.economy.grant_reward("campaign:"+str(id),int(MISSIONS.MISSIONS[id].reward))
 	if not CAMPAIGN.validate_snapshot(value) or not session.state.campaign.restore_snapshot(value): return false
-	# Matching past bank receipt/state keeps the completed Jessica prefix valid.
+	# Recibo/estado anterior do banco correspondentes mantêm válido o prefixo concluído da Jessica.
 	var bank: Dictionary = session.robberies.snapshot()
 	bank.bank_cash0 = true
 	bank.bank_alarm = true
@@ -228,9 +228,9 @@ func run() -> void:
 		check(result.distance>1.5,role+" can move through the free room corridor")
 		if not review_dir.is_empty() and DisplayServer.get_name() != "headless":
 			var role_id := "player" if actor == world.player else "npc"
-			# At z=-3.35 the overhead camera sees over the low sofa end.
-			# This nearer, still capsule-clear stance actually places the feet
-			# behind the seat silhouette; the same positive control is retained.
+			# Em z=-3.35 a câmera de cima vê por sobre a ponta baixa do sofá.
+			# Esta posição mais próxima, ainda livre para a cápsula, de fato põe os pés
+			# atrás da silhueta do assento; o mesmo controle positivo é mantido.
 			for pose in [["desk",Vector3(2.4,.08,-3.0)],["sofa",Vector3(-4.85,.08,-3.15)]]:
 				var point: Vector3 = room.to_global(pose[1])
 				check(session.position_clear(point),role+" depth capture uses supported unoccupied ground")
@@ -246,8 +246,8 @@ func run() -> void:
 	check(session.position_clear(list_point),"list interaction stands in front of the table")
 	check(await session.arrival._walk(world.player,list_point),"real player reaches the list without crossing furniture")
 	await capture_frame("takeshi-desk-front")
-	# The prefix already holds more than R$2000 from the bank. Settle its existing
-	# achievement before measuring this mission; do not count it as a finale fee.
+	# O prefixo já tem mais de R$2000 do banco. Acerta a conquista existente
+	# antes de medir esta missão; não a conta como taxa do final.
 	session.activities.refresh_achievements()
 	var balance: int = session.state.economy.balance
 	check(session.mission_world.perform("transfer_document"),"actual list interaction opens the story dialogue")

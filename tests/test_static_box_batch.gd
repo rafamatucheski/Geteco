@@ -1,5 +1,5 @@
 extends SceneTree
-## Compare indexed geometry/attributes with the legacy native SurfaceTool path.
+## Compara geometria/atributos indexados com o caminho nativo legado do SurfaceTool.
 const BOX_BATCH := preload("res://runtime/transit/StaticBoxBatch.gd")
 var failed := 0
 var checks := 0
@@ -27,8 +27,8 @@ func run() -> void:
 		var pose := Transform3D(basis,Vector3(i*.3,.8,-i))
 		old.append_from(box,0,pose)
 		offset = BOX_BATCH.append_from(candidate,box,0,pose,offset)
-	# Both callers keep cylinder wheels outside the batch; other future geometry
-	# and subdivided boxes must retain their original append path.
+	# Os dois chamadores mantêm as rodas cilíndricas fora do lote; outra geometria futura
+	# e caixas subdivididas precisam manter o caminho de append original.
 	var cylinder := CylinderMesh.new()
 	old.append_from(cylinder,0,Transform3D.IDENTITY)
 	offset = BOX_BATCH.append_from(candidate,cylinder,0,Transform3D.IDENTITY,offset)

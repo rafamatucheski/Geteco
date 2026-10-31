@@ -1,5 +1,5 @@
 extends SceneTree
-## Art review through the ordinary gameplay camera, never an FPS measurement.
+## Revisão de arte pela câmera de jogo comum, nunca medição de FPS.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 var world
 var output := ""

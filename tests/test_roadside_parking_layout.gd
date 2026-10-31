@@ -1,6 +1,6 @@
 extends SceneTree
-## Real edited geography, no save writes; verifies the complete footprint and
-## physical access using a car-sized body, separately from rendered validation.
+## Geografia editada real, sem gravar save; confere a área completa e o
+## acesso físico usando um corpo do tamanho de um carro, separado da validação renderizada.
 const REGION := preload("res://world/editing/EditableRegion.gd")
 const LAYOUT := preload("res://world/roadside_parking/RoadsideParkingLayout.gd")
 const BAY := preload("res://world/roadside_parking/RoadsideParkingBay.gd")
@@ -47,8 +47,8 @@ func _run() -> void:
 				_check((slot.position-site.edge).dot(site.outward)>=2.0,site.id+": vehicle fully outside the lane")
 				_check((slot.explore_position-slot.position).dot(site.outward)>=2.8,site.id+": pedestrian leaves onto outer shoulder")
 				_check((-Basis(Vector3.UP,float(slot.yaw)).z).dot(site.forward)>.999,site.id+": correct driving direction")
-		# Test generated floor access independently: through-traffic must never
-		# meet a new vertical barrier when crossing either end or the open mouth.
+		# Testa o acesso pelo piso gerado de forma independente: o trânsito de passagem nunca pode
+		# encontrar uma barreira vertical nova ao cruzar qualquer ponta ou a boca aberta.
 		var stage := Node3D.new()
 		root.add_child(stage)
 		for site in sites: BAY.build(stage,site)
@@ -75,8 +75,8 @@ func _run() -> void:
 				_check(body.move_and_collide(slot.position-body.position,true)==null,site.id+": car can enter pull-off")
 				body.position=slot.position+Vector3.UP*.04
 				_check(body.move_and_collide(slot.lane_position-body.position,true)==null,site.id+": car can leave pull-off")
-				# Resting wheels/chassis, unlike the raised spawn probe above: this
-				# caught the former 4.5 cm bay lip blocking real front/reverse entry.
+				# Rodas/chassi em repouso, ao contrário da sonda de spawn erguida acima: isto
+				# pegou a antiga borda de 4.5 cm da vaga bloqueando a entrada real de frente/de ré.
 				collision.position.y=.65
 				body.position=Vector3(slot.lane_position.x,.001,slot.lane_position.z)
 				var on_grade:=Vector3(slot.position.x,.001,slot.position.z)
@@ -95,8 +95,8 @@ func _run() -> void:
 func _real_scene(region: Node3D, sites: Array[Dictionary]) -> void:
 	region.initial_prewarm_only=true
 	root.add_child(region)
-	# Complete the actual chunks, including authored props and the final city
-	# dressing; prepare_collision_at alone deliberately supplies surfaces first.
+	# Completa os chunks reais, incluindo props autorais e o acabamento final da
+	# cidade; prepare_collision_at sozinho fornece de propósito as superfícies primeiro.
 	for site in sites:
 		for dx in [-20.0,0.0,20.0]:
 			for dz in [-20.0,0.0,20.0]:

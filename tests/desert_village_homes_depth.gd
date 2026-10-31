@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Native room geometry and real Actor rigs, final aligned camera, positive visibility controls.
-## This fixture proves local rendered depth only; Main lifecycle and frame time are separate checks.
+## Geometria nativa da sala e rigs reais do Actor, câmera final alinhada, controles positivos de visibilidade.
+## Esta fixture prova só a profundidade renderizada local; ciclo de vida do Main e tempo de quadro são checagens à parte.
 const HOMES := preload("res://world/desert/village/DesertVillageHomes.gd")
 const NATIVE := preload("res://world/places/NativePlace.gd")
 var destination: String = ""
@@ -95,7 +95,7 @@ func run() -> void:
 				var actual: Image=await capture()
 				var visible_pixels: int=mask_count(actual)
 				check(actual.save_png(destination.path_join(id+".png"))==OK,id+" rendered depth evidence saved")
-				# Only architecture is hidden: this is the same actor, camera and pose.
+				# Só a arquitetura é escondida: é o mesmo ator, câmera e pose.
 				room.hide()
 				var control: Image=await capture()
 				var control_pixels: int=mask_count(control)
@@ -103,7 +103,7 @@ func run() -> void:
 				room.show()
 				var ratio: float=float(visible_pixels)/maxf(float(control_pixels),1.0)
 				check(control_pixels>150,id+" unobstructed positive control contains the real actor")
-				# Same visibility thresholds as test_vertice_depth, fixed before rendering.
+				# Mesmos limiares de visibilidade de test_vertice_depth, fixados antes de renderizar.
 				if setup.expected=="clear":
 					check(ratio>.9,id+" actor remains readable in front/beside furniture: "+str(ratio))
 				else:
@@ -125,14 +125,14 @@ func _positions(index: int,layout: Dictionary) -> Array[Dictionary]:
 	var table: Vector3=layout.table
 	var bed: Vector3=layout.bed
 	var half_width: float=1.1 if index==3 else .925
-	# In home 1 the eastern ceiling beam is at x=3.48; probe the western table
-	# lane so "clear" measures table ordering rather than intentional beam cover.
+	# Na casa 1 a viga leste do teto fica em x=3.48; sonda a faixa oeste da mesa
+	# para que "livre" meça a ordem da mesa em vez da cobertura intencional da viga.
 	var chair_bypass: float=-.60 if index==0 else .60
-	# Oval tops taper at the ends: probe closer to their rear edge, still outside
-	# the full physical envelope (.51 m + .32 m capsule radius).
+	# Tampos ovais afinam nas pontas: sonda mais perto da borda de trás, ainda fora
+	# do envelope físico completo (.51 m + .32 m de raio da cápsula).
 	var rear_distance := -.85 if index in [0,2] else -.92
-	# Chairs occupy x +/- .26 at z +/- .98. Offset x=.60 leaves capsule clearance
-	# and keeps the actor behind the tabletop silhouette without standing on a chair.
+	# As cadeiras ocupam x +/- .26 em z +/- .98. O offset x=.60 deixa folga para a cápsula
+	# e mantém o ator atrás da silhueta do tampo sem ficar em pé numa cadeira.
 	var result: Array[Dictionary]=[
 		{"id":"table-front","point":table+Vector3(chair_bypass,.04,.94),"expected":"clear"},
 		{"id":"table-behind","point":table+Vector3(chair_bypass,.04,rear_distance),"expected":"partial"},

@@ -50,7 +50,7 @@ func run() -> void:
 	queue.enqueue("harbor")
 	check(queue.pending.size() == count,"manifest submissions deduplicate")
 	check(not queue.pending.is_empty(),"generated manifest schedules real resources")
-	# Cancel while a real loader request is owned by the soon-to-be-freed node.
+	# Cancela enquanto um pedido real do loader pertence ao nó que logo será liberado.
 	var cancelled := preload("res://runtime/BackgroundRegionPreparation.gd").new()
 	controller.add_child(cancelled)
 	cancelled.set_process(false)

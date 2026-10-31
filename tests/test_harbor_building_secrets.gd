@@ -1,6 +1,6 @@
 extends SceneTree
-## Native collision and actual lockpick/economy integration. FullSession walking
-## and save-store round trips are covered by the separate production fixture.
+## Colisão nativa e integração real de gazua/economia. A caminhada pela FullSession
+## e as idas e voltas pelo save-store são cobertas pela fixture de produção separada.
 const CATALOG := preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
 const CONTENT := preload("res://world/places/harbor_buildings/HarborBuildingContent.gd")
 const NATIVE := preload("res://world/places/NativePlace.gd")
@@ -113,7 +113,7 @@ func run() -> void:
 	await physics_frame
 	check(secrets.opened and not player.test_move(player.global_transform, Vector3.LEFT * 1.4), "restored opened door is visually and physically open")
 	check(session.state.economy.inventory.get("lockpick", 0) == 1, "door restoration spends no further item")
-	# Fresh unopened state for interrupted/death paths; the durable wallet is kept.
+	# Estado novo não aberto para os caminhos de interrupção/morte; a carteira durável é mantida.
 	room.free()
 	session.state.world_state = {}
 	room = NATIVE.new()
@@ -123,9 +123,9 @@ func run() -> void:
 	await physics_frame
 	check(secrets.perform(), "fresh door begins before death interruption")
 	session.world.gameplay.health = 0.0
-	# SceneTree.process_frame fires before the nodes' _process callbacks. The
-	# second boundary observes one completed cancellation tick rather than the
-	# same boundary at which the zero-health value was written.
+	# SceneTree.process_frame dispara antes dos callbacks _process dos nós. O
+	# segundo limite observa um tick de cancelamento concluído em vez do
+	# mesmo limite em que o valor de vida zero foi escrito.
 	await process_frame
 	await process_frame
 	check(not secrets.lockpick.active and not secrets.opened and not session.modal, "death cancels UI without unlocking")

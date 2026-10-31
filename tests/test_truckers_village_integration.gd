@@ -56,8 +56,8 @@ func run() -> void:
 		world.production.region.prepare_collision_at(parking)
 		car.place(parking,0)
 		car.health = car.max_health * .5
-		# Teleporting the existing car across streamed chunks leaves its old
-		# awaiting_ground marker; let the production admission clear it normally.
+		# Teleportar o carro existente por chunks em streaming deixa o antigo marcador
+		# awaiting_ground dele; deixa a admissão de produção limpá-lo normalmente.
 		for i in 240:
 			await physics_frame
 			if not car.has_meta("awaiting_ground"): break
@@ -107,8 +107,8 @@ func run() -> void:
 	conflict_save.world.urban_operations=urban.snapshot()
 	check(restored.restore_snapshot(conflict_save),"GameState validates hostile cooldown snapshot")
 	check(urban.restore_snapshot(conflict_save.world.urban_operations) and urban.village_residents.hostile,"Actual resident manager restores hostile state")
-	# Shoot through an open authored pedestrian path using the actual resident,
-	# muzzle ray and Gameplay.damage_player; wall/vehicle cases live in its test.
+	# Atira por um caminho de pedestre autoral aberto usando o morador real, o raio
+	# do cano e Gameplay.damage_player; os casos de parede/veículo ficam no teste dele.
 	for resident in urban.village_residents.residents: resident.set_physics_process(false)
 	var shooter = urban.village_residents.residents[0]
 	shooter.global_position=Vector3(-365,.04,111)
@@ -154,9 +154,9 @@ func run() -> void:
 			capsule.height=1.75
 			query.shape=capsule
 			query.collision_mask=1
-			# CharacterBody may rest a few millimetres into the streamed ground's
-			# collision margin. Check furniture/body clearance above that contact,
-			# and verify support independently instead of counting floor as a wall.
+			# O CharacterBody pode repousar alguns milímetros dentro da margem de colisão do chão
+			# em streaming. Confere a folga mobília/corpo acima desse contato
+			# e confere o apoio de forma independente em vez de contar o piso como parede.
 			query.transform.origin=actor.global_position+Vector3.UP*.905
 			var contacts: Array = world.get_world_3d().direct_space_state.intersect_shape(query)
 			if not contacts.is_empty(): print("HOME_COLLISION_DIAGNOSTIC home=",index," actor=",actor.name," point=",actor.global_position," path=",contacts[0].collider.get_path())

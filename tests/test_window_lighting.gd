@@ -85,7 +85,7 @@ func run() -> void:
 		check(snapshot(rebuilt)==original,source.id+": same panes/materials after streaming reconstruction")
 		rebuilt.free()
 		MATERIALS.set_night(0)
-	# Skylights and opaque frames must keep their authored material.
+	# Claraboias e caixilhos opacos precisam manter o material autoral.
 	var stage := Node3D.new()
 	root.add_child(stage)
 	for row in [["WindowGlass",Vector3(3,.08,3)],["WindowFrame",Vector3(1.5,1.4,.16)]]:

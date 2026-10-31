@@ -77,7 +77,7 @@ func run() -> void:
 	check(is_equal_approx(remaining, session.notice_time) and not session.speech_caption.visible and session.speech_voice.stream_paused, "Pause freezes voice/caption lifetime and hides caption behind menus")
 	paused = false
 	await process_frame
-	# SceneTree.process_frame is emitted before Node._process updates visibility.
+	# SceneTree.process_frame é emitido antes de Node._process atualizar a visibilidade.
 	await process_frame
 	check(session.speech_caption.visible and not session.speech_voice.stream_paused, "Resume restores the same spoken caption")
 	session.show_message("Missão: R$ 500")

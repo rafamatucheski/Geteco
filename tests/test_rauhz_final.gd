@@ -41,7 +41,7 @@ func run() -> void:
 	var snapshot := FIXTURE.full_snapshot(Vector3.ZERO,true)
 	snapshot.world.merge(state,true)
 	preload("res://systems/campaign/DigoProgress.gd").complete_desert_race(snapshot.world,"digo_desert_race",true)
-	# Use a real isolated checkpoint; preserve the fixture's wallet structure.
+	# Usa um checkpoint isolado real; preserva a estrutura da carteira da fixture.
 	snapshot.economy = economy.snapshot()
 	var path := FIXTURE.write_fixture(folder,"champion.json",snapshot)
 	check(not path.is_empty(),"final victory and wallet pass full save contract and write to disk")

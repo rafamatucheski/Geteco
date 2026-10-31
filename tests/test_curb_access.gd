@@ -54,7 +54,7 @@ func run() -> void:
 				await ticks(ceili(3.6 / speed * 60.0))
 				check(absf(actor.position.y) < .04, "descend " + label)
 		actor.free()
-	# The real modular curb in both orientations, including its narrow ends.
+	# O meio-fio modular real nas duas orientações, incluindo as pontas estreitas.
 	slab.free()
 	var curb := PROPS.create_curb_segment(4, .30, .14)
 	stage.add_child(curb)
@@ -71,7 +71,7 @@ func run() -> void:
 		await ticks(45 if side.x != 0 else 65)
 		check(actor.position.dot(side) < -.2 if side.x != 0 else actor.position.dot(side) < 1.3, "curb side " + str(side) + " position=" + str(actor.position))
 	curb.free()
-	# Use the actual city batch builder; the video planter was a MultiMesh.
+	# Usa o montador real de lotes da cidade; a jardineira do vídeo era um MultiMesh.
 	var chunk := Node3D.new()
 	stage.add_child(chunk)
 	DRESSING._flush(chunk, {"planter": [Transform3D.IDENTITY]})
@@ -96,12 +96,12 @@ func run() -> void:
 		var clear := true
 		for i in 100:
 			await physics_frame
-			# The NPC may steer around the planter, but cannot enter its stone
-			# footprint or gain height by walking through the foliage.
+			# O NPC pode desviar da jardineira, mas não pode entrar na área de pedra
+			# dela nem ganhar altura andando pela folhagem.
 			clear = clear and (absf(citizen.position.x) > .55 or absf(citizen.position.z) > .55) and citizen.position.y < .04
 		check(clear, "NPC respects planter volume " + str(side))
 	citizen.free()
-	# Height alone must not turn furniture into a walkable step.
+	# Só a altura não pode transformar mobília num degrau caminhável.
 	chunk.free()
 	var low_solid := box(stage, Vector3(4, .14, 4), Vector3(0, .07, 0))
 	actor.automatic_direction = Vector3.ZERO

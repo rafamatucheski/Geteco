@@ -1,5 +1,5 @@
 extends SceneTree
-## Full capsule at the authored entrance and swept against the unchanged shell.
+## Cápsula inteira na entrada autoral e varrida contra a casca inalterada.
 
 var failures: Array[String] = []
 

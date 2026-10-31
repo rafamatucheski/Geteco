@@ -84,7 +84,7 @@ func run() -> void:
 		check(cargo.contains(world.player.global_position) and service.nearest_action().get("target","") == cargo.cargo_id,"Loot approachable in layout "+str(cycle))
 		await photo("restock-layout-"+str(cycle))
 	check(layouts[0] != layouts[1] and layouts[1] != layouts[2],"Cargo changes position each delivery")
-	# Restocking must never close around an occupant, even after its timer expires.
+	# A reposição nunca pode fechar em volta de um ocupante, mesmo depois de o timer dela expirar.
 	service.advance_restock(STATE.RESTOCK_SECONDS)
 	check(cargo.opened and service.records[cargo.cargo_id].cycle == 2,"No restock around player")
 	world.player.teleport(cargo.global_position+Vector3(90,.1,0))
@@ -118,7 +118,7 @@ func run() -> void:
 	check(save_result == OK,"Save restocked state")
 	var restored := preload("res://runtime/GameState.gd").new()
 	check(store.load_into(restored).ok and restored.world_state.port_containers[cargo.cargo_id].cycle == 3,"Reload preserves delivery and timer")
-	# Perception uses actual walls, range, facing and living witnesses.
+	# A percepção usa paredes, alcance, orientação e testemunhas vivas reais.
 	cargo.apply_state({"opened":true,"looted":false,"cycle":3})
 	world.player.teleport(cargo.global_position+Vector3(1,.1,0))
 	npc.position = cargo.global_position+Vector3(5,.1,0)

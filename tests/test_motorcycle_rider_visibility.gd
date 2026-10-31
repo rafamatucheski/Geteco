@@ -1,5 +1,5 @@
 extends SceneTree
-## New imported pilots wear helmets and disappear when Dante takes the bike.
+## Os pilotos importados novos usam capacete e somem quando o Dante pega a moto.
 var failures := 0
 
 func _initialize() -> void: run.call_deferred()

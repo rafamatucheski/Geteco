@@ -14,7 +14,7 @@ func check(ok: bool,label: String) -> void:
 	if not ok: failures.append(label)
 
 func run() -> void:
-	# Use the production retirement owner without preparing unrelated geography.
+	# Usa o dono de produção da aposentadoria sem preparar geografia não relacionada.
 	var region := REGION.new()
 	var chunk := Node3D.new()
 	root.add_child(chunk)
@@ -40,8 +40,8 @@ func run() -> void:
 	for frame in 3: await process_frame
 	check(cached_pulse.can_process() and cached_pulse.ticks>cached_ticks,"cached group resumes animation on remount")
 	var ticks := pulse.ticks
-	# A paused slice may leave the model alive while one of its joints is gone.
-	# Reproduce the actual reported state without changing the model's policy.
+	# Uma fatia pausada pode deixar o modelo vivo enquanto uma das juntas dele sumiu.
+	# Reproduz o estado real relatado sem mudar a política do modelo.
 	if not model.can_process():
 		var limb: Node3D = model.thighs[0]
 		limb.get_parent().remove_child(limb)

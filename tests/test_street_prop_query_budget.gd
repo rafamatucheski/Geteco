@@ -1,6 +1,6 @@
 extends "res://tests/tank_control/test_heavy_impacts.gd"
-## Real vehicle hull and wall queries. The existing aggregate collector counts
-## obstruction casts without overriding a non-virtual native physics method.
+## Consultas reais de casco de veículo e de parede. O coletor agregado existente conta
+## os lançamentos de obstrução sem sobrescrever um método nativo não virtual de física.
 const WORK := preload("res://runtime/StallWorkTrace.gd")
 const CAST_LABEL := "street.pre.props.cast"
 const MOTION := Vector3(0, 0, -0.5)

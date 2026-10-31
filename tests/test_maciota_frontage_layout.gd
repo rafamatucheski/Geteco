@@ -1,6 +1,6 @@
 extends SceneTree
-## Real authored exteriors and terrain: keep the workshop and relocated house
-## separate, with supported pedestrian and vehicle approaches.
+## Exteriores e terreno autorais reais: mantém a oficina e a casa realocada
+## separadas, com aproximações apoiadas para pedestre e veículo.
 const REGION := preload("res://world/editing/EditableRegion.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const MACIOTA := preload("res://world/maciota/MaciotaPlace.gd")
@@ -23,8 +23,8 @@ func solid_meshes(node: Node3D) -> Array[AABB]:
 	for mesh: MeshInstance3D in node.find_children("*", "MeshInstance3D", true, false):
 		if not mesh.mesh is BoxMesh: continue
 		var bounds: AABB = mesh.global_transform * mesh.get_aabb()
-		# Structural masses at pedestrian height; pavement, roof finish and trim
-		# do not establish whether one building occupies another building.
+		# Massas estruturais na altura de pedestre; calçamento, acabamento do telhado e frisos
+		# não estabelecem se um prédio ocupa outro prédio.
 		if bounds.position.y < 2.1 and bounds.end.y > .4 and bounds.size.y > .35 and bounds.size.x > .5 and bounds.size.z > .5:
 			result.append(bounds)
 	return result

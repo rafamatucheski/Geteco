@@ -15,7 +15,7 @@ func _initialize() -> void: run.call_deferred()
 func run() -> void:
 	for id in FLEET.all():
 		var model: Node3D = FLEET.create(id)
-		# The army tank is built by PoliceGroundModels, not an exported .scn.
+		# O tanque do exército é montado pelo PoliceGroundModels, não um .scn exportado.
 		if id == "army_tank":
 			check(model.has_node("TankTurret/TankBarrel"), "army_tank: modelo procedural completo")
 		else:

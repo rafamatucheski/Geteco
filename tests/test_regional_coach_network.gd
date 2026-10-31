@@ -29,8 +29,8 @@ func run() -> void:
 			if not plan.get("ok",false): continue
 			check(plan.get("native",false),"Route search executes C# "+from+" -> "+to)
 			if to=="mountain":
-				# Both incoming roads physically keep progressing south through the
-				# ice fork. The old lane hook reversed north by almost one metre.
+				# As duas ruas de chegada continuam fisicamente avançando para o sul pela
+				# bifurcação do gelo. O antigo gancho de faixa voltava quase um metro para o norte.
 				var turn: float=plan.curve.get_closest_offset(Vector3(691,0,-413))
 				var backwards := 0.0
 				for step in 32:

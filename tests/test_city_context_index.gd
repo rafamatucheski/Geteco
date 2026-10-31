@@ -184,8 +184,8 @@ func _real_edits() -> void:
 
 
 func _rotated_buildings() -> void:
-	# Use the same native model as edited building 48; compare the context
-	# against its generated wall mesh, not against a copy of the index formula.
+	# Usa o mesmo modelo nativo do prédio editado 48; compara o contexto
+	# com a malha de parede gerada dele, não com uma cópia da fórmula do índice.
 	for angle in [90.0,37.0]:
 		var region := REGION.new()
 		var data := _building("new_1790426066_503_97028106",Vector2(7,92),Vector2(8.55372619628906,12.8305902481079))

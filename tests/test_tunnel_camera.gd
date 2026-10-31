@@ -18,8 +18,8 @@ func pitch_degrees(camera: Camera3D) -> float:
 	return rad_to_deg(asin(clampf(-(-camera.global_basis.z).y, -1.0, 1.0)))
 
 func settle(world: Node, seconds: float) -> void:
-	# Camera blends advance by delta. A fixed number of draw frames at 400 FPS
-	# used to assert before boarding and the camera's physical transition ended.
+	# As transições da câmera avançam por delta. Um número fixo de quadros de desenho a 400 FPS
+	# fazia a asserção antes de o embarque e a transição física da câmera terminarem.
 	var deadline := Time.get_ticks_usec() + int(seconds * 1000000.0)
 	while Time.get_ticks_usec() < deadline and is_instance_valid(world):
 		await physics_frame
@@ -91,8 +91,8 @@ func run() -> void:
 	var camera: Camera3D = world.camera
 	camera.set_process_unhandled_input(false)
 	var car: CharacterBody3D = world.driving.car
-	# Board the production-admitted starter parking pose. x=160 is already on
-	# the canal ramp (below y=0), so the former fixture began above its floor.
+	# Embarca na pose de estacionamento inicial admitida pela produção. x=160 já fica na
+	# rampa do canal (abaixo de y=0), então a fixture antiga começava acima do piso dela.
 	if not await wait_ground(world, car.global_position):
 		await finish(world)
 		return

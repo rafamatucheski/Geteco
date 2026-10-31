@@ -241,8 +241,8 @@ func _run() -> void:
 	state.equip_weapon("shotgun")
 	await frames(2)
 	var npc2 := await spawn_npc(direction, 4.0)
-	# Keep this pellet/accounting fixture alive even if every pellet connects.
-	# Lethal pacing is covered above and in test_weapon_damage_balance.gd.
+	# Mantém esta fixture de chumbinho/contabilidade viva mesmo que todo chumbinho acerte.
+	# O ritmo letal é coberto acima e em test_weapon_damage_balance.gd.
 	npc2.health = 1000.0
 	var crime0: int = gameplay.crime_points
 	var h0: float = npc2.health
@@ -360,7 +360,7 @@ func _run() -> void:
 	await shot("09_granada")
 
 	# ---- 6b. Recuo com passos próprios e velocidade controlada de combate.
-	# Keep faster strafing away from the automatic garage entrance during this fixture.
+	# Mantém o deslocamento lateral mais rápido longe da entrada automática da garagem nesta fixture.
 	player.teleport(ground(player.global_position + direction * 5.0))
 	state.equip_weapon("pistol")
 	await frames(2)

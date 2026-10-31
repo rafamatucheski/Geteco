@@ -34,8 +34,8 @@ func run() -> void:
 		await physics_frame
 		if world.production.region.is_streaming_idle(): break
 	arrival._spawn_encounter()
-	# The real driver stops one metre short of an open route. Verify both exits
-	# beside Jessica's full physical Jetta hull, rather than assuming an empty bay.
+	# O motorista real para um metro antes de uma rota aberta. Confere as duas saídas
+	# ao lado do casco físico completo do Jetta da Jessica, em vez de supor uma vaga vazia.
 	var parking: Vector3 = world.maciota_place.tour_parking
 	world.player.teleport(parking+Vector3(-1.1,.08,3.0))
 	world.production.region.set_focus(world.player.global_position)
@@ -74,8 +74,8 @@ func run() -> void:
 	if not arrival.last_exit_plan.is_empty():
 		check(arrival.last_exit_plan.passenger.distance_to(arrival.last_exit_plan.driver)>=1.0,"final pose separates the two admitted actor capsules")
 		check(session.position_clear(world.player.global_position),"final pose puts Dante on supported clear ground")
-	# Run the actual collision handler on the controlled cinematic driver. The
-	# street system owns damage/impulse/stun; Arrival must resume only afterward.
+	# Roda o handler real de colisão no motorista cinematográfico controlado. O
+	# sistema de rua é dono do dano/impulso/atordoamento; o Arrival só pode retomar depois.
 	world.player.teleport(arrival.PARK+Vector3(0,.08,5))
 	world.production.region.set_focus(world.player.global_position)
 	for i in 600:
@@ -136,7 +136,7 @@ func run() -> void:
 	arrival.car.controlled = false
 	arrival.car.stop_boarding_motion()
 	jetta.free()
-	# Then remove the car itself while the player is hidden in the same ride.
+	# Depois remove o próprio carro enquanto o jogador está escondido na mesma corrida.
 	arrival.phase = "city_tour"
 	arrival.riding = true
 	arrival.controls_locked = true

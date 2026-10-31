@@ -44,8 +44,8 @@ func run() -> void:
 	check(not terminal.passengers.is_empty(),"passenger spawns aboard")
 	if not terminal.passengers.is_empty():
 		var passenger=terminal.passengers[0]
-		# 75 m including both 32-degree stair ramps; uphill slide speed is below
-		# the 1.55 m/s flat pace. Allow 75 s for the complete physical route.
+		# 75 m incluindo as duas rampas de escada de 32 graus; a velocidade de deslize na subida fica abaixo
+		# do ritmo plano de 1.55 m/s. Permite 75 s para a rota física completa.
 		for i in 4500:
 			await physics_frame
 			if passenger.point_index>=passenger.points.size(): break

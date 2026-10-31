@@ -1,5 +1,5 @@
 extends SceneTree
-## Instrumentation contract only, not a gameplay or performance test.
+## Só contrato de instrumentação, não um teste de jogo nem de desempenho.
 const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const WORK := preload("res://runtime/StallWorkTrace.gd")
 class Controller extends Node:

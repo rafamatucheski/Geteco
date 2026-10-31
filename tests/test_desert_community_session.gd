@@ -1,6 +1,6 @@
 extends SceneTree
-## Actual Main, C# router, ordinary interactions, physical approaches and cold save reload.
-## Fixture relocation between locations does not certify the complete driving route.
+## Main real, roteador C#, interações comuns, aproximações físicas e recarga fria do save.
+## A realocação da fixture entre locais não certifica a rota completa de direção.
 const FIXTURE:=preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const STATE:=preload("res://runtime/desert/community/DesertCommunityState.gd")
 const SITE:=preload("res://world/desert/community/DesertCommunitySite.gd")
@@ -23,8 +23,8 @@ func boot(path: String) -> void:
 	root.add_child(world)
 	current_scene=world
 	while world.session==null or not world.session.ready_for_play or not world.production.startup_streaming_settled: await physics_frame
-	# --no-save protects ordinary startup, then persistence is enabled only for
-	# the verified isolated fixture path. Never enable writes to a user slot.
+	# --no-save protege o início comum, e depois a persistência é ligada só para
+	# o caminho de fixture isolado verificado. Nunca liga gravações num slot do usuário.
 	check(world.production.store.path==path and path.begins_with(folder+"/"),"only isolated fixture slot may receive writes")
 	if world.production.store.path!=path or not path.begins_with(folder+"/"): quit(1); return
 	world.production.no_save=false
@@ -66,8 +66,8 @@ func verify_pump_physics() -> void:
 		transform.origin=world.player.global_position
 		check(actor.test_move(transform,Vector3(-3,0,0)),"real resident capsule also blocked by pump")
 		break
-	# Three controls under the gameplay camera expose drawing/occlusion errors;
-	# these photographs need visual review and are not an automatic depth verdict.
+	# Três controles sob a câmera de jogo expõem erros de desenho/oclusão;
+	# estas fotografias precisam de revisão visual e não são um veredito automático de profundidade.
 	for offset in [Vector3(0,0,1.8),Vector3(0,0,-1.8),Vector3(2.1,0,0)]:
 		await stage_at(SITE.ORIGIN+offset)
 		await create_timer(.4).timeout

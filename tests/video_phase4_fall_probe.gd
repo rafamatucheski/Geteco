@@ -52,8 +52,8 @@ func run() -> void:
 	world.player.automatic_direction = Vector3.ZERO
 	world.production.set_population(0)
 	coupe = world.driving.car
-	# Explicit incident setup: the recorded coupe was left on Westgate,
-	# unlike the clean-save startup parking spot beside Maciota.
+	# Preparação explícita do incidente: o cupê registrado foi deixado na Westgate,
+	# ao contrário da vaga de estacionamento inicial de save limpo ao lado do Maciota.
 	coupe.place(Vector3(26.7, .12, 109), 0.0)
 	phase = "original_parked"
 	await frames(20)

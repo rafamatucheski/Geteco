@@ -1,6 +1,6 @@
 extends "res://tests/test_mining_session.gd"
-## Native session contact/menu/save integration and real scoop input. Initial
-## cargo/car placements are diagnostic fixtures, not evidence of a driven route.
+## Integração nativa de contato/menu/save da sessão e entrada real da pá. Os posicionamentos
+## iniciais de carga/carro são fixtures de diagnóstico, não evidência de rota dirigida.
 const JOB := preload("res://gameplay/mining/jobs/MiningYardJob.gd")
 
 func run() -> void:
@@ -46,11 +46,11 @@ func run() -> void:
 	for car in world.production.vehicles:
 		if is_instance_valid(car) and car.vehicle_id=="mineradora_tractor": machine=car; break
 	if not check(machine!=null,"existing loader available"): finish(1); return
-	# Place tractor on the clear north approach; ordinary boarding and B/PgUp
-	# operate its real adapter. No test calls the delivery-state mutation.
+	# Põe o trator na aproximação norte livre; o embarque comum e B/PgUp
+	# operam o adaptador real dele. Nenhum teste chama a mutação do estado de entrega.
 	var delivery:=JOB.DESTINATION+Vector3(-1.8,0,0)
-	# Give a full metre of rolling clearance when withdrawing the raised scoop;
-	# a release on the painted boundary correctly fails the delivery contract.
+	# Dá um metro inteiro de folga de rolagem ao retirar a pá erguida;
+	# soltar sobre o limite pintado falha com razão no contrato de entrega.
 	machine.place(delivery+Vector3(0,.08,-4.1),PI)
 	world.player.teleport(machine.driver_door_anchor(1)+machine.global_basis.x*.5+Vector3.UP*.08)
 	await frames(20)
@@ -66,7 +66,7 @@ func run() -> void:
 	rock.angular_velocity=Vector3.ZERO
 	await frames(120)
 	check(JOB.STATE.data(world.session.state.world_state).delivered.is_empty(),"pushing a rock into bay without using scoop gives no credit")
-	# Move only the initial fixture to the real scoop acquisition range.
+	# Move só a fixture inicial para o alcance real de captura da pá.
 	rock.global_position=controls.cargo_anchor()+Vector3(0,.65,.5)
 	await frames(2)
 	key(KEY_B,true); await frames(2); key(KEY_B,false)
@@ -98,8 +98,8 @@ func run() -> void:
 	check(not saved.is_empty() and JOB.STATE.data(saved.world).delivered.size()==1,"full save validator restores partial job")
 	check(not saved.is_empty() and JOB.STATE.validate_wallet(saved.world,saved.economy),"partial state has consistent unpaid wallet")
 	if not saved.is_empty() and JOB.STATE.data(saved.world).delivered.has("0"):
-		# Recreate the controller and its original rock, exactly the two owners
-		# restored independently at startup. Keep real streamed terrain/colliders.
+		# Recria o controlador e a rocha original dele, exatamente os dois donos
+		# restaurados de forma independente no início. Mantém o terreno/colisores reais em streaming.
 		var row: Dictionary=JOB.STATE.data(saved.world).delivered["0"]
 		var expected:=Vector3(row.position[0],row.position[1],row.position[2])
 		rock.global_position=LAYOUT.cargo_spawns()[0]+Vector3.UP*.65
@@ -109,8 +109,8 @@ func run() -> void:
 		world.session.desert.extras.add_child(replacement)
 		replacement.configure(world.session)
 		world.session.desert.extras.mining_job=replacement
-		# Swap ownership atomically before yielding: HUD queries the aggregator
-		# every frame and must never observe an intentionally freed fixture node.
+		# Troca a posse de forma atômica antes de ceder: o HUD consulta o agregador
+		# a cada quadro e nunca pode observar um nó de fixture liberado de propósito.
 		job.queue_free()
 		await frames(90)
 		check(rock.freeze and rock.global_position.distance_to(expected)<.03,"fresh controller restores delivered physical rock without duplicating cargo")

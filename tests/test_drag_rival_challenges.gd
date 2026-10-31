@@ -1,6 +1,6 @@
 extends SceneTree
-## Pure drivetrain calibration plus real isolated persistence; physical crossings
-## and UI entry are covered separately by the session integration runner.
+## Calibração pura do trem de força mais persistência isolada real; as travessias físicas
+## e a entrada pela UI são cobertas à parte pelo runner de integração da sessão.
 const PROGRESS := preload("res://activities/desert_drag/DragRivalChallengeProgress.gd")
 const CATALOG := preload("res://activities/desert_drag/DragRivalChallengeCatalog.gd")
 const TELEMETRY := preload("res://activities/desert_drag/DragRivalChallengeTelemetry.gd")

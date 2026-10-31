@@ -39,7 +39,7 @@ func run() -> void:
 	site.position=Vector3.ZERO
 	site.hide()
 	for spec in [{"id":"tire-display","x":-7.9},{"id":"tool-chest","x":7.45}]:
-		# Tire-display control stays beside both racks and clear of the string-light pole.
+		# O controle da vitrine de pneus fica ao lado das duas prateleiras e livre do poste do varal de luzes.
 		var side_x: float = -5.1 if spec.id=="tire-display" else spec.x-1.7
 		fixtures.append({"id":spec.id,"node":site,"camera":Vector3(spec.x,3,-5),"target":Vector3(spec.x,.8,4.85),"front":Vector3(spec.x,.05,3.4),"behind":Vector3(spec.x,.05,5.6),"side":Vector3(side_x,.05,4.85)})
 	fixtures.append({"id":"store-wall","node":site,"camera":Vector3(0,8,-10),"target":Vector3(0,1.8,10),"size":32.0,"front":Vector3(0,.05,3.6),"behind":Vector3(0,.05,15),"side":Vector3(11,.05,10)})

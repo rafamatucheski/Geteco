@@ -152,8 +152,8 @@ func _build_passage_fixture() -> Node3D:
 	var home := Node3D.new()
 	home.name = "Home1"
 	homes.add_child(home)
-	# Production Casa 1 is rotated: testing an identity house hid the old
-	# stair-to-bookshelf orientation error despite isolated routes being clear.
+	# A Casa 1 de produção é girada: testar uma casa com identidade escondia o antigo
+	# erro de orientação escada-estante apesar de as rotas isoladas estarem livres.
 	home.position = Vector3(-403,0,87)
 	home.rotation.y = PI*.5
 	var roof := Node3D.new()

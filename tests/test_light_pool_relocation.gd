@@ -1,5 +1,5 @@
 extends "res://tests/test_belt_lantern_occlusion.gd"
-## A pooled static fitting must not sweep an interpolated light between mounts.
+## Uma luminária estática do pool não pode arrastar uma luz interpolada entre suportes.
 func run() -> void:
 	if DisplayServer.get_name()=="headless": quit(2); return
 	Engine.max_fps = 120

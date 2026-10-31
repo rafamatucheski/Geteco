@@ -1,5 +1,5 @@
 extends SceneTree
-## Production session with isolated save: proximity, menu routing and recovery.
+## Sessão de produção com save isolado: proximidade, roteamento de menu e recuperação.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const OUTPUT := "res://artifacts/npc-hud-implementation-20261022/"
 var world
@@ -46,8 +46,8 @@ func sample_frames() -> Dictionary:
 		"over_66ms": samples.filter(func(value): return value > 66.667).size()}
 
 func measure_caption() -> void:
-	# Optional comparison uses the exact pre-edit UI sources saved in the task's
-	# artifacts. Only their inheritance path is redirected to the saved parent.
+	# A comparação opcional usa os códigos exatos de UI de antes da edição salvos nos artefatos
+	# da tarefa. Só o caminho de herança deles é redirecionado para o pai salvo.
 	var original = load(OUTPUT + "before/BaselineCard.gd").new()
 	var current = world.session.dialogue_card
 	world.hud.add_child(original)
@@ -76,8 +76,8 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT))
 	var folder := FIXTURE.output_dir("npc-hud-implementation-20261022/save")
 	var snapshot := FIXTURE.full_snapshot(Vector3(166, .1, 112), true)
-	# Early campaign avoids the post-campaign reward-car action taking priority
-	# over Maciota at his desk. The introduction is already complete.
+	# O início da campanha evita que a ação do carro de recompensa pós-campanha tenha prioridade
+	# sobre o Maciota na mesa dele. A introdução já está concluída.
 	snapshot.campaign = preload("res://systems/campaign/CampaignRuntime.gd").new().snapshot()
 	var path := FIXTURE.write_fixture(folder, "save.json", snapshot)
 	check(not path.is_empty(), "isolated save created")
@@ -127,7 +127,7 @@ func run() -> void:
 	await frames(12)
 	check(button("Informações") != null, "journal keeps access to story records")
 	await capture("04-missoes")
-	# Exercise an active objective without triggering mission spawns or rewards.
+	# Exercita um objetivo ativo sem disparar spawns nem recompensas de missão.
 	check(session.state.campaign.restore_snapshot(FIXTURE.before_document(true)), "active mission checkpoint restored for journal check")
 	session.show_journal()
 	await frames(8)

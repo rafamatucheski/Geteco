@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Arrival coroutines, physics-frame suspension and door timer; lightweight
-## actors isolate callback ownership from navigation, art and the city tour.
+## Corrotinas reais do Arrival, suspensão por quadro de física e timer da porta; atores
+## leves isolam a posse dos callbacks da navegação, da arte e do passeio pela cidade.
 const ARRIVAL := preload("res://runtime/Arrival.gd")
 class Actor extends CharacterBody3D:
 	var input_locked := false
@@ -150,8 +150,8 @@ func run() -> void:
 	previous_car.queue_free()
 	release(f)
 	if arrival_script == ARRIVAL:
-		# Actual deferred recovery, with only actor creation and floor admission
-		# replaced by the lightweight fixture; no mocked recovery callback.
+		# Recuperação adiada real, com só a criação do ator e a admissão no piso
+		# substituídas pela fixture leve; nenhum callback de recuperação simulado.
 		f = fixture(true)
 		board(f.arrival)
 		f.arrival.car.health = 0

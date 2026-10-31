@@ -1,8 +1,8 @@
 extends SceneTree
-## Main integration: actual player gunfire, service-vault theft, guard projectiles,
-## convoy radio, production police dispatch and natural death/loot forfeiture.
-## The player alone is positioned at a collision-checked rear access for setup.
-## No convoy/guard is teleported, disabled, killed or replaced by this test.
+## Integração no Main: tiros reais do jogador, roubo do cofre de serviço, projéteis dos guardas,
+## rádio do comboio, dispatch policial de produção e morte natural/perda do saque.
+## Só o jogador é posicionado num acesso traseiro conferido por colisão na preparação.
+## Nenhum comboio/guarda é teleportado, desligado, morto ou substituído por este teste.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
@@ -49,7 +49,7 @@ func _player_fire(_weapon: String, _point: Vector3) -> void:
 	_player_shots += 1
 
 func _reported(points: int) -> void:
-	# The authored first alarm contributes 90. Gunfire testimony is capped at 4.
+	# O primeiro alarme autoral contribui 90. O testemunho dos tiros é limitado a 4.
 	if points >= 90: _radio_reports += 1
 
 func _trace(label: String) -> void:
@@ -96,8 +96,8 @@ func _rear_setup() -> Dictionary:
 	return {}
 
 func _persist_diagnostic() -> void:
-	# A separate evidence store validates the live state; this does not bypass
-	# FullSession's prohibition on player checkpoints while carrying stolen cash.
+	# Um armazenamento de evidência separado valida o estado vivo; isto não contorna a
+	# proibição da FullSession de checkpoints do jogador carregando dinheiro roubado.
 	var store := STORE.new()
 	store.path = folder.path_join("live-state-diagnostic.json")
 	if not check(store.path != STORE.PATH and store.save(world.session.state) == OK, "live convoy snapshot serializes to an isolated diagnostic file"): return
@@ -137,8 +137,8 @@ func _verify_failed_wallet(before: Dictionary) -> void:
 		"delta":delta, "achievement_income":achievement_income, "new_transactions":new_transactions,
 		"armored_receipts":armored_receipts}))
 	check(armored_receipts == [false, false] and convoy.data.secured == [false, false], "failed robbery creates no truck reward receipt or secured cargo")
-	# Wanted level 3 legitimately awards 'most_wanted' (R$100) during this
-	# confrontation. Reconcile that independent source instead of banning income.
+	# O nível de procurado 3 concede legitimamente 'most_wanted' (R$100) durante este
+	# confronto. Reconcilia essa fonte independente em vez de proibir renda.
 	check(delta == achievement_income, "wallet increase is exactly the unrelated achievement rewards, with no stolen cargo credit")
 
 func run() -> void:
@@ -189,8 +189,8 @@ func run() -> void:
 	check(not convoy.data.hostile and world.gameplay.stars == 0, "legal observation leaves guards and police neutral")
 	world.player.teleport(rear_setup.point)
 	world.camera.initialized = false
-	# Ordinary starting equipment, set once. No invulnerability, healing, damage
-	# suppression or regeneration is used during the confrontation.
+	# Equipamento inicial comum, definido uma vez. Nenhuma invulnerabilidade, cura, supressão
+	# de dano ou regeneração é usada durante o confronto.
 	world.gameplay.armor = 100
 	session.state.grant_weapon("pistol")
 	session.state.add_ammo("pistol", 36)
@@ -228,8 +228,8 @@ func run() -> void:
 		await physics_frame
 		_observe_police()
 		_worst_player_health = minf(_worst_player_health, world.gameplay.health)
-		# A short ordinary retreat gives the convoy and real dispatcher time to
-		# react. Collision resolves every step; this is not an escape certificate.
+		# Uma retirada comum curta dá tempo ao comboio e ao dispatcher real de
+		# reagir. A colisão resolve cada passo; isto não é certificado de fuga.
 		var offset: Vector3 = rear_setup.retreat - world.player.global_position
 		offset.y = 0
 		world.player.automatic_direction = offset.normalized() if Time.get_ticks_msec() - combat_started < 5000 and offset.length() > .35 else Vector3.ZERO

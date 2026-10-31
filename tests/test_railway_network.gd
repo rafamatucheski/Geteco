@@ -1,5 +1,5 @@
 extends SceneTree
-## Route contracts, independent of rendered quality or real station admission.
+## Contratos de rota, independentes da qualidade renderizada e da admissão real nas estações.
 const NETWORK := preload("res://world/railway/RailwayNetwork.gd")
 var checks := 0
 var failures: Array[String] = []

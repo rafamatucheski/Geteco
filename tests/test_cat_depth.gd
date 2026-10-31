@@ -1,7 +1,7 @@
 extends SceneTree
-## Native cat mesh depth with a visible positive control at every tested position.
-## This isolated fixture proves depth ordering only, not complete interior approval
-## or performance. Run rendered in Godot 4.7.2 .NET after building Harbor.csproj.
+## Profundidade da malha nativa do gato com um controle positivo visível em cada posição testada.
+## Esta fixture isolada prova só a ordem de profundidade, não a aprovação completa do interior
+## nem desempenho. Rode renderizado no Godot 4.7.2 .NET depois de compilar Harbor.csproj.
 
 const CAT := preload("res://runtime/cats/CatModel.gd")
 const FURNITURE := preload("res://runtime/cats/CatFurniture.gd")

@@ -29,8 +29,8 @@ func run() -> void:
 		check(controls.operate_rear(motion,.18),"rear joint %d has an independent hydraulic command" % axis)
 		for other in 4:
 			if other != axis: check(is_equal_approx(rear.pose[other],pose[other]),"joint %d does not move joint %d" % [axis,other])
-	# A real wall encloses only the next swing destination; a large delta must
-	# stop at contact rather than jump through its thin thickness.
+	# Uma parede real fecha só o próximo destino do giro; um delta grande precisa
+	# parar no contato em vez de pular pela espessura fina dela.
 	var before: Vector4 = rear.pose
 	var wall := StaticBody3D.new()
 	var wall_shape := CollisionShape3D.new()
@@ -43,8 +43,8 @@ func run() -> void:
 	check(rear.bucket.global_position.x < wall.position.x+.02,"rear scoop cannot tunnel through wall")
 	check(rear.pose.x >= before.x,"blocked movement preserves last safe hydraulic pose")
 	wall.queue_free(); await physics_frame
-	# No independent controls when the engine is unavailable, a modal owns
-	# input, the driver is absent or save restoration has not finished.
+	# Sem controles independentes quando o motor está indisponível, um modal é dono da
+	# entrada, o motorista está ausente ou a restauração do save não terminou.
 	machine.controlled = true
 	check(controls.active(),"occupied machine exposes controls")
 	machine.input_locked = true
@@ -53,8 +53,8 @@ func run() -> void:
 	check(not controls.active(),"disabled engine blocks hydraulic input")
 	machine.engine_disabled = false; machine.controlled = false
 	check(not controls.active(),"parked machine cannot consume driver input")
-	# Unoccupied collision still follows a moved carrier; rear physical volumes
-	# have the same live collision owner and disappear with its destruction.
+	# A colisão desocupada ainda segue um chassi movido; os volumes físicos de trás
+	# têm o mesmo dono de colisão vivo e somem com a destruição dele.
 	machine.position += Vector3.RIGHT*6
 	controls.operate(0,0)
 	for shape in rear.shapes:

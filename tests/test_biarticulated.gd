@@ -44,7 +44,7 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	var poses := []
 	var blocked := []
-	# Audit the real streamed collision for all three bodies at every metre.
+	# Audita a colisão real em streaming dos três corpos a cada metro.
 	bus.set_active(false)
 	for other in ops.fleet: other.set_active(false)
 	ops.set_physics_process(false)

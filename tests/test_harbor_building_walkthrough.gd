@@ -1,7 +1,7 @@
 extends SceneTree
-## Main-scene coverage: physical thresholds, real-height floors, roof, receipts,
-## return, and cold restore. Supports bounded inventory slices without skipping
-## a failing case or substituting catalog assertions for walking.
+## Cobertura na cena do Main: limiares físicos, andares em altura real, telhado, recibos,
+## volta e restauração fria. Aceita fatias limitadas do inventário sem pular
+## um caso que falha nem substituir a caminhada por asserções de catálogo.
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const CATALOG = preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
 const STORE = preload("res://runtime/SaveStore.gd")
@@ -32,12 +32,12 @@ func boot() -> void:
 		if Time.get_ticks_msec() >= boot_deadline:
 			check(false, "Main boot reaches ready session and settled streaming within 180 seconds")
 			finish(3)
-			# quit() is deferred; never return into a derived runner's assertions.
+			# quit() é adiado; nunca volta para as asserções de um runner derivado.
 			while true: await process_frame
 		if world.session != null and world.session.ready_for_play and world.production.ready_for_play:
 			if world.production.startup_streaming_settled: break
-			# The startup flag is a one-shot result with a 240-frame budget.
-			# Runtime streaming can finish later without updating that flag.
+			# A flag de início é um resultado único com orçamento de 240 quadros.
+			# O streaming em runtime pode terminar depois sem atualizar essa flag.
 			var idle := true
 			for resident in world.production.regions.values():
 				if is_instance_valid(resident) and not resident.is_streaming_idle(): idle = false
@@ -94,8 +94,8 @@ func stairs_to(destination: int) -> bool:
 	return false
 
 func roof_walk_to(roof: Node3D, local_goal: Vector3) -> bool:
-	# Original chimneys and roof units stay solid. Verify an actual route around
-	# them instead of assuming every roof has an unobstructed straight aisle.
+	# As chaminés e unidades de telhado originais continuam sólidas. Confere uma rota real em volta
+	# delas em vez de supor que todo telhado tem um corredor reto desobstruído.
 	var goal: Vector3 = roof.to_global(local_goal)
 	var start: Vector3 = world.player.global_position
 	if not world.session.position_clear(goal): return false
@@ -177,8 +177,8 @@ func run() -> void:
 			check(world.camera._building_approach_blend>.95,label+" entrance approach raises camera")
 		await photo(label+"-exterior")
 		if label in ["harbor_building_new_1790426066_503_97028106","harbor_building_torque_store"]:
-			# These authored doors face away from the default street view. Use
-			# the existing orbit to inspect their actual front-facing approach.
+			# Estas portas autorais ficam de costas para a vista padrão da rua. Usa
+			# a órbita existente para inspecionar a aproximação de frente real delas.
 			var saved_orbit: float = world.camera.heading
 			var view_offset: Vector3 = world.camera._exterior_view_offset()
 			world.camera.heading = float(definition.exterior_rotation)-atan2(view_offset.x,view_offset.z)
@@ -229,8 +229,8 @@ func run() -> void:
 				check(urban.cargo_handling.depot.solids.all(func(body): return body.collision_layer==1),label+" company retains physical solids level "+str(index))
 				var quays := Vector3(4885.0/16.0,0,3400.0/16.0)
 				if world.player.global_position.distance_to(quays)<=urban.cargo_handling.ACTIVE_DISTANCE:
-					# Residency scans run every .25s. A new landing can cross their
-					# radius just after a scan and the stairs fade lasts only .20s.
+					# As varreduras de residência rodam a cada .25s. Um patamar novo pode cruzar o
+					# raio delas logo depois de uma varredura, e o fade da escada dura só .20s.
 					var cargo_deadline := Time.get_ticks_msec()+600
 					while not urban.cargo_handling.active and Time.get_ticks_msec()<cargo_deadline: await physics_frame
 					check(urban.cargo_handling.active,label+" nearby cargo activity continues level "+str(index))

@@ -1,6 +1,6 @@
 extends SceneTree
-## Focused regression: real collision at the paddock seam, reversible physical
-## obstruction, and queue ownership while the driver explores on foot.
+## Regressão focada: colisão real na emenda do paddock, obstrução física
+## reversível e posse da fila enquanto o motorista explora a pé.
 const MEET := preload("res://world/desert/drag_meet/DesertDragMeet.gd")
 const OPEN := preload("res://activities/desert_drag/DragOpenMeet.gd")
 const DRIVE := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")

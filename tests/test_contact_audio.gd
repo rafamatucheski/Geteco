@@ -115,7 +115,7 @@ func run() -> void:
 	car.set_physics_process(false)
 	check(pool.played_count > before and recorded(pool,pair_key(car,wall)), "real move_and_slide wall collision reaches audio")
 	print("CONTACT_PHYSICAL wall emissions=",pool.played_count-before," capture_ms=",Time.get_ticks_msec()-capture_started_ms)
-	# Car-to-car uses the established crash fixture in test_vehicle_contact_collision.
+	# Carro contra carro usa a fixture de batida estabelecida em test_vehicle_contact_collision.
 	var street := StreetFixture.new()
 	world.add_child(street)
 	wall.position.x = 30

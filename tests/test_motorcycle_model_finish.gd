@@ -1,5 +1,5 @@
 extends SceneTree
-## Shared packed models must not share mutable paint, lamp or damage state.
+## Modelos empacotados compartilhados não podem compartilhar estado mutável de pintura, lanterna ou dano.
 const VEHICLE=preload("res://scripts/Vehicle.gd")
 const ROLES=preload("res://runtime/VehicleSurfaceRoles.gd")
 var checks:=0

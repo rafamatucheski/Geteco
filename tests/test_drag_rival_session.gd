@@ -159,8 +159,8 @@ func run() -> void:
 	finish()
 
 func _seed_recorded_proofs(state, car: Node) -> Array[String]:
-	# Recovery only: previous physical results become explicit fixture prerequisites,
-	# never evidence that this process drove the skipped races again.
+	# Só recuperação: resultados físicos anteriores viram pré-requisitos explícitos da fixture,
+	# nunca evidência de que este processo dirigiu de novo as corridas puladas.
 	var source := ""
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--resume-rival-log="): source=argument.trim_prefix("--resume-rival-log=")

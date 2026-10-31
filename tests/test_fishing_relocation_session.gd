@@ -1,7 +1,7 @@
 extends SceneTree
-## One real Main journey: legacy save, actual car controls, dirt/land seams,
-## walking/fishing input and isolated persistence. Continuous frames are visual
-## evidence; readback/JPEG/capture cap explicitly exclude FPS conclusions.
+## Uma jornada real no Main: save legado, controles reais do carro, emendas de terra/chão,
+## entrada de caminhada/pesca e persistência isolada. Os quadros contínuos são evidência
+## visual; o limite de leitura/JPEG/captura exclui explicitamente conclusões de FPS.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LOCATION := preload("res://runtime/FishingLocation.gd")
 const LAYOUT := preload("res://world/places/fishing/FishingRuralLayout.gd")
@@ -41,8 +41,8 @@ func run() -> void:
 	source_before = fingerprint()
 	var legacy_point := LOCATION.LEGACY_ANCHOR+Vector3(0,.10,30)
 	var snapshot := FIXTURE.full_snapshot(legacy_point,false)
-	# The gateway helper defaults to an active finale; this journey intentionally
-	# starts between missions, as free fishing requires no campaign in progress.
+	# O helper do portal usa por padrão um final ativo; esta jornada de propósito
+	# começa entre missões, já que a pesca livre exige nenhuma campanha em andamento.
 	snapshot.campaign.active_id = ""
 	snapshot.campaign.step = 0
 	snapshot.economy.balance = 500
@@ -188,8 +188,8 @@ func run() -> void:
 	finish()
 
 func capture_tree_depth() -> void:
-	# Real Dante, real native trunk and normal depth test. Fixture positions are
-	# separate from the journey; paired show/hide frames isolate target pixels.
+	# Dante real, porta-malas nativo real e teste de profundidade normal. As posições da fixture são
+	# separadas da jornada; quadros pareados de mostrar/esconder isolam os pixels do alvo.
 	var inventory := preload("res://world/places/fishing/FishingWoodland.gd").tree_inventory()
 	inventory.sort_custom(func(a,b): return a.point.distance_to(LOCATION.ENTRY)<b.point.distance_to(LOCATION.ENTRY))
 	var tree_point: Vector3 = inventory[0].point

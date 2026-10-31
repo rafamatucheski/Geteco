@@ -1,6 +1,6 @@
 extends SceneTree
-## Local reproduction of the last 57 m into the ice station. Staging is explicit;
-## after admission, the real regional controller owns every movement and actor.
+## Reprodução local dos últimos 57 m até a estação do gelo. A preparação é explícita;
+## depois da admissão, o controlador regional real é dono de todo movimento e ator.
 const F := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const ROUTES := preload("res://runtime/regional/RegionalCoachRoute.gd")
 const COACH := preload("res://runtime/regional/RegionalCoach.gd")
@@ -13,8 +13,8 @@ func run() -> void:
 	create_timer(240).timeout.connect(func(): push_error("COACH_APPROACH timeout"); quit(3))
 	seed(28092026)
 	folder=F.output_dir("regional-coach-approach")
-	# Begin in Harbor so the player's parked car stays at the genuine origin.
-	# Starting the checkpoint beside the approach would park it on this route.
+	# Começa no Harbor para que o carro estacionado do jogador fique na origem genuína.
+	# Começar o checkpoint ao lado da aproximação o estacionaria nesta rota.
 	var snapshot := F.full_snapshot(Vector3(135,.12,72),true)
 	snapshot.campaign.aftermath={"call_complete":true}
 	var save_path := F.write_fixture(folder,"save.json",snapshot)

@@ -43,7 +43,7 @@ func run() -> void:
 			for j in range(i+2,count):
 				if i==0 and j==count-1: continue
 				if Geometry2D.segment_intersects_segment(path[i],path[(i+1)%count],path[j],path[(j+1)%count]) != null: crossings += 1
-	# Left/right rails must not cut each other, including in tight turns.
+	# Os trilhos esquerdo/direito não podem se cortar, inclusive em curvas fechadas.
 	for i in count:
 		for j in count:
 			if Geometry2D.segment_intersects_segment(paths[0][i],paths[0][(i+1)%count],paths[2][j],paths[2][(j+1)%count]) != null: crossings += 1

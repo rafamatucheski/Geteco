@@ -1,5 +1,5 @@
 extends SceneTree
-## Real streamed surface collision. This is not a session or FPS benchmark.
+## Colisão real de superfície em streaming. Isto não é benchmark de sessão nem de FPS.
 const NATIVE := preload("res://world/regions/NativeRegion.gd")
 const DESERT := preload("res://world/desert/DesertRegion.gd")
 const BOUNDARY := preload("res://world/regions/ScenarioBoundary3D.gd")
@@ -24,7 +24,7 @@ func run() -> void:
 	desert.initial_prewarm_only = true
 	root.add_child(desert)
 	desert.set_process(false)
-	# Samples cover the snow/sand side, all sand perimeter directions and seams.
+	# As amostras cobrem o lado da neve/areia, todas as direções do perímetro de areia e as emendas.
 	for z in [-400.0, -576.0, -600.0, -960.0, -1440.0, -1900.0]:
 		var point := Vector3(464, 0, z)
 		mountain.prepare_collision_at(point)
@@ -45,8 +45,8 @@ func run() -> void:
 		check(not space.intersect_ray(PhysicsRayQueryParameters3D.create(pair[0],pair[1],1)).is_empty(), "sand perimeter sealed %s" % pair[0])
 	var bridge := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(342.5,3.2,-382),Vector3(342.5,3.2,-365),1))
 	check(bridge.is_empty(), "authored city/desert bridge stays open")
-	# Capsule sweeps cross an entire cell edge in one call, including the jump
-	# height above the old terminal guardrail. Real collision must stop them.
+	# As varreduras de cápsula cruzam uma aresta inteira de célula numa chamada, incluindo a altura
+	# do salto acima do antigo guarda-corpo do terminal. A colisão real precisa pará-las.
 	for pair in [[Vector3(370,0,-600),Vector3(85,0,0)], [Vector3(370,0,-576),Vector3(85,0,0)], [Vector3(342.5,3,-1945),Vector3(0,0,-20)]]:
 		if pair[0].x == 370:
 			pair[0].y = desert._ground_height(Vector2(pair[0].x,pair[0].z))+1.1
@@ -69,8 +69,8 @@ func run() -> void:
 		query.collision_mask = 1
 		check(space.intersect_shape(query).is_empty(), "capsule starts outside existing solids")
 		var contact := actor.move_and_collide(pair[1])
-		# Existing solid outcrops may stop the capsule before the continuous ridge.
-		# The directed rays above independently verify the ridge fills the gaps.
+		# Afloramentos sólidos existentes podem parar a cápsula antes da serra contínua.
+		# Os raios dirigidos acima conferem de forma independente que a serra preenche os vãos.
 		print("BOUNDARY_CONTACT ", contact.get_collider().get_parent().name if contact != null else "none", " ", actor.global_position)
 		check(contact != null and actor.global_position.x < 440 and actor.global_position.z > -1950, "capsule stays inside supported sand perimeter %s" % pair[0])
 		check(actor.global_position.distance_to(pair[0]) < pair[1].length() and actor.global_position.y >= pair[0].y-.1, "no teleport, fall or traversal through boundary")

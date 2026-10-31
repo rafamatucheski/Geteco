@@ -99,7 +99,7 @@ func _run() -> void:
 		if record.kind == "utility_pole": pole_positions[record.position] = true
 	for record in record_data:
 		if record.kind == "utility_span": _check(pole_positions.has(record.a) and pole_positions.has(record.b), "overhead span connects existing poles")
-	# Compare actual streamed mesh triangles with the physical surface at curves/T.
+	# Compara os triângulos reais da malha em streaming com a superfície física nas curvas/T.
 	var region := Node3D.new(); root.add_child(region)
 	var probes: Array[Vector2] = [Vector2(336,-534),Vector2(330.78,-888.28),Vector2(-1048.28,-551.72),Vector2(-114.69,-635.31),Vector2(302,-498),Vector2(-211.9,-569.3)]
 	var cells: Dictionary = {}
@@ -113,11 +113,11 @@ func _run() -> void:
 		var position := Vector3(point.x,0,point.y)
 		var query := PhysicsRayQueryParameters3D.create(position+Vector3.UP,position-Vector3.UP,1)
 		var hit := region.get_world_3d().direct_space_state.intersect_ray(query)
-		# Unified paving deliberately keeps physical asphalt flush with the sand;
-		# its 26mm rendered finish is not an extra physical step for the tires.
+		# O calçamento unificado mantém de propósito o asfalto físico rente à areia;
+		# o acabamento renderizado de 26mm dele não é um degrau físico extra para os pneus.
 		var physical_height := 0.0 if BRIDGE_STYLE.enabled() else .018
-		# Several chunks share this fixture parent; Godot may rename subsequent
-		# same-named meshes to @MeshInstance3D@.... Surface ownership is semantic.
+		# Vários chunks compartilham este pai de fixture; o Godot pode renomear malhas
+		# seguintes de mesmo nome para @MeshInstance3D@.... A posse da superfície é semântica.
 		var road_hit: bool=not hit.is_empty() and hit.collider is StaticBody3D and hit.collider.get_meta("vehicle_surface","")=="hard" and hit.collider.get_parent() is MeshInstance3D and hit.collider.get_parent().get_meta("vehicle_surface","")=="hard"
 		var observed_path := str(hit.collider.get_path()) if not hit.is_empty() else "none"
 		var observed_height := str(hit.position.y) if not hit.is_empty() else "none"

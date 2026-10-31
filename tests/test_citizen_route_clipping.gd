@@ -1,6 +1,6 @@
 extends SceneTree
-## Real physics plus ProductionWorld's admission helper. No Main population,
-## renderer or FPS claim; street metadata represents the road exclusion rule.
+## Física real mais o helper de admissão do ProductionWorld. Sem população do Main,
+## renderizador nem afirmação de FPS; os metadados de rua representam a regra de exclusão da pista.
 const PRODUCTION := preload("res://runtime/ProductionWorld.gd")
 const SESSION := preload("res://runtime/FullSession.gd")
 var checks := 0
@@ -51,8 +51,8 @@ func run() -> void:
 	production.set_process(false)
 	production.world = world
 	production.regions = {"harbor": region}
-	# Use the productive FullSession capsule and supporting-floor checks.
-	# Keep this session outside the tree so its gameplay _ready does not run.
+	# Usa a cápsula produtiva da FullSession e as checagens de piso de apoio.
+	# Mantém esta sessão fora da árvore para que o _ready de jogo dela não rode.
 	var session := SESSION.new()
 	session.world = world
 	production.session = session
@@ -91,8 +91,8 @@ func run() -> void:
 	obstacle.free()
 	await sync_physics()
 
-	# Samples use the ordinary .32 m actor capsule. A prop outside those
-	# samples must still block the final .72 m lane envelope sweep.
+	# As amostras usam a cápsula comum de ator de .32 m. Um prop fora dessas
+	# amostras ainda precisa bloquear a varredura final do envelope de faixa de .72 m.
 	obstacle = box(world,Vector3(10,1,.6),Vector3(.1,2,.1))
 	await sync_physics()
 	check(production._clip_citizen_route(point,start,finish).is_empty(),"final .72 m capsule refuses a prop between the walking lanes")

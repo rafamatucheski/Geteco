@@ -1,7 +1,7 @@
 extends "res://tests/tank_control/test_heavy_impacts.gd"
 ## Native contacts: bumper-start acceleration, nested authored NPCs and swept props.
 class AuthoredContact extends CharacterBody3D:
-	# Deliberately no health/damage API: this is the noncombat actor contract.
+	# De propósito sem API de vida/dano: este é o contrato de ator fora de combate.
 	var model: Node3D
 	func _ready() -> void:
 		collision_layer=2
@@ -28,7 +28,7 @@ func run() -> void:
 		var person := Person.new()
 		world.add_child(person)
 		person.position=Vector3(0,.002,2.27 if backward else -2.27)
-		street._people_cache=[] # nested actors can be missing from the periodic cache
+		street._people_cache=[] # atores aninhados podem faltar no cache periódico
 		await physics_frame
 		var start := person.position
 		CRUSH.set_planar(vehicle,Vector3.BACK*.15 if backward else Vector3.FORWARD*.15)
@@ -138,7 +138,7 @@ func run() -> void:
 	world.add_child(behind)
 	behind.position=Vector3(0,0,-9)
 	FRAGILE.register_node("lamp",behind,world)
-	await physics_frame # Admit the freshly constructed wall to the native broadphase.
+	await physics_frame # Admite a parede recém-construída na broadphase nativa.
 	CRUSH.set_planar(vehicle,Vector3.FORWARD*42)
 	street._hit_props(vehicle,vehicle.horizontal_velocity,Vector3(0,0,-12))
 	check(FRAGILE.query(behind.position,1).size()==1,"wall blocks destruction of props behind it")

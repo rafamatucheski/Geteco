@@ -88,7 +88,7 @@ func run() -> void:
 		await frames(35)
 		await photo("03-interior-%d"%int(point.x))
 	check(session.anchor.position.x > session.room.global_position.x+10,"camera follows along tunnel")
-	# Each leg fits the existing 15 s movement window at the real walking speed.
+	# Cada trecho cabe na janela de movimento existente de 15 s na velocidade real de caminhada.
 	for x in [4,-5,-17]:
 		check(await walk_to(session.room.to_global(Vector3(x,0,0))),"walk back towards western exit x=%d"%x)
 	world.player.automatic_direction = Vector3.LEFT
@@ -101,7 +101,7 @@ func run() -> void:
 	check(not world.player.input_locked,"exit restores control")
 	check(world.player.global_position.distance_to(definition.return_position) < 2,"returns to original exterior")
 	await photo("04-return")
-	# Second cycle exercises the reentry latch and immediate return from spawn.
+	# O segundo ciclo exercita a trava de reentrada e a volta imediata a partir do spawn.
 	check(await walk_to(hatch.to_global(Vector3(0,.08,.6))),"walk back to gate")
 	world.player.automatic_direction = inward
 	for i in 480:

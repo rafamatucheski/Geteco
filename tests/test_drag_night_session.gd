@@ -80,8 +80,8 @@ func run() -> void:
 		temporal.segment="drag"
 		temporal._report.clock_control="Night fixed at0.9; all four passes and physical return use production cameras."
 		temporal._report.coverage="Noite de Acerto201/402/402/800, actual race physics, results, return and stable course cell identity."
-	# Controller/UI entry points are resolved here to exercise the same actions
-	# as the player, including modal dismissal and safe return between passes.
+	# Os pontos de entrada de controlador/UI são resolvidos aqui para exercitar as mesmas ações
+	# do jogador, incluindo fechar modais e a volta segura entre passadas.
 	for step in 4:
 		check(race.perform("board"),"board opens for pass%d"%(step+1))
 		race.board_controller.board.night_button.pressed.emit()

@@ -1,6 +1,6 @@
 extends SceneTree
-## Isolated real meshes, bodies, physics sweeps and instance-owned interaction.
-## Rendered visual acceptance and the full service flow are separate tests.
+## Malhas, corpos, varreduras de física e interação por instância reais, isolados.
+## A aceitação visual renderizada e o fluxo completo de serviço são testes à parte.
 const CONTAINER = preload("res://world/regions/LootablePortContainer.gd")
 var checks := 0
 var failures: Array[String] = []
@@ -127,7 +127,7 @@ func run() -> void:
 	for mesh in first_roof:
 		restored = restored and mesh.visible and is_equal_approx(mesh.material_override.albedo_color.a,1.0) and mesh.material_override.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED
 	check(restored,"leaving restores the same opaque roof materials")
-	# Exercise independent cache keys, including an upper container and its absence.
+	# Exercita chaves de cache independentes, incluindo um contêiner de cima e a ausência dele.
 	for point in [Vector3(1,0,20),Vector3(2,0,40),Vector3(3,0,60)]:
 		var cold = spawn(point,size)
 		await settled()

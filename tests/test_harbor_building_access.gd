@@ -1,5 +1,5 @@
 extends SceneTree
-## Logical/physical coverage; rendered depth and frame time are separate gates.
+## Cobertura lógica/física; profundidade renderizada e tempo de quadro são portões à parte.
 const CATALOG = preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
 const ACCESS = preload("res://world/places/harbor_buildings/HarborBuildingExteriorAccess.gd")
 const FACTORY = preload("res://world/urban_detail/UrbanBuildingFactory.gd")
@@ -85,7 +85,7 @@ func _check_facade(parent: Node3D, definition: Dictionary) -> void:
 	await process_frame
 
 func _check_rooftops(parent: Node3D, definitions: Array[Dictionary]) -> void:
-	# Every distinct parcel must have a valid landing, pickup and guarded edge.
+	# Todo lote distinto precisa ter patamar, coleta e borda protegida válidos.
 	for definition in definitions:
 		var roof := ROOFTOP.new()
 		roof.definition = definition.duplicate(true)

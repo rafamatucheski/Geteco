@@ -1,5 +1,5 @@
 extends SceneTree
-## The port finish must never compete with road edges at the same depth.
+## O acabamento do porto nunca pode competir com as bordas da rua na mesma profundidade.
 var failures: Array[String] = []
 
 func _initialize() -> void: run.call_deferred()

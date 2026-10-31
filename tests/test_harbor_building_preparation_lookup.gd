@@ -77,7 +77,7 @@ func run() -> void:
 	check(labels == ["building.prepare.lookup", "building.prepare.instantiate", "building.prepare.add_child"], "Separate preparation stages recorded")
 	var reference: Node3D = PLACES.create_place("harbor_customs_house")
 	reference.prepare_session(session, true)
-	# Compare identical transforms: this fixture does not move actors between them.
+	# Compara transformações idênticas: esta fixture não move atores entre elas.
 	reference.position = prepared.position
 	reference.rotation = prepared.rotation
 	stage.add_child(reference)

@@ -49,8 +49,8 @@ func run() -> void:
 	for id in NETWORK.ids():
 		var room = CATALOG.create_place(id)
 		stage.add_child(room)
-		# Isolate depth from the separate darkness CanvasLayer: its color tint must
-		# not be mistaken for an occluded magenta diagnostic actor.
+		# Isola a profundidade da CanvasLayer separada de escuridão: a tinta de cor dela não pode
+		# ser confundida com um ator magenta de diagnóstico tampado.
 		for overlay in room.find_children("*","CanvasLayer",true,false):
 			overlay.process_mode = Node.PROCESS_MODE_DISABLED
 			overlay.hide()

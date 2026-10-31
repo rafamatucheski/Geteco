@@ -1,6 +1,6 @@
 extends SceneTree
-## Independent frozen D3 builders recreate the entire geometry/collision hierarchy.
-## Rendered 2+2 remains required for performance; this process owns no game save.
+## Montadores D3 congelados independentes recriam a hierarquia inteira de geometria/colisão.
+## O 2+2 renderizado continua obrigatório para desempenho; este processo não é dono de nenhum save de jogo.
 const BOX_BATCH := preload("res://runtime/transit/StaticBoxBatch.gd")
 const TUNNEL := preload("res://gameplay/urban_v1/SecretTunnel3D.gd")
 const TUNNEL_OLD := preload("res://tests/fixtures/startup_box_original/SecretTunnel3D.gd")
@@ -54,7 +54,7 @@ func same_mesh(a: Mesh, b: Mesh) -> bool:
 	if a.get_class()!=b.get_class() or a.get_surface_count()!=b.get_surface_count(): return false
 	if a.get_aabb().position.distance_to(b.get_aabb().position)>.0001 or a.get_aabb().size.distance_to(b.get_aabb().size)>.0001: return false
 	for surface in a.get_surface_count():
-		# These two methods are bound on ArrayMesh, not PrimitiveMesh in 4.7.2.
+		# Estes dois métodos ficam no ArrayMesh, não no PrimitiveMesh, no 4.7.2.
 		if a is ArrayMesh:
 			if a.surface_get_primitive_type(surface)!=b.surface_get_primitive_type(surface): return false
 			if a.surface_get_format(surface)!=b.surface_get_format(surface): return false
@@ -109,7 +109,7 @@ func compare_tree(a: Node, b: Node, path: String) -> bool:
 	return ok
 
 func cylinder_contract() -> void:
-	# Actual builders use mixed cylinders/boxes, tapered radii and low radial counts.
+	# Os montadores reais usam cilindros/caixas mistos, raios afunilados e poucas divisões radiais.
 	for params in [[8,0,1.0,1.0,true,true],[8,1,0.0,1.0,true,true],[10,1,.4,.4,true,true],[12,1,.1,.4,true,false],[16,4,.4,0.0,false,true],[32,6,.2,.3,false,false]]:
 		var cylinder := CylinderMesh.new()
 		cylinder.radial_segments=params[0]

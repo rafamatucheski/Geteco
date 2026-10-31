@@ -27,8 +27,8 @@ func run() -> void:
 	var data := FIXTURE.full_snapshot(door+Vector3(0,.08,1.12),true)
 	var state = preload("res://runtime/GameState.gd").new()
 	state.restore_snapshot(data)
-	# This shop checkpoint is after the campaign epilogue phone call; leaving
-	# it pending legitimately locks walking with an unrelated story dialogue.
+	# Este checkpoint da loja fica depois do telefonema do epílogo da campanha; deixá-lo
+	# pendente trava legitimamente a caminhada com um diálogo de história não relacionado.
 	state.campaign.complete_aftermath_call()
 	HONOR.record_finish(state.world_state,true,13.8)
 	var car := {"vehicle_id":HONOR.CAR_ID,"archetype":"supra_a80","region":"desert","position":[-1000,.1,-1240],"yaw":PI,"health":200.0,"paint":"efeee8ff","equipment":{},"was_driven":false}

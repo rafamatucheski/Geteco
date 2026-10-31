@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Rendered native depth using the final room camera and real player/visitor
-## rigs. Positive controls hide the room only; they never hide the actor.
+## Profundidade nativa renderizada usando a câmera final da sala e rigs reais de jogador/visitante.
+## Os controles positivos escondem só a sala; nunca escondem o ator.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 

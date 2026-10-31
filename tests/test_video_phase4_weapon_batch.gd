@@ -35,14 +35,14 @@ func _run() -> void:
 	_check(first == second, "identical bevel geometry is reused")
 	var different: ArrayMesh = finish._beveled_box(Vector3(.03, .04, .10))
 	_check(first.get_aabb() != different.get_aabb(), "exact dimensions remain distinct")
-	# Default oracle leaves finished source pieces unbatched; expected transforms
-	# and triangle attributes are read independently before product batching.
-	# An archived legacy pass can additionally prove before/after equivalence.
+	# O oráculo padrão deixa as peças de origem acabadas sem lote; as transformações
+	# e os atributos de triângulo esperados são lidos de forma independente antes do lote do produto.
+	# Uma passada legada arquivada pode provar também a equivalência antes/depois.
 	var reference_source := FileAccess.get_file_as_string(candidate_path).replace("\t\tif moving: _batch_static(moving)", "\t\tif moving: pass").replace("\t_batch_static(root)", "\tpass")
 	if not legacy_path.is_empty():
 		reference_source = FileAccess.get_file_as_string(legacy_path)
-		# Art edits in apply are independent of this optimization. Compare the
-		# current authored shapes using old helpers, never an obsolete rail/guard.
+		# As edições de arte em apply independem desta otimização. Compara as
+		# formas autorais atuais usando os helpers antigos, nunca um trilho/guarda obsoleto.
 		var current_source := FileAccess.get_file_as_string(candidate_path)
 		var apply_start := current_source.find("static func apply(")
 		var apply_end := current_source.find("static func _finish_meshes(")

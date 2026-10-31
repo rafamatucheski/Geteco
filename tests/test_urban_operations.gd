@@ -1,6 +1,6 @@
 extends SceneTree
-## Integrated, synthetic-only validation for productive Harbor routines. The
-## launcher must pass --no-save; no fixture reads or writes a personal save.
+## Validação integrada, só sintética, das rotinas produtivas do Harbor. O
+## lançador precisa passar --no-save; nenhuma fixture lê ou grava um save pessoal.
 
 const PORT_CENTER := Vector3(5800.0 / 16.0, .05, 4300.0 / 16.0)
 const CEMETERY_CENTER := Vector3(-650.0 / 16.0, .05, 1740.0 / 16.0)
@@ -132,7 +132,7 @@ func _port_cycle() -> void:
 	check(boat.phase=="returning" and int(boat.load)==0 and boat.visual.visible,"Launch returns empty after its productive away phase")
 	port._tick_boat(0,2.6)
 	check(boat.phase=="loading" and worker.crate_total()==30,"Returned launch begins a new thirty-crate cycle")
-	# Exercise suspension in the middle of real loader progress.
+	# Exercita a suspensão no meio do progresso real do loader.
 	boat.load = 7
 	worker.crate_stock.assign([22,1])
 	worker.carrying = false
@@ -147,7 +147,7 @@ func _port_cycle() -> void:
 	await settle()
 	check(port.active and actor_count("south_port_launch_loader_00")==1 and actor_count("south_port_launch_loader_01")==1,"Returning recreates loaders exactly once")
 	check(port.boats[0].phase=="loading" and int(port.boats[0].load)+port.boats[0].worker.crate_total()==30,"Return preserves cargo and interrupted loader state")
-	# An authoritative restore must replace, rather than stack, live workers.
+	# Uma restauração de autoridade precisa substituir os trabalhadores vivos, não empilhá-los.
 	port.boats[0].load = 18
 	check(port.restore_snapshot(interrupted),"Synthetic port snapshot restores")
 	await settle()
@@ -218,7 +218,7 @@ func _security_cycle() -> void:
 	await process_frame
 
 func _cemetery_cycle() -> void:
-	# Exercise the real FullSession entry/exit path before the outdoor funeral.
+	# Exercita o caminho real de entrada/saída da FullSession antes do funeral ao ar livre.
 	world.player.teleport(CEMETERY_CENTER)
 	world.production.region.set_focus(CEMETERY_CENTER)
 	urban.refresh_context()
@@ -237,7 +237,7 @@ func _cemetery_cycle() -> void:
 	check(await session.leave_place(),"Keeper house exits through FullSession")
 	await settle()
 	check(actor_count("cemetery_keeper")==1 and actor_count("cemetery_storyteller")==1,"Yard return reconstructs each cemetery resident exactly once")
-	# Drive the adapter through the real EmergencyManager collection ledger.
+	# Aciona o adaptador pelo livro-razão real de coletas do EmergencyManager.
 	var deceased := SyntheticDeceased.new()
 	deceased.name = "AlziraDoCais"
 	deceased.set_meta("display_name","Alzira do Cais")
@@ -281,8 +281,8 @@ func _cemetery_cycle() -> void:
 	cemetery._tick_trip(.1)
 	await settle()
 	check(cemetery.trip_identity.is_empty() and actor_count("cemetery_mortician")==0 and actor_prefix_count("cemetery_mourner_")==0,"Funeral attachments leave after burial")
-	# Snapshot during the next funeral: the persisted owner normalizes it back
-	# to the morgue, so restore can resume without a second hearse or grave.
+	# Snapshot durante o próximo funeral: o dono persistido o normaliza de volta
+	# para o necrotério, então a restauração pode retomar sem um segundo carro funerário nem cova.
 	check(cemetery.register_synthetic_case("test:bento","Bento Maquinista"),"Second synthetic identity enters independently")
 	cemetery._try_start_trip()
 	var interrupted: Dictionary = cemetery.snapshot()
@@ -326,8 +326,8 @@ func _snapshot_contract() -> void:
 	check(urban.cemetery._next_deceased_identity()!="harbor_deceased:00000001","Migrated identity allocator skips an occupied legacy id")
 
 func _shutdown_contract() -> void:
-	# Leave an active funeral in place, then remove its service. Sibling
-	# attachments must not outlive the ledger that owns them.
+	# Deixa um funeral ativo no lugar e depois remove o serviço dele. Os acessórios
+	# irmãos não podem sobreviver ao livro-razão que é dono deles.
 	world.player.teleport(CEMETERY_CENTER)
 	world.production.region.set_focus(CEMETERY_CENTER)
 	urban.refresh_context()

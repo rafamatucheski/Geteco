@@ -1,5 +1,5 @@
 extends SceneTree
-## Local geometry contract; temporal stability and real admission need Main.
+## Contrato de geometria local; estabilidade temporal e admissão real precisam do Main.
 const INTERIOR := preload("res://world/places/harbor_buildings/HarborBuildingInterior.gd")
 const NATIVE := preload("res://world/places/NativePlace.gd")
 const CATALOG := preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
@@ -20,8 +20,8 @@ func run() -> void:
 	create_timer(30).timeout.connect(func(): push_error("WALL_CLEARANCE timeout"); quit(3))
 	for spec in [Vector4(30,13.75,0,0),Vector4(8,6,-.5,0),Vector4(18,9,3.0,0),Vector4(18,9,0,1)]:
 		check_shell(spec)
-	# Exercise the actual floor-adapter collider instead of copying its formula
-	# into a fake shape. Its footprint stays full beneath the recessed finish.
+	# Exercita o colisor real do adaptador de piso em vez de copiar a fórmula dele
+	# numa forma falsa. A área dele fica inteira sob o acabamento recuado.
 	var room := NATIVE.new()
 	room.definition = CATALOG.find("harbor_building_market_hall").duplicate(true)
 	root.add_child(room)
@@ -48,7 +48,7 @@ func check_shell(spec: Vector4) -> void:
 	room.depth = spec.y
 	room.floor_index = int(spec.w)
 	room.definition = {"id":"wall_clearance_fixture","entrance_local":Vector3(spec.z,0,0)}
-	# Detached _shell construction isolates the changed geometry from dressing.
+	# A construção desligada de _shell isola a geometria alterada do acabamento.
 	room._shell()
 	var walls := {}
 	for node in room.get_children():

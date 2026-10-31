@@ -1,11 +1,11 @@
 extends SceneTree
-## Main regression: a parked selection loses streaming support before the next
-## distance-cleanup tick. Freight must not persist its unsupported falling pose.
+## Regressão no Main: uma seleção estacionada perde o apoio do streaming antes do próximo
+## tick de limpeza por distância. O frete não pode persistir a pose caindo sem apoio.
 const FLEET := preload("res://runtime/FleetState.gd")
 const OUTPUT := "res://evidence/video-review-phase4-20260924/"
 
 class LegacyCapture extends "res://gameplay/urban_v1/PortFreightDelivery.gd":
-	# Diagnostic ablation: this is the prior, unconditional snapshot behavior.
+	# Ablação de diagnóstico: este é o comportamento anterior, incondicional, do snapshot.
 	func _capture_supported_previous(vehicle: CharacterBody3D) -> void:
 		previous_vehicle = FLEET.capture(vehicle, str(previous_vehicle.get("region", "harbor")))
 		previous_vehicle.was_driven = false
@@ -69,8 +69,8 @@ func run() -> void:
 	for _i in 20: await physics_frame
 	sample("startup_supported")
 	check(prior.is_on_floor() and prior.position.y > -.05, "original personal car begins physically supported")
-	# Set the far focus through ProductionWorld so the selected personal car
-	# retains its existing support; do not unload its floor in fixture setup.
+	# Define o foco distante pelo ProductionWorld para que o carro pessoal selecionado
+	# mantenha o apoio existente; não descarrega o piso dele na preparação da fixture.
 	var depot := Vector3(316.5, .12, 351.3)
 	world.production._update_physical_residency(depot)
 	world.player.teleport(depot + Vector3(0, 0, 10))
@@ -88,8 +88,8 @@ func run() -> void:
 	freight.previous_vehicle = initial.duplicate(true)
 	freight._previous_ref = weakref(prior)
 	freight._watch_previous(prior)
-	# Exercise the existing save owner and ordinary world streaming/despawn.
-	# Neither vehicle is teleported below its floor, and no cleanup is mocked.
+	# Exercita o dono de save existente e o streaming/despawn comum do mundo.
+	# Nenhum veículo é teleportado abaixo do piso, e nenhuma limpeza é simulada.
 	world.production.population_clock = 0.0
 	world.driving.car = truck
 	world.driving._watch_car(truck)

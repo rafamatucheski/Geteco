@@ -1,7 +1,7 @@
 extends SceneTree
-## Focused production-controller contracts. Uses an isolated elevated physics
-## fixture after session startup; not a rendered playtest or an FPS benchmark.
-## Run only with --no-save and the project's compiled .NET environment.
+## Contratos focados do controlador de produção. Usa uma fixture física elevada isolada
+## depois do início da sessão; não é playtest renderizado nem benchmark de FPS.
+## Rode só com --no-save e o ambiente .NET compilado do projeto.
 
 class Target extends CharacterBody3D:
 	var dead := false
@@ -53,8 +53,8 @@ func run() -> void:
 	var gameplay = world.gameplay
 	var state = gameplay.state
 	var controls = root.get_node("GameInput")
-	# Keep actual permission, attack, selector and buffer code. Stop their automatic
-	# ticks so each assertion controls only the clock/input phase it is exercising.
+	# Mantém o código real de permissão, ataque, seletor e buffer. Para os ticks
+	# automáticos deles para que cada asserção controle só a fase de relógio/entrada que exercita.
 	world.session.set_process(false)
 	gameplay.set_physics_process(false)
 	world.player.set_physics_process(false)
@@ -90,7 +90,7 @@ func run() -> void:
 	Input.action_release("aim")
 	check(not gameplay.melee_feedback_active(), "releasing aim hides idle melee feedback")
 
-	# The off-axis fixture must not offer an alternative around this wall.
+	# A fixture fora do eixo não pode oferecer uma alternativa contornando esta parede.
 	nearer.collision_layer = 0
 	var wall := StaticBody3D.new()
 	wall.collision_layer = 1
@@ -134,8 +134,8 @@ func run() -> void:
 	check(gameplay._melee_direction().dot(Vector3.RIGHT) > 0.99, "recovery releases the committed direction")
 	check(is_equal_approx(float(world.player.get_meta("melee_movement_scale")), 1.0), "recovery restores normal movement")
 
-	# Two early clicks still queue only one attack; consuming it is observable
-	# through the real attack serial, without substituting the firing function.
+	# Dois cliques antecipados ainda enfileiram um ataque só; consumi-lo é observável
+	# pelo serial real de ataque, sem substituir a função de disparo.
 	gameplay.cooldown = 0.10
 	var serial: int = gameplay._attack_serial
 	check(not gameplay.fire_at(aim) and not gameplay._melee_buffer.is_empty(), "early click queues instead of starting a second attack")

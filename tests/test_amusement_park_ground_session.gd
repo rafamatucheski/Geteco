@@ -1,5 +1,5 @@
 extends SceneTree
-## Real Main ground review only. Captures are not frame-time measurements.
+## Só revisão do chão no Main real. Capturas não são medições de tempo de quadro.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LAYOUT := preload("res://world/places/amusement_park/AmusementParkLayout.gd")
 var world
@@ -82,8 +82,8 @@ func record_walk(id: String,from: Vector3,to: Vector3) -> void:
 	var remaining: Vector3 = target-world.player.global_position
 	remaining.y = 0
 	check(remaining.length()<.30 and supported,id+" walks across finish seam with native supported body")
-	# max_fps is a ceiling. Readback/encoding may slow this diagnostic capture;
-	# continuity depends on actual render counters and coverage, not a frame quota.
+	# max_fps é um teto. Leitura/codificação podem desacelerar esta captura de diagnóstico;
+	# a continuidade depende dos contadores reais de render e da cobertura, não de uma cota de quadros.
 	var continuous := sequence.size()-initial_index>=2
 	if continuous:
 		continuous = sequence[-1].ticks_usec-sequence[initial_index].ticks_usec>=2500000

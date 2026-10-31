@@ -1,6 +1,6 @@
 extends "res://tests/test_harbor_building_walkthrough.gd"
-## Real Main/FullSession death and rescue interrupt both sides of a floor commit.
-## These finite cases use an isolated checkpoint and never save user data.
+## Morte e resgate reais no Main/FullSession interrompem os dois lados de uma confirmação de andar.
+## Estes casos finitos usam um checkpoint isolado e nunca salvam dados do usuário.
 
 func _observe_change(room: Node3D, destination: int, result: Dictionary) -> void:
 	result.ok = await room.change_floor(destination)
@@ -84,7 +84,7 @@ func run() -> void:
 		check(outcome.completed and not outcome.ok,phase+" interrupted stairs report failure and finish")
 		await physics_frame
 		check(get_nodes_in_group("building_resident").is_empty(),phase+" old residents released")
-	# A third visit proves that cancellation did not poison floor ownership.
+	# Uma terceira visita prova que o cancelamento não envenenou a posse do andar.
 	var returned: Node3D = await _enter_building(definition)
 	if returned == null: finish(); return
 	world.player.teleport(returned.to_global(returned.stair_point())+Vector3.UP*.04)
@@ -94,8 +94,8 @@ func run() -> void:
 	world.player.teleport(returned.spawn_position+Vector3.UP*.04)
 	check(await walk(definition.return_position+Vector3.UP*.04),"reentry can walk out normally")
 	check(world.session.state.place_id.is_empty(),"reentry leaves no active room")
-	# Interrupt a street-side preload after the facade opens but before room
-	# admission. A generation/health change must dispose the candidate.
+	# Interrompe um pré-carregamento do lado da rua depois que a fachada abre, mas antes da admissão
+	# na sala. Uma mudança de geração/vida precisa descartar o candidato.
 	var runtime = world.session.building_entrance
 	runtime.reset()
 	await physics_frame

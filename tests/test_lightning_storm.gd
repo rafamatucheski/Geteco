@@ -94,7 +94,7 @@ func run() -> void:
 	check(storm.bolt == first_bolt,"Repeated discharges reuse the same presentation node")
 	check(not storm.strike_position.is_equal_approx(first_point),"Later discharges vary their location")
 	check(storm.bolt.find_children("*","Light3D",true,false).is_empty(),"Visible discharge adds no dynamic lights")
-	# Weather rewrites its base before sync, as in the production _update path.
+	# O Weather reescreve a base dele antes da sincronia, como no caminho _update de produção.
 	weather.controller.sun.light_energy = .4
 	weather.controller.sun.light_color = Color(.9,.8,.7)
 	weather.controller.environment.environment.ambient_light_energy = .3

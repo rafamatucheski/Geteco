@@ -59,7 +59,7 @@ func run() -> void:
 			var saved: Dictionary = preload("res://runtime/FleetState.gd").capture(car, "harbor")
 			var restored := VEHICLE.new()
 			stored_setup(restored, id, world)
-			# Production restoration replaces the identity after spawning.
+			# A restauração de produção substitui a identidade depois do spawn.
 			restored.vehicle_id = saved.vehicle_id
 			restored.paint_color = Color.html(saved.paint)
 			check(restored.visual.get_meta("usage_profile") == car.visual.get_meta("usage_profile"), "save restoration preserves condition and load")

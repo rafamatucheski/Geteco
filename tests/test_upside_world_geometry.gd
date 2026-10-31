@@ -1,6 +1,6 @@
 extends SceneTree
-## Actual arena, Actor capsules and authored monsters. This is a scoped
-## geometry/depth fixture, not Main lifecycle or a performance benchmark.
+## Arena real, cápsulas do Actor e monstros autorais. É uma fixture delimitada
+## de geometria/profundidade, não ciclo de vida do Main nem benchmark de desempenho.
 const WORLD := preload("res://world/places/upside_world/UpsideWorld.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
@@ -107,8 +107,8 @@ func run() -> void:
 	await photo("02-first-person-pursuit")
 	camera.look_at(Vector3(-4,10,-16))
 	await photo("03-sky-meteors-ruins")
-	# Freeze only for diagnostic mask captures. Architecture and actor share
-	# the same depth buffer; hiding scenery supplies a positive control.
+	# Congela só para as capturas de máscara de diagnóstico. Arquitetura e ator compartilham
+	# o mesmo buffer de profundidade; esconder o cenário fornece um controle positivo.
 	arena.set_process(false)
 	for monster in arena.monsters: monster.set_physics_process(false); monster.hide()
 	var subject: CharacterBody3D = arena.monsters[0]
@@ -122,8 +122,8 @@ func run() -> void:
 	subject.reset_physics_interpolation()
 	camera.look_at(Vector3(0,1.65,-4))
 	await _depth_case(subject,"visible-first-person",false)
-	# Looking toward a genuine rear ruin wall: the monster is positioned on
-	# the clear floor behind the wall, not embedded inside its solid.
+	# Olhando para uma parede genuína de ruína ao fundo: o monstro fica posicionado no
+	# piso livre atrás da parede, não embutido no sólido dela.
 	camera.position = Vector3(-10.15,1.65,-.8)
 	subject.position = Vector3(-10.15,.05,-10.2)
 	subject.reset_physics_interpolation()

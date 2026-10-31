@@ -63,7 +63,7 @@ func run() -> void:
 	if not is_instance_valid(facade):
 		quit(1)
 		return
-	# Streaming mounts the facade before PhysicsServer registers its shapes.
+	# O streaming monta a fachada antes de o PhysicsServer registrar as formas dela.
 	await frames(2)
 	check(is_zero_approx(facade.open_amount), "police doors start closed")
 	var vestibule_point := door - Vector3(0, 0, .35) + Vector3.UP * .14

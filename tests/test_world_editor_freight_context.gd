@@ -35,8 +35,8 @@ func run() -> void:
 	check(envelope.has_point(Vector2(-340,-80)) and envelope.has_point(Vector2(-340,-2)),"Actual company geometry includes warehouse and truck gate")
 	check(supplement.context[FOREST].parts.any(func(part): return part.size()>6 and part[6].size()>4),"Woodland exports canopy silhouettes instead of every mesh triangle")
 	check(supplement.context[FOREST].parts.filter(func(part): return part[4]>6 and part[2]>2 and part[5]!="000000").size()>300,"Forest preserves actual tall colored canopies even from a headless export")
-	# Independent extent regression: old framing only considered the first road
-	# point and centers, ignoring background land, road ends and rotated corners.
+	# Regressão independente de extensão: o enquadramento antigo só considerava o primeiro ponto
+	# da rua e os centros, ignorando a terra de fundo, as pontas das ruas e os cantos girados.
 	var canvas := CANVAS.new()
 	canvas.land=[[-16000,-8000,1600,1600]]
 	canvas.terrain=[[600,700,64,64,"778877"]]

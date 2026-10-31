@@ -13,8 +13,8 @@ func run() -> void:
 	root.get_node("V2Launch").selected_path = "user://arrival-flow-isolated.json"
 	world = load("res://Main.tscn").instantiate()
 	root.add_child(world)
-	# A cold .NET/Main launch took 48 s in the integrated story validation;
-	# use the same finite wall-clock startup window as other current fixtures.
+	# Um lançamento frio do .NET/Main levou 48 s na validação integrada da história;
+	# usa a mesma janela finita de início em tempo de parede das outras fixtures atuais.
 	var ready_deadline := Time.get_ticks_msec()+80000
 	while Time.get_ticks_msec() < ready_deadline:
 		await process_frame
@@ -48,7 +48,7 @@ func run() -> void:
 	if "--capture-arrival" in OS.get_cmdline_user_args() and DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://evidence/arrival-port-fix-20261010.png")
-	# A resumed checkpoint must not reset the saved clock/weather to the prologue.
+	# Um checkpoint retomado não pode reiniciar o relógio/clima salvos para o prólogo.
 	var arrival_time: float = session.weather.time_of_day
 	session.weather.time_of_day = .42
 	session.weather.weather_state = 3

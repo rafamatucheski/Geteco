@@ -1,5 +1,5 @@
 extends "res://tests/test_harbor_building_walkthrough.gd"
-## A real controlled walk through the roof gate followed by native gravity.
+## Uma caminhada controlada real pelo portão do telhado seguida da gravidade nativa.
 func run() -> void:
 	create_timer(240).timeout.connect(func(): push_error("ROOF_FALL timeout"); finish(3))
 	rendered = DisplayServer.get_name() != "headless"

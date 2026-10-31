@@ -1,7 +1,7 @@
 extends SceneTree
-## A narrow wrapper may own a wide/expensive subtree. A retirement slice must
-## stop at its budget instead of recursively deleting that entire hierarchy.
-## The delay creates a deterministic budget boundary; it does not measure FPS.
+## Um wrapper estreito pode ser dono de uma subárvore larga/cara. Uma fatia de aposentadoria precisa
+## parar no orçamento em vez de apagar recursivamente a hierarquia inteira.
+## O atraso cria um limite de orçamento determinístico; não mede FPS.
 class RegionFixture extends "res://world/regions/NativeRegion.gd":
 	func _ready() -> void: pass
 class BudgetLeaf extends Node3D:

@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Harbor refresh: actual meshes, native solid inventory, swept Actor bodies,
-## and separate rendered depth controls. --physics-only allows headless logic.
+## Renovação do Harbor: malhas reais, inventário sólido nativo, corpos varridos do Actor
+## e controles de profundidade renderizada à parte. --physics-only permite lógica headless.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const DEST := "res://artifacts/ammunation-refresh-20261019/depth"
 var physics_only := false

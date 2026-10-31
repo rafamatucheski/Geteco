@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical contracts use real player/NPC capsules. Rendered depth and performance
-## are measured separately in the production session, never inferred here.
+## Os contratos físicos usam cápsulas reais de jogador/NPC. Profundidade renderizada e desempenho
+## são medidos à parte na sessão de produção, nunca inferidos aqui.
 const LAYOUT := preload("res://world/places/amusement_park/AmusementParkLayout.gd")
 const SITE := preload("res://world/places/amusement_park/ParkLume.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
@@ -38,8 +38,8 @@ func run() -> void:
 	room.position = Vector3(0,0,-3000)
 	stage.add_child(room)
 	for i in 4: await physics_frame
-	# The unsafe overlapping inner returns were removed; the simple circuit is
-	# about 130 m. Crossing/curvature regressions live in test_coaster_geometry.
+	# Os retornos internos sobrepostos inseguros foram removidos; o circuito simples tem
+	# uns 130 m. Regressões de cruzamento/curvatura ficam em test_coaster_geometry.
 	check(park.coaster_length()>120.0,"coaster has a full recreation circuit")
 	check(park.sample_coaster(0).origin.distance_to(park.sample_coaster(park.coaster_length()).origin)<.001,"coaster returns exactly to station")
 	var high := 0.0
@@ -80,8 +80,8 @@ func run() -> void:
 		actor.collision_mask = 1
 		for i in 3: await physics_frame
 		var who := "Dante" if player else "NPC visitor"
-		# Real stepping logic must cross the platform lip, not merely fit at its
-		# destination. Only this body is pavement; benches remain solid furniture.
+		# A lógica real de degraus precisa vencer a borda da plataforma, não só caber no
+		# destino. Só este corpo é calçamento; os bancos continuam mobília sólida.
 		actor.teleport(LAYOUT.ORIGIN+Vector3(-3.4,.08,15))
 		actor.speed = 3.5
 		actor.automatic_direction = Vector3.ZERO

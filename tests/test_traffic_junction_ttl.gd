@@ -1,8 +1,8 @@
 extends SceneTree
-## Functional reproduction, not an FPS test or a city-wide junction approval.
-## Actual Vehicle/BiarticulatedBus construction and BoxShape3D collision bodies.
-## Normal physics frames register/move bodies. Only the recorded lease timestamp
-## is aged synthetically; no proposed occupancy implementation is used as oracle.
+## Reprodução funcional, não teste de FPS nem aprovação de cruzamentos da cidade inteira.
+## Construção real de Vehicle/BiarticulatedBus e corpos de colisão BoxShape3D.
+## Quadros de física normais registram/movem os corpos. Só o timestamp registrado da concessão
+## é envelhecido de forma sintética; nenhuma implementação de ocupação proposta é usada como oráculo.
 const VEHICLE = preload("res://scripts/Vehicle.gd")
 const BUS = preload("res://runtime/transit/BiarticulatedBus.gd")
 const JUNCTIONS = preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
@@ -56,9 +56,9 @@ func acquire(owner: Node3D) -> bool:
 	return granted
 
 func core_colliders(protected := false) -> Array[int]:
-	# Independently defined physical road crossing: two 8 m wide roads at y=0.
-	# Fixtures put a full hull in its centre, clearly outside it, or 12 m above.
-	# No SAT, lease implementation or proposed controller helper is consulted.
+	# Cruzamento físico de ruas definido de forma independente: duas ruas de 8 m de largura em y=0.
+	# As fixtures põem um casco completo no centro, claramente fora dele ou 12 m acima.
+	# Nenhum SAT, implementação de concessão ou helper proposto do controlador é consultado.
 	var query := PhysicsShapeQueryParameters3D.new()
 	var box := BoxShape3D.new()
 	box.size = Vector3(14.0, 4.4, 14.0) if protected else Vector3(8.0, 6.0, 8.0)
@@ -105,7 +105,7 @@ func registry_costs(owner: Node3D, title: String) -> void:
 			if method == "occupies" and not expired: continue
 			var samples: Array[int] = []
 			for index in 520:
-				# Timestamp setup and sample allocation are outside each measured call.
+				# A preparação do timestamp e a alocação da amostra ficam fora de cada chamada medida.
 				var records: Dictionary = JUNCTIONS.owners[key]
 				records[id][1] = Time.get_ticks_msec() - (JUNCTIONS.HOLD_LIMIT_MSEC + 1 if expired else 0)
 				var started := Time.get_ticks_usec()
@@ -121,9 +121,9 @@ func boundary_contracts() -> void:
 	var owner = make_car(Vector3(0, .1, 0))
 	owner.set_physics_process(false)
 	var points: Array[Dictionary] = []
-	# Physical query of the documented protected volume: +/-7 m horizontally,
-	# road space from -0.4 to +4 m. Test centres are 0.25 m either side of contact,
-	# avoiding solver margins. These tests do not call the candidate's SAT helper.
+	# Consulta física do volume protegido documentado: +/-7 m na horizontal,
+	# espaço da rua de -0.4 a +4 m. Os centros de teste ficam 0.25 m de cada lado do contato,
+	# evitando as margens do solver. Estes testes não chamam o helper SAT do candidato.
 	for side in [-1.0, 1.0]:
 		for inside in [true, false]:
 			var margin := -.25 if inside else .25
@@ -144,8 +144,8 @@ func boundary_contracts() -> void:
 	await frames()
 
 func reconfiguration_contracts() -> void:
-	# An isolated SubViewport uses a genuinely different physics world, not a
-	# visibility flag or a dictionary pretending that the collider disappeared.
+	# Um SubViewport isolado usa um mundo de física genuinamente diferente, não uma
+	# flag de visibilidade nem um dicionário fingindo que o colisor sumiu.
 	var isolated := SubViewport.new()
 	isolated.size = Vector2i(32, 32)
 	isolated.world_3d = World3D.new()
@@ -201,16 +201,16 @@ func orphan_and_tail_contracts() -> void:
 	car.traffic = true
 	await frames(8)
 	check(car._held_junction == key, "orphan test starts with an actual locally acquired token")
-	# Registry ownership can disappear independently of a driver's local token.
-	# Before the stop line, a missing token must obey the current PARE rule again.
+	# A posse no registro pode sumir independente do token local de um motorista.
+	# Antes da linha de parada, um token faltando precisa obedecer de novo à regra PARE atual.
 	car.place(Vector3(0, .1, 20), 0)
 	JUNCTIONS.release(key, car.get_instance_id())
 	await frames(8)
 	check(not core_colliders().has(car.get_instance_id()), "orphan owner is still before the physical crossing")
 	check(car.junction_wait and car.junction_gap > 0, "orphan token before the line cannot bypass the current stop rule")
 	check(car._held_junction == null, "orphan token is cleared when registry no longer owns it")
-	# An already committed vehicle instead keeps clearing the crossing and
-	# republishes its real occupancy, rather than stopping in the middle.
+	# Já um veículo comprometido continua liberando o cruzamento e
+	# republica a ocupação real dele, em vez de parar no meio.
 	car.place(Vector3(0, .1, 0), 0)
 	await frames(8)
 	check(car._held_junction == key, "owner inside the crossing has acquired a token")
@@ -222,8 +222,8 @@ func orphan_and_tail_contracts() -> void:
 	car.queue_free()
 	await frames()
 
-	# Real catalogue vehicle: a 9.78 m urban bus using ordinary Vehicle logic.
-	# Its centre has passed EXIT, while the physical rear still crosses the road.
+	# Veículo real do catálogo: um ônibus urbano de 9.78 m usando a lógica comum de Vehicle.
+	# O centro dele passou do EXIT, enquanto a traseira física ainda atravessa a rua.
 	var long_car = make_car(Vector3(0, .1, 0), "route_city")
 	long_car.route = curve()
 	long_car.traffic = true
@@ -275,7 +275,7 @@ func run() -> void:
 	check(core_colliders().has(owner.get_instance_id()), "physical query sees the active owner's hull in the road crossing")
 	if aged(owner.get_instance_id()): ask_crossing("expired lease, active owner in centre", owner.get_instance_id(), false)
 
-	# Missing heartbeat cannot turn an actual stationary collider into free space.
+	# Um heartbeat faltando não pode transformar um colisor parado real em espaço livre.
 	owner.set_physics_process(false)
 	owner.place(Vector3(0, 0.1, 0), 0)
 	acquire(owner)
@@ -385,7 +385,7 @@ func run() -> void:
 	bus.signal_gap()
 	check(JUNCTIONS.owners.get(key, {}).has(bus.get_instance_id()), "bus tail with orphan token republishes registry occupancy")
 	ask_crossing("bus rear protected after orphan token recovery", bus.get_instance_id(), false)
-	# Move bodies without set_route(), which would deliberately release the token.
+	# Move os corpos sem set_route(), que liberaria o token de propósito.
 	for section in bus.sections: section.global_position += Vector3(0, 0, -30)
 	acquire(bus)
 	await frames()

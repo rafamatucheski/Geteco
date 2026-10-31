@@ -1,6 +1,6 @@
 extends SceneTree
-## Physical/storefront contracts; rendered depth and performance are measured
-## separately in the real session, not certified by this headless check.
+## Contratos físicos/de vitrine; profundidade renderizada e desempenho são medidos
+## à parte na sessão real, não certificados por esta checagem headless.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const RESIDENTS := preload("res://world/places/OriginalResidents.gd")
 var failures: Array[String] = []
@@ -37,8 +37,8 @@ func _run() -> void:
 		old_model.free()
 		var model := RESIDENTS.create_model(definition)
 		staff.visual.add_child(model)
-		# Let the physics server publish the authored staff transform before
-		# sweeping another body past its previous construction position.
+		# Deixa o servidor de física publicar a transformação autoral do funcionário antes
+		# de varrer outro corpo pela posição anterior de construção dele.
 		await physics_frame
 		check(model.get("hand_targets") != null, id + " current articulated staff")
 		check(staff.move_and_collide(Vector3.UP * .001, true) == null, id + " staff whole body fits behind counter")
@@ -46,22 +46,22 @@ func _run() -> void:
 		for point in [room.spawn_position, room.exit_position, service]:
 			player.global_position = point + Vector3.UP * .08
 			check(player.move_and_collide(Vector3.UP * .001, true) == null, id + " player whole body fits " + str(point))
-		# Customer passage: entry to centre aisle, then across to the counter.
+		# Passagem do cliente: da entrada ao corredor central, depois atravessando até o balcão.
 		var route := [room.spawn_position, Vector3(0, 0, service.z), service]
 		for i in range(route.size() - 1):
 			player.global_position = route[i] + Vector3.UP * .08
 			var contact: KinematicCollision3D = player.move_and_collide(route[i + 1] - route[i], true)
 			if contact != null: print("SHOP_ROUTE_BLOCKER ", id, " ", contact.get_collider().get_path(), " ", contact.get_position(), " route=", route)
 			check(contact == null, id + " open customer route " + str(i))
-		# Isolate furniture contacts from the second actor while sweeping.
+		# Isola os contatos com a mobília do segundo ator durante a varredura.
 		player.collision_layer = 0
 		staff.collision_layer = 0
 		for actor in [player, staff]:
 			for body in room.solid_bodies:
 				var bounds: AABB = body.get_meta("bounds")
 				if body.name == "Floor" or bounds.size.y < .15: continue
-				# Sweep into every furniture volume from all four faces. Other
-				# solids may stop the sweep sooner; crossing the target may not.
+				# Varre para dentro de cada volume de mobília pelas quatro faces. Outros
+				# sólidos podem parar a varredura antes; atravessar o alvo não.
 				for side in [Vector3.LEFT, Vector3.RIGHT, Vector3.FORWARD, Vector3.BACK]:
 					var extent: float = bounds.size.x * .5 if side.x != 0 else bounds.size.z * .5
 					var start: Vector3 = Vector3(bounds.get_center().x, .08, bounds.get_center().z) + side * (extent + .7)

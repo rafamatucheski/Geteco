@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Main/.NET with isolated saves. Checkpoint fixtures stage the final
-## document event; they do not claim a full playthrough of the campaign.
+## Main/.NET real com saves isolados. As fixtures de checkpoint encenam o evento
+## final do documento; não afirmam ter jogado a campanha inteira.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LAYOUT := preload("res://world/north_gateway/NorthGatewayLayout.gd")
 const POLICY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
@@ -69,8 +69,8 @@ func run() -> void:
 	var east_to := Vector3(444,.8,-282.85)
 	check(ray(east_from,east_to).is_empty(),"east mountain exit has no north-gateway barrier")
 	check(not ray(gate.origin+Vector3(0,.8,3),gate.origin+Vector3(0,.8,-3)).is_empty(),"closed gateway has real solid barrier")
-	# Follow the authored access through the real shoreline opening. No actor
-	# placement or progress substitution occurs during either walking attempt.
+	# Segue o acesso autoral pela abertura real na margem. Nenhum posicionamento
+	# de ator ou substituição de progresso ocorre em nenhuma das tentativas a pé.
 	var walked := await walk_to(gate.origin+Vector3(0,0,3),20.0,true)
 	check(walked,"player physically reaches the works through the curved access")
 	if not live_attempt("after_access_walk"): finish(); return
@@ -108,8 +108,8 @@ func run() -> void:
 		print("NORTH_GATEWAY_ABORT final document rejected; completed-state checks not exercised")
 		finish()
 		return
-	# Wait for the production poll instead of assigning completed or rebuilding
-	# scenery from the test; this verifies completion while the world stays open.
+	# Espera a consulta de produção em vez de atribuir concluído ou reconstruir o
+	# cenário pelo teste; isto confere a conclusão enquanto o mundo continua aberto.
 	await create_timer(.6).timeout
 	await frames(3)
 	check(gateway.completed,"live campaign completion automatically finishes construction")
@@ -130,8 +130,8 @@ func run() -> void:
 	for index in 10: gateway.reconcile()
 	check(gateway.scenery.get_instance_id()==mounted_id and get_nodes_in_group("north_gateway").size()==1,"repeated reconcile does not duplicate scenery or controllers")
 	await check_streaming(gateway,LAYOUT.TERMINAL+Vector3(0,.1,0),true)
-	# Explicit save is restricted to the verified fixture path even though normal
-	# gameplay autosaving is disabled. It checks the actual live completion ledger.
+	# O save explícito fica restrito ao caminho de fixture verificado mesmo com o autosave
+	# normal de jogo desligado. Ele confere o livro-razão vivo real de conclusão.
 	check(world.production.store.save(world.session.state)==OK,"live completion can be saved into isolated fixture")
 	var persisted: Dictionary = STORE.read_valid(save_path)
 	check(not persisted.is_empty() and POLICY.campaign_completed(persisted.get("campaign",{})),"saved live completion retains authoritative unlock")
@@ -356,9 +356,9 @@ func check_completed_support() -> void:
 	check(unsupported.is_empty(),"finished bridge supports center and usable deck edges at 2m intervals: "+str(unsupported))
 
 func check_streaming(gateway, return_point: Vector3, with_parked_car: bool) -> void:
-	# Fixture relocation exercises residency in the real world, separately from
-	# the walking/driving attempts. This road is within WorldConnection's 320m
-	# retention; only the gateway's own 210m release should unload scenery.
+	# A realocação da fixture exercita a residência no mundo real, separada das
+	# tentativas a pé/dirigindo. Esta rua fica dentro da retenção de 320m do WorldConnection;
+	# só a liberação de 210m do próprio portal deve descarregar o cenário.
 	var old_scenery = gateway.scenery
 	var old_workers = gateway.workers
 	var parked
@@ -381,8 +381,8 @@ func check_streaming(gateway, return_point: Vector3, with_parked_car: bool) -> v
 		await frames(3)
 	check(not gateway.is_mounted() and not is_instance_valid(old_scenery) and not is_instance_valid(old_workers),"distant empty gateway releases its scenery and workers")
 	if with_parked_car:
-		# Spawn through production while the distant bridge is unloaded. This
-		# normally enters awaiting_ground; no test callback manufactures support.
+		# Cria pela produção enquanto a ponte distante está descarregada. Isto
+		# normalmente entra em awaiting_ground; nenhum callback de teste fabrica apoio.
 		var suspended = world.production.spawn_vehicle("sport_coupe",LAYOUT.TERMINAL+Vector3(4,.08,0),0.0)
 		check(is_instance_valid(suspended),"distant production spawn creates a streaming-suspended car")
 		if is_instance_valid(suspended):

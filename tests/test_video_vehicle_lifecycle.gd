@@ -1,6 +1,6 @@
 extends SceneTree
-## Regression for the recorded theft -> port despawn -> death/save failure,
-## plus the accumulated boarding offset and the detached fallback door panels.
+## Regressão da falha registrada roubo -> despawn no porto -> morte/save,
+## mais o deslocamento acumulado do embarque e os painéis de porta de fallback desligados.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 var world
 var failures: Array[String] = []
@@ -62,7 +62,7 @@ func run() -> void:
 		check(await wait_transition(), "car exit %d finishes" % cycle)
 		check(world.player.visual.position.is_equal_approx(original_visual), "exit preserves standing baseline %d" % cycle)
 		check(world.player.visible and world.player.collision_layer == 2, "exit restores visible physical actor")
-	# A teleport into an interior must not inherit a lowered visual from driving.
+	# Um teleporte para um interior não pode herdar um visual abaixado da direção.
 	world.player.teleport(world.player.global_position + Vector3(3, 0, 0))
 	check(world.player.visual.position.is_equal_approx(original_visual), "teleport after two trips preserves the body baseline")
 	original.hide()

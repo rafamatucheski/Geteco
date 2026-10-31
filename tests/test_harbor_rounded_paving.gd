@@ -24,7 +24,7 @@ func _initialize() -> void:
 		for i in polygons.size():
 			for j in range(i+1,polygons.size()):
 				for overlap in Geometry2D.intersect_polygons(polygons[i],polygons[j]): overlaps += area(overlap)
-		# Splitting a lot at an arbitrary streaming boundary preserves its area.
+		# Dividir um lote num limite arbitrário de streaming preserva a área dele.
 		var left: Rect2 = source.rect
 		left.size.x *= .5
 		var right: Rect2 = source.rect

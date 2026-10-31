@@ -1,5 +1,5 @@
 extends SceneTree
-## Verify the visible hand geometry, not merely the bone's nominal axis.
+## Confere a geometria visível da mão, não só o eixo nominal do osso.
 const BODY = preload("res://assets/CivilianModel.gd")
 const CATALOG = preload("res://assets/civilians/CivilianBodyCatalog.gd")
 var failures := 0

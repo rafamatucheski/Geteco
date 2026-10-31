@@ -7,8 +7,8 @@ var checks := 0
 var failures := 0
 
 class CostlyPlainLeaf extends Node:
-	# A real destructor that exceeds the queue's budget makes this independent
-	# of machine speed: the queue must yield rather than destroy the next root.
+	# Um destrutor real que passa do orçamento da fila torna isto independente
+	# da velocidade da máquina: a fila precisa ceder em vez de destruir a próxima raiz.
 	static var disposed := 0
 	func _notification(what: int) -> void:
 		if what != NOTIFICATION_PREDELETE: return
@@ -45,7 +45,7 @@ func run() -> void:
 			leaf.mesh = BoxMesh.new()
 			branch.add_child(leaf)
 			leaf_ids.append(leaf.get_instance_id())
-		# This is visited first, before the two mesh owners in this subtree.
+		# Este é visitado primeiro, antes dos dois donos de malha desta subárvore.
 		branch.add_child(CostlyPlainLeaf.new())
 		RELEASE.retire_detached_subtree(detached)
 	var retained := true
@@ -60,8 +60,8 @@ func run() -> void:
 	_check(CostlyPlainLeaf.disposed <= 1, "one tick cannot consume multiple costly subtree destructors")
 	_check(RELEASE.debug_snapshot().roots == EVICTED_ROOTS, "first tick leaves the bulk of subtree work pending")
 	_check(RELEASE.debug_snapshot().orphans == 0, "unvisited mesh owners remain in their queued subtree")
-	# Drive the real consumer synchronously so its automatic process-frame hook
-	# cannot obscure how many disposal slices were needed.
+	# Aciona o consumidor real de forma síncrona para que o gancho automático de process-frame
+	# dele não esconda quantas fatias de descarte foram necessárias.
 	var slices := 1
 	while RELEASE.debug_snapshot().roots > 0 and slices < EVICTED_ROOTS * 4:
 		RELEASE._tick()
@@ -76,8 +76,8 @@ func run() -> void:
 	var before_gpu: int = RELEASE.released_gpu
 	RELEASE._release_orphans()
 	_check(RELEASE.released_gpu == before_gpu and RELEASE.debug_snapshot().orphans == leaf_ids.size(), "GPU leaves cannot be freed before their deadline")
-	# Advance only the queued deadlines to exercise expiry/quota without a
-	# wall-clock sleep; the adoption and pre-deadline checks above use real time.
+	# Avança só os prazos na fila para exercitar expiração/cota sem um
+	# sleep de tempo de parede; as checagens de adoção e de antes do prazo acima usam tempo real.
 	for entry in RELEASE._orphans: entry[1] = Time.get_ticks_msec() - 1
 	RELEASE._release_orphans()
 	var quota: int = RELEASE.debug_snapshot().gpu_per_frame
@@ -88,8 +88,8 @@ func run() -> void:
 	var gpu_freed := true
 	for id in leaf_ids: gpu_freed = gpu_freed and not is_instance_id_valid(id)
 	_check(gpu_freed, "flush frees every delayed GPU leaf")
-	# An empty subtree can itself be the final GPU owner; finishing its root
-	# must use the same delay as finishing a mesh leaf inside a larger branch.
+	# Uma subárvore vazia pode ela mesma ser o último dono de GPU; terminar a raiz dela
+	# precisa usar o mesmo atraso de terminar uma folha de malha dentro de um ramo maior.
 	var gpu_root := MeshInstance3D.new()
 	gpu_root.mesh = SphereMesh.new()
 	var gpu_root_id := gpu_root.get_instance_id()
@@ -98,8 +98,8 @@ func run() -> void:
 	_check(RELEASE.debug_snapshot().roots == 0 and RELEASE.debug_snapshot().orphans == 1 and is_instance_id_valid(gpu_root_id), "an empty GPU root transfers intact to delayed release")
 	RELEASE.flush()
 	_check(not is_instance_id_valid(gpu_root_id) and RELEASE.pending() == 0, "flush also frees the delayed empty GPU root")
-	# Empty roots may use deferred destruction during normal draining. Let that
-	# actual engine flush happen before asserting that ownership was released.
+	# Raízes vazias podem usar destruição adiada durante o esvaziamento normal. Deixa esse
+	# flush real do motor acontecer antes de afirmar que a posse foi liberada.
 	await process_frame
 	var roots_freed := true
 	for id in root_ids: roots_freed = roots_freed and not is_instance_id_valid(id)

@@ -1,7 +1,7 @@
 extends "res://tests/test_harbor_building_walkthrough.gd"
-## Real Main scene: walk in, reach a resident through solids, use the actual
-## interaction and buttons, recover control, witness a threat and walk out.
-## Rendered captures are presentation evidence, never frame-time certification.
+## Cena real do Main: entra a pé, alcança um morador por entre sólidos, usa a interação
+## e os botões reais, recupera o controle, presencia uma ameaça e sai a pé.
+## Capturas renderizadas são evidência de apresentação, nunca certificação de tempo de quadro.
 var social_frames: Array[Dictionary] = []
 
 func capture_social(label: String, resident: Node3D, count := 1) -> void:
@@ -97,8 +97,8 @@ func run() -> void:
 	check(world.session.building_social.nearest_action().is_empty(),"wanted player cannot use conversation as shelter")
 	check(not resident.test_move(resident.global_transform,Vector3.UP*.002),"frightened NPC stays outside furniture")
 	await capture_social("04-police-called",resident,3)
-	# End the controlled crime scenario using the existing cleanup API; movement
-	# and resident recovery afterwards still run through the productive runtime.
+	# Encerra o cenário de crime controlado usando a API de limpeza existente; o movimento
+	# e a recuperação dos moradores depois ainda rodam pelo runtime produtivo.
 	world.gameplay.clear_wanted()
 	await create_timer(12.0).timeout
 	check(resident.global_position.distance_to(station)<.15,"resident returns to interrupted post")

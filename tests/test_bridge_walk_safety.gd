@@ -46,7 +46,7 @@ func run() -> void:
 			if not SAFETY.protected_segment(first,next,side): continue
 			body.position=SAFETY.walk_point(row,side)+Vector3.UP*.09
 			check(body.test_move(body.global_transform,-row.side*side*2.0),"Solid inner rail stops pedestrian entering traffic: "+str(body.position))
-	# The northern junction must remain traversable before campaign completion.
+	# O entroncamento norte precisa continuar atravessável antes de concluir a campanha.
 	var mouth := KIT.east_mouth_limits()
 	var query := PhysicsRayQueryParameters3D.create(Vector3(360,.8,(mouth.x+mouth.y)*.5),Vector3(377,.8,(mouth.x+mouth.y)*.5),1)
 	check(world.get_world_3d().direct_space_state.intersect_ray(query).is_empty(),"North branch mouth stays open")

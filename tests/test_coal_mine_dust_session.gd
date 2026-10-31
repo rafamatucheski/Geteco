@@ -1,7 +1,7 @@
 extends "res://tests/test_mining_session.gd"
-## One Main startup reuses the complete coal discovery/save/return route.
-## Observe production region hooks at the existing photo milestones; this test
-## never calls dust.set_focus/suspend itself and does not certify visual quality.
+## Um início do Main reaproveita a rota completa de descoberta/save/volta do carvão.
+## Observa os ganchos de região de produção nos marcos de foto existentes; este teste
+## nunca chama dust.set_focus/suspend por conta própria e não certifica qualidade visual.
 var _dust_stages: Array[Dictionary]=[]
 
 func photo(label: String) -> void:
@@ -10,8 +10,8 @@ func photo(label: String) -> void:
 	await super.photo(label)
 
 func _dust_stage(label: String, expected_active: bool) -> void:
-	# The region controller publishes activity at 0.3 s intervals; allow its
-	# real update and the emitter's gentle activation to complete naturally.
+	# O controlador da região publica atividade a intervalos de 0.3 s; deixa a atualização
+	# real dele e a ativação suave do emissor terminarem naturalmente.
 	await create_timer(1.5).timeout
 	var dust: Node3D=world.production.region.get("mining_dust")
 	if not check(is_instance_valid(dust),"mine dust resident exists at "+label): return
@@ -30,7 +30,7 @@ func _dust_stage(label: String, expected_active: bool) -> void:
 		check(world.session.state.place_id==COAL.PLACE_ID and float(data.strength)==0.0,"interior suspends exterior dust without ambient leakage")
 
 func machines() -> void:
-	# Parent flow has exited/reentered/exited the actual coal mine by this point.
+	# A esta altura o fluxo pai já saiu/entrou de novo/saiu da mina de carvão real.
 	await _dust_stage("exterior-return-night",true)
 	check(_dust_stages.size()==3,"one Main visit covers dust admission, interior suspension and return")
 	await photo("dust-return-night")

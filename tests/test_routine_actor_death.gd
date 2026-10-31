@@ -1,5 +1,5 @@
 extends SceneTree
-## The shared damage path must complete for direct and wrapped civilian models.
+## O caminho de dano compartilhado precisa terminar para modelos civis diretos e embrulhados.
 var failures: Array[String] = []
 var checks := 0
 var deaths: Dictionary = {}

@@ -1,6 +1,6 @@
 extends SceneTree
-## Production admission and loading: real bank geometry, crew and physical cars.
-## Completed campaign/calendar are isolated fixture setup, not campaign coverage.
+## Admissão e carregamento de produção: geometria real do banco, equipe e carros físicos.
+## Campanha/calendário concluídos são preparação isolada da fixture, não cobertura da campanha.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
@@ -38,7 +38,7 @@ func run() -> void:
 	snapshot.world.moon_day = 3 if region == "desert" else 1
 	snapshot.world.time = (14.0 if region == "desert" else 9.0)/24.0
 	if security_level > 0:
-		# Persisted preparation seeds the real scheduler; it must create the event.
+		# A preparação persistida alimenta o agendador real; ele precisa criar o evento.
 		snapshot.world[SCHEDULE.KEY] = {"version":1,"last_event":"","security_level":security_level,"event":{}}
 	var path := FIXTURE.write_fixture(folder,"checkpoint.json",snapshot)
 	if not check(not path.is_empty(),"isolated scheduled checkpoint accepted"): finish(1); return
@@ -63,8 +63,8 @@ func run() -> void:
 	if not check(session.position_clear(point),"observer begins on supported clear bank sidewalk"): finish(1); return
 	world.player.teleport(point)
 	print("ARMORED_SETUP ",JSON.stringify({"bank":str(PLACES.get_definition(origin).entry_position),"fixture":str(point),"cache":world.production._route_cache.keys()}))
-	# Bank staging may shift along the street to leave persistent/player cars intact.
-	# Bound service by its actual two round trips at the authored 1.35m/s walk pace.
+	# A encenação do banco pode se deslocar ao longo da rua para deixar intactos carros persistentes/do jogador.
+	# Limita o serviço pelas duas idas e voltas reais no ritmo autoral de caminhada de 1.35m/s.
 	var deadline := Time.get_ticks_msec()+(140000 if origin == "desert_bank" else 90000)
 	var observed_loading := false
 	var observed_boarding := false
@@ -80,7 +80,7 @@ func run() -> void:
 				var longest_trip := 0.0
 				for index in 2:
 					var trip: Vector3 = convoy.fleet[index].door_point()-(bank+Vector3(float(index)-.5,.08,1.0))
-					# Carriers use the frontage then a perpendicular road crossing.
+					# Os carregadores usam a fachada e depois uma travessia perpendicular da rua.
 					longest_trip = maxf(longest_trip,absf(trip.x)+absf(trip.z))
 				deadline = Time.get_ticks_msec()+int((4.0*longest_trip/1.35+35.0)*1000.0)
 				await photo("loading")
@@ -106,8 +106,8 @@ func run() -> void:
 	check(convoy.fleet.all(func(car): return car.health == car.max_health),"legal parking and loading cause no vehicle damage")
 	if not initial_positions.is_empty() and convoy.fleet.size() == 4:
 		var moved := 0
-		# A legal red signal held the rear pair for >15s in the production trace.
-		# Observe two signal cycles instead of demanding all cars move within 8s.
+		# Um sinal vermelho legal segurou o par de trás por >15s no rastreio de produção.
+		# Observa dois ciclos de sinal em vez de exigir que todos os carros se movam em 8s.
 		var movement_deadline := Time.get_ticks_msec()+45000
 		while Time.get_ticks_msec() < movement_deadline and moved < 4:
 			await physics_frame

@@ -49,8 +49,8 @@ func run() -> void:
 	gameplay = GAMEPLAY.new()
 	world.gameplay = gameplay
 	gameplay.configure(world,player,null,STATE.new())
-	# Directed pain captions use scene timers. The production Gameplay owner
-	# belongs to the tree; the fixture must preserve that lifecycle too.
+	# As legendas dirigidas de dor usam timers de cena. O dono de produção do Gameplay
+	# pertence à árvore; a fixture precisa preservar também esse ciclo de vida.
 	world.add_child(gameplay)
 	gameplay.set_physics_process(false)
 	gameplay.set_process(false)
@@ -69,7 +69,7 @@ func run() -> void:
 	player.input_locked = true
 	check(not player.air_movement.request_jump(), "locked movement rejects jumping")
 	player.input_locked = false
-	# Collision with a ceiling must stop the swept capsule, without penetration.
+	# A colisão com um teto precisa parar a cápsula varrida, sem penetração.
 	floor_box(Vector3(0,2.15,0), Vector3(4,.2,4))
 	check(player.air_movement.request_jump(), "jump below ceiling starts")
 	var maximum := 0.0
@@ -78,7 +78,7 @@ func run() -> void:
 		maximum = maxf(maximum, player.global_position.y)
 	check(maximum < .5, "ceiling blocks capsule")
 	await until_ground()
-	# Low and high falls use the real Gameplay damage path and never armor.
+	# Quedas baixas e altas usam o caminho real de dano do Gameplay e nunca a blindagem.
 	player.teleport(Vector3(8,4.1,0))
 	gameplay.armor = 60.0
 	await until_ground()
@@ -88,7 +88,7 @@ func run() -> void:
 	var health_after: float = gameplay.health
 	await settle(20)
 	check(gameplay.health == health_after, "landing damage is not repeated")
-	# A real one-storey roof keeps its parapet collider during the complete exit.
+	# Um telhado real de um andar mantém o colisor da platibanda durante toda a saída.
 	var roof = ROOF.new()
 	roof.definition = {"id":"air_fixture_roof", "size":Vector2(8,8), "floor_count":1, "roof_height":4.0, "reward":{}, "rewards":[]}
 	roof.position = Vector3(16,4,0)

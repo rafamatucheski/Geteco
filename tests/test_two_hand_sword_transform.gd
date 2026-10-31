@@ -1,6 +1,6 @@
 extends SceneTree
-## Regression: the authored four-decimal grip must remain a valid rotation
-## throughout the transition from one hand to two hands.
+## Regressão: a empunhadura autoral de quatro casas decimais precisa continuar uma rotação válida
+## durante toda a transição de uma mão para duas mãos.
 const ACTOR = preload("res://scripts/Actor.gd")
 const GAMEPLAY = preload("res://gameplay/Gameplay.gd")
 var checks := 0

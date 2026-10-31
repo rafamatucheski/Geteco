@@ -1,7 +1,7 @@
 extends SceneTree
-## Isolated validator for res://runtime/TrunkView.gd, the V2 presentation of
-## the Monaliza trunk (real 3D lid + weapon models, no PersonalCar/session
-## plumbing needed to exercise it).
+## Validador isolado para res://runtime/TrunkView.gd, a apresentação V2 do
+## porta-malas do Monaliza (tampa 3D real + modelos de arma, sem precisar da ligação
+## de PersonalCar/sessão para exercitá-lo).
 class MockCar extends Node3D:
 	var visual: Node3D
 var failures: Array[String] = []

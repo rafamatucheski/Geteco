@@ -37,9 +37,9 @@ func scenario(queue: bool, sealed: bool, sidewalk := false) -> void:
 	car.route = curve
 	car.traffic = true
 	car.controlled = true
-	# The mission owns crash recovery for its controlled passenger car. Run
-	# that real owner as well; a bare controlled car intentionally stays stopped
-	# after StreetPhysics suspends it on an impact.
+	# A missão é dona da recuperação de batida do carro de passageiro controlado. Roda
+	# também esse dono real; um carro controlado sozinho fica de propósito parado
+	# depois que o StreetPhysics o suspende num impacto.
 	var passenger := preload("res://runtime/ArrivalActor.gd").new()
 	scene.add_child(passenger)
 	passenger.collision_layer = 0

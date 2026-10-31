@@ -49,7 +49,7 @@ func run() -> void:
 	check(await session.leave_place(), "leave restored garage")
 	check(sea.visible, "exit restores sea immediately")
 	await photo("02-exterior")
-	# Fixture ownership only; buying houses is outside this rendering regression.
+	# Só posse da fixture; comprar casas fica fora desta regressão de renderização.
 	session.activities.residence.data.active_home = "westgate_garden"
 	for id in ["westgate_garden", "harbor_hospital", "maciota"]:
 		while session.is_transition_blocked() or world.player.input_locked: await physics_frame

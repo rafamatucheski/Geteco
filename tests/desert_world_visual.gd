@@ -1,5 +1,5 @@
 extends SceneTree
-## Rendered component inspection only. Main integration/performance are owned by the session runner.
+## Só inspeção renderizada de componente. Integração/desempenho no Main ficam com o runner da sessão.
 const REGION := preload("res://world/desert/DesertRegion.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 var output := "D:/geteco/artifacts/desert-20261006/world"
@@ -37,7 +37,7 @@ func _run() -> void:
 	region.initial_focus=LAYOUT.TRUCK_STOP
 	stage.add_child(region)
 	camera=Camera3D.new()
-	# These are inspection teleports, never interpolate the first view from the origin.
+	# São teleportes de inspeção; nunca interpola a primeira vista a partir da origem.
 	camera.physics_interpolation_mode=Node.PHYSICS_INTERPOLATION_MODE_OFF
 	camera.projection=Camera3D.PROJECTION_ORTHOGONAL
 	camera.far=1400

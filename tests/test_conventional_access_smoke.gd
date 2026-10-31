@@ -1,5 +1,5 @@
 extends "res://tests/test_video_phase3_access.gd"
-## Finite functional smoke only; the user owns visual/FPS validation for this batch.
+## Só fumaça funcional finita; o usuário é dono da validação visual/de FPS deste lote.
 
 func _run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args() or "--skip-arrival" not in OS.get_cmdline_user_args():
@@ -65,8 +65,8 @@ func _smoke_access(id: String) -> bool:
 	await frames(24)
 	check(facade.open_amount < .01 and world.player.test_move(sweep, Vector3(0, 0, -1.1)), id + " stationary approach preserves closed physical door")
 	check(session.nearest().get("id", "") != "enter" and session.state.place_id.is_empty(), id + " no E or standing transfer")
-	# This smoke checks physical doors. Movement follows their world-space
-	# inward direction, independently of the saved camera view or orbit.
+	# Esta fumaça confere portas físicas. O movimento segue a direção para dentro delas
+	# no espaço do mundo, independente da vista de câmera salva ou da órbita.
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = access._inward(id)
 	var entered := await wait_until(func(): return session.state.place_id == canonical, 180)

@@ -9,7 +9,7 @@ var failures: Array[String] = []
 class ControllerMap extends "res://ui/hud/MapUI.gd":
 	# Exercise the production input handler without unrelated region cartography.
 	func _ready() -> void: set_process(false)
-	# No map world/connections are created by this input-only fixture.
+	# Nenhum mundo/conexão do mapa é criado por esta fixture só de entrada.
 	func _exit_tree() -> void: pass
 
 func check(ok: bool, label: String) -> void:

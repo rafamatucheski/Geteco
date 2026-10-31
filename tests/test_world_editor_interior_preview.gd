@@ -35,6 +35,6 @@ func run() -> void:
 	ui.free()
 	check(not OS.is_process_running(pid),"Closing an interior stops its own worker")
 	print("WORLD_EDITOR_INTERIOR_PREVIEW checks=",checks," failures=",failures)
-	# Intentionally quit immediately after free: all retired resources must already
-	# belong to the SceneTree rather than an orphaned deferred collector.
+	# Sai de propósito logo depois do free: todos os recursos aposentados já precisam
+	# pertencer à SceneTree em vez de a um coletor adiado órfão.
 	quit(1 if failures else 0)

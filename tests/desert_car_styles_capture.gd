@@ -1,5 +1,5 @@
 extends SceneTree
-## Side-profile art inspection only. Integrated drag/performance are separate.
+## Só inspeção de arte de perfil. Arrancada/desempenho integrados são à parte.
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")

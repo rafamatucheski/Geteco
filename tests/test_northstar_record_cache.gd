@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Northstar builder, physical gangway, cache detach/reparent and destruction.
-## Does not prove FPS, all ship routes, occlusion or exported resources.
+## Montador real do Northstar, passarela física, desligar/religar do cache e destruição.
+## Não prova FPS, todas as rotas de navio, oclusão nem recursos exportados.
 const REGION := preload("res://world/regions/NativeRegion.gd")
 const HOIST := preload("res://world/regions/NorthstarCargoHoist3D.gd")
 var failures := 0
@@ -44,7 +44,7 @@ func _run() -> void:
 	var owner := REGION.new()
 	owner.region_id = "harbor"
 	owner.initial_prewarm_only = true
-	# Prepare only this actual source payload; avoid building unrelated world records.
+	# Prepara só este conteúdo de origem real; evita montar registros de mundo não relacionados.
 	owner.source_data = JSON.parse_string(FileAccess.get_file_as_string(REGION.DATA_PATH))
 	owner.data_prepared = true
 	scene.add_child(owner)

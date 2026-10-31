@@ -1,6 +1,6 @@
 extends SceneTree
-## Exact geometry signatures across before/after, plus shore, seam and lifecycle contracts.
-## Construction timings are isolated CPU cost, never gameplay FPS.
+## Assinaturas exatas de geometria antes/depois, mais contratos de margem, emenda e ciclo de vida.
+## Os tempos de construção são custo isolado de CPU, nunca FPS de jogo.
 const OCEAN := preload("res://world/regions/HarborOcean.gd")
 const PORT := preload("res://world/regions/OriginalSouthPort.gd")
 var checks := 0
@@ -48,7 +48,7 @@ func run() -> void:
 	var cases: Array[Rect2] = []
 	for cell in [Vector2i(3,3),Vector2i(4,3),Vector2i(0,0),Vector2i(-1,0),Vector2i(1,-1),Vector2i(6,-5),Vector2i(7,-5),Vector2i(8,-5),Vector2i(3,0),Vector2i(3,1),Vector2i(-2,-2),Vector2i(10,10)]:
 		cases.append(Rect2(Vector2(cell)*64.0,Vector2(64,64)))
-	# Boundary/degenerate edges and reconfiguration must not retain stale candidates.
+	# Arestas de limite/degeneradas e a reconfiguração não podem reter candidatos obsoletos.
 	var synthetic: Array[PackedVector2Array] = [PackedVector2Array([Vector2(-24,0),Vector2(-24,64)]),PackedVector2Array([Vector2(88,0),Vector2(88,64)]),PackedVector2Array([Vector2(0,88),Vector2(64,88)]),PackedVector2Array([Vector2(20,20),Vector2(20,20)]),PackedVector2Array([Vector2(1000,1000),Vector2(1001,1000),Vector2(1001,1001)])]
 	for pass_index in 3:
 		if pass_index == 1: ocean.configure([[0,0,160,160]],synthetic)
@@ -75,13 +75,13 @@ func run() -> void:
 			for index in vertices.size():
 				var vertex := vertices[index]
 				var distance := ocean.shore_distance(Vector2(vertex.x,vertex.z))
-				# Mesh colors are stored as normalized RGBA8; use one byte tolerance.
+				# As cores da malha são guardadas como RGBA8 normalizado; usa tolerância de um byte.
 				check(absf(colors[index].r-distance/OCEAN.DEPTH_RANGE)<=1.0/255.0+0.000001,"exact shore query determines color")
 				check(absf(vertex.y-OCEAN.surface_y(Vector2(vertex.x,vertex.z),distance))<0.000001,"bridge/water height preserved")
 			rows.append({"pass":pass_index,"rect":str(rect),"build_usec":elapsed,"geometry":signature(holder)})
 			holder.free()
 			await process_frame
-	# The measured production chunk workload is repeated finitely in each variant.
+	# A carga medida de chunks de produção é repetida de forma finita em cada variante.
 	var timings: Array[int] = []
 	for cycle in 12:
 		var holder := Node3D.new()

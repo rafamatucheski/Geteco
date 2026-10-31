@@ -1,5 +1,5 @@
 extends SceneTree
-## Ambient riders use actual course collision and the controller's shared AI.
+## Os pilotos do ambiente usam a colisão real do percurso e a IA compartilhada do controlador.
 const AMBIENT := preload("res://activities/motocross/MotocrossAmbient.gd")
 const CONTROLLER := preload("res://activities/motocross/Motocross.gd")
 const COURSE := preload("res://activities/motocross/MotocrossCourse.gd")

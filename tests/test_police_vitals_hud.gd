@@ -7,7 +7,7 @@ class Officer:
 	extends Node3D
 	var max_armor := 80.0
 	var armor := 80.0
-	# Health belongs to combat; a shield-only HUD must never inspect either value.
+	# A vida pertence ao combate; um HUD só de escudo nunca pode inspecionar nenhum dos dois valores.
 	var health_reads := 0
 	var max_health: float:
 		get:

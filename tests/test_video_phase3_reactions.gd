@@ -1,6 +1,6 @@
 extends SceneTree
-## Causal Main regression: real gunfire/fire, physical retreat, service interruption
-## and recovery, without touching the personal save or protected garage residents.
+## Regressão causal no Main: tiros/fogo reais, recuo físico, interrupção de serviço
+## e recuperação, sem tocar o save pessoal nem os moradores protegidos da garagem.
 const REACTION := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 var world
@@ -46,8 +46,8 @@ func run() -> void:
 	check(world.session != null and world.session.ready_for_play, "Main session ready")
 	if not failures.is_empty(): quit(1); return
 	var session = world.session
-	# Isolate cessation of danger: skip_dispatch alone leaves legacy police active.
-	# Actual initiating shots and NPC-gunfire events remain connected and exercised.
+	# Isola o fim do perigo: só skip_dispatch deixa a polícia legada ativa.
+	# Os tiros iniciais reais e os eventos de tiros de NPC continuam ligados e exercitados.
 	world.gameplay.dispatch_owned = true
 	world.gameplay.emergency.dispatch_owned = true
 	world.player.controlled_automatically = true
@@ -94,7 +94,7 @@ func run() -> void:
 	security._pay_bribe()
 	check(session.state.economy.balance == balance and not security.authorized_entry, "stale bribe action cannot charge frightened staff")
 	await frames(280)
-	# Stream an authored moving worker, then fire away from the worker.
+	# Carrega em streaming um trabalhador autoral em movimento e então atira longe dele.
 	await place(Vector3(3900.0 / 16.0, .08, 3370.0 / 16.0 + 3.0))
 	var worker = session._routine_director().actors.get("south_port_worker_00")
 	check(is_instance_valid(worker), "authored cargo worker is physically active")
@@ -119,7 +119,7 @@ func run() -> void:
 		check(clerks.size() == 2, "both real bank clerks spawned")
 		var homes: Array = clerks.map(func(candidate): return candidate.global_position)
 		check(shoot_away(), "real shot inside bank")
-		# Stop the alarm's guard response to isolate recovery after the initiating shot.
+		# Para a resposta de guarda do alarme para isolar a recuperação depois do tiro inicial.
 		session.robberies.data.bank_shots = false
 		await frames(80)
 		for i in clerks.size():

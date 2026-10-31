@@ -1,5 +1,5 @@
 extends SceneTree
-## A complete workshop draft is paid and installed together, or stays untouched.
+## Um rascunho completo da oficina é pago e instalado junto, ou fica intocado.
 const GARAGE := preload("res://runtime/desert/DesertGarageState.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
@@ -41,7 +41,7 @@ func _run() -> void:
 	var empty_world := {}
 	result = GARAGE.apply_loadout(empty_world,poor,"poor_car","sedan_classic",draft,9)
 	_check(not result.ok and empty_world.is_empty() and poor.snapshot()==poor_before,"combined price rejects before charging any part")
-	# Force a late receipt failure: the first debit must be rolled back too.
+	# Força uma falha tardia de recibo: o primeiro débito também precisa ser revertido.
 	before = wallet.snapshot()
 	_check(not wallet.spend_batch([{"amount":100,"receipt_id":"batch_first"},{"amount":100,"receipt_id":"x".repeat(111)}]),"invalid later receipt rejected")
 	_check(wallet.snapshot()==before,"late failure rolls back all debits and receipts")

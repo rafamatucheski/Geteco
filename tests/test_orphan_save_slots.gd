@@ -1,5 +1,5 @@
 extends SceneTree
-## Real slot listing, menu buttons and disk persistence; every slot is isolated.
+## Listagem real de slots, botões do menu e persistência em disco; todo slot é isolado.
 class IsolatedLaunch extends "res://runtime/SessionLaunch.gd":
 	var folder := ""
 	func slot_path(id: String) -> String:

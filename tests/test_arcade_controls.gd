@@ -78,8 +78,8 @@ func _fresh_blocks() -> void:
 
 func _run() -> void:
 	TranslationServer.set_locale("pt_BR")
-	# Match the shared default accept/handbrake binding that caused the bug,
-	# while moving WASD to IJKL to verify that gameplay follows InputMap.
+	# Reproduz o atalho padrão compartilhado de aceitar/freio de mão que causou o bug,
+	# enquanto move WASD para IJKL para conferir que a jogabilidade segue o InputMap.
 	_binding("interact", [KEY_E], JOY_BUTTON_X)
 	_binding("ui_accept", [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE], JOY_BUTTON_A)
 	_binding("handbrake", [KEY_SPACE], JOY_BUTTON_A)

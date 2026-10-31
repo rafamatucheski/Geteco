@@ -55,7 +55,7 @@ func inspect(mesh: MeshInstance3D, label: String) -> void:
 	var shape := collider.shape as ConcavePolygonShape3D
 	check(not shape.backface_collision, label + " original backface policy")
 	var actual := shape.get_faces()
-	# Deliberate readback here only: compare to the original engine conversion.
+	# Leitura deliberada só aqui: compara com a conversão original do motor.
 	var reference := mesh.mesh.create_trimesh_shape()
 	check(actual.size() == 1536, label + " full 512 triangles")
 	check(same_faces(actual, reference.get_faces()), label + " rendering triangles and winding preserved")
@@ -101,8 +101,8 @@ func run() -> void:
 	await physics_frame
 	ground(rect.position + Vector2(8.7, 12.3), terrain, "return")
 	ground(rect.position + Vector2(63.99, 11.4), terrain, "return seam")
-	# User-reported mountain priority: shore after the tunnel, summit and the
-	# northern ski perimeter. Build the exact tile under each physical sample.
+	# Prioridade da montanha relatada pelo usuário: margem depois do túnel, cume e o
+	# perímetro norte do esqui. Monta o tile exato sob cada amostra física.
 	var visited: Dictionary = {}
 	for point in [Vector2(636.3,-337.7),Vector2(698.75,-498.4375),Vector2(700,-553.75),Vector2(763.75,-572.5),Vector2(712.5,-615.625),Vector2(778.2,-625.7),Vector2(777.9,-639.99),Vector2(777.9,-640.01)]:
 		var cell := Vector2i(floori(point.x/64.0),floori(point.y/64.0))

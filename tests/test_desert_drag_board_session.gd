@@ -39,7 +39,7 @@ func run() -> void:
 	check(world.dispatch.router._native!=null,"C# route backend active")
 	var session=world.session
 	var race=session.desert.drag
-	# Keep this ranked-board suite independent of the visitor heat schedule.
+	# Mantém esta suíte do placar classificado independente da agenda de baterias dos visitantes.
 	race.open_meet.enabled = false
 	for i in 3: await physics_frame
 	world.gameplay.god_mode=true

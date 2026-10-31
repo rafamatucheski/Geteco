@@ -35,8 +35,8 @@ func run() -> void:
 	world.player.automatic_direction = Vector3.ZERO
 	world.camera.set_process_unhandled_input(false)
 	world.driving.set_process_unhandled_input(false)
-	# Exercise mapped actions explicitly; unrelated desktop/controller input
-	# must not pause this isolated capture while the user keeps working.
+	# Exercita as ações mapeadas explicitamente; entrada não relacionada de desktop/controle
+	# não pode pausar esta captura isolada enquanto o usuário continua trabalhando.
 	world.session.set_process_input(false)
 	world.production.region.set_focus(LAYOUT.BOARDING)
 	world.production.region.prepare_collision_at(LAYOUT.BOARDING)

@@ -1,6 +1,6 @@
 extends SceneTree
-## Real mine crew bodies and shared animation clock on a supported physics floor.
-## Integration with real weapons/vehicles is covered by Main session validation.
+## Corpos reais da equipe da mina e relógio de animação compartilhado num piso de física apoiado.
+## A integração com armas/veículos reais é coberta pela validação de sessão no Main.
 const LIFE := preload("res://world/mining/MiningLife.gd")
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 var failures: Array[String] = []
@@ -69,7 +69,7 @@ func run() -> void:
 	await frames(2)
 	life.set_focus(LAYOUT.CENTER)
 	check(life._workers.size() == 5, "leaving before cooldown does not replace a worker")
-	# Advance only the deadline, not the physics or production admission path.
+	# Avança só o prazo, não a física nem o caminho de admissão de produção.
 	life._defeated["sample_breaker"] = Time.get_ticks_msec() / 1000.0 - .01
 	life.set_focus(LAYOUT.CENTER)
 	check(life._workers.size() == 5 and life._defeated.has("sample_breaker"), "elapsed cooldown cannot respawn a worker near the player")
@@ -81,8 +81,8 @@ func run() -> void:
 	var live := 0
 	for replacement in life._workers:
 		if not replacement.dead: live += 1
-	# Distant authored stations deliberately sleep, so is_on_floor() is not
-	# updated there. The replaced worker is within the live physics radius.
+	# As estações autorais distantes dormem de propósito, então is_on_floor() não é
+	# atualizado ali. O trabalhador substituído fica dentro do raio de física viva.
 	var replacement = life._work_root.get_node("Miner_sample_breaker")
 	check(live == 6 and replacement.is_on_floor() and replacement.health == 100, "replacement is alive and supported without duplicating stations")
 	print("MINING_WORKERS_RESULT checks=", checks, " failures=", failures.size())

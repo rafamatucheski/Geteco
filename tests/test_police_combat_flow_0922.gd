@@ -1,6 +1,6 @@
 extends "res://tests/test_combat_flow.gd"
-## Same assertions and production flow; capture collisions around the two
-## locomotion failures without changing Actor or relaxing expectations.
+## Mesmas asserções e mesmo fluxo de produção; captura as colisões em volta das duas
+## falhas de locomoção sem mudar o Actor nem relaxar as expectativas.
 var recent_motion: Array[Dictionary] = []
 func _initialize() -> void:
 	physics_frame.connect(_sample_motion)

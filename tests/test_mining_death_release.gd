@@ -1,6 +1,6 @@
 extends "res://tests/test_mining_machine.gd"
-## Native damage while a load is suspended: both rigid blast wrecks and the
-## crushed CharacterBody path must release ownership without losing gravity.
+## Dano nativo enquanto uma carga está suspensa: tanto os destroços rígidos da explosão quanto o
+## caminho do CharacterBody esmagado precisam liberar a posse sem perder a gravidade.
 const CRUSH := preload("res://gameplay/street_physics/HeavyVehicleCrush.gd")
 
 func _initialize() -> void:

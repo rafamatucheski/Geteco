@@ -1,5 +1,5 @@
 extends "res://tests/capture/capture_amusement_park_temporal.gd"
-## Main/.NET journey; --umbra-before records the unchanged house before editing.
+## Jornada no Main/.NET; --umbra-before grava a casa inalterada antes da edição.
 var wing_recording := false
 var wing_clock := 0.0
 

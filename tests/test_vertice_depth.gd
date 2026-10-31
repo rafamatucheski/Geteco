@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Actor rigs, warehouse meshes and rendered depth. Magenta is a diagnostic
-## actor mask; the unoccluded control hides architecture, never the actor.
+## Rigs reais do Actor, malhas do galpão e profundidade renderizada. Magenta é uma máscara
+## de ator de diagnóstico; o controle sem oclusão esconde a arquitetura, nunca o ator.
 const BUILDING := preload("res://gameplay/urban_v1/PortDepotBuilding.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const OUTPUT := "res://evidence/port-logistics-20260928/depth"
@@ -88,7 +88,7 @@ func run() -> void:
 		actor.set_physics_process(false)
 		actor.process_mode = Node.PROCESS_MODE_DISABLED
 		var who := "player" if is_player else "npc"
-		# Natural materials first: one evidence image of each real rig by a rack.
+		# Materiais naturais primeiro: uma imagem de evidência de cada rig real ao lado de uma prateleira.
 		actor.position = Vector3(-19, .04, -1.4)
 		camera.position = setups[0].camera
 		camera.look_at(setups[0].target)

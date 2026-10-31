@@ -1,7 +1,7 @@
 extends SceneTree
-## Compare the production merge with the original GPU-roundtrip algorithm.
-## Run rendered. Optional --capture=res://evidence/police-equipment-before.png.
-## Timings cover CPU method calls only; they do not establish gameplay FPS.
+## Compara a junção de produção com o algoritmo original de ida e volta pela GPU.
+## Rode renderizado. Opcional --capture=res://evidence/police-equipment-before.png.
+## Os tempos cobrem só chamadas de método na CPU; não estabelecem FPS de jogo.
 const MODEL := preload("res://gameplay/PoliceModel.gd")
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 const PARTS := ["chest", "belt", "helmet", "glove", "thigh", "knee"]
@@ -138,7 +138,7 @@ func run() -> void:
 			for part: String in PARTS:
 				var source := source_mesh(part, heavy)
 				if part == "chest" and heavy: source = with_extra_surface(source)
-				source_refs.append(source) # Keep the original RID alive throughout cache assertions.
+				source_refs.append(source) # Mantém o RID original vivo durante todas as asserções de cache.
 				var source_before: Array = source.surface_get_arrays(0)
 				var source_material: Material = source.surface_get_material(0)
 				var label := "%d/%s/%s" % [tier, "heavy" if heavy else "slim", part]

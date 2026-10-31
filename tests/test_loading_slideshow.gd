@@ -9,8 +9,8 @@ func check(ok: bool, message: String) -> void:
 	if not ok: failures.append(message)
 
 func run() -> void:
-	# This exercises the portable Godot fallback. The native loop has its own
-	# rendered block/resize/lifecycle test and intentionally suspends this artwork.
+	# Isto exercita o fallback portável do Godot. O laço nativo tem o próprio teste
+	# renderizado de bloco/redimensionamento/ciclo de vida e suspende esta arte de propósito.
 	if OS.get_name() == "Windows" and DisplayServer.get_name() != "headless" and "--loading-presenter=godot" not in OS.get_cmdline_user_args():
 		push_error("Use --loading-presenter=godot for the fallback slideshow test")
 		quit(2)
@@ -29,9 +29,9 @@ func run() -> void:
 	var out := "res://evidence/loading-slideshow/preview-fifteen"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
 	paused = true
-	# Wait for the actual loop: screenshot readbacks and first-use GPU uploads can
-	# pause the main thread; artwork deliberately clamps such deltas to avoid cuts.
-	# Fifteen visible slides require 105 seconds, excluding those stalls.
+	# Espera o laço real: leituras de captura e uploads de primeiro uso na GPU podem
+	# pausar a thread principal; a arte limita de propósito esses deltas para evitar cortes.
+	# Quinze slides visíveis exigem 105 segundos, sem contar essas travadas.
 	while art.transitions < 15 and Time.get_ticks_usec() - began < 180000000:
 		await process_frame
 		seen[art.current_index] = true
@@ -46,7 +46,7 @@ func run() -> void:
 			captures[index] = true
 	check(seen.size() == 15, "quinze artes alternam mesmo com progresso parado e árvore pausada")
 	check(motion_checked, "movimento foi observado durante o ciclo real")
-	# Cover every direction and framing endpoint, also after a window resize.
+	# Cobre toda direção e ponta de enquadramento, também depois de redimensionar a janela.
 	for viewport_size in [Vector2(1280,720), Vector2(2560,1080), Vector2(720,1280)]:
 		art.size = viewport_size
 		var covered := true

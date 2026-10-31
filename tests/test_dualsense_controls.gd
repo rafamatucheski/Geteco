@@ -1,5 +1,5 @@
 extends SceneTree
-## Input contracts and settings migration. Never writes the player's settings.
+## Contratos de entrada e migração de configurações. Nunca grava as configurações do jogador.
 var failures: Array[String] = []
 var checks := 0
 var controls: Node
@@ -42,7 +42,7 @@ func run() -> void:
 	check(bound("skate_ollie", button(JOY_BUTTON_A)) and bound("skate_flip", button(JOY_BUTTON_RIGHT_SHOULDER)) and bound("skate_shove", button(JOY_BUTTON_LEFT_SHOULDER)), "skate offers all three tricks")
 	check(bound("tank_fire", button(JOY_BUTTON_B)) and bound("pause_game", button(JOY_BUTTON_START)), "tank cannon and pause remain reachable")
 
-	# Customizing one of the shared contexts must not silently delete another.
+	# Personalizar um dos contextos compartilhados não pode apagar outro em silêncio.
 	check(controls.rebind_gamepad("weapon_next", button(JOY_BUTTON_RIGHT_SHOULDER)).ok, "remap next weapon succeeds")
 	check(bound("skate_flip", button(JOY_BUTTON_RIGHT_SHOULDER)) and bound("radio_next", button(JOY_BUTTON_RIGHT_SHOULDER)), "next weapon remap preserves kickflip and radio")
 	check(controls.rebind_gamepad("radio_previous", button(JOY_BUTTON_LEFT_SHOULDER)).ok, "remap previous radio succeeds")
@@ -69,7 +69,7 @@ func run() -> void:
 	controls.import_gamepad_bindings(modern)
 	check(controls.export_gamepad_bindings() == modern, "current binding export round-trips completely")
 
-	# These entries were emitted empty by the pre-camera/pre-surrender defaults.
+	# Estas entradas eram emitidas vazias pelos padrões de antes da câmera/rendição.
 	var legacy: Dictionary = modern.duplicate(true)
 	for action in ["camera_left", "camera_right", "surrender", "radio_toggle"]: legacy[action] = []
 	legacy.weapon_flashlight = [{"button": JOY_BUTTON_MISC1}]

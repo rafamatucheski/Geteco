@@ -1,6 +1,6 @@
 extends "res://tests/test_seated_driver.gd"
-## Regression: a fitted ankle can still place the visible shoe below the chassis.
-## Original authored Aurora chassis deck spans Y=.205..275 in model coordinates.
+## Regressão: um tornozelo ajustado ainda pode pôr o sapato visível abaixo do chassi.
+## O deck original autoral do chassi do Aurora vai de Y=.205..275 em coordenadas do modelo.
 const CHASSIS_DECK_TOP := .275
 
 func _initialize() -> void:

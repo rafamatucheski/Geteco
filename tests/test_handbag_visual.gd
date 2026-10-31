@@ -22,8 +22,8 @@ func shot(label: String) -> void:
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
-	# Pose captures are not benchmarks; keep the alpha watermark, omit the
-	# uninitialized first-second FPS counter without saving user settings.
+	# Capturas de pose não são benchmarks; mantém a marca d'água alfa e omite o
+	# contador de FPS não inicializado do primeiro segundo sem salvar configurações do usuário.
 	root.get_node("V2Settings").show_fps=false
 	root.get_node("V2Settings")._update_fps_overlay()
 	stage=Node3D.new(); root.add_child(stage); current_scene=stage

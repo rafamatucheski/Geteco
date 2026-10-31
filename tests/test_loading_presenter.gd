@@ -55,8 +55,8 @@ func run() -> void:
 	ok = ok and float(fullscreen.animation_seconds)-float(fullscreen_start.animation_seconds) >= 28.0
 	print("NATIVE_LOADING_FULLSCREEN frames=",steady.size()," p95_ms=",p95," p99_ms=",p99," progress=",fullscreen.displayed_progress)
 	var physical := DisplayServer.window_get_size()
-	# The Windows fullscreen host has 2 extra client pixels in this engine;
-	# coverage must include the entire visible screen, with only that padding.
+	# O host de tela cheia do Windows tem 2 pixels extras de cliente neste motor;
+	# a cobertura precisa incluir a tela visível inteira, só com essa margem.
 	ok = ok and int(fullscreen.width) == physical.x and int(fullscreen.height) in [physical.y,physical.y+2]
 	print("NATIVE_LOADING_RESIZE ",resized.width,"x",resized.height," fullscreen=",fullscreen.width,"x",fullscreen.height," expected=",physical)
 	var report: Dictionary = {}

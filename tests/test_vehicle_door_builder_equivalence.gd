@@ -1,6 +1,6 @@
 extends SceneTree
-## Exact before/after geometry plus finite local CPU timings. Headless timings
-## measure the builder only; they do not certify rendered gameplay FPS.
+## Geometria exata de antes/depois mais tempos locais finitos de CPU. Os tempos headless
+## medem só o montador; não certificam o FPS de jogo renderizado.
 const BEFORE := preload("res://tests/fixtures/VehicleDoorBuilderBeforeHeart.gd")
 const AFTER := preload("res://gameplay/VehicleDoorBuilder.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
@@ -75,7 +75,7 @@ func median(values: Array) -> float:
 	return float(ordered[int(ordered.size() * .5)])
 
 func time_case(visual: Node3D, spec: Dictionary, label: String) -> void:
-	# Five finite pairs; alternate order after both implementations have warmed.
+	# Cinco pares finitos; alterna a ordem depois que as duas implementações aqueceram.
 	build(BEFORE, visual, spec)
 	build(AFTER, visual, spec)
 	var old_times: Array = []

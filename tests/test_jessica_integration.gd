@@ -1,8 +1,8 @@
 extends SceneTree
-## Real Main/.NET flow, isolated checkpoint and ordinary bank/getaway adapters.
-## First pistol hit, guards, lockpick, cash and exit use production objects.
-## Guard combat is finished deterministically after that hit; combat balance is
-## not certified here. Wanted is never cleared and the Jetta never teleports.
+## Fluxo real no Main/.NET, checkpoint isolado e adaptadores comuns de banco/fuga.
+## O primeiro tiro de pistola, os guardas, a gazua, o dinheiro e a saída usam objetos de produção.
+## O combate com os guardas é terminado de forma determinística depois desse acerto; o equilíbrio do combate
+## não é certificado aqui. O procurado nunca é limpo e o Jetta nunca teleporta.
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
@@ -99,9 +99,9 @@ func finish_dialogue() -> void:
 func walk(point: Vector3, seconds := 12.0, stop_for_debrief := false, direct := false) -> bool:
 	var began := Time.get_ticks_msec()
 	var place: String = world.session.state.place_id
-	# The bank has narrow authored portal/aisle coordinates. A coarse nav grid
-	# can put its waypoint into the open vault leaf; use the same ordinary
-	# direct walking used by test_bank_gameplay inside that actual corridor.
+	# O banco tem coordenadas autorais estreitas de portal/corredor. Uma grade de navegação grosseira
+	# pode pôr o waypoint dela na folha aberta do cofre; usa a mesma caminhada direta
+	# comum usada por test_bank_gameplay dentro desse corredor real.
 	var path: PackedVector3Array = PackedVector3Array([point]) if direct or place == "harbor_bank" else world.gameplay.find_path(world.player.global_position,point)
 	if path.is_empty() or path[-1].distance_to(point) > .1: path.append(point)
 	for waypoint in path:
@@ -206,9 +206,9 @@ func run() -> void:
 	var heist = session.robberies
 	check(session.controller.loaded_save and not session.controller.save_invalid,"fixture actually loaded and passed production save validation")
 	check(session.controller.store.path == report.fixture_path,"all checkpoint persistence targets the isolated fixture")
-	# The campaign prefix includes Maciota's completed arrival. Keep the real
-	# cinematic hull in its bay, so the Jetta must park and admit its occupants
-	# with both cars present. This fixture never moves either car during escape.
+	# O prefixo da campanha inclui a chegada concluída do Maciota. Mantém o casco
+	# cinematográfico real na vaga dele, para que o Jetta precise estacionar e admitir os ocupantes
+	# com os dois carros presentes. Esta fixture nunca move nenhum carro durante a fuga.
 	parked_m8 = preload("res://runtime/ArrivalCar.gd").new()
 	parked_m8.position = world.maciota_place.tour_parking+Vector3.UP*.02
 	parked_m8.set_meta("fixture_parked_maciota",true)

@@ -1,5 +1,5 @@
 extends SceneTree
-## Camera response over the authored quarry heightfield; rendered route is separate.
+## Resposta da câmera sobre o heightfield autoral da pedreira; a rota renderizada é à parte.
 const CAMERA := preload("res://world/desert/DesertTerrainCamera.gd")
 const TERRAIN := preload("res://world/mining/MiningExterior.gd")
 

@@ -1,7 +1,7 @@
 extends "res://tests/test_traffic_junction_completed_turn.gd"
-## Four real civilian Vehicles: two leaders turning towards one another and
-## their following cars. Explicit committed leaders; followers request actual
-## green admission before movement. There is no convoy or formation controller.
+## Quatro Vehicles civis reais: dois líderes virando um na direção do outro e
+## os carros que os seguem. Líderes comprometidos explicitamente; os seguidores pedem admissão
+## real no verde antes de se mover. Não há controlador de comboio nem de formação.
 
 func _initialize() -> void:
 	create_timer(75).timeout.connect(func(): push_error("turn queue timeout"); quit(3))
@@ -23,7 +23,7 @@ func run() -> void:
 	floor_body.add_child(shape)
 	floor_body.position = Vector3(375,-.1,-262.5)
 	world.add_child(floor_body)
-	# Rounded corners with the normal 3 m trim/0.55 handle ratio.
+	# Cantos arredondados com o recorte normal de 3 m/razão de alça de 0.55.
 	var route_w := curve([Vector3(382.5,0,-220),Vector3(382.5,0,-260.85),Vector3(379.5,0,-263.85),Vector3(325,0,-263.85)])
 	route_w.set_point_out(1,Vector3.FORWARD*1.65)
 	route_w.set_point_in(2,Vector3.RIGHT*1.65)
@@ -47,8 +47,8 @@ func run() -> void:
 		car.position=car.route.sample_baked(offset-car.half_length-8.0,true)+Vector3.UP*.04
 		var gap: float = offset-car.route.get_closest_offset(car.position)-car.half_length-7.0
 		J._phase_frame=Engine.get_process_frames()
-		# Restore each approach's own green admission snapshot. These two
-		# signals have different phases, not a fabricated simultaneous green.
+		# Restaura o snapshot de admissão no verde de cada aproximação. Estes dois
+		# sinais têm fases diferentes, não um verde simultâneo fabricado.
 		J._phase_time=J.CYCLE*.5+1.0-J._offset(center)
 		check(J.signal_state(key,heading)=="green","arrival uses its own real green phase")
 		var admitted := J.request(key,car.get_instance_id(),heading,gap,0)
@@ -58,8 +58,8 @@ func run() -> void:
 			car._held_offset=offset
 		print("QUEUE_ADMISSION index=",i," gap=",gap," admitted=",admitted)
 	admission_contracts(leaders[0],followers[0])
-	# Stop-controlled crossings isolate reservation behavior from waiting phases.
-	# Green policy is independently checked above; no signal changed in production.
+	# Cruzamentos com parada obrigatória isolam o comportamento de reserva das fases de espera.
+	# A política do verde é conferida de forma independente acima; nenhum sinal mudou na produção.
 	J._signals.clear()
 	for car in leaders+followers: car.set_physics_process(true)
 	for frame in 2700: await physics_frame
@@ -101,7 +101,7 @@ func admission_contracts(leader: CharacterBody3D, follower: CharacterBody3D) -> 
 	follower._junction_list=far_rows
 	check(not J._turn_queue_blocked(key,follower,8.0),"turn towards a well-separated junction retains ordinary early admission")
 	follower._junction_list=saved_rows
-	# Already crossing the stop line is never ordered to stop inside by this gate.
+	# Quem já cruza a linha de parada nunca recebe ordem deste portão para parar lá dentro.
 	var previous: Dictionary=J.owners[key].duplicate(true)
 	J.owners[key].erase(follower.get_instance_id())
 	check(J.request(key,follower.get_instance_id(),Vector3.FORWARD,-2.0,2.0),"committed entry still clears the crossing despite queued-turn policy")

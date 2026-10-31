@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Main/Vehicle/.NET integration, with pedal/shift test input only.
-## Never advances cars or injects finish events after start. Requires --no-save.
+## Integração real Main/Vehicle/.NET, só com entrada de teste de pedal/troca.
+## Nunca avança carros nem injeta eventos de chegada depois da largada. Exige --no-save.
 var world
 var checks := 0
 var failures: Array[String] = []
@@ -78,7 +78,7 @@ func run() -> void:
 		if not world.production.travel_busy and session.ready_for_play: break
 	check(session.state.region_id=="desert","desert has supported ground")
 	await frames(120)
-	# Approach parking is clear of the authored meet residents and staging grid.
+	# O estacionamento da aproximação fica livre dos moradores autorais do encontro e do grid de largada.
 	var style_car := "desert_mirage_gt" if "--style-car" in OS.get_cmdline_user_args() else "desert_mirage"
 	if "--street-profile" in OS.get_cmdline_user_args(): style_car="porto_rosso"
 	for argument in OS.get_cmdline_user_args():
@@ -109,8 +109,8 @@ func run() -> void:
 	var previous_power: Variant = powertrain(car)
 	check(race.perform("start"),"nearby night action builds two-car grid")
 	if not race.active: finish(); return
-	# The panorama covers 42 cells. Allow up to 60 seconds for readiness;
-	# the old limit of 900 physics ticks only allowed 15 seconds.
+	# O panorama cobre 42 células. Permite até 60 segundos para a prontidão;
+	# o limite antigo de 900 ticks de física só permitia 15 segundos.
 	var preparation_deadline := Time.get_ticks_msec()+60000
 	check(is_zero_approx(race.elapsed) and is_equal_approx(race.countdown,3.0),"cold scenery preparation never advances the race clock or countdown")
 	while race.phase=="preparing" and Time.get_ticks_msec()<preparation_deadline:
@@ -185,8 +185,8 @@ func run() -> void:
 	finish()
 
 func check_destruction(race,car) -> void:
-	# Chaos runs only after the clean temporal sequence. This fixture reposition is
-	# outside every attempt; the timed race above is driven entirely by its physics.
+	# O caos só roda depois da sequência temporal limpa. Este reposicionamento da fixture fica
+	# fora de toda tentativa; a corrida cronometrada acima é guiada inteiramente pela física dela.
 	if race.active: return
 	var at: Vector3 = race.staging_point+Vector3(0,.1,-6)
 	var region = world.production.region

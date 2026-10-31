@@ -14,8 +14,8 @@ func run() -> void:
 	viewport.add_child(scene)
 	var room = PLACES.create_place("desert_under_culvert")
 	scene.add_child(room)
-	# Disable only the screen-space mood in this diagnostic color-mask fixture.
-	# The Main screenshots retain the production mood and lighting.
+	# Desliga só o clima de espaço de tela nesta fixture de diagnóstico com máscara de cor.
+	# As capturas do Main mantêm o clima e a iluminação de produção.
 	for child in room.model.get_children():
 		if child is CanvasLayer:
 			child.set_process(false)

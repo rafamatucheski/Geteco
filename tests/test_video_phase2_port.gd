@@ -104,7 +104,7 @@ func run() -> void:
 	check(state.economy.balance == 400, "duplicate payment signal cannot debit twice")
 	var paid: Dictionary = state.world_state.get("urban_operations", {}).duplicate(true)
 	check(paid.get("security", {}).get("authorized_entry", false), "accepted payment immediately enters saved state")
-	# JSON round-trip through the complete GameState validator, then the production adapter.
+	# Ida e volta JSON pelo validador completo do GameState e depois pelo adaptador de produção.
 	var restored = STATE.new()
 	check(restored.restore_snapshot(JSON.parse_string(JSON.stringify(state.snapshot()))), "paid full save survives serialization and validation")
 	var legacy: Dictionary = paid.duplicate(true)
@@ -140,7 +140,7 @@ func run() -> void:
 	check(operations.restore_snapshot(visit), "active visit restores")
 	await frames(12)
 	check(security.authorized_visit and security.gate_open and not security.alerted, "restored visitor remains authorized inside")
-	# Building transitions must not consume the visit; the hold already provides useful content.
+	# As transições de prédio não podem consumir a visita; o porão já fornece conteúdo útil.
 	check(await session.enter_place("santa_mare_hold", false), "existing cargo hold remains enterable")
 	await frames(8)
 	check(security.authorized_visit, "entering a port building preserves the visit")
@@ -149,8 +149,8 @@ func run() -> void:
 	await frames(12)
 	check(security.authorized_visit, "return from port building remains authorized")
 	check(security._inside_security_zone(world.player.global_position), "ship deck belongs to the same secured visit")
-	# Workers use the center lane; use the free side of the four-metre gangway.
-	# Both capsules retain their collision, and every segment is real movement.
+	# Os trabalhadores usam a faixa do centro; usa o lado livre da passarela de quatro metros.
+	# As duas cápsulas mantêm a colisão, e cada segmento é movimento real.
 	var deck_lane: bool = await walk_to(Vector3(266.4, .08, 192.0), 120)
 	var reached_quay: bool = deck_lane and await walk_to(Vector3(266.4, .08, 3260.0/16.0), 250)
 	check(reached_quay, "player physically walks from hold exit across gangway to quay")
@@ -165,7 +165,7 @@ func run() -> void:
 	check(not security.gate_open, "gate closes behind the departing player")
 	await place(GATE + Vector3(5.5, 0, 3.1))
 	check(security.alerted and world.gameplay.crime_points > crime_before, "new unpaid perimeter crossing still alerts security")
-	# The port authorization must not override the separate restricted garage schedule.
+	# A autorização do porto não pode sobrepor o horário restrito separado da garagem.
 	for hour in [.99, 1.0, 4.999, 5.0, 12.0]:
 		state.world_state.time = hour / 24.0
 		check(session.garage_rewards.can_enter("port_boss_garage") == (hour >= 1.0 and hour < 5.0), "boss garage preserves 1–5h schedule at %.3f" % hour)

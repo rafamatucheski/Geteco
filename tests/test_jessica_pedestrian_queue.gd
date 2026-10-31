@@ -1,6 +1,6 @@
 extends "res://tests/test_jessica_avoidance.gd"
-## The rendered bank start: collidable officer in front, owned coupe behind.
-## This checks the recorded physical envelopes, not live pursuit AI.
+## A largada renderizada no banco: policial colidível na frente, cupê próprio atrás.
+## Isto confere os envelopes físicos registrados, não a IA viva de perseguição.
 
 func run() -> void:
 	var stage := Node3D.new()

@@ -1,5 +1,5 @@
 extends "res://tests/test_vehicle_crash_damage.gd"
-## Reuse the existing physical crash scenario; do not inject an audio event.
+## Reaproveita o cenário físico de batida existente; não injeta um evento de áudio.
 var contact_audio_checks := 0
 
 func check(condition: bool, label: String) -> void:

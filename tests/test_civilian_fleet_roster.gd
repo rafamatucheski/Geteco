@@ -1,6 +1,6 @@
 extends SceneTree
-## Regional variety, retained resources and a real isolated save round trip.
-## Resource contracts only; rendered driving and timing are validated separately.
+## Variedade regional, recursos retidos e uma ida e volta real por save isolado.
+## Só contratos de recurso; direção renderizada e cronometragem são validadas à parte.
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const FLEET_STATE := preload("res://runtime/FleetState.gd")
 const STATE := preload("res://runtime/GameState.gd")

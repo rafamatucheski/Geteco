@@ -73,8 +73,8 @@ func run() -> void:
 		check(from_region.relief_cache_hit and from_region.relief==unlocked.relief,"changing the active region reuses the same session relief: "+active)
 	for region in world.production._region_cache.values():
 		check(not region.is_inside_tree() and region.chunks.is_empty(),"repeated map collection never mounts regions or chunks")
-	# The printed street map uses the same navigation snapshot without sampling
-	# the terrain into a low-resolution relief or mounting any scene.
+	# O mapa de ruas impresso usa o mesmo snapshot de navegação sem amostrar
+	# o terreno num relevo de baixa resolução nem montar nenhuma cena.
 	var printed := ATLAS.new(); printed.collect(controller,false)
 	check(printed.roads==unlocked.roads and printed.region_bounds==unlocked.region_bounds,"printed atlas preserves road and navigation coordinates")
 	check(not printed.relief_cache_hit and printed.relief.triangle_count==0,"printed atlas skips unused height raster/relief preparation")

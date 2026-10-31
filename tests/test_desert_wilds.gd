@@ -134,8 +134,8 @@ func run() -> void:
 	finish(0 if failures.is_empty() else 1)
 
 func approach(center: Vector3, distance: float) -> Vector3:
-	# The northern homestead is now close to the perimeter: establish the same
-	# approach distance on its southern side instead of spawning beyond the map.
+	# A sede de fazenda do norte agora fica perto do perímetro: estabelece a mesma
+	# distância de aproximação no lado sul dela em vez de criar além do mapa.
 	var offset := distance if center.z+distance < DESERT_LAYOUT.BOUNDS.end.y-3 else -distance
 	return center+Vector3(0,.1,offset)
 

@@ -1,7 +1,7 @@
 extends SceneTree
-## Collision regression for the 96 m asphalt/ground seams of the drag strip.
-## Uses the production road builder and an actual Vehicle body. Driving inputs
-## are held constant here to isolate support; Main tests cover the powertrain.
+## Regressão de colisão para as emendas de asfalto/chão de 96 m da pista de arrancada.
+## Usa o montador de ruas de produção e um corpo real de Vehicle. As entradas de direção
+## ficam constantes aqui para isolar o apoio; os testes do Main cobrem o trem de força.
 const SUPPORT := preload("res://world/desert/DragTrackSupport.gd")
 const ROAD := preload("res://world/desert/DesertRoadGeometry.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
@@ -89,8 +89,8 @@ func _run() -> void:
 	await physics_frame
 	var coverage_ok := true
 	var bad_points: Array[Vector2] = []
-	# Sample interiors, every former seam, the diagonal of the large support,
-	# and 5 cm inside each cut boundary. Expectations come from the authored road.
+	# Amostra os interiores, cada emenda antiga, a diagonal do apoio grande
+	# e 5 cm para dentro de cada limite de corte. As expectativas vêm da rua autoral.
 	var xs: Array[float] = [-935.95,-925.0,-500.0,89.95]
 	for x in range(-864,1,96):
 		xs.append(float(x)-.05)
@@ -130,8 +130,8 @@ func _run() -> void:
 	car.position = Vector3(-925,.08,-1318)
 	car.rotation.y = -PI*.5
 	scene.add_child(car)
-	# The race also takes ownership of motion; preserve the real hull, masks,
-	# safe margin and Godot collision response instead of moving its transform.
+	# A corrida também toma posse do movimento; preserva o casco real, as máscaras,
+	# a margem segura e a resposta de colisão do Godot em vez de mover a transformação.
 	car.set_physics_process(false)
 	car.set_process(false)
 	await physics_frame
@@ -142,8 +142,8 @@ func _run() -> void:
 			var finish := Vector3(84 if sign_x>0 else -930,.08,z)
 			var result := await _traverse(start,finish,60.0)
 			check(result.ok,"physical vehicle covers the full straight z=%s direction=%s: %s" % [str(z),str(sign_x),JSON.stringify(result)])
-	# Real low-speed crossings at the finite support perimeter catch lips/holes
-	# that a vertical ray alone cannot reveal. No teleport occurs inside a pass.
+	# Travessias reais em baixa velocidade no perímetro do apoio finito pegam bordas/buracos
+	# que um raio vertical sozinho não revela. Nenhum teleporte ocorre dentro de uma passada.
 	var edges: Array[Array] = [
 		[Vector3(-943,.08,-1318),Vector3(-929,.08,-1318)],
 		[Vector3(83,.08,-1318),Vector3(97,.08,-1318)],
@@ -173,8 +173,8 @@ func _run() -> void:
 	await physics_frame
 	var outside_rebuilt := _ray(Vector2(-450,-1314.95))
 	check(support.get_instance_id()==support_id and _single_track_support(Vector2(-450,-1318)) and not outside_rebuilt.is_empty() and outside_rebuilt.collider!=support,"rebuilt chunk restores its shoulder without duplicating the track support")
-	# Reapply the clip as can happen during a rebuild; it must not consume the
-	# surviving shoulder or introduce a second floor on the track.
+	# Reaplica o recorte como pode acontecer numa reconstrução; ele não pode consumir o
+	# acostamento sobrevivente nem introduzir um segundo piso na pista.
 	SUPPORT.replace_chunk_collision(region,rebuilt)
 	await physics_frame
 	await physics_frame
@@ -208,8 +208,8 @@ func _traverse(start: Vector3, finish: Vector3, speed: float) -> Dictionary:
 		var before := car.global_position
 		var floor_before := car.is_on_floor()
 		var vertical_before := car.velocity.y
-		# Production Vehicle uses floor snap and no downward impulse while
-		# grounded; the regression must use that same motion contract.
+		# O Vehicle de produção usa encaixe no piso e nenhum impulso para baixo enquanto
+		# está no chão; a regressão precisa usar esse mesmo contrato de movimento.
 		car.velocity = direction*speed+Vector3(0,0.0 if car.is_on_floor() else car.velocity.y-18.0*delta,0)
 		car.move_and_slide()
 		var actual_speed := (car.global_position-before).dot(direction)/delta

@@ -1,5 +1,5 @@
 extends SceneTree
-## Public arrival and fishing access must never count as freight trespassing.
+## A chegada pública e o acesso à pesca nunca podem contar como invasão da área de carga.
 class State extends RefCounted:
 	var region_id := "harbor"
 	var place_id := ""
@@ -26,7 +26,7 @@ class Session extends RefCounted:
 	func show_message(_message: String) -> void: pass
 	func show_speech(_speaker: String, _message: String, _duration := 5.0, _play_voice := true, _persona := "", _canonical := "", _character_id := "", _section := "") -> void: pass
 class Checkpoint extends "res://gameplay/urban_v1/HarborPortSecurity.gd":
-	# Exercise the production scanner without building the unrelated staff rigs.
+	# Exercita o scanner de produção sem montar os rigs de funcionários não relacionados.
 	func _ready() -> void:
 		active = true
 		_was_active = true

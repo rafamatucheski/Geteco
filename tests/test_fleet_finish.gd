@@ -14,7 +14,7 @@ func run() -> void:
 	var world := Node3D.new()
 	root.add_child(world)
 	for id in FLEET.all():
-		# Industrial lifting equipment is covered by its own contract, not road lamps.
+		# O equipamento industrial de elevação é coberto pelo próprio contrato, não pelo de faróis.
 		if id == "port_forklift": continue
 		var car := VEHICLE.new()
 		car.archetype = id
@@ -66,8 +66,8 @@ func run() -> void:
 			for first in range(0,vertices.size(),6):
 				var center := Vector3.ZERO
 				for i in 6: center += vertices[first+i]/6.0
-				# Tactical van bars intentionally cross the windshield; the body must not.
-				# Sample the clear pane between its three narrow protective bars.
+				# As barras da van tática cruzam o para-brisa de propósito; a carroceria não pode.
+				# Amostra o vidro livre entre as três barras de proteção estreitas.
 				if id == "police_transport" and normals[first].z < -.5: center.x += .12
 				var hit: Dictionary = geo.ray(center+normals[first]*.22,-normals[first])
 				check(not hit.is_empty() and hit.part == cabin,id+": window exposed outside body at "+str(center)+" hit="+(str(hit.part.name) if not hit.is_empty() else "none"))

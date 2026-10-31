@@ -11,7 +11,7 @@ func run() -> void:
 	urban.refresh_context()
 	await settle(10)
 	cemetery.set_process(false)
-	# Physical funeral: do not advance route indexes or teleport participants.
+	# Funeral físico: não avança índices de rota nem teleporta participantes.
 	check(cemetery.register_synthetic_case("test:peaceful", "Visitante"), "Funeral queued")
 	world.camera.set_process(false)
 	world.camera.position = cemetery.GATE + Vector3(0,20,20)
@@ -39,7 +39,7 @@ func run() -> void:
 		world.camera.look_at(CEMETERY_CENTER)
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://evidence/cemetery-npcs-ceremony-0928.png")
-	# Funeral waits for every visitor, not just the worker, before removing actors.
+	# O funeral espera todo visitante, não só o trabalhador, antes de remover os atores.
 	cemetery._tick_trip(5.1)
 	check(cemetery.cases["test:peaceful"].phase == "buried", "Peaceful ceremony buries the original identity")
 	world.camera.position = cemetery.GATE + Vector3(0,20,20)

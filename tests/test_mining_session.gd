@@ -62,7 +62,7 @@ func run() -> void:
 	world.dispatch.router.nearest_edge(world.player.global_position)
 	check(world.dispatch.router._native!=null,"compiled C# routing active")
 	check(world.production.store.path==path,"SaveStore uses temporary evidence file")
-	# Enable actual writes only after proving the selected path is our isolated fixture.
+	# Liga as gravações reais só depois de provar que o caminho selecionado é a nossa fixture isolada.
 	world.production.no_save=false
 	world.player.controlled_automatically=true
 	world.player.automatic_direction=Vector3.ZERO
@@ -164,8 +164,8 @@ func machines() -> void:
 	check(preload("res://gameplay/mining/MiningOperation.gd").validate_snapshot(world.session.state.world_state.get("mining_equipment",null)),"parked equipment has valid persistent snapshots")
 
 func prepare_machine_access(selected: CharacterBody3D) -> bool:
-	# This fixture jumps between the upper yard and the pit. Wait for the same
-	# residency/ground admission the real walking approach would already load.
+	# Esta fixture salta entre o pátio de cima e a cava. Espera a mesma
+	# admissão de residência/chão que a aproximação real a pé já carregaria.
 	var at: Vector3 = selected.driver_door_anchor(1)+selected.global_basis.x*.45+Vector3.UP*.08
 	world.production.region.set_focus(at)
 	world.production.region.prepare_collision_at(at)
@@ -195,8 +195,8 @@ func key(code: int,pressed: bool) -> void:
 
 func lift_inputs(car: CharacterBody3D) -> void:
 	var machine=car.get_node("MiningMachine")
-	# Controlled initial fixture in the clear working apron; every subsequent
-	# raise/release/reverse uses the real player controls and physics.
+	# Fixture inicial controlada no avental de trabalho livre; cada
+	# subir/soltar/dar ré seguinte usa os controles e a física reais do jogador.
 	var point:=LAYOUT.CENTER+Vector3(7,-27.92,-22)
 	world.production.region.set_focus(point)
 	world.production.region.prepare_collision_at(point)

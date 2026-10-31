@@ -1,6 +1,6 @@
 extends SceneTree
-## Actual Main, isolated disk save and cold reload. No personal save is opened.
-## This fixture covers admission/persistence, not the visual quality or frame time.
+## Main real, save isolado em disco e recarga fria. Nenhum save pessoal é aberto.
+## Esta fixture cobre admissão/persistência, não a qualidade visual nem o tempo de quadro.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
@@ -26,8 +26,8 @@ func _frames(count: int) -> void:
 	for frame in count: await physics_frame
 
 func _check_room_music(label: String, active: bool) -> void:
-	# The existing location update runs every .3s; allow that pulse plus its
-	# .8s/1s fades without calling the helper directly from the fixture.
+	# A atualização de local existente roda a cada .3s; permite esse pulso mais os
+	# fades de .8s/1s sem chamar o helper direto da fixture.
 	await create_timer(1.4).timeout
 	var music: Node = world.session.desert.workshop_music
 	if not _check(is_instance_valid(music),label+" retains the real location-owned workshop music helper"): return
@@ -94,8 +94,8 @@ func _wait_access() -> void:
 	_check(false,"access completes within finite deadline")
 
 func _drive_until(action: String, place: String) -> bool:
-	# Actual analogue pedal input and productive vehicle physics cross the portal.
-	# No pose, speed or occupancy is injected for this part of the fixture.
+	# A entrada analógica real de pedal e a física produtiva do veículo cruzam o portal.
+	# Nenhuma pose, velocidade ou ocupação é injetada nesta parte da fixture.
 	var deadline := Time.get_ticks_msec()+20000
 	var starting: Vector3 = world.driving.car.global_position
 	while Time.get_ticks_msec() < deadline:
@@ -277,7 +277,7 @@ func _run() -> void:
 	session.load_game()
 	await process_frame
 	_check(is_instance_valid(world) and world.get_instance_id() == instance,"in-car load command is refused by existing product rule")
-	# Cold boot the same isolated slot instead of bypassing the product's in-car load gate.
+	# Faz boot frio do mesmo slot isolado em vez de contornar o portão de load dentro do carro do produto.
 	if reload_current_scene() != OK: _check(false,"cold boot request accepted"); _finish(1); return
 	var deadline := Time.get_ticks_msec()+80000
 	while Time.get_ticks_msec() < deadline:

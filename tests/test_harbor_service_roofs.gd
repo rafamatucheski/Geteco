@@ -1,6 +1,6 @@
 extends SceneTree
-## Full Main-scene owner -> physical roof -> owner, with authorized campaign and
-## residential fixtures. The fixture is not evidence of playing prior missions.
+## Dono na cena completa do Main -> telhado físico -> dono, com fixtures autorizadas de campanha e
+## residenciais. A fixture não é evidência de ter jogado as missões anteriores.
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const CATALOG = preload("res://world/places/harbor_buildings/HarborServiceRoofCatalog.gd")
 const PLACES = preload("res://world/places/PlaceCatalog.gd")
@@ -29,7 +29,7 @@ func boot() -> void:
 	root.add_child(world)
 	current_scene = world
 	while world.session==null or not world.session.ready_for_play or not world.production.startup_streaming_settled: await physics_frame
-	# The runner owns this isolated store, even when launched with --no-save.
+	# O runner é dono deste armazenamento isolado, mesmo quando lançado com --no-save.
 	if not check(world.production.store.path==save_path,"roof persistence owns isolated fixture only"): finish(3); return
 	world.production.no_save = false
 	world.player.controlled_automatically = true
@@ -61,7 +61,7 @@ func garage_protection(label: String) -> void:
 
 func walk(target: Vector3) -> bool:
 	# The Vértice roof is 55.5m wide; a real 5m/s crossing needs over ten
-	# seconds. Scale only the bounded travel allowance to the actual distance.
+	# segundos. Escala só a tolerância limitada de viagem até a distância real.
 	var travel_ms := ceili(world.player.global_position.distance_to(target)/maxf(.1,world.player.speed)*1300.0)+2000
 	var deadline := Time.get_ticks_msec()+maxi(10000,travel_ms)
 	while world.player.global_position.distance_to(target)>.26 and Time.get_ticks_msec()<deadline:
@@ -82,8 +82,8 @@ func walk(target: Vector3) -> bool:
 	return world.player.global_position.distance_to(target)<.43
 
 func place_fixture(point: Vector3) -> bool:
-	# A distant fixture teleport can outrun streamed terrain. Admission and
-	# walking are live after real floor/capsule support becomes available.
+	# Um teleporte distante da fixture pode chegar antes do terreno em streaming. A admissão e
+	# a caminhada ficam vivas depois que o apoio real de piso/cápsula fica disponível.
 	world.player.set_physics_process(false)
 	world.player.teleport(point)
 	world.production.region.set_focus(point)
@@ -133,13 +133,13 @@ func approach_owner(target: Dictionary) -> bool:
 	elif target.owner=="vertice": start=session.urban_operations.cargo_handling.depot.to_global(Vector3(35,.06,32.1))
 	elif target.owner=="northgate": start=target.exterior_position+Vector3(0,.06,target.size.y*.5+1.4)
 	if target.id=="port_boss_garage":
-		# This checkpoint includes an authorized port visit. Teleporting a
-		# fixture into the security zone without that permission is a real crime.
+		# Este checkpoint inclui uma visita autorizada ao porto. Teleportar uma
+		# fixture para a zona de segurança sem essa permissão é um crime real.
 		check(session.urban_operations.security.restore_snapshot({"version":1,"authorized_entry":false,"authorized_visit":true,"exiting_port":false}),"authorized port visit fixture")
 	if target.owner=="village_home":
-		# Each house is an independent rested/armored checkpoint after the last
-		# conflict expired. Crossing this house still triggers its live guards;
-		# no invulnerability, NPC deactivation or combat/save bypass is used.
+		# Cada casa é um checkpoint independente descansado/blindado depois que o último
+		# conflito expirou. Atravessar esta casa ainda dispara os guardas vivos dela;
+		# nenhuma invulnerabilidade, desativação de NPC ou contorno de combate/save é usado.
 		var quest = session.urban_operations.village_quest
 		var commerce: Dictionary = quest.commerce.snapshot()
 		commerce.hostility = 0.0
@@ -166,7 +166,7 @@ func approach_owner(target: Dictionary) -> bool:
 		match str(target.owner):
 			"village_home":
 				var home: Node3D = session.urban_operations.village.homes.homes[int(target.index)].root
-				# Stand beyond the 1.8m swinging leaf while proximity opens it.
+				# Fica além da folha basculante de 1.8m enquanto a proximidade a abre.
 				for frame in 40: await physics_frame
 				destination = home.to_global(Vector3(0,.04,3.05))
 			"tire_shop":
@@ -226,7 +226,7 @@ func visit(target: Dictionary) -> bool:
 		check(world.session.position_clear(world.player.global_position),str(target.id)+" restored support and capsule")
 		garage_protection("cold restore")
 		original_room = world.session.room
-	# Descending requires reaching the actual stair landing in the live scene.
+	# Descer exige chegar ao patamar real da escada na cena viva.
 	if not check(await walk(runtime.roof.to_global(runtime.roof.stair_point()+Vector3.UP*.04)),str(target.id)+" walk to roof stair"): return false
 	if not check(await runtime.use_stairs(),str(target.id)+" functional descent"): return false
 	check(not runtime.is_active() and world.session.room==original_room,str(target.id)+" original owner restored")
@@ -284,9 +284,9 @@ func walk_off_roof(runtime) -> bool:
 	return runtime.falling and world.gameplay.health>0
 
 func normal_jump(target: Dictionary) -> void:
-	# The same entry also proves the uninterrupted physical jump and fall,
-	# with normal gravity/damage and the service owner released to the street.
-	# Each jump starts rested; fall damage remains enabled and measured.
+	# A mesma entrada também prova o salto e a queda físicos sem interrupção,
+	# com gravidade/dano normais e o dono do serviço liberado para a rua.
+	# Cada salto começa descansado; o dano de queda continua ligado e medido.
 	world.gameplay.heal(100)
 	world.player.controlled_automatically = true
 	if not await approach_owner(target): return

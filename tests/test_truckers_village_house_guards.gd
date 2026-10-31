@@ -95,7 +95,7 @@ func run():
 	var invalid: Dictionary=saved.duplicate(true)
 	invalid.house_guards.health["0"]=[91,90]
 	check(not quest.restore_snapshot(invalid),"Invalid resident health snapshot rejected atomically")
-	# Isolate actual shotgun rays from unrelated homes and actors.
+	# Isola os raios reais da espingarda de casas e atores não relacionados.
 	manager.set_region_active(false)
 	guards._activate(-1)
 	var shooter:=RESIDENT.new()

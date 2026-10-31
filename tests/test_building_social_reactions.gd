@@ -1,6 +1,6 @@
 extends SceneTree
-## Social decisions plus real resident capsules, threat retreat and the existing
-## police evidence delay. Visual depth/FPS are validated in the session fixture.
+## Decisões sociais mais cápsulas reais de moradores, recuo diante de ameaça e o atraso
+## existente da evidência policial. Profundidade visual/FPS são validados na fixture de sessão.
 const SOCIAL := preload("res://gameplay/civilian_social/CivilianSocialState.gd")
 const RESIDENT := preload("res://world/places/harbor_buildings/HarborBuildingResident.gd")
 const REACTION := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd")
@@ -159,21 +159,21 @@ func run() -> void:
 	var recovered: Dictionary = resident.social_snapshot()
 	print("BUILDING_SOCIAL_RECOVERED ", JSON.stringify({"social":recovered, "clock":resident.social_routine.social.routine_clock,
 		"fear_left":resident.social_routine.social.fear_left, "reaction_active":reaction.active, "prop":resident.prop.visible}))
-	# Retreat/return and emotional recovery are distinct. Fear is held while
-	# danger or a phone report is active, then decays from the retained value.
-	# Measure that value once; a stuck timer cannot extend this deadline again.
+	# Recuo/volta e recuperação emocional são distintos. O medo é mantido enquanto
+	# o perigo ou uma denúncia por telefone está ativo e depois decai a partir do valor retido.
+	# Mede esse valor uma vez; um timer travado não pode estender este prazo de novo.
 	var residual: float = resident.social_routine.social.fear_left
 	check(residual >= 0.0 and residual <= 10.0 and recovered.state in ["scared", "recovering", "calm"], "returning to the post may retain a bounded fear reaction")
 	var recovery_window := maxf(residual, float(resident.social_routine.social.state_left)) + .35
 	await create_timer(recovery_window).timeout
 	recovered = resident.social_snapshot()
 	check(recovered.state == "calm" and not resident.social_phone.visible and resident.prop.visible == (recovered.routine == "work"), "recovered resident resumes its work or authored break with matching props")
-	# A scheduled break lasts 3.5 seconds of the 19-second work cycle. It is a
-	# valid routine state, but it must also finish and reveal the work prop again.
+	# Uma pausa agendada dura 3.5 segundos do ciclo de trabalho de 19 segundos. É um
+	# estado válido da rotina, mas também precisa terminar e mostrar o prop de trabalho de novo.
 	if recovered.routine == "pause": await create_timer(4.0).timeout
 	check(resident.prop.visible and resident.social_snapshot().state == "calm", "routine break finishes and native activity prop returns")
-	# A solid behind the worker blocks the whole escape segment. Keep the
-	# authored post; do not teleport across furniture to simulate flight.
+	# Um sólido atrás do trabalhador bloqueia o segmento inteiro de fuga. Mantém o
+	# posto autoral; não teleporta por cima da mobília para simular fuga.
 	var furniture := solid(stage, resident.global_position + Vector3(1.0, 1.0, 0), Vector3(.8, 2.0, 3.0))
 	await physics_frame
 	await physics_frame
@@ -182,9 +182,9 @@ func run() -> void:
 	furniture.queue_free()
 	await physics_frame
 	await physics_frame
-	# Short aim is interrupted by a wall. Its partial duration cannot be reused
-	# when the player appears on the other side or comes back into view.
-	# The previous verbal event's cooldown is unrelated to this new aim case.
+	# Uma mira curta é interrompida por uma parede. A duração parcial dela não pode ser reaproveitada
+	# quando o jogador aparece do outro lado ou volta a ficar à vista.
+	# O cooldown do evento verbal anterior não tem relação com este novo caso de mira.
 	resident.social_routine.social.threat_cooldown = 0.0
 	gameplay.weapon = "pistol"
 	gameplay.aim_active = true
@@ -198,7 +198,7 @@ func run() -> void:
 	wall.queue_free()
 	await physics_frame
 	await physics_frame
-	# A new hostile event must be seen for the full grace interval again.
+	# Um novo evento hostil precisa ser visto de novo pelo intervalo de tolerância completo.
 	var second := RESIDENT.new()
 	second.specification = {"id":"social_neighbor", "identity":3, "activity":"phone"}
 	second.position = Vector3(3.8, .03, 1.0)

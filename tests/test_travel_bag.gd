@@ -42,8 +42,8 @@ func run() -> void:
 	check(startup_ready,"Main real pronta após cortina, streaming e solo físico")
 	if failures: quit(1); return
 	var session = world.session
-	# Isolate this inventory fixture from unrelated traffic damage. Explicit
-	# health=0 below still exercises the dead-player transfer restriction.
+	# Isola esta fixture de inventário de dano de trânsito não relacionado. O
+	# health=0 explícito abaixo ainda exercita a restrição de transferência do jogador morto.
 	world.gameplay.god_mode=true
 	var field = session.field_inventory
 	var personal = session.personal_car
@@ -91,7 +91,7 @@ func run() -> void:
 	await shot("offer")
 	var before: Dictionary = economy.snapshot()
 	world.player.teleport(world.player.position+Vector3(12,0,0))
-	# The live inventory refreshes physical access at 4 Hz.
+	# O inventário vivo atualiza o acesso físico a 4 Hz.
 	await create_timer(.3).timeout
 	check(button().disabled,"afastar-se desabilita retirada com painel aberto")
 	check(not field.claim_travel_bag() and economy.snapshot() == before,"chamada atrasada remota não altera itens ou recibos")
@@ -112,7 +112,7 @@ func run() -> void:
 	var full_before: Dictionary = economy.snapshot()
 	check(not field.claim_travel_bag() and economy.snapshot() == full_before,"limite de bagagens rejeita troca sem perda ou recibo")
 	check(economy.restore_snapshot(before),"fixture restaura estado anterior ao teste de limite")
-	# Block the three physical drop candidates, leaving the trunk ray clear.
+	# Bloqueia os três candidatos físicos de largar, deixando livre o raio do porta-malas.
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
 	world.player.visual.rotation.y = PI
@@ -180,8 +180,8 @@ func run() -> void:
 	check(field.perform(key),"mala conquistada pode ser recuperada por interação física")
 	transition_owners("after recover")
 	check(economy.grid_snapshot().storage == storage and not personal.travel_bag_available(),"recuperação mantém conteúdo e recibo")
-	# Approach the actual authored entrance and let the actor land after the
-	# pickup teleport; admission correctly rejects an airborne actor.
+	# Aproxima-se da entrada autoral real e deixa o ator pousar depois do
+	# teleporte de coleta; a admissão rejeita com razão um ator no ar.
 	var entrance: Vector3=world.maciota_place.entry_position+Vector3(0,.08,1.0)
 	var collision_ready: bool=world.production.region.prepare_collision_at(entrance)
 	await frames(3)

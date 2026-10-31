@@ -1,5 +1,5 @@
 extends SceneTree
-## Native harbor ship art must stream with the berths and leave access physical.
+## A arte nativa dos navios do porto precisa carregar em streaming com os berços e deixar o acesso físico.
 const REGION := preload("res://world/regions/NativeRegion.gd")
 var failures := 0
 

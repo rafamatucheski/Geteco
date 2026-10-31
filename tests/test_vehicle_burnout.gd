@@ -1,5 +1,5 @@
 extends SceneTree
-## Pedal actions through the real vehicle, physical ground and tire/audio effects.
+## Ações de pedal pelo veículo real, chão físico e efeitos de pneu/áudio.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 var failures: Array[String] = []
 var checks := 0
@@ -72,7 +72,7 @@ func run() -> void:
 	Input.action_press("brake", .6)
 	await frames(30)
 	check(car.burnout_strength() > .6, "unequal analog pedals still engage burnout")
-	# Surface selection must follow real contacts; spinning on soil is not rubber smoke.
+	# A seleção de superfície precisa seguir os contatos reais; patinar na terra não é fumaça de borracha.
 	for kind in ["grass","dirt","snow","water","hard"]:
 		ground.set_meta("vehicle_surface", kind)
 		await frames(8)
@@ -127,7 +127,7 @@ func run() -> void:
 	check(car.speed < 12 and car.speed > .75 and car.burnout_strength() == 0.0, "both pedals at speed brake before stationary spin")
 	release()
 	car.free()
-	# The fleet has both the original handling and the full street powertrain.
+	# A frota tem tanto a dirigibilidade original quanto o trem de força de rua completo.
 	for id in ["police_cruiser", "desert_faisca"]:
 		car = VEHICLE.new()
 		car.archetype = id

@@ -1,6 +1,6 @@
 extends SceneTree
-## Real physics obstruction plus the rank's actual retry/admission loop.
-## The spawn spy constructs a real Vehicle to check the cached hull contract.
+## Obstrução de física real mais o laço real de nova tentativa/admissão do ponto.
+## O espião de spawn constrói um Vehicle real para conferir o contrato do casco em cache.
 const RANK := preload("res://runtime/TaxiRank.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 var failures: Array[String] = []
@@ -57,7 +57,7 @@ func run() -> void:
 	world.add_child(rank)
 	rank.set_process(false)
 	box(world,Vector3(160,-.1,73),Vector3(40,.2,20))
-	# At yaw PI/2 the long hull extends along X; this misses an unrotated hull.
+	# Com yaw PI/2 o casco longo se estende ao longo de X; isto não pega num casco sem rotação.
 	var obstacle := box(world,RANK.SLOTS[0]+Vector3(1.9,.6,0),Vector3(.3,.8,.3))
 	for i in 2: await physics_frame
 	check(rank._slot_occupied(RANK.SLOTS[0]),"rotated taxi footprint sees a real solid")
@@ -68,7 +68,7 @@ func run() -> void:
 	obstacle.set_meta("vehicle_ramp_structure",true)
 	check(not rank._slot_occupied(RANK.SLOTS[0]),"ramp exception matches production clearance")
 	obstacle.remove_meta("vehicle_ramp_structure")
-	# Every layer used by vehicle_position_clear must block admission.
+	# Toda camada usada por vehicle_position_clear precisa bloquear a admissão.
 	for layer in [1,2,4]:
 		obstacle.collision_layer = layer
 		for i in 2: await physics_frame

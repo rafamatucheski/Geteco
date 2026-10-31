@@ -1,5 +1,5 @@
 extends SceneTree
-## CPU/resource attribution and material isolation, not a rendered FPS test.
+## Atribuição de CPU/recursos e isolamento de material, não um teste de FPS renderizado.
 const ART_PATH := "res://assets/regions/source/guns/ammunation/AmmunationArt.gd"
 const FINISH := preload("res://gameplay/WeaponAttachmentVisuals.gd")
 var checks := 0
@@ -26,7 +26,7 @@ func _run() -> void:
 		if arg.begins_with("--legacy="): legacy_path = arg.trim_prefix("--legacy=")
 	var source := FileAccess.get_file_as_string(candidate_path).replace("\r\n", "\n")
 	var candidate := _script(source)
-	# Independent uncached primitive construction is available without an archive.
+	# A construção independente de primitivas sem cache fica disponível sem um arquivo.
 	var reference := source
 	var start := reference.find("static func box(")
 	var end := reference.find("static func text(")
@@ -37,7 +37,7 @@ func _run() -> void:
 	if not failures.is_empty():
 		quit(1)
 		return
-	# Warm only the shared Arsenal/WeaponFinish dependency before A/B kit timings.
+	# Aquece só a dependência compartilhada Arsenal/WeaponFinish antes dos tempos A/B dos kits.
 	var warmup := Node3D.new()
 	legacy.room(warmup, false)
 	warmup.free()

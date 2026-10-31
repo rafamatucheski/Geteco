@@ -1,6 +1,6 @@
 extends SceneTree
-## A second reservation must not release a first crossing still occupied by the
-## rear of an actual long Vehicle. This is functional evidence, never FPS proof.
+## Uma segunda reserva não pode liberar uma primeira travessia ainda ocupada pela
+## traseira de um Vehicle longo real. Isto é evidência funcional, nunca prova de FPS.
 const VEHICLE = preload("res://scripts/Vehicle.gd")
 const JUNCTIONS = preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const FIRST := Vector3.ZERO
@@ -60,17 +60,17 @@ func capture(label: String, owner: CharacterBody3D) -> void:
 		"second_physical":physical(SECOND,owner.get_instance_id())})
 
 func wait_for_next(owner: CharacterBody3D) -> void:
-	# The current single-token controller can alternate first/second each frame.
-	# Observe the actual acquisition, rather than depending on an even frame count.
+	# O controlador atual de token único pode alternar primeiro/segundo a cada quadro.
+	# Observa a aquisição real, em vez de depender de uma contagem par de quadros.
 	for frame in 8:
 		await frames(1)
 		capture("approach_next_frame_%d" % frame,owner)
 		if held(SECOND,owner.get_instance_id()): return
 
 func real_pairs() -> Dictionary:
-	# Exact current Harbor data and the production ambient-road filter; no map edit.
-	# Graph topology identifies candidate locations only. It does not claim the
-	# synthetic straight-route manoeuvre has been driven on each listed street.
+	# Dados atuais exatos do Harbor e o filtro de ruas do ambiente de produção; sem edição de mapa.
+	# A topologia do grafo só identifica locais candidatos. Não afirma que a
+	# manobra sintética em rota reta foi dirigida em cada rua listada.
 	var before := FileAccess.get_sha256("res://world/editing/world_edits.json")
 	var region = preload("res://world/editing/EditableRegion.gd").build_region("harbor")
 	region.prepare_data()

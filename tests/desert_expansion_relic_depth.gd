@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Reuses the real rig mask/capture helper. This is a physical/depth fixture;
-## the integrated Main run and streaming performance are measured separately.
+## Reaproveita o helper real de máscara/captura do rig. É uma fixture física/de profundidade;
+## a rodada integrada no Main e o desempenho do streaming são medidos à parte.
 const RELICS := preload("res://world/desert/expansion/DesertRelics.gd")
 const SITES := preload("res://world/desert/expansion/DesertRelicsSites.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")

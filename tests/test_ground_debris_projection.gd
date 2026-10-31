@@ -1,5 +1,5 @@
 extends SceneTree
-## Physical regression for airborne permanent glass/litter after car impacts.
+## Regressão física para vidro/lixo permanente no ar depois de impactos de carro.
 const PROJECTION := preload("res://gameplay/street_physics/DebrisGroundProjection.gd")
 class DebrisDirector:
 	extends "res://gameplay/street_physics/StreetPhysics.gd"
@@ -48,8 +48,8 @@ func run() -> void:
 	var flat := PROJECTION.triangle(space,Vector3(0,2,0),offsets)
 	check(flat.size()==3,"project glass from window height onto ground")
 	for vertex in flat: check(absf(vertex.y-PROJECTION.LIFT)<.002,"vehicle roof excluded, shard on actual floor")
-	# Compare with generated productive paving, not merely the physics plane.
-	# A .008 lift passed the physical check but hid glass below these overlays.
+	# Compara com o calçamento produtivo gerado, não só com o plano da física.
+	# Uma elevação de .008 passava na checagem física, mas escondia o vidro abaixo dessas sobreposições.
 	var paving := Node3D.new()
 	root.add_child(paving)
 	var roads = preload("res://world/urban_detail/HarborRoadGeometry3D.gd").new()

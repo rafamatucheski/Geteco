@@ -96,7 +96,7 @@ func run() -> void:
 	PIECES.apply(dressing, {row.id:row})
 	check(mesh.mesh == original_mesh, "Removing outline restores authored box mesh")
 	dressing.free()
-	# A colliding flat source verifies polygon collision, not only its drawing.
+	# Uma origem plana com colisão confere a colisão do polígono, não só o desenho dele.
 	var floor_piece := Node3D.new()
 	root.add_child(floor_piece)
 	PIECES.mark(floor_piece, "cobra/cobra_home_gravel/0", "Piso")

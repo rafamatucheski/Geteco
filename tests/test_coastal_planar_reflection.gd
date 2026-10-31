@@ -1,6 +1,6 @@
 extends SceneTree
-## Rendered geometric oracle: a red marker's virtual point must be red in
-## the reflected camera. Checks projection/UV parity under camera movement.
+## Oráculo geométrico renderizado: o ponto virtual de um marcador vermelho precisa ser vermelho
+## na câmera refletida. Confere a paridade de projeção/UV com a câmera em movimento.
 const BATCHES := preload("res://world/city_look/CoastalFacadeBatches.gd")
 const PLANAR := preload("res://world/city_look/CoastalPlanarReflections.gd")
 var errors: Array[String] = []
@@ -98,7 +98,7 @@ func run() -> void:
 		if not PLANAR.bounds_in_frustum(camera, marker.global_transform * marker.get_aabb()): errors.append("Visible facade bounds were culled")
 		if PLANAR.bounds_in_frustum(camera, AABB(Vector3(10000,10000,10000),Vector3.ONE)): errors.append("Offscreen facade bounds were not culled")
 		var image := view.get_texture().get_image()
-		# Actual projection of the marker, not the arbitrary ground coordinate.
+		# Projeção real do marcador, não a coordenada arbitrária do chão.
 		var clip := PLANAR.projection_for(mirrored) * Vector4(1,2,0,1)
 		var uv := Vector2(clip.x/clip.w*.5+.5,-clip.y/clip.w*.5+.5)
 		var pixel := Vector2i(uv*Vector2(image.get_size()))
@@ -147,7 +147,7 @@ func _check_interpolated_batch(stage: Node3D) -> void:
 	var displayed := original.get_instance_transform(0)
 	var displayed_color := original.get_instance_color(0)
 	var displayed_custom := original.get_instance_custom_data(0)
-	# Establish that the real rendered source changed before comparing its proxy.
+	# Estabelece que a origem real renderizada mudou antes de comparar o proxy dela.
 	if not displayed.origin.is_equal_approx(Vector3(0,0,4)) or not displayed_color.is_equal_approx(Color.BLUE):
 		errors.append("Interpolated fixture never displayed the changed source pose/color")
 	if not displayed_custom.is_equal_approx(Color(.6,.5,.4,.3)):

@@ -83,8 +83,8 @@ func run() -> void:
 				for hit in overlaps:
 					var collider: Node3D=hit.collider
 					var solid_id: String=str(collider.get_meta("interior_solid_id",collider.name))
-					# A settled capsule legitimately touches the floor; separate that
-					# support from furniture without accepting penetration below it.
+					# Uma cápsula assentada encosta legitimamente no piso; separa esse
+					# apoio da mobília sem aceitar penetração abaixo dele.
 					if solid_id=="Floor" and state.activity!="sleep" and child.shape is CapsuleShape3D:
 						var floor_bounds: AABB=collider.get_meta("bounds",AABB())
 						var capsule_bottom: float=room.to_local(child.global_position).y-float(child.shape.height)*.5
@@ -100,7 +100,7 @@ func run() -> void:
 			else:
 				check(resident.is_physics_processing() and resident.is_on_floor(),"Awake resident stands on physical floor")
 				check(resident.held_prop is Node3D,"Cooking/reading has a held functional prop")
-			# An ordinary pause freezes both occupancy polling and presentation.
+			# Uma pausa comum congela tanto a consulta de ocupação quanto a apresentação.
 			var clock_before: float=float(resident.home_model.clock)
 			paused=true
 			weather.time_of_day=.5
@@ -134,8 +134,8 @@ func run() -> void:
 			if victim.home_activity=="sleep":
 				check(victim.visual.transform.is_equal_approx(supported_pose),"Death preserves the validated horizontal mattress pose")
 				check(not victim.home_model.is_processing(),"Sleeping death stops breathing and domestic activity")
-			# Exercise the productive fade itself without spending the ten-second
-			# display delay four times. Its normal two-second cleanup remains intact.
+			# Exercita o próprio fade produtivo sem gastar o atraso de exibição de dez
+			# segundos quatro vezes. A limpeza normal de dois segundos continua intacta.
 			preload("res://gameplay/DestroyedFade3D.gd").fade(victim)
 			await create_timer(2.25).timeout
 			check(not is_instance_valid(victim),"Production corpse fade actually removes the actor")

@@ -48,7 +48,7 @@ func run() -> void:
 	await physics_frame
 	var body = art.find_children("*","StaticBody3D",true,false)[0]
 	var center := (a+b+c)/3
-	# Godot front faces use clockwise winding; probe from the solid's exterior.
+	# As faces da frente no Godot usam sentido horário; sonda do lado de fora do sólido.
 	var normal := (c-a).cross(b-a).normalized()
 	var hit := art.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(warp*(center+normal*.2),warp*(center-normal*.2),1))
 	check(not hit.is_empty() and hit.collider==body,"Edited structural collision is physically hittable")

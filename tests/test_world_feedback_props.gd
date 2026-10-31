@@ -1,5 +1,5 @@
 extends SceneTree
-## Native code/physics regression; visual and frame time checks belong to gameplay.
+## Regressão nativa de código/física; as checagens visuais e de tempo de quadro pertencem ao jogo.
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 const PROP := preload("res://world/urban_detail/HarborProp3D.gd")
 const HOIST := preload("res://world/regions/NorthstarCargoHoist3D.gd")

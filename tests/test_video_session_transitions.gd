@@ -1,5 +1,5 @@
 extends SceneTree
-## Real session regression for the transitions shown in the 24/09 recording.
+## Regressão de sessão real para as transições mostradas na gravação de 24/09.
 var world: Node3D
 var failures: Array[String] = []
 var checks := 0

@@ -1,8 +1,8 @@
 extends SceneTree
-## Directed V1 -> V2 Harbor acceptance route.
-## Required: rendered Godot with --no-save --skip-arrival --population=8.
-## Fixture teleports only place Dante at distant action starts; the actions use
-## production input, physical admission and the live session controller.
+## Rota dirigida de aceitação V1 -> V2 do Harbor.
+## Obrigatório: Godot renderizado com --no-save --skip-arrival --population=8.
+## Os teleportes da fixture só põem o Dante no início de ações distantes; as ações usam
+## entrada de produção, admissão física e o controlador de sessão vivo.
 
 const ACTOR := preload("res://scripts/Actor.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")

@@ -89,7 +89,7 @@ func run() -> void:
 	for point in [center+Vector2(-.01,3.2),center+Vector2(.01,3.2),center+Vector2(9.3,-8.1)]:
 		ray(point,terrain.surface_height_at(point),"Edited mountain "+str(point))
 	holder.free()
-	# Motocross source and route-only switch use the actual production constructor.
+	# A origem do motocross e a chave só de rota usam o construtor real de produção.
 	Engine.set_meta("geteco_world_edit_document",DATA.empty_document())
 	var source := COURSE.new()
 	var index := 20
@@ -106,7 +106,7 @@ func run() -> void:
 	var edited := COURSE.new()
 	check(absf(edited.points[index].y-track.y-3)<.001,"Include track edits actual route height")
 	check(edited._editor_terrain.paint_weights(Vector2(track.x,track.z),true)[1]>.99,"Include track paints actual clay")
-	# Build only the two ground surfaces under test; no scenery/AI or staged ready loop.
+	# Monta só as duas superfícies de chão em teste; sem cenário/IA nem laço encenado de prontidão.
 	edited._build_terrain()
 	edited._mesh(edited._terrain_surface,"QuarryHills",true)
 	edited._build_ribbon()
@@ -115,7 +115,7 @@ func run() -> void:
 	await physics_frame
 	await physics_frame
 	var terrain_point := Vector2(-185,-116)
-	# Ribbon may cover a quarry point: isolate the quarry collision for this assertion.
+	# A faixa pode cobrir um ponto da pedreira: isola a colisão da pedreira para esta asserção.
 	var ribbon: Node3D = edited.get_node("DirtTrack").get_child(0)
 	var ribbon_mesh: Node = ribbon.get_parent()
 	ribbon_mesh.remove_child(ribbon)

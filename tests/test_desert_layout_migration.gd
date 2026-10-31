@@ -1,6 +1,6 @@
 extends SceneTree
-## Legacy coordinate migration must be one-shot, copy-on-read and local to the
-## desert exterior. The caller still owns complete save-schema validation.
+## A migração de coordenadas legadas precisa ser única, cópia-na-leitura e local ao
+## exterior do deserto. Quem chama ainda é dono da validação completa do esquema do save.
 const MIGRATION := preload("res://runtime/desert/DesertLayoutMigration.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")

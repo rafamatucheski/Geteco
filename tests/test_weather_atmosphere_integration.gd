@@ -39,8 +39,8 @@ func run() -> void:
 	check(env.fog_enabled and env.adjustment_enabled and weather.precipitation.emitting,"Exit restores rainy Harbor")
 	var origin: Vector3 = world.player.position
 	world.session.cold.model.weather_clock = 120
-	# The current route starts streaming at sea, but its authored climate blend
-	# starts on the eastern shore. Check both boundaries, independently.
+	# A rota atual começa o streaming no mar, mas a mistura de clima autoral dela
+	# começa na margem leste. Confere os dois limites, de forma independente.
 	for x in [CONNECTION.SEAM.x-.01,CONNECTION.SEAM.x+.01]:
 		world.player.teleport(Vector3(x,.08,CONNECTION.CENTER_Z))
 		weather._update()
