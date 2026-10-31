@@ -4,22 +4,22 @@ extends RefCounted
 ## do ciclo (revisão cruzada de 18/10/2026).
 ##   morte: Dante acorda na porta do Bay Medical (Harbor) e paga a conta;
 ##   prisão: sai pela delegacia (Harbor), paga a multa e perde a munição que carregava.
-## Serra e deserto não têm hospital nem delegacia no catálogo: o resgate continua no ponto da
-## região, com a mesma conta.
+## Serra e deserto não têm hospital nem delegacia no catálogo: o destino equivalente de cada
+## região (e a regra da ponte) mora em RecoveryDestination; a conta é a mesma.
 const BALANCE := preload("res://data/catalogs/EconomyBalance.gd")
+const DESTINATION := preload("res://runtime/RecoveryDestination.gd")
 const RATE: float = BALANCE.RECOVERY_RATE
 const CAP: int = BALANCE.RECOVERY_CAP
-const HOSPITAL := "harbor_hospital"
-const PRECINCT := "harbor_police"
+const HOSPITAL := DESTINATION.HARBOR_HOSPITAL
+const PRECINCT := DESTINATION.HARBOR_PRECINCT
 
 ## 10% do dinheiro na mão, no máximo R$ 2.000: quem está quebrado não fica negativo.
 static func fee(balance: int) -> int:
 	return clampi(int(floor(float(balance) * RATE)), 0, CAP)
 
-## Lugar de retorno no Harbor; vazio fora dele (usa o ponto de resgate da região).
+## Lugar de retorno da região; vazio no deserto (pátio do posto, sem interior no catálogo).
 static func place_for(region_id: String, arrested: bool) -> String:
-	if region_id != "harbor": return ""
-	return PRECINCT if arrested else HOSPITAL
+	return DESTINATION.place_for(region_id, arrested)
 
 ## Cobra e confisca. Modo desenvolvedor com dinheiro infinito não paga nada.
 static func apply(economy, arrested: bool) -> Dictionary:

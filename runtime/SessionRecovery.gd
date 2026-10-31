@@ -7,9 +7,9 @@ extends RefCounted
 ## Até as chamadas entre funções deste arquivo passam por `g.`: testes sobrescrevem _respawn e as
 ## apresentações numa subclasse da sessão e o despacho tem de continuar igual.
 
-const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const RECOVERY_PENALTY := preload("res://runtime/RecoveryPenalty.gd")
 const V1_DEATH_AUDIO := preload("res://audio/V1DeathAudio.gd")
+const RECOVERY_DESTINATION := preload("res://runtime/RecoveryDestination.gd")
 
 var g: Node
 
@@ -185,6 +185,26 @@ func _on_death() -> void:
 	if not g.rescue_pending or not g.is_inside_tree(): return
 	await g._respawn()
 
+## Altura do chão no ponto (serra e deserto não são planos); Harbor fica como sempre, y do catálogo.
+func _grounded(point: Vector3) -> Vector3:
+	var region: Node = g.controller.region
+	var ground := point.y
+	if g.state.region_id != "harbor":
+		if region.get("terrain") != null: ground = region.terrain.surface_height_at(Vector2(point.x,point.z))
+		elif region.has_method("_ground_height"): ground = region._ground_height(Vector2(point.x,point.z))
+	return Vector3(point.x,ground,point.z)+Vector3.UP*.1
+
+## Segundo ponto se a porta estiver ocupada. Harbor: o spawn da cidade. Serra: o outro lugar seguro
+## (delegacia <-> hospital). Deserto: o pátio do posto, recuado. Nunca o spawn_position da serra ou do
+## deserto, que fica na ponte.
+func _region_fallback(arrested: bool) -> Vector3:
+	match String(g.state.region_id):
+		"harbor": return g.controller.region.spawn_position+Vector3.UP*.1
+		"desert": return _grounded(RECOVERY_DESTINATION.DESERT_RECOVERY+Vector3(0,0,8))
+	var other: Dictionary = RECOVERY_DESTINATION.for_region(g.state.region_id, not arrested)
+	if other.position.is_finite(): return _grounded(other.position)
+	return g.controller.region.spawn_position+Vector3.UP*.1
+
 func _respawn() -> void:
 	g._cancel_for(&"rescue_1")
 	if g.respawn_busy: return
@@ -194,13 +214,23 @@ func _respawn() -> void:
 		return
 	g.respawn_busy = true
 	var arrested: bool = g.arrest_pending
-	var fallback: Vector3 = g.controller.region.spawn_position+Vector3.UP*.1
+	# Morte acorda no hospital da região onde aconteceu, prisão sai pela delegacia (RecoveryDestination).
+	# Na ponte/túnel decide a ponta mais próxima; o spawn_position da serra e do deserto fica em cima
+	# de conexão e não serve mais de resgate (Dante acordava na ponte, relato de 31/10).
+	var died_at: Vector3 = g.world.player.global_position if g.state.place_id.is_empty() else Vector3.INF
+	if g.state.place_id.is_empty() and g.world.driving.occupied and is_instance_valid(g.world.driving.car): died_at = g.world.driving.car.global_position
+	var target: Dictionary = RECOVERY_DESTINATION.choose(died_at, g.state.region_id, arrested)
+	if target.region != g.state.region_id:
+		# A ponta escolhida é a outra região: só troca se ela estiver montada (perto da ponte ela
+		# está, pela residência física). Senão fica o resgate da região atual, nunca a ponte.
+		if g.controller.regions.has(target.region): g.controller._commit_logical_region(target.region)
+		if target.region != g.state.region_id: target = RECOVERY_DESTINATION.for_region(g.state.region_id, arrested)
+	var fallback: Vector3 = _region_fallback(arrested)
 	var destination := fallback
-	# Morte acorda na porta do Bay Medical, prisão sai pela delegacia (RecoveryPenalty).
-	var recovery_place: Dictionary = PLACES.get_definition(RECOVERY_PENALTY.place_for(g.state.region_id, arrested))
-	if not recovery_place.is_empty(): destination = recovery_place.return_position+Vector3.UP*.1
+	if target.position.is_finite(): destination = _grounded(target.position)
 	g.controller.region.set_focus(destination)
-	# Na serra o ponto de resgate é o spawn_position, no tabuleiro da ponte: o piso é da conexão.
+	# Os pontos de resgate ficam fora do tabuleiro; prepare_connection_at só monta a conexão quando
+	# o destino está perto da emenda ou da cabeça norte, como antes.
 	g.controller.prepare_connection_at(destination)
 	if g.cold != null: g.cold.prepare_collision_at(destination)
 	for i in 3:
