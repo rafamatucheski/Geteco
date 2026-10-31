@@ -242,7 +242,7 @@ func perform(target: String) -> bool:
 	var expected := nearest_action()
 	if expected.is_empty() or str(expected.get("target","")) != target:
 		return false
-	if target.ends_with("fort_open_door"): return session.room.operation.perform(target)
+	if target.ends_with("fort_open_door") or target.ends_with("fort_search_desk"): return session.room.operation.perform(target)
 	if target.ends_with("fort_ascend"):
 		_ascend_to_ski()
 		return true

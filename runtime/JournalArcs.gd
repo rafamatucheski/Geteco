@@ -7,6 +7,7 @@ extends RefCounted
 const GATEWAY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
 const DESERT := preload("res://runtime/desert/DesertCampaign.gd")
 const MOUNTAIN := preload("res://activities/mountain_story/MountainStory.gd")
+const FORT := preload("res://gameplay/urban_v1/fort/FortExpansionState.gd")
 const VILLAGE := preload("res://gameplay/urban_v1/TruckersVillageQuest.gd")
 const FORGE_LINES := {
 	"met": "Forja da Serra · Pergunte a Seu Bento sobre o aço lendário.",
@@ -25,6 +26,8 @@ static func lines(world_state: Dictionary, campaign_snapshot: Dictionary, villag
 	var forge_state: Variant = world_state.get("blade_forge", {})
 	var forge := str(FORGE_LINES.get(str(forge_state.get("stage", "unknown")) if forge_state is Dictionary else "unknown", ""))
 	if not forge.is_empty(): result.append(_t(forge))
+	var fort := FORT.journal_line(world_state)
+	if not fort.is_empty(): result.append(_t(fort))
 	var tonico := VILLAGE.journal_line(village if not village.is_empty() else world_state.get("urban_operations", {}).get("truckers_village", {}))
 	if not tonico.is_empty(): result.append(_t(tonico))
 	# O deserto só abre depois do fim do Harbor (a ponte usa a mesma regra).

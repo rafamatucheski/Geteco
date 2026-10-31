@@ -173,6 +173,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 		for receipt in data.economy.get("transactions",{}):
 			if str(receipt).begins_with("spend:curitiba_wine_"): return false
 	if data.world.has("port_containers") and not preload("res://gameplay/urban_v1/PortContainerState.gd").validate_snapshot(data.world.port_containers): return false
+	# Expansão do forte (31/10/2026): opcional, mas se vier tem de ser coerente (fase x recibos).
+	if data.world.has("mountain_fort_expansion") and not preload("res://gameplay/urban_v1/fort/FortExpansionState.gd").validate(data.world.mountain_fort_expansion): return false
 	# Opcional por compatibilidade com saves V2 gravados antes de existir o estado de porto/cemitério.
 	# Uma vez presente, as duas metades são obrigatórias e validadas de forma atômica.
 	if data.world.has("urban_operations"):

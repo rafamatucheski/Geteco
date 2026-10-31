@@ -17,6 +17,16 @@ const SIGHT_ALERT := 24.0
 const FOV_COS := 0.36
 const FIRE_RANGE := 22.0
 const RETREAT_FRACTION := .35
+## Tipos da expansão do forte (docs/forte-expansao-20261031.md): mesma malha e IA, só
+## parâmetros. Atirador vê e acerta de longe mas atira devagar e quase não se move;
+## escudeiro aguenta tiro de frente e avança; operador de rádio foge para longe e, se
+## ficar vivo em combate, a FortOperation deixa o rádio chamar reforço.
+const ROLE_PARAMS := {
+	"leader": {"health":140.0},
+	"marksman": {"health":80.0,"sight":34.0,"fire_range":34.0,"damage":16.0,"burst":1,"burst_gap":Vector2(1.6,2.2),"accuracy":.18,"mode":"hold"},
+	"shield": {"health":120.0,"front_armor":.8,"fire_range":12.0,"damage":6.0,"speed":.65,"mode":"advance"},
+	"radioman": {"health":80.0,"mode":"retreat","damage":5.0,"accuracy":-.1},
+}
 
 var operation
 var gameplay: Node
@@ -31,6 +41,17 @@ var phase := "hidden"
 var awareness := 0.0
 var cover: Dictionary = {}
 var weapon_id := "m4a1"
+var sight_alert := SIGHT_ALERT
+var fire_range := FIRE_RANGE
+var shot_damage := 7.0
+var burst_size := Vector2i(3,5)
+var burst_gap := Vector2(.5,.9)
+var accuracy_bonus := 0.0
+var front_armor := 0.0
+var speed_scale := 1.0
+var cover_mode := ""
+## Sentinela do alojamento começa dormindo: só acorda por barulho, dano ou rádio.
+var sleeping := false
 var shots_fired := 0
 var visual: Node3D
 var last_known := Vector3.INF
@@ -55,8 +76,20 @@ func configure(owner_operation, definition: Dictionary) -> void:
 	spec = definition.duplicate(true)
 	name = str(spec.get("id","FortSoldier"))
 	role = str(spec.get("role","rifleman"))
-	max_health = 140.0 if role == "leader" else 100.0
+	var params: Dictionary = ROLE_PARAMS.get(role,{})
+	max_health = float(params.get("health",100.0))
 	health = max_health
+	sight_alert = float(params.get("sight",SIGHT_ALERT))
+	fire_range = float(params.get("fire_range",FIRE_RANGE))
+	shot_damage = float(params.get("damage",7.0))
+	var burst := int(params.get("burst",0))
+	if burst > 0: burst_size = Vector2i(burst,burst)
+	burst_gap = params.get("burst_gap",burst_gap)
+	accuracy_bonus = float(params.get("accuracy",0.0))
+	front_armor = float(params.get("front_armor",0.0))
+	speed_scale = float(params.get("speed",1.0))
+	cover_mode = str(params.get("mode",""))
+	sleeping = bool(spec.get("sleeping",false))
 	_rng.seed = hash(name)
 
 func _ready() -> void:
@@ -121,7 +154,8 @@ func _has_los() -> bool:
 
 func _sees_player() -> bool:
 	var to := player.global_position+Vector3.UP*1.1-eyes()
-	var sight := SIGHT_ALERT if state == "combat" else SIGHT_IDLE
+	if sleeping: return false
+	var sight := sight_alert if state == "combat" else (SIGHT_IDLE*(1.6 if role == "marksman" else 1.0))
 	if to.length() > sight: return false
 	var flat := Vector3(to.x,0,to.z).normalized()
 	if state != "combat" and flat.dot(forward()) < FOV_COS: return false
@@ -144,6 +178,7 @@ func _update_awareness(sees: bool,step: float) -> void:
 func on_noise(point: Vector3,loud: bool) -> void:
 	if dead or state == "combat": return
 	last_known = point
+	sleeping = false
 	if loud:
 		awareness = maxf(awareness,.6)
 		state = "investigate"
@@ -152,6 +187,7 @@ func on_noise(point: Vector3,loud: bool) -> void:
 func alert(point: Vector3) -> void:
 	if dead: return
 	last_known = point
+	sleeping = false
 	awareness = 1.0
 	if state != "combat":
 		state = "combat"
@@ -204,7 +240,7 @@ func _combat(delta: float,sees: bool) -> void:
 	# Escolhe (ou refaz) o abrigo: sem abrigo, exposto a tiro ou ferido demais.
 	var exposed := not cover.is_empty() and phase == "hidden" and _has_los()
 	if cover.is_empty() or (exposed and _phase_time > .6):
-		var mode := "retreat" if wounded else ("flank" if role == "flanker" else "hold")
+		var mode := "retreat" if wounded else ("flank" if role == "flanker" else (cover_mode if not cover_mode.is_empty() else "hold"))
 		_take_cover(mode)
 	if wounded and not cover.is_empty() and not cover.get("retreat",false):
 		_take_cover("retreat")
@@ -215,7 +251,7 @@ func _combat(delta: float,sees: bool) -> void:
 				phase = "hidden"
 				_phase_time = 0.0
 				_hold = _rng.randf_range(.8,1.8)
-			else: _follow(delta,RUN_SPEED)
+			else: _follow(delta,RUN_SPEED*speed_scale)
 			_face(operation.player_point(),delta)
 		"hidden":
 			_move(Vector3.ZERO,delta)
@@ -240,7 +276,7 @@ func _combat(delta: float,sees: bool) -> void:
 			else:
 				_move(Vector3.ZERO,delta)
 			_face(player.global_position,delta)
-			if sees and global_position.distance_to(player.global_position) <= FIRE_RANGE:
+			if sees and global_position.distance_to(player.global_position) <= fire_range:
 				_shoot(delta)
 			if (_burst_left <= 0 and _fire_cd <= 0 and _phase_time > .9 and shots_fired_in_peek() >= 3) or _phase_time > 4.2 or (not sees and _phase_time > 1.6):
 				phase = "move"
@@ -286,9 +322,9 @@ func _best_peek() -> Vector3:
 func _shoot(_delta: float) -> void:
 	if _fire_cd > 0: return
 	if _burst_left <= 0:
-		_burst_left = _rng.randi_range(3,5)
+		_burst_left = _rng.randi_range(burst_size.x,burst_size.y)
 	_burst_left -= 1
-	_fire_cd = .13 if _burst_left > 0 else _rng.randf_range(.5,.9)
+	_fire_cd = .13 if _burst_left > 0 else _rng.randf_range(burst_gap.x,burst_gap.y)
 	shots_fired += 1
 	_peek_shots += 1
 	var origin: Vector3 = visual.muzzle_position()
@@ -296,14 +332,16 @@ func _shoot(_delta: float) -> void:
 	var distance := origin.distance_to(end)
 	var moving := Vector2(player.velocity.x,player.velocity.z).length() > 1.0 if player is CharacterBody3D else false
 	# Erra mais de longe e contra alvo em movimento; ferido atira pior.
-	var chance := clampf(.66-distance*.022-(.14 if moving else 0.0)-(.12 if health < max_health*RETREAT_FRACTION else 0.0),.1,.7)
+	# O atirador perde menos com a distância (luneta); accuracy_bonus vem do tipo.
+	var falloff := .008 if role == "marksman" else .022
+	var chance := clampf(.66+accuracy_bonus-distance*falloff-(.14 if moving else 0.0)-(.12 if health < max_health*RETREAT_FRACTION else 0.0),.1,.7)
 	var hit := _rng.randf() < chance
 	var aim := end+(Vector3.ZERO if hit else Vector3(_rng.randf_range(-1.2,1.2),_rng.randf_range(-.5,.6),_rng.randf_range(-1.2,1.2)))
 	visual.attack()
 	if is_instance_valid(gameplay):
 		if gameplay.has_method("_sound"): gameplay._sound(weapon_id,origin)
 		if gameplay.has_method("_trace"): gameplay._trace(origin,aim,.06,.012)
-		if hit and gameplay.has_method("damage_player"): gameplay.damage_player(7.0)
+		if hit and gameplay.has_method("damage_player"): gameplay.damage_player(shot_damage)
 		if gameplay.has_signal("npc_gunfire"): gameplay.npc_gunfire.emit(origin,(aim-origin).normalized(),self)
 
 # --- Movimento -----------------------------------------------------------------
@@ -354,8 +392,18 @@ func _animate(delta: float) -> void:
 
 # --- Dano ----------------------------------------------------------------------
 
+## Fração do dano que o escudo segura: só de frente (cone de ~100°). Flanquear é a
+## resposta do jogador.
+func shield_block(source: Node) -> float:
+	if front_armor <= 0.0 or not source is Node3D or not is_instance_valid(visual): return 0.0
+	var to := (source as Node3D).global_position-global_position
+	to.y = 0
+	if to.length_squared() < .01: return 0.0
+	return front_armor if to.normalized().dot(forward()) >= .64 else 0.0
+
 func receive_damage(amount: float,source: Node = null) -> void:
 	if dead or not is_finite(amount) or amount <= 0: return
+	amount *= 1.0-shield_block(source)
 	health = maxf(0,health-amount)
 	if is_instance_valid(source) and source is Node3D:
 		operation.report_sighting(self,(source as Node3D).global_position)
