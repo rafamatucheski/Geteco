@@ -1,12 +1,18 @@
 extends RefCounted
 ## Só registra faróis e giroflex de VehicleEquipment: neon e fogo têm outros donos.
 ## Luz de cano (MuzzleFx) entra como `"transient": true` no pedido: fica atrás de toda luz contínua.
+## `"priority"` (inteiro, padrão 0) no pedido marca fonte que não pode perder a vaga: maior vem
+## antes de tudo, não esmaece nem sai pelo raio de 25 m (o holofote do helicóptero fica a ~22 m de
+## altura). Lanterna de cintura do jogador = PRIORITY_PLAYER_LANTERN; holofote da polícia aérea =
+## PRIORITY_PURSUIT. Donos sem o campo continuam exatamente como antes.
 static var enabled := OS.get_environment("GETECO_LIGHT_BUDGET") != "0"
 const MAX_LIGHTS := 8
 const MAX_NPC_HEADLIGHTS := 2
 const LIGHT_RADIUS := 25.0
 const NPC_HANDOFF_SECONDS := .16
 const NPC_PRIORITY_MARGIN := 1.5
+const PRIORITY_PURSUIT := 1
+const PRIORITY_PLAYER_LANTERN := 2
 static var _owners: Dictionary = {}
 static var _frame := -1
 static var _npc_incumbents: Dictionary = {}
@@ -40,11 +46,12 @@ static func refresh(force: bool = false) -> void:
 			var race_headlight: bool = bool(request.get("race_headlights",false)) and source.headlight
 			# Fade pela distância até o jogador, independente da elevação/zoom da câmera.
 			var energy := float(source.light.get_meta("budget_energy", source.light.light_energy))
-			var weight := 1.0 if request.player or race_headlight else 1.0 - smoothstep(22.0, LIGHT_RADIUS, distance)
+			var priority := int(source.get("priority", 0))
+			var weight := 1.0 if request.player or race_headlight or priority > 0 else 1.0 - smoothstep(22.0, LIGHT_RADIUS, distance)
 			var target := energy * weight
 			if not is_equal_approx(source.light.light_energy, target): source.light.light_energy = target
-			if request.player or race_headlight or distance <= LIGHT_RADIUS:
-				lights.append({"node": source.light, "player": request.player, "headlight": source.headlight, "distance": distance, "race_headlight": race_headlight, "transient": bool(source.get("transient", false))})
+			if request.player or race_headlight or priority > 0 or distance <= LIGHT_RADIUS:
+				lights.append({"node": source.light, "player": request.player, "headlight": source.headlight, "distance": distance, "race_headlight": race_headlight, "transient": bool(source.get("transient", false)), "priority": priority})
 	lights.sort_custom(_nearer)
 	# Fachos reais de trânsito com sombra substituem os decalques emissivos no calçamento. Limita
 	# o custo deles à parte para que os projetores do jogador sempre mantenham a prioridade.
@@ -103,6 +110,11 @@ static func _apply(nodes: Array, ranked: Array[Dictionary], maximum: int) -> voi
 		if not node.visible: node.show()
 
 static func _nearer(a: Dictionary, b: Dictionary) -> bool:
+	# Prioridade explícita decide antes de tudo: o jogador nunca perde a própria lanterna e o
+	# holofote da perseguição não cede a vaga a faróis. Sem o campo, todos empatam em 0.
+	var a_priority: int = int(a.get("priority", 0))
+	var b_priority: int = int(b.get("priority", 0))
+	if a_priority != b_priority: return a_priority > b_priority
 	# Clarão curto (luz do cano, gameplay/fx/MuzzleFx.gd) só ocupa vaga que sobrou: se tomasse a vaga de um
 	# farol ou giroflex, ele piscaria a cada tiro. Entre clarões, o do jogador vem primeiro.
 	var a_transient: bool = bool(a.get("transient", false))

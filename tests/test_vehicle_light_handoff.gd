@@ -4,13 +4,16 @@ class Owner extends Node3D:
 	var light: SpotLight3D
 	var player := false
 	var enabled := true
+	var priority := 0
 	func _ready() -> void:
 		light = SpotLight3D.new()
 		light.light_energy = 2.0
 		light.set_meta("budget_energy",2.0)
 		add_child(light)
 	func _budget_request() -> Dictionary:
-		return {"lights":[light],"wanted":[{"light":light,"headlight":true}] if enabled else [],"camera":Vector3.ZERO,"player":player,"decal":null,"pool":false}
+		var source := {"light":light,"headlight":priority == 0}
+		if priority > 0: source.priority = priority
+		return {"lights":[light],"wanted":[source] if enabled else [],"camera":Vector3.ZERO,"player":player,"decal":null,"pool":false}
 var failures := 0
 func _initialize() -> void: run.call_deferred()
 func check(ok: bool,label: String) -> void:
@@ -65,4 +68,25 @@ func run() -> void:
 		owner.free()
 	BUDGET.refresh(true)
 	check(BUDGET.counts().registered==0,"despawn releases all owners")
+	# Lanterna do jogador e holofote da perseguição (campo priority) vencem oito projetores do
+	# jogador colados na câmera, mesmo fora do raio de 25 m, e o teto de oito continua.
+	var crowd: Array[Owner] = []
+	for i in 10:
+		var owner := Owner.new()
+		owner.position.z = 1.0 + i
+		owner.player = i < 8
+		root.add_child(owner)
+		crowd.append(owner)
+	crowd[8].priority = BUDGET.PRIORITY_PLAYER_LANTERN
+	crowd[9].priority = BUDGET.PRIORITY_PURSUIT
+	crowd[9].position = Vector3(0,22,40)
+	for owner in crowd: BUDGET.register(owner)
+	await process_frame
+	BUDGET.refresh(true)
+	check(crowd[8].light.visible and crowd[9].light.visible,"priority sources keep their slot")
+	check(is_equal_approx(crowd[9].light.light_energy,2.0),"priority source beyond 25 m does not fade")
+	check(BUDGET.counts().active_lights<=8 and not crowd[7].light.visible,"priority still respects the global cap")
+	for owner in crowd:
+		BUDGET.unregister(owner)
+		owner.free()
 	quit(1 if failures else 0)

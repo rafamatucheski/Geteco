@@ -5,6 +5,7 @@ const AIRFRAME = preload("res://gameplay/police_response/air_k9/PoliceHelicopter
 const OFFICER = preload("res://gameplay/PoliceAgent.gd")
 const RAPPEL_POSE = preload("res://gameplay/police_response/air_k9/PoliceRappelPose.gd")
 const FIREFLY := preload("res://audio/FireflyBank.gd")
+const LIGHT_BUDGET := preload("res://gameplay/lights/LightBudget.gd")
 const HOVER_HEIGHT := 13.0
 const ROPE_SEGMENTS := 10
 const DESCENT_SPEED := 2.3
@@ -48,6 +49,8 @@ var _mode_time := 0.0
 var _sensor := 0.0
 var _searchlight_point := Vector3.ZERO
 var _searchlight_ready := false
+## Holofote pedido; com orçamento quem mostra/esconde o SpotLight3D é o LightBudget.
+var spotlight_wanted := false
 
 var _next_drop := 0.0
 var _reserved := 4
@@ -94,6 +97,7 @@ func _ready() -> void:
 	spotlight.shadow_enabled = false
 	spotlight.visible = false
 	add_child(spotlight)
+	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.register(self)
 	_build_ropes()
 	sound = AudioStreamPlayer3D.new()
 	var recorded := _recorded_rotor()
@@ -108,6 +112,29 @@ func _ready() -> void:
 	if is_instance_valid(director) and is_instance_valid(director.gameplay):
 		var from: Vector3 = global_position - director.gameplay.last_known
 		_orbit_angle = atan2(from.z, from.x)
+
+func _exit_tree() -> void:
+	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.unregister(self)
+
+func _budget_request() -> Dictionary:
+	var wanted: Array[Dictionary] = []
+	var lights: Array[Light3D] = []
+	if is_instance_valid(spotlight):
+		lights.append(spotlight)
+		if not spotlight.has_meta("budget_energy"): spotlight.set_meta("budget_energy", spotlight.light_energy)
+		# Prioridade alta: em perseguição o holofote não cede a vaga a faróis de trânsito.
+		if spotlight_wanted: wanted.append({"light": spotlight, "headlight": false, "priority": LIGHT_BUDGET.PRIORITY_PURSUIT})
+	return {"lights": lights, "wanted": wanted, "player": false, "camera": global_position}
+
+## Liga/desliga o holofote: direto sem orçamento; com ele, pede a rodada (forçada na troca).
+func _set_spotlight(on: bool) -> void:
+	var changed := on != spotlight_wanted
+	spotlight_wanted = on
+	if not LIGHT_BUDGET.enabled:
+		spotlight.visible = on
+		return
+	if changed and is_inside_tree(): LIGHT_BUDGET.refresh(true)
+	elif on or spotlight.visible: LIGHT_BUDGET.refresh()
 
 ## Rotor gravado (Firefly, 2026-10-15) em loop; sem o arquivo importado fica o sintetizado.
 func _recorded_rotor() -> AudioStreamWAV:
@@ -232,7 +259,8 @@ func _fly_to(destination: Vector3, speed: float, delta: float) -> void:
 
 func _sense() -> void:
 	sees_player = false
-	spotlight.visible = false
+	# Sem desligar aqui: _update_searchlight, logo depois no mesmo quadro, decide o estado; apagar e
+	# reacender forçaria duas rodadas do LightBudget a cada leitura do sensor.
 	if dead or mode == "depart" or not director.exterior_active(): return
 	var gameplay: Node3D = director.gameplay
 	var target: Node3D = gameplay.pursuit_target()
@@ -244,8 +272,8 @@ func _sense() -> void:
 	_searchlight_ready = true
 
 func _update_searchlight(delta: float) -> void:
-	spotlight.visible = not dead and mode != "depart" and _searchlight_ready and director.exterior_active() and director.point_on_screen(global_position, 72.0)
-	if not spotlight.visible: return
+	_set_spotlight(not dead and mode != "depart" and _searchlight_ready and director.exterior_active() and director.point_on_screen(global_position, 72.0))
+	if not spotlight_wanted: return
 	# Rastreia a cada quadro de física, com uma pequena varredura de busca depois de perder o contato visual.
 	var point := _searchlight_point
 	var target: Node3D = director.gameplay.pursuit_target()
@@ -430,7 +458,7 @@ func _start_departure() -> void:
 	while _reserved > 0: _release_slot()
 	mode = "depart"
 	_mode_time = 0.0
-	spotlight.visible = false
+	_set_spotlight(false)
 	_depart_origin = global_position
 	_depart_target = global_position + Vector3(115.0, 22.0, -100.0)
 
@@ -440,7 +468,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	if health > 0.0: return
 	dead = true
 	_mode_time = 0.0
-	spotlight.visible = false
+	_set_spotlight(false)
 	rope_mesh.visible = false
 	sound.stop()
 	for entry in rappellers:

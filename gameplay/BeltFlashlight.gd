@@ -1,12 +1,15 @@
 extends Node3D
 ## Equipamento independente: segue a cintura do Dante, nunca a arma nem a pose dela.
 const PRICE := 300
+const LIGHT_BUDGET := preload("res://gameplay/lights/LightBudget.gd")
 var gameplay
 var owned := false
 var enabled := false
 var lamp: OmniLight3D
 var housing: Node3D
 var glass: StandardMaterial3D
+## Estado pedido pelo jogo; com orçamento quem mostra/esconde a luz é o LightBudget.
+var lit := false
 
 func _ready() -> void:
 	housing = Node3D.new()
@@ -47,8 +50,20 @@ func _ready() -> void:
 	lamp.light_specular = .2
 	lamp.shadow_enabled = true
 	lamp.shadow_caster_mask = preload("res://gameplay/PersonalLightLayers.gd").SHADOW_MASK
+	lamp.set_meta("budget_energy", lamp.light_energy)
 	housing.add_child(lamp)
+	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.register(self)
 	update_visibility()
+
+func _exit_tree() -> void:
+	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.unregister(self)
+
+func _budget_request() -> Dictionary:
+	var wanted: Array[Dictionary] = []
+	# Prioridade máxima: oito faróis por perto nunca apagam a lanterna do próprio jogador.
+	if lit: wanted.append({"light": lamp, "headlight": false, "priority": LIGHT_BUDGET.PRIORITY_PLAYER_LANTERN})
+	var lights: Array[Light3D] = [lamp]
+	return {"lights": lights, "wanted": wanted, "player": true, "camera": global_position}
 
 func purchase() -> bool:
 	if owned or not gameplay.state.spend(PRICE, "belt_flashlight"): return false
@@ -67,8 +82,16 @@ func update_visibility() -> void:
 	if not is_instance_valid(housing): return
 	housing.visible = owned and is_instance_valid(gameplay.player) and gameplay.player.visible
 	var driving = gameplay.world.get("driving") if is_instance_valid(gameplay.world) else null
-	lamp.visible = housing.visible and enabled and gameplay.health > 0 and not (is_instance_valid(driving) and driving.occupied)
-	if glass.emission_enabled != lamp.visible: glass.emission_enabled = lamp.visible
+	var want: bool = housing.visible and enabled and gameplay.health > 0 and not (is_instance_valid(driving) and driving.occupied)
+	var changed := want != lit
+	lit = want
+	if glass.emission_enabled != lit: glass.emission_enabled = lit
+	if not LIGHT_BUDGET.enabled:
+		lamp.visible = lit
+		return
+	# Troca de estado aplica no mesmo quadro (comprar, alternar, morrer); acesa, pede a rodada do quadro.
+	if changed and is_inside_tree(): LIGHT_BUDGET.refresh(true)
+	elif lit or lamp.visible: LIGHT_BUDGET.refresh()
 
 func _process(_delta: float) -> void:
 	if not owned or not is_instance_valid(gameplay.player) or not is_instance_valid(gameplay.player.visual): return
