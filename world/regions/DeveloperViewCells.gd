@@ -1,5 +1,5 @@
 extends RefCounted
-## Finite cells intersecting the developer camera footprint, clipped to authored geography.
+## Células finitas que cruzam a área da câmera de desenvolvedor, recortadas pela geografia autorada.
 static func select_cells(view: Rect2, bounds: Rect2, cell_size: float) -> Dictionary:
 	var result := {}
 	var clipped := view.intersection(bounds)

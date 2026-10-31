@@ -16,8 +16,8 @@ static var _sidewalk: StandardMaterial3D
 static func concrete() -> StandardMaterial3D:
 	if not enabled: return PAVING.material()
 	if _concrete != null: return _concrete
-	# Keep the city pavement material untouched. This cache belongs to the
-	# bridge, including its tunnel lining and northern campaign structure.
+	# Mantém o material de calçamento da cidade intocado. Este cache pertence à
+	# ponte, incluindo o revestimento do túnel e a estrutura norte da campanha.
 	_concrete = PAVING.material().duplicate() as StandardMaterial3D
 	_concrete.albedo_texture = ALBEDO
 	_concrete.albedo_color = Color("87918b")
@@ -66,8 +66,8 @@ static func sidewalk() -> StandardMaterial3D:
 	if _sidewalk != null: return _sidewalk
 	_sidewalk = concrete().duplicate() as StandardMaterial3D
 	_sidewalk.albedo_texture = LITTER
-	# Larger irregular tile: sheets stay life-sized and the litter pattern
-	# repeats less often than the plain mineral detail on the structure.
+	# Ladrilho irregular maior: as folhas ficam em tamanho real e o padrão de lixo
+	# se repete menos que o detalhe mineral simples da estrutura.
 	_sidewalk.uv1_scale = Vector3.ONE / 8.0
 	_sidewalk.normal_scale = .45
 	return _sidewalk

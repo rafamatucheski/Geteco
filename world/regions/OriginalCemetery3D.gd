@@ -1,6 +1,6 @@
 extends Node3D
-## Exterior layout from HarborGame/HarborCemetery, in native metres.
-## The keeper facade remains owned by PlaceCatalog. No burial/gameplay state here.
+## Layout externo de HarborGame/HarborCemetery, em metros nativos.
+## A fachada do zelador continua pertencendo ao PlaceCatalog. Sem estado de sepultamento/gameplay aqui.
 const SOURCE_CENTER := Vector2(-650, 1740)
 const SCALE := 1.0 / 16.0
 const LOT_SIZE := Vector2(780, 700)
@@ -65,7 +65,7 @@ func _ready() -> void:
 	solids.collision_mask = 0
 	add_child(solids)
 	_build_ground()
-	# North gate: 52 source pixels, 3.25 m before the two stone posts.
+	# Portão norte: 52 pixels fonte, 3.25 m antes dos dois pilares de pedra.
 	for segment in [
 		[Vector2(-390,-350),Vector2(-26,-350)],
 		[Vector2(26,-350),Vector2(390,-350)],
@@ -125,7 +125,7 @@ func _grass() -> void:
 	GRASS.scatter(self,Rect2(-lot*.5+Vector2(.8,.8),lot-Vector2(1.6,1.6)),keep_out,.8,7503,.002)
 
 func _tomb(point: Vector2, variant: int) -> void:
-	# Original CemeteryGrave3D model units project at 20px; V2 geography is 16px/m.
+	# As unidades do modelo CemeteryGrave3D original projetam a 20px; a geografia da V2 é 16px/m.
 	var origin := Vector3(point.x,0,point.y)
 	var model_scale := 1.25
 	for part in [
@@ -142,7 +142,7 @@ func _tomb(point: Vector2, variant: int) -> void:
 		var local_point: Vector3 = part[0]
 		var size: Vector3 = part[1]
 		_box(origin+local_point*model_scale,size*model_scale,part[2])
-	# Exact physical footprint, with separate headstone so shots do not hit empty air.
+	# Área física exata, com lápide separada para os tiros não acertarem ar vazio.
 	_solid(origin+Vector3(0,.43,0),Vector3(2.1,.69,3.5)*model_scale)
 	_solid(origin+Vector3(0,1.30,-1.35)*model_scale,Vector3(1.66,1.2,.36)*model_scale)
 	var vase := origin+Vector3(.55,.85,.95)*model_scale

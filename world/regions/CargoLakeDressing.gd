@@ -1,7 +1,7 @@
 extends Node3D
-## Authored cargo camp, moored rowboat and crash fragments. Static geometry is
-## merged by finish; physical bodies stay explicit and independent from art.
-## Coordinates are local to the original secret lake. No heat/water policy here.
+## Acampamento de carga autorado, barco a remo atracado e fragmentos do acidente. A geometria estática é
+## mesclada por acabamento; os corpos físicos ficam explícitos e independentes da arte.
+## As coordenadas são locais ao lago secreto original. Sem política de calor/água aqui.
 const PROP_SHADER := preload("res://world/regions/cargo_lake_props.gdshader")
 const CAMP_Y := .08
 const ISLAND_Y := .085
@@ -141,14 +141,14 @@ func _cargo_crate(at: Vector3) -> void:
 		for z in [-.62,.62]:
 			_box(Vector3(x,.427,z),Vector3(.055,.55,.015),"metal",Color("6a736e"))
 			for y in [.21,.57]: _box(Vector3(x,y,z*1.008),Vector3(.024,.024,.012),"metal",Color("a2aaa4"))
-	# Snow clings to the lid and reinforced corners, rather than a white box cap.
+	# A neve gruda na tampa e nos cantos reforçados, em vez de uma tampa de caixa branca.
 	_prism(PackedVector2Array([Vector2(-.68,-.57),Vector2(-.12,-.58),Vector2(.04,-.28),Vector2(-.20,.12),Vector2(-.62,.33)]),.704,.719,"snow",Color("dce7e9"))
 	_solid_box("OriginalCargoCrateA",Vector3(at.x,.4,at.z),CARGO_SIZE)
 
 func _lashed_cargo(at: Vector3) -> void:
 	_pose = Transform3D(Basis.IDENTITY,at)
-	# Legacy cargo footprints overlap at this corner. This L-shaped load joins
-	# the first crate without intersecting duplicate coplanar pallet/lid boards.
+	# As áreas de carga legadas se sobrepõem nesta esquina. Esta carga em L junta
+	# a primeira caixa sem cruzar tábuas duplicadas e coplanares de palete/tampa.
 	var rim := PackedVector2Array([Vector2(-.1875,-.625),Vector2(.75,-.625),Vector2(.75,.625),Vector2(-.75,.625),Vector2(-.75,-.3125),Vector2(-.1875,-.3125)])
 	_prism(rim,.025,.14,"wood",Color("796449"))
 	_prism(rim,.14,.655,"cloth",Color("526452"))
@@ -212,7 +212,7 @@ func _boulder(id: String, at: Vector3, size: Vector3, yaw: float) -> void:
 	for i in 8:
 		var next := (i+1)%8
 		_triangle("stone",rings[2][i],rings[2][next],crown,Color("8b9695"))
-		# The snowy crown follows the rock facets; no separate floating slab.
+		# A coroa de neve segue as facetas da rocha; sem laje separada flutuando.
 		if i not in [1,2,3]:
 			_triangle("snow",rings[2][i]+Vector3.UP*.006,rings[2][next]+Vector3.UP*.006,crown+Vector3.UP*.012,Color("dce7e9"))
 	var convex := ConvexPolygonShape3D.new()
@@ -246,7 +246,7 @@ func _rowboat() -> void:
 	var hull := ConvexPolygonShape3D.new()
 	hull.points = hull_points
 	_solid("MooredRowboat",at,hull,0.0,Vector3(2.36,.40,1.04))
-	# Short rough mooring platform ends before the original wing obstruction.
+	# Uma plataforma de atracação curta e tosca termina antes da obstrução original da asa.
 	_pose = Transform3D.IDENTITY
 	for i in 10:
 		_box(Vector3(11.48+i*.19,.100,-1.30),Vector3(.175,.070,.62),"wood",Color("867250").darkened(.04*(i%2)))
@@ -306,7 +306,7 @@ func _fragments() -> void:
 		_box(Vector3(-.11,.038,.01),Vector3(.29,.015,.36),"paint",Color("354b51"))
 		_prism(PackedVector2Array([Vector2(-.32,-.25),Vector2(-.10,-.21),Vector2(-.08,-.05),Vector2(-.28,.05)]),.040,.052,"snow",Color("d8e2e3"))
 	_pose = Transform3D.IDENTITY
-	# Ragged metal folds and broken cargo slats, grouped beside the open ramp.
+	# Dobras de metal rasgadas e ripas de carga quebradas, agrupadas ao lado da rampa aberta.
 	for entry in [[Vector3(-3.35,.043,6.4),Vector3(.12,.045,.70),.70],[Vector3(3.5,.038,8.0),Vector3(.16,.04,.48),-.32]]:
 		_box(entry[0],entry[1],"wood",Color("7f7156"),Vector3(0,entry[2],0))
 

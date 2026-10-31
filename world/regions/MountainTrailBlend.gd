@@ -1,5 +1,5 @@
 extends RefCounted
-## One union mask on the terrain: crossings never stack translucent road quads.
+## Uma máscara de união no terreno: cruzamentos nunca empilham quads translúcidos de estrada.
 const CELL := 64.0
 const STEP := 0.5
 const SIZE := 129

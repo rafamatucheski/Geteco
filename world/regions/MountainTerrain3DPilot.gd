@@ -1,7 +1,7 @@
 extends RefCounted
 ## Terrain3D's baked output, limited to one tile near Terminal da Serra.
-## The live 1.0.2 native node crashes this 4.7.2 .NET session (Windows heap
-## corruption). No native Terrain3D node is instantiated during gameplay.
+## O nó nativo vivo 1.0.2 derruba esta sessão .NET 4.7.2 (corrupção de heap
+## no Windows). Nenhum nó Terrain3D nativo é instanciado durante o jogo.
 const ORIGIN := Vector2(704, -448)
 const SIZE := 64
 const SHADER := preload("res://world/regions/mountain_terrain3d_pilot.gdshader")
@@ -21,7 +21,7 @@ static func attach(source: RefCounted, surface: MeshInstance3D, rect: Rect2, tra
 	if mesh == null:
 		push_error("Missing Terrain3D baked pilot: run tools/terrain3d/bake_mountain.gd")
 		return
-	# Future road edits must not leave an obsolete floor over the collider.
+	# Edições futuras de estrada não podem deixar um piso obsoleto sobre o colisor.
 	var heights: PackedFloat32Array = mesh.get_meta("native_grid_heights",PackedFloat32Array())
 	if heights.size()!=289: push_error("Invalid Terrain3D pilot height signature"); return
 	for z in 17:

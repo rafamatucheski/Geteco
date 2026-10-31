@@ -114,7 +114,7 @@ func flush() -> void:
 	batches.clear()
 
 func merge_static_boxes(owners: Array) -> void:
-	# Consolidate the static quay and moored boats. Keep the ferry separate because it moves.
+	# Consolida o cais estático e os barcos atracados. Mantém a balsa separada porque ela se move.
 	var inverse := global_transform.affine_inverse()
 	for source_owner in owners:
 		for child in source_owner.get_children():
@@ -206,7 +206,7 @@ func _ring(center: Vector3, radius: float, thickness: float, color: String, upri
 		_beam(center+p*radius,center+q*radius,thickness,color)
 
 func fishing_boat(variant: int) -> void:
-	# An open, double-sided hull: no rectangular slab hiding the pointed bow.
+	# Um casco aberto de dois lados: sem laje retangular escondendo a proa pontuda.
 	var outline := PackedVector2Array([Vector2(-.73,2.5),Vector2(.73,2.5),Vector2(.97,1.6),Vector2(1.08,.4),Vector2(.98,-.9),Vector2(.66,-2),Vector2(0,-2.95),Vector2(-.66,-2),Vector2(-.98,-.9),Vector2(-1.08,.4),Vector2(-.97,1.6)])
 	var paint := Color("366c73" if variant%2==0 else "8f5949")
 	var surface := SurfaceTool.new()
@@ -239,7 +239,7 @@ func fishing_boat(variant: int) -> void:
 	finish.cull_mode=BaseMaterial3D.CULL_DISABLED
 	hull_mesh.material_override=finish
 	add_child(hull_mesh)
-	# Floorboards, curved ribs and seats follow the available width of the hull.
+	# Tábuas do piso, cavernas curvas e bancos seguem a largura disponível do casco.
 	for z in [-1.8,-1.2,-.6,0.0,.6,1.2,1.8]:
 		var width := .75 if absf(z)>1.5 else 1.15
 		box(Vector3(0,.14,z),Vector3(width,.035,.43),"pier_deck_light")
@@ -247,7 +247,7 @@ func fishing_boat(variant: int) -> void:
 	for row in [{"z":-1.55,"w":1.35},{"z":.35,"w":1.94},{"z":1.8,"w":1.5}]:
 		for offset in [-.12,.12]: box(Vector3(0,.56,row.z+offset),Vector3(row.w,.09,.21),"pier_deck_light")
 		for side in [-1.0,1.0]: box(Vector3(side*row.w*.33,.35,row.z),Vector3(.075,.4,.32),"pier_deck")
-	# Rounded tire fenders, lashings, a rope coil and oar secured inside the gunwale.
+	# Defensas de pneu arredondadas, amarrações, uma bobina de corda e remo presos dentro da borda.
 	for side in [-1.0,1.0]:
 		for z in [-.9,1.3]:
 			_ring(Vector3(side*1.03,.3,z),.22,.105,"253238",true)
@@ -255,7 +255,7 @@ func fishing_boat(variant: int) -> void:
 	for radius in [.12,.17,.22]: _ring(Vector3(-.20,.63,1.8),radius,.03,"b49d73")
 	_beam(Vector3(.81,.76,-1.6),Vector3(.81,.76,.95),.055,"pier_deck")
 	box(Vector3(.81,.76,-1.76),Vector3(.18,.065,.45),"pier_deck_light")
-	# Outboard with hood, clamp, leg, tiller and propeller (no animated decoration).
+	# Motor de popa com capô, braçadeira, perna, cana do leme e hélice (sem decoração animada).
 	box(Vector3(0,.70,2.65),Vector3(.46,.46,.46),"253238")
 	box(Vector3(0,.95,2.64),Vector3(.39,.08,.4),"607c82")
 	box(Vector3(0,.39,2.51),Vector3(.26,.23,.26),"34494c")
@@ -393,7 +393,7 @@ func _fish_landing() -> void:
 	box(Vector3(239.15,.27,190.2),Vector3(.45,.06,.8),"607c82")
 
 func quay_details() -> void:
-	# Keep the freight lane and worker circuits clear; cluster details at the water edge.
+	# Mantém a faixa de carga e os circuitos dos trabalhadores livres; agrupa os detalhes na beira da água.
 	for x in [245.0,261.0,279.0,299.0,321.0,344.0]:
 		lamp(Vector3(x,0,202.3))
 		box(Vector3(x+1,.23,200.8),Vector3(.24,.46,.24),"34494c",true)

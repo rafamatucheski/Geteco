@@ -1,6 +1,6 @@
 extends Node3D
-## Full-size 40-foot cargo cycle under each streamed Northstar jib. The load stays
-## above the walkable deck and the authored crane remains the physical object.
+## Ciclo de carga de 40 pés em tamanho real sob cada lança do Northstar em streaming. A carga fica
+## acima do convés caminhável e o guindaste autorado continua sendo o objeto físico.
 const PAINT := preload("res://world/regions/PortShipMaterials3D.gd")
 var anchor := Vector2.ZERO
 var phase_offset := 0.0
@@ -30,7 +30,7 @@ func _ready() -> void:
 	load_mesh = CONTAINERS.create(2,CARGO_SIZE)
 	load_mesh.name = "SuspendedCargo40ft"
 	add_child(load_mesh)
-	# Four corner locks connect the spreader to the ISO corner castings.
+	# Quatro travas de canto ligam o spreader às peças de canto ISO.
 	for x in [-1.1,1.1]:
 		for z in [-5.92,5.92]:
 			var lock := _part("TwistLock",Vector3(.18,.28,.18),_color("384448"))
@@ -103,7 +103,7 @@ func _update_pose() -> void:
 		x = lerpf(anchor.x+6.0,anchor.x+17.0,smoothstep(.85,1.0,cycle))
 		lift = 3.9
 	var boom_y := 5.15
-	# Full-size cargo has a base origin, unlike the former miniature box.
+	# A carga em tamanho real tem origem na base, ao contrário da antiga caixa em miniatura.
 	lift = lerpf(1.55,3.05,clampf((lift-3.05)/.85,0,1))
 	var cargo_top := lift+1.445
 	var cable_length := boom_y-cargo_top-.16

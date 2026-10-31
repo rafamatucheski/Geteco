@@ -11,7 +11,7 @@ static func build_desert(parent: Node3D, rect: Rect2, height: Callable) -> void:
 	var bounds := DESERT.BOUNDS
 	var west := bounds.position.x + INSET
 	var east := bounds.end.x - INSET
-	# Leave the north road's existing terminal (-1945) and guardrail accessible.
+	# Deixa acessíveis o fim existente da estrada norte (-1945) e o guarda-corpo.
 	var north := bounds.position.y + 1.0
 	var south := bounds.end.y - INSET
 	_strip(parent, rect, Vector2(west,north), Vector2(west,south), height, false)
@@ -22,21 +22,21 @@ static func build_desert(parent: Node3D, rect: Rect2, height: Callable) -> void:
 		_low_strip(parent, rect, Vector2(east,north), Vector2(east,south), Vector2.RIGHT, height)
 	else:
 		_strip(parent, rect, Vector2(east,north), Vector2(east,south), height, false)
-	# The only southern route is the campaign bridge. Its physical deck and
-	# shoulders fit inside this opening; the old scattered rocks left 156 m open.
+	# A única rota para o sul é a ponte da campanha. O tabuleiro físico e os
+	# acostamentos cabem nesta abertura; as antigas pedras espalhadas deixavam 156 m abertos.
 	var bridge_x := DESERT.BRIDGE_END.x
 	_strip(parent, rect, Vector2(west,south), Vector2(bridge_x-14,south), height, false)
 	_strip(parent, rect, Vector2(bridge_x+14,south), Vector2(east,south), height, false)
-	# The mission opens the pass, not an unbuilt next map. A ridge behind its
-	# terminal also stops a pedestrian jumping over the existing low guardrail.
+	# A missão abre o passo, não um próximo mapa ainda não construído. Uma serra atrás do
+	# fim da estrada também impede um pedestre de pular o guarda-corpo baixo existente.
 	_strip(parent, rect, Vector2(west,north), Vector2(east,north), height, false, 2.0)
 
 static func build_mountain(parent: Node3D, rect: Rect2, height: Callable, blocked: Callable = Callable()) -> void:
 	if preload("res://world/regions/MountainTerrain3D.gd").island_enabled():
 		build_mountain_coast(parent, rect, height, blocked)
 		return
-	# Stay on the supported side of the logical seam. The bridge void row
-	# (-320..-256) already has its authored shore, rails and tunnel opening.
+	# Fica do lado apoiado da emenda lógica. A fileira vazia da ponte
+	# (-320..-256) já tem a costa, os guarda-corpos e a abertura do túnel autorados.
 	var west := CONNECTION.SEAM.x + INSET
 	_strip(parent, rect, Vector2(west,-1000000), Vector2(west,-320), height, true)
 	_strip(parent, rect, Vector2(west,-256), Vector2(west,CONNECTION.LOGICAL_NORTH_LIMIT_Z-INSET), height, true)
@@ -96,7 +96,7 @@ static func _cuts(rect: Rect2, a: Vector2, b: Vector2) -> Array[float]:
 	var low := maxf(a.y if vertical else a.x, rect.position.y if vertical else rect.position.x)
 	var high := minf(b.y if vertical else b.x, rect.end.y if vertical else rect.end.x)
 	var cuts: Array[float] = []
-	# The wall has one owner, including when a boundary aligns to the grid.
+	# A parede tem um dono, inclusive quando um limite se alinha à grade.
 	if high <= low or fixed < (rect.position.x if vertical else rect.position.y) or fixed >= (rect.end.x if vertical else rect.end.y): return cuts
 	cuts.append(low)
 	var cut := (floorf(low/8.0)+1)*8.0

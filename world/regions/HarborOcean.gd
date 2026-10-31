@@ -1,6 +1,6 @@
 extends RefCounted
-## Opaque, streamed ocean. Shore distance is baked on creation, never per frame.
-const WATER_Y := -0.94 # Preserve the top of the previous water box.
+## Oceano opaco em streaming. A distância da costa é embutida na criação, nunca por quadro.
+const WATER_Y := -0.94 # Preserva o topo da caixa de água anterior.
 const STEP := 4.0
 const DEPTH_RANGE := 24.0
 ## Período das ondas em metros. O shader recebe coordenada local 0..PERIOD em UV:
@@ -47,9 +47,9 @@ func shore_distance(point: Vector2) -> float:
 			nearest = minf(nearest,point.distance_to(closest))
 	return nearest
 
-## Broad phase computed once per chunk. Every retained edge keeps its original
-## order; exact closest-point distances still determine each vertex's shore color.
-## The margin includes boundary/rounding cases, and also accepts zero-width AABBs.
+## Fase ampla calculada uma vez por chunk. Toda borda retida mantém a ordem
+## original; distâncias exatas ao ponto mais próximo ainda determinam a cor de costa de cada vértice.
+## A margem inclui casos de borda/arredondamento e também aceita AABBs de largura zero.
 func _nearby_shore_edges(rect: Rect2) -> PackedVector2Array:
 	var area := rect.abs().grow(DEPTH_RANGE + 0.001)
 	var edges := PackedVector2Array()
@@ -71,8 +71,8 @@ func _shore_distance_from_edges(point: Vector2, edges: PackedVector2Array) -> fl
 	return nearest
 
 func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
-	# Exclude actual land geometry, not cell centres: even an island smaller
-	# than STEP must stay dry, without a square gap in the surrounding sea.
+	# Exclui a geometria real de terra, não centros de célula: até uma ilha menor
+	# que STEP precisa ficar seca, sem um buraco quadrado no mar em volta.
 	var dry: Array[PackedVector2Array] = []
 	for polygon in shores:
 		if polygon.size() >= 3 and GROUND_CUT.bounds(polygon).intersects(rect): dry.append(polygon)

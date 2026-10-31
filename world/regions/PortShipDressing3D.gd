@@ -1,6 +1,6 @@
 extends Node3D
-## Static, batched native 3D ship finish. Every piece is visual-only and is
-## kept off boarding routes; authored hulls, rails and cranes own collision.
+## Acabamento estático em lote de navio 3D nativo. Toda peça é só visual e fica
+## fora das rotas de embarque; cascos, guarda-corpos e guindastes autorados são donos da colisão.
 const PAINT := preload("res://world/regions/PortShipMaterials3D.gd")
 
 var _batches: Dictionary = {}
@@ -82,7 +82,7 @@ func build_northstar(outline: PackedVector2Array) -> void:
 		_box(Vector3(210.7,-.55,z),Vector3(.58,1.0,.44),"28383a")
 	_beam(Vector3(211.0,.55,58.0),Vector3(201.0,.36,55.0),.055,"9a927c")
 	_beam(Vector3(211.0,.55,124.0),Vector3(201.0,.36,127.0),.055,"9a927c")
-	# Glazing and roof gear give the aft superstructure a legible profile.
+	# Vidraças e equipamentos no teto dão à superestrutura de popa um perfil legível.
 	for z in [114.0,118.0,122.0]:
 		_box(Vector3(231.30,2.30,z),Vector3(.08,.58,2.1),"263f49")
 	for z in [113.0,116.1,119.2]:
@@ -93,7 +93,7 @@ func build_northstar(outline: PackedVector2Array) -> void:
 	_box(Vector3(224.7,5.32,113.5),Vector3(.12,3.0,.12),"c6c2ab")
 	_box(Vector3(224.7,6.38,113.5),Vector3(2.3,.08,.10),"c6c2ab")
 	_box(Vector3(225.8,6.30,113.5),Vector3(.72,.18,.38),"d4bd81")
-	# Maintenance scaffold outside the starboard hull, above the open basin.
+	# Andaime de manutenção fora do casco de boreste, acima da bacia aberta.
 	var near_x := 235.75
 	var outer_x := 238.15
 	var start_z := 74.0
@@ -121,8 +121,8 @@ func build_santa_mare(hull: PackedVector2Array) -> void:
 		_edge(a,b,-1.35,Vector2(.24,2.7),"344c54")
 		_edge(a,b,-.16,Vector2(.27,.10),"c6c2ab")
 		_edge(a,b,-2.58,Vector2(.27,.08),"8a5147")
-	# The bridge sits above the original deckhouse; glazed faces, wings and
-	# radar make the pilot station visible from the normal game camera.
+	# A ponte de comando fica acima da casaria original; faces envidraçadas, asas e
+	# radar deixam o posto do piloto visível da câmera normal do jogo.
 	_box(Vector3(255.9,5.15,181.7),Vector3(10.4,1.0,9.2),"bec8c1")
 	_box(Vector3(255.9,5.72,181.7),Vector3(11.1,.18,9.8),"52656a")
 	for x in [252.0,254.0,256.0,258.0,260.0]:
@@ -145,14 +145,14 @@ func build_santa_mare(hull: PackedVector2Array) -> void:
 	for x in [268.0,286.0,304.0,322.0,340.0]:
 		_box(Vector3(x,-.85,194.94),Vector3(.48,1.2,.20),"182d33")
 		_box(Vector3(x,-.7,195.06),Vector3(.25,.25,.04),"93a9a4")
-	# Boarding hatch is in the clear lane between wheelhouse and cargo.
+	# A escotilha de embarque fica na faixa livre entre a casa do leme e a carga.
 	var hold_hatch := preload("res://world/places/PortHoldHatch3D.gd").new()
 	hold_hatch.position = Vector3(264.91,.055,186.25)
 	add_child(hold_hatch)
 	_box(Vector3(264.9,.62,186.25),Vector3(.12,1.12,1.62),"b7a252")
 	_box(Vector3(265.65,.08,185.43),Vector3(1.65,.16,.12),"d2b458")
 	_box(Vector3(265.65,.08,187.07),Vector3(1.65,.16,.12),"d2b458")
-	# Quay equipment and stained service bays keep the berth readable in motion.
+	# Equipamentos do cais e baias de serviço manchadas mantêm o berço legível em movimento.
 	for x in [258.0,295.0,332.0]:
 		_box(Vector3(x,.22,202.9),Vector3(.9,.42,.45),"a1a07e")
 		_box(Vector3(x,.08,203.8),Vector3(.16,.04,3.1),"d2af56")
@@ -167,7 +167,7 @@ func build_santa_mare(hull: PackedVector2Array) -> void:
 		_box(Vector3(297.0,.045,z),Vector3(91.0,.018,.11),"b5a570")
 	for x in [271.0,320.0]:
 		_box(Vector3(x,.045,183.1),Vector3(.11,.018,19.0),"b5a570")
-	# A low side access platform below the sheer line, outside the north rail.
+	# Uma plataforma baixa de acesso lateral abaixo da linha da borda, fora do guarda-corpo norte.
 	var start_x := 279.0
 	var end_x := 309.0
 	var inner_z := 170.35
@@ -204,7 +204,7 @@ func build_south_crane(width: float, depth: float) -> void:
 	var base := Vector3(-width*.4,0,depth*.42)
 	var start := base+Vector3(0,7,4)
 	var tip := Vector3(width*.48,8,-depth*.42)
-	# High catwalk and ladder are above pedestrian and vehicle clearance.
+	# A passarela alta e a escada ficam acima da folga de pedestres e veículos.
 	var mid := start.lerp(tip,.28)
 	_beam(start+Vector3(-.62,-.48,0),mid+Vector3(-.62,-.48,0),.18,"73817d")
 	_beam(start+Vector3(-.62,.22,0),mid+Vector3(-.62,.22,0),.08,"d8b765")

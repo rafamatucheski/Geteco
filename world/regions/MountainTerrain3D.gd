@@ -1,5 +1,5 @@
 extends RefCounted
-## Metric XZ coordinates; NativeRegion owns the returned mesh and collision.
+## Coordenadas métricas XZ; o NativeRegion é dono da malha e da colisão devolvidas.
 const CATALOG = preload("res://world/places/PlaceCatalog.gd")
 const LAKE_BASINS := preload("res://world/regions/LakeBasins.gd")
 const TRAIL_BLEND := preload("res://world/regions/MountainTrailBlend.gd")
@@ -64,8 +64,8 @@ func configure(roads: Array, entries: Array, clearings: Array) -> void:
 		_clearings.append(Rect2((original.position+CATALOG.MOUNTAIN_OFFSET)/16.0,original.size/16.0).grow(GRID_MARGIN))
 	for clearing in clearings:
 		if clearing is Rect2: _clearings.append(clearing.grow(GRID_MARGIN))
-	# Keep the remote secret exit and its approach supported by the terrain itself.
-	# The existing blend joins this small clearing smoothly to the snowy hillside.
+	# Mantém a saída secreta remota e a aproximação dela apoiadas pelo próprio terreno.
+	# A mistura existente liga esta pequena clareira suavemente à encosta nevada.
 	var secret_exit: Vector3 = preload("res://gameplay/urban_v1/fort/MountainFortExit3D.gd").WORLD_POSITION
 	_clearings.append(Rect2(Vector2(secret_exit.x-4.0,secret_exit.z-4.0),Vector2(8.0,9.0)).grow(GRID_MARGIN))
 	for entry in entries:
@@ -125,8 +125,8 @@ func is_reserved(point: Vector2, radius: float = 0.0) -> bool:
 	return _clearance(point) <= maxf(0.0,radius)
 
 func height_at(point: Vector2) -> float:
-	# Terrain, normals and ground dressing repeatedly sample the same points.
-	# Keep the exact result; FIFO eviction bounds memory during long journeys.
+	# Terreno, normais e mobiliário de chão amostram repetidamente os mesmos pontos.
+	# Mantém o resultado exato; o descarte FIFO limita a memória em viagens longas.
 	if _height_samples.has(point): return _height_samples[point]
 	var height := _calculate_height(point)
 	_remember_height(point, height)
@@ -147,14 +147,14 @@ func _calculate_height(point: Vector2) -> float:
 	# Fixed world-space waves: deterministic, continuous across loading boundaries.
 	var broad := 0.5+0.5*sin(point.x*0.025+sin(point.y*0.019))*cos(point.y*0.023)
 	var detail := 0.5+0.5*sin(point.x*0.075+0.7)*sin(point.y*0.068)
-	# The flat road reservation meets the physical road top at y=0. Lowering
-	# this terrain made a one-way curb at every narrow track edge.
+	# A reserva plana da estrada encontra o topo físico da estrada em y=0. Baixar
+	# este terreno criava um meio-fio de mão única em cada borda de trilha estreita.
 	var original := weight*(broad*6.0+detail*1.5)-LAKE_BASINS.depth_in(_lake_shore,_lake_bounds,point)
 	var height: float = _editor_terrain.height_at(point,original) if _editor_terrain != null and not _editor_terrain.brushes.is_empty() else original
 	return shore_height(point,height)
 
 func surface_height_at(point: Vector2) -> float:
-	# Same diagonal and interpolation as build_chunk, for trees/rocks without floating.
+	# Mesma diagonal e interpolação do build_chunk, para árvores/pedras não flutuarem.
 	var origin := Vector2(floorf(point.x/STEP),floorf(point.y/STEP))*STEP
 	var f := (point-origin)/STEP
 	var a := height_at(origin)
@@ -213,7 +213,7 @@ static func prepare_task(terrain: RefCounted, rect: Rect2, out: Dictionary) -> v
 ## Monta o trecho. `data` vem de chunk_data (pronto num trabalhador); vazio, calcula aqui mesmo (testes,
 ## ferramentas e quem precisa do chão já). No thread principal ficam só a malha, a forma de colisão e os nós.
 func build_chunk(parent: Node3D, rect: Rect2, shore_edges: Array[Dictionary] = [], data: Dictionary = {}) -> MeshInstance3D:
-	# Only aligned 64m NativeRegion chunks: no partial edge cells or mismatched seams.
+	# Só chunks alinhados de 64m do NativeRegion: sem células parciais de borda nem emendas desencontradas.
 	if rect.size != Vector2.ONE*CELL or rect.position != Vector2(_cell(rect.position))*CELL:
 		push_error("MountainTerrain3D requires aligned 64m chunks")
 		return null
@@ -261,7 +261,7 @@ func build_chunk(parent: Node3D, rect: Rect2, shore_edges: Array[Dictionary] = [
 	shape.shape = collision_shape
 	body.add_child(shape)
 	result.add_child(body)
-	# Only the explicit bridge water spans have permanent exposed banks.
+	# Só os vãos explícitos de água da ponte têm margens expostas permanentes.
 	preload("res://world/regions/MountainBridgeShore.gd").build_chunk(parent,rect,self,shore_edges)
 	preload("res://world/regions/MountainTerrain3DPilot.gd").attach(self,result,rect,chunk_material.get_shader_parameter("trail_mask"))
 	return result

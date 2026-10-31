@@ -1,6 +1,6 @@
 extends RefCounted
-## Exposed edges of the actual dry footprint, split at intersections and chunk lines.
-## All geometry/collision is static and owned by the streamed chunk.
+## Bordas expostas da área seca real, divididas em interseções e linhas de chunk.
+## Toda geometria/colisão é estática e pertence ao chunk em streaming.
 const CELL := 64.0
 const HEIGHT := 1.15
 const NORTH_GATEWAY_LAYOUT := preload("res://world/north_gateway/NorthGatewayLayout.gd")
@@ -36,8 +36,8 @@ func configure(data: Dictionary, extra: Array[PackedVector2Array], road_surfaces
 	for row in data.harbor_land:
 		polygons.append(_rect(Rect2(float(row[0])/16,float(row[1])/16,float(row[2])/16,float(row[3])/16)))
 	polygons.append_array(extra)
-	# The public passenger quay supplies its own deck and guards. Union its
-	# footprint before extracting edges so the old walkway rail has a real opening.
+	# O cais público de passageiros fornece o próprio tabuleiro e guardas. Une a área
+	# dele antes de extrair as bordas para o antigo guarda-corpo do passeio ter uma abertura real.
 	polygons.append(_rect(Rect2(218,191.5,20,11)))
 	var ship := PackedVector2Array()
 	for p in data.ship_deck: ship.append(Vector2(p[0],p[1])/16.0)
@@ -149,7 +149,7 @@ func _extract() -> void:
 			var right := on_land(midpoint-normal*0.02)
 			if left == right: continue
 			if left: normal = -normal
-			# Ships and bridge already have authored rails. Keep their boarding gaps.
+			# Navios e ponte já têm guarda-corpos autorados. Mantém os vãos de embarque deles.
 			if _existing_guard(midpoint): continue
 			var key := str(midpoint.snapped(Vector2.ONE*0.01))
 			if seen.has(key): continue
@@ -162,8 +162,8 @@ func _extract() -> void:
 			_index(record)
 
 func _existing_guard(point: Vector2) -> bool:
-	# Split at both ends of the access before testing its midpoint; only the
-	# local portal is opened and the new bridge owns its continuous guards.
+	# Divide nas duas pontas do acesso antes de testar o ponto médio; só o
+	# portal local é aberto e a ponte nova é dona das guardas contínuas.
 	if not NORTH_GATEWAY_POLICY.baseline_disabled() and NORTH_GATEWAY_LAYOUT.reserves_shore_opening(point): return true
 	if _unified_owns(point): return true
 	if Rect2(217.9,191.4,20.2,11.2).has_point(point): return true
@@ -226,7 +226,7 @@ func _index(record: Dictionary) -> void:
 		var start := a+delta*cuts[i]
 		var end := a+delta*cuts[i+1]
 		if start.distance_to(end)<0.01: continue
-		# Put the guard on dry ground. Ownership follows that same inset.
+		# Põe a guarda em chão seco. A posse segue esse mesmo recuo.
 		var inset: Vector2 = record.outward*0.24
 		var center := (start+end)*0.5-inset
 		var key := Vector2i(floori(center.x/CELL),floori(center.y/CELL))
@@ -296,8 +296,8 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 		root.add_child(instance)
 
 func _build_walk_support(parent: Node3D, rect: Rect2) -> void:
-	# The original road collider covered asphalt only; over water its visible
-	# sidewalks need support before a pedestrian can reach the new guard.
+	# O colisor original da estrada cobria só o asfalto; sobre a água as calçadas
+	# visíveis precisam de apoio antes de um pedestre chegar à guarda nova.
 	var faces := PackedVector3Array()
 	for polygon in bridge_walks:
 		var pieces: Array[PackedVector2Array] = []

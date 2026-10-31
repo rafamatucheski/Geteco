@@ -5,8 +5,8 @@ static var cache: Dictionary = {}
 static func material(color: Color, timber := false) -> StandardMaterial3D:
 	var key := color.to_html()+str(timber)
 	if cache.has(key): return cache[key]
-	# Weathered cargo belongs to the same restrained dock palette; no extra
-	# material layers or objects are introduced for the new finish.
+	# A carga gasta pertence à mesma paleta contida do cais; nenhuma camada de
+	# material ou objeto extra é introduzido para o acabamento novo.
 	if not timber: color = color.lerp(Color("7f7968"),.18).darkened(.12)
 	var surface_material := StandardMaterial3D.new()
 	surface_material.resource_name = "Cargo_"+key
