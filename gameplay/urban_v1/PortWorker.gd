@@ -1,5 +1,5 @@
 extends "res://gameplay/routines_v1/V1RoutineActor.gd"
-## Damage is opt-in for port staff. Protected garage residents never use this actor.
+## O dano é opcional para a equipe do porto. Moradores protegidos da garagem nunca usam este ator.
 signal died(actor: CharacterBody3D)
 var health := 100.0
 var dead := false
@@ -40,7 +40,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 		if is_instance_valid(carried_crate): carried_crate.hide()
 		if has_meta("v2_burning"): preload("res://gameplay/BurningActor.gd").char_body(self)
 		var impact: Vector3 = global_position-source.global_position if source is Node3D else Vector3.ZERO
-		# The shared fall releases hands on both direct and wrapped civilian bodies.
+		# A queda compartilhada solta as mãos tanto em corpos civis diretos quanto embrulhados.
 		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(self,model,impact)
 		died.emit(self)
 	else:

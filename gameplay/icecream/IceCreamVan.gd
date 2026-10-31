@@ -97,8 +97,8 @@ func _ready() -> void:
 		clown.mesh = clown_mesh()
 		clown.position = Vector3(side*.43,.68,-.83)
 		crew.add_child(clown)
-	# The authored courier batches glass and paint in Body. Override only glass
-	# surfaces; a node-wide override would also make its bodywork transparent.
+	# O courier feito à mão agrupa vidro e pintura em Body. Substitui só as superfícies
+	# de vidro; uma substituição no nó inteiro deixaria a lataria transparente também.
 	for part: MeshInstance3D in car.visual.find_children("*","MeshInstance3D",true,false):
 		if part.mesh == null or part.has_meta("wheel_center"): continue
 		for surface in part.mesh.get_surface_count():
@@ -118,7 +118,7 @@ func _ready() -> void:
 	song.position.y = 2.1
 	add_child(song)
 	traced = _span("icecream_song", traced)
-	# Solid rooftop ornament; the existing road sensor keeps the van's dimensions.
+	# Ornamento sólido no teto; o sensor de via existente mantém as dimensões da van.
 	var roof := CollisionShape3D.new()
 	roof.name = "IceCreamRoofCollision"
 	var shape := BoxShape3D.new()
@@ -144,8 +144,8 @@ func _span(label: String, began: int) -> int:
 	return Time.get_ticks_usec()
 
 func _roof_height() -> float:
-	# A courier's highest painted vertices are its roof. Read once on attachment,
-	# before adding the ornament; wheels, windows and trim cannot move the mount.
+	# Os vértices pintados mais altos de um courier são o teto. Lidos uma vez ao anexar,
+	# antes de acrescentar o ornamento; rodas, janelas e acabamento não podem mover a montagem.
 	# Todas as vans usam as mesmas malhas do FleetCatalog: a varredura (vértice a vértice em
 	# GDScript) custou 43 ms num quadro da serra no EXE de 17/10 e agora roda uma vez por
 	# conjunto de malhas e posições, não a cada van que nasce no trânsito.
@@ -181,8 +181,8 @@ static func _livery_for_roof(height: float) -> ArrayMesh:
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX].duplicate()
 	var offset := height-2.10
 	for i in vertices.size():
-		# Only the central roof ornament occupies this region. Side serving
-		# windows, canopy, stripes and the separate clown meshes stay in place.
+		# Só o ornamento central do teto ocupa esta região. As janelas laterais
+		# de atendimento, o toldo, as faixas e as malhas separadas do palhaço ficam no lugar.
 		if absf(vertices[i].x)<.5 and vertices[i].y>1.97:
 			vertices[i].y += offset
 	arrays[Mesh.ARRAY_VERTEX]=vertices
@@ -215,7 +215,7 @@ func _update_ambience() -> void:
 			if other_distance < distance or (is_equal_approx(other_distance,distance) and other.get_instance_id() < get_instance_id()): nearer += 1
 		active = active and nearer < 2
 	if active and not song.playing:
-		# Common musical clock keeps nearby trucks in phase.
+		# Um relógio musical comum mantém em fase os caminhões próximos.
 		song.play(fmod(Time.get_ticks_msec()/1000.0,song.stream.get_length()))
 	elif not active and song.playing: song.stop()
 
@@ -224,7 +224,7 @@ static func song_stream() -> AudioStreamWAV:
 		_song = load("res://audio/icecream/jingle.wav") as AudioStreamWAV
 		_song.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		_song.loop_begin = 0
-		# Imported WAV may be QOA/ADPCM: loop points count frames, not PCM bytes.
+		# O WAV importado pode ser QOA/ADPCM: os pontos de loop contam quadros, não bytes de PCM.
 		_song.loop_end = roundi(_song.get_length()*_song.mix_rate)
 	return _song
 

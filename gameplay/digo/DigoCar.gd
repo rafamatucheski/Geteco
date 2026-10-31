@@ -1,5 +1,5 @@
 extends "res://scripts/Vehicle.gd"
-## Uses the ordinary vehicle physics, boarding, damage and turbo audio paths.
+## Usa os caminhos comuns de física, embarque, dano e áudio de turbo de veículo.
 const SPEC := preload("res://gameplay/digo/DigoCarSpec.gd")
 const MUSIC := preload("res://audio/living_city/porto_club.ogg")
 var stereo: AudioStreamPlayer3D
@@ -20,7 +20,7 @@ func _ready() -> void:
 	stereo = install_stereo(self)
 	_update_stereo()
 
-## Also attaches to an ordinary Vehicle restored from FleetState.
+## Também se anexa a um Vehicle comum restaurado de FleetState.
 static func install_stereo(car: CharacterBody3D) -> AudioStreamPlayer3D:
 	car.add_to_group("digo_car")
 	car.set_meta("owner_id", "digo")

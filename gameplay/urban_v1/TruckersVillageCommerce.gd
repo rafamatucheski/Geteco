@@ -1,6 +1,6 @@
 extends RefCounted
-## Local cash register and consumables. Wallet receipts prevent replaying
-## rewards or purchases when older village state is restored alongside a wallet.
+## Caixa registradora local e consumíveis. Os recibos da carteira impedem repetir
+## recompensas ou compras quando um estado mais antigo da vila é restaurado junto com uma carteira.
 const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
 const DRINK_PRICE := 20
 const DRINK_HEAL := 25

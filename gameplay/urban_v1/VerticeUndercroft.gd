@@ -1,5 +1,5 @@
 extends Node3D
-## Native clandestine room. The place adapter owns travel, camera and rewards.
+## Sala clandestina nativa. O adaptador do lugar é dono da viagem, da câmera e das recompensas.
 const SPAWN_POINT := Vector3(0,0,3)
 const EXIT_POINT := Vector3(0,0,4)
 const WEAPON_POINT := Vector3(0,0,-3)
@@ -79,14 +79,14 @@ func _shell() -> void:
 		_box(Vector3(x,3.07,0),Vector3(.24,.22,10),"steel",_roof)
 	for z in [-4.6,4.6]:
 		_box(Vector3(0,.025,z),Vector3(11.7,.05,.18),"steel")
-	# Floor drain is flush and walkable, not an invisible collision obstacle.
+	# O ralo do piso é rente e andável, não um obstáculo de colisão invisível.
 	_box(Vector3(-2.7,.014,1.4),Vector3(.65,.02,.65),"dark")
 	for i in 7: _box(Vector3(-2.97+i*.09,.031,1.4),Vector3(.035,.016,.61),"steel")
 	for z in [-2.0,1.0]:
 		_box(Vector3(-1.85,.012,z),Vector3(.065,.012,1.05),"ochre")
 
 func _workbench() -> void:
-	# A single full-volume body blocks the table, including the space below it.
+	# Um único corpo de volume cheio bloqueia a mesa, incluindo o espaço embaixo dela.
 	_solid("Workbench",Vector3(-5.02,.6,-2.2),Vector3(1.42,1.2,3.25))
 	_box(Vector3(-5.02,1.01,-2.2),Vector3(1.42,.13,3.25),"wood")
 	for x in [-5.58,-4.46]:
@@ -116,7 +116,7 @@ func _armory() -> void:
 		for y in [1.85,1.94,2.03]: _box(Vector3(x,y,-3.807),Vector3(.5,.025,.018),"dark")
 		_box(Vector3(x+(0.3 if x<3.5 else -.3),1.2,-3.78),Vector3(.06,.3,.06),"steel")
 	_box(Vector3(3.5,1.16,-3.78),Vector3(.19,.14,.08),"brass")
-	# Ammunition cases remain beside the cabinet, leaving the reward aisle open.
+	# As caixas de munição ficam ao lado do armário, deixando o corredor da recompensa aberto.
 	_solid("AmmoCases",Vector3(5.12,.5,-2.6),Vector3(1.15,1,1.1))
 	for y in [.23,.69]:
 		_box(Vector3(5.12,y,-2.6),Vector3(1.15,.43,1.1),"ammo")

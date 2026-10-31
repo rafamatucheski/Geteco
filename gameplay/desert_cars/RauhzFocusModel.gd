@@ -1,6 +1,6 @@
 extends RefCounted
-## Focus Mk1 five-door: authored from Rauhz's reference, in metres, nose at -Z.
-## Reuses fleet wheel/paint batches, boarding and equipment semantics.
+## Focus Mk1 cinco portas: feito a partir da referência do Rauhz, em metros, nariz em -Z.
+## Reaproveita os lotes de roda/pintura da frota e a semântica de embarque e equipamento.
 const SHAPE := preload("res://gameplay/desert_cars/DesertCarModel.gd")
 const CABIN := preload("res://gameplay/desert_cars/DesertCarCabin.gd")
 
@@ -26,7 +26,7 @@ static func create(s: Dictionary) -> Node3D:
 		SHAPE._beam(root,"MirrorStem",Vector3(side*w*.40,belt+.04,-.80),Vector3(side*w*.50,belt+.13,-.76),.04,trim)
 		SHAPE._box(root,"Mirror",Vector3(.13,.095,.19),Vector3(side*w*.515,belt+.14,-.75),paint)
 		SHAPE._box(root,"MirrorGlass",Vector3(.014,.064,.135),Vector3(side*w*.554,belt+.14,-.735),metal)
-		# Two real door outlines, rear quarter glass and the Mk1 rising beltline.
+		# Dois contornos reais de porta, vidro do quarto traseiro e a linha de cintura ascendente do Mk1.
 		for z in [l*float(s.door_back),l*.30]:
 			SHAPE._box(root,"DoorHandle",Vector3(.024,.032,.15),Vector3(side*w*.486,belt-.10,z-.13),paint)
 			SHAPE._box(root,"DoorSeam",Vector3(.009,.46,.008),Vector3(side*w*.482,.51,z),trim)
@@ -44,7 +44,7 @@ static func create(s: Dictionary) -> Node3D:
 			Vector3(side*.77,.627,-l*.496),Vector3(side*.77,.731,-l*.496),
 			Vector3(side*.77,.800,-1.835)
 		],Vector3(side,0,0),lamp)
-		# High D-pillar lamps are visible from both the side and rear.
+		# Lanternas altas na coluna D ficam visíveis tanto de lado quanto de trás.
 		var top := Vector3(side*.665,1.30,1.17)
 		var outer := Vector3(side*.806,.83,1.83)
 		var inner := Vector3(side*.68,.83,1.83)
@@ -77,8 +77,8 @@ static func create(s: Dictionary) -> Node3D:
 	return root
 
 static func _hood_lens(root: Node3D,side: float,paint: Material,lamp: Material) -> void:
-	# Project a subdivided swept lens onto the actual bonnet bevel, avoiding
-	# both buried triangles and floating corners at its change of slope.
+	# Projeta uma lente puxada subdividida no chanfro real do capô, evitando
+	# tanto triângulos enterrados quanto cantos flutuando na mudança de inclinação.
 	var hull := PackedVector3Array()
 	for part: MeshInstance3D in root.get_children():
 		if part.material_override==paint and part.name=="BodyShell": hull=part.mesh.get_faces()

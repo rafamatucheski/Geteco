@@ -1,5 +1,5 @@
 extends RefCounted
-## One gearbox state drives motion, tachometer and audio. No speed bonuses on shift.
+## Um estado de câmbio comanda movimento, conta-giros e áudio. Sem bônus de velocidade na troca.
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
 const AXLE := preload("res://gameplay/desert_cars/AxleTraction.gd")
 const SPEED_FACTOR := preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
@@ -28,7 +28,7 @@ var limiter := false
 var launched := false
 var surface_grip := 1.0
 var launch_blend_seconds := 0.0
-## Opt in only from the drag activity; ordinary street handling keeps its calibration.
+## Só ativa a partir da atividade de drag; a dirigibilidade comum de rua mantém a calibração.
 var race_mode := false
 var _integrating := false
 var shift_torque_factor := 1.0
@@ -89,8 +89,8 @@ func stage(delta: float, pedal: float, digital_input := false) -> void:
 	if launched: return
 	var dt := maxf(delta,0.0)
 	var target_pedal := clampf(pedal,0.0,1.0)
-	# A key remains a real 0/1 pedal, but no longer sweeps the entire good band
-	# in 221 ms. Deliberate presses work; holding it still reaches the limiter.
+	# Uma tecla continua sendo um pedal real 0/1, mas não varre mais a faixa boa inteira
+	# em 221 ms. Toques deliberados funcionam; segurar ainda chega ao limitador.
 	throttle = move_toward(throttle,target_pedal,dt*5.0) if race_mode and digital_input else target_pedal
 	var target_rpm := lerpf(_idle,redline,throttle)
 	var response := (.36 if target_rpm>rpm else .28) if race_mode and digital_input else .95
@@ -104,8 +104,8 @@ func launch() -> String:
 	var ratio := rpm/redline
 	_launch_remaining = 1.5
 	if race_mode:
-		# Quality changes continuously, including at the boundaries of the labels.
-		# A tiny miss must never suddenly remove almost half the available grip.
+		# A qualidade muda de forma contínua, inclusive nos limites dos rótulos.
+		# Um erro mínimo nunca pode tirar de repente quase metade da aderência disponível.
 		var low_error := 1.0-smoothstep(0.0,LAUNCH_PERFECT_MIN,ratio)
 		var high_error := smoothstep(LAUNCH_PERFECT_MAX,1.0,ratio)
 		_launch_factor = 1.0-low_error*.44-high_error*.37
@@ -177,8 +177,8 @@ func _begin_race_shift(target_gear: int, duration: float) -> void:
 
 func _race_shift_state() -> float:
 	var progress := 1.0-shift_remaining/maxf(.001,_shift_duration)
-	# Unload the old gear before engaging the new ratio. The integral of this
-	# envelope loses ~121 ms of drive for an ideal shift (previously 120 ms).
+	# Descarrega a marcha antiga antes de engatar a nova relação. A integral deste
+	# envelope perde ~121 ms de tração numa troca ideal (antes 120 ms).
 	shift_torque_factor = 1.0-smoothstep(0.0,.20,progress) if progress<.20 else smoothstep(.55,1.0,progress)
 	if progress>=.20: gear=_shift_target_gear
 	return progress
@@ -190,10 +190,10 @@ func step(delta: float, pedal: float, use_nitro: bool, brake: float = 0.0) -> vo
 	var remaining := clampf(delta,0.0,.25)
 	while remaining > .00001:
 		var dt := minf(remaining,1.0/120.0)
-		# Race motion has its own driver and bypasses the street speed limiter.
-		# Keep the authored engine/gearbox in mechanical units, then convert both
-		# speed and travelled distance together. HUD, collision and finish timing
-		# therefore consume the same reduced world speed, with no second street scale.
+		# O movimento de corrida tem motorista próprio e pula o limitador de velocidade da rua.
+		# Mantém o motor/câmbio definidos em unidades mecânicas e então converte juntos a
+		# velocidade e a distância percorrida. HUD, colisão e cronometragem de chegada
+		# consomem assim a mesma velocidade reduzida do mundo, sem uma segunda escala de rua.
 		var scale := SPEED_FACTOR if race_mode else 1.0
 		var prior_distance := distance_m
 		speed_mps /= scale
@@ -217,8 +217,8 @@ func _integrate(dt: float, pedal: float, use_nitro: bool, brake: float) -> void:
 	if throttle > 0.0 or _launch_blend_elapsed > 0.0: _launch_blend_elapsed += dt
 	var clutch_rpm := lerpf(_idle,redline*.45,throttle)*(1.0-smoothstep(0.0,9.0,speed_mps))
 	var target_rpm := clampf(maxf(_coupled_rpm(),clutch_rpm),_idle,redline*1.025)
-	# Race starts carry the staged revs into clutch engagement instead of
-	# replacing them on the first physics tick. Ordinary driving keeps its adapter.
+	# Largadas de corrida levam a rotação preparada para o engate da embreagem em vez de
+	# substituí-la no primeiro tick de física. A direção comum mantém o adaptador.
 	if shifting:
 		var next_rpm := speed_mps/(TAU*float(spec.wheel_radius))*60.0*float(spec.gears[_shift_target_gear-1])*float(spec.final_drive)
 		rpm = lerpf(_shift_from_rpm,clampf(next_rpm,_idle,redline*1.025),smoothstep(.12,.85,shift_progress))
@@ -263,7 +263,7 @@ func _mechanical_speed() -> float:
 	return speed_mps / SPEED_FACTOR if race_mode and not _integrating else speed_mps
 
 func synchronize(actual_speed: float, pedal: float, reverse := false) -> void:
-	# Collision/reverse adapter uses real wheel speed, never an estimated shift.
+	# O adaptador de colisão/ré usa a velocidade real da roda, nunca uma troca estimada.
 	speed_mps = maxf(0.0,absf(actual_speed))
 	if reverse: gear = 1
 	throttle = clampf(pedal,0.0,1.0)
@@ -272,9 +272,9 @@ func synchronize(actual_speed: float, pedal: float, reverse := false) -> void:
 	limiter = rpm >= redline
 
 func follow_external_motion(actual_speed: float, pedal: float, delta: float) -> void:
-	# Native route/external drivers own movement and do not call Handling.step.
-	# Observe their real wheel speed using this gearbox's ratios, without adding
-	# force, distance, launch bonuses or changing the nitro reserve.
+	# Motoristas de rota nativa/externos são donos do movimento e não chamam Handling.step.
+	# Observa a velocidade real da roda deles usando as relações deste câmbio, sem acrescentar
+	# força, distância, bônus de largada nem mudar a reserva de nitro.
 	if spec.is_empty(): return
 	var mechanical_speed := absf(actual_speed)/(SPEED_FACTOR if race_mode and not _integrating else 1.0)
 	var wheel_rpm := mechanical_speed/(TAU*float(spec.wheel_radius))*60.0*float(spec.final_drive)
@@ -282,8 +282,8 @@ func follow_external_motion(actual_speed: float, pedal: float, delta: float) -> 
 	if actual_speed >= 0.0:
 		while gear < spec.gears.size() and wheel_rpm*float(spec.gears[gear-1]) > ideal_shift_rpm:
 			gear += 1
-	# Native external driving resets Handling each physics tick. This observer
-	# must not manufacture a repeated manual-shift cut/event after every reset.
+	# A direção externa nativa reinicia Handling a cada tick de física. Este observador
+	# não pode fabricar um corte/evento repetido de troca manual depois de cada reinício.
 	shift_remaining = 0.0
 	synchronize(actual_speed,pedal,actual_speed<0.0)
 	wheelspin = 0.0

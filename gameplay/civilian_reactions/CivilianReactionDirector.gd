@@ -501,8 +501,8 @@ func _steer_panic(person: CharacterBody3D, state: Dictionary, delta: float) -> v
 			state.target = Vector3.ZERO
 			_cancel_escape(person.get_instance_id(), state)
 			stats.stuck_replans += 1
-	# ZERO means the previous search found no escape, not a reached waypoint.
-	# Retry it on the same bounded cadence; actual arrivals still replan at once.
+	# ZERO significa que a busca anterior não achou fuga, não um waypoint alcançado.
+	# Tenta de novo na mesma cadência limitada; chegadas reais ainda replanejam na hora.
 	var arrived: bool = state.target != Vector3.ZERO and person.global_position.distance_to(state.target) < 0.8
 	if arrived: state.target = Vector3.ZERO
 	if state.escape_search.is_empty() and (state.replan <= 0.0 or arrived):

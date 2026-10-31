@@ -1,5 +1,5 @@
 extends RefCounted
-## Cold catalogue entry: the saved personal car keeps its body and handling.
+## Entrada fria do catálogo: o carro pessoal salvo mantém a carroceria e a dirigibilidade.
 const ID := "jessica_jetta_gli"
 static func spec() -> Dictionary:
 	return {"id":ID,"label":"Jetta GLI · Jessica","scene":"res://gameplay/jessica/JessicaJettaModel.tscn",

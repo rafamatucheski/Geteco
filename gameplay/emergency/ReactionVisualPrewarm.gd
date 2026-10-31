@@ -1,6 +1,6 @@
 extends RefCounted
-## Warm the measured first-use text/outline family under the existing cover.
-## Uses the authored label factory without triggering reactions, audio or RNG.
+## Aquece a família de texto/contorno medida no primeiro uso sob a cobertura existente.
+## Usa a fábrica de rótulos definida sem disparar reações, áudio nem RNG.
 const PRESENTER = preload("res://gameplay/civilian_reactions/CivilianReactionPresenter.gd")
 const GUARDS = preload("res://gameplay/emergency/EffectsPrewarm.gd")
 const DRAW_FRAMES := 3

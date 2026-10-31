@@ -6,7 +6,7 @@ const SOBER_RATE := 0.42
 const SIP_COOLDOWN := 2.5
 const SERIAL_LIMIT := 1000000
 const GIFT_WINE := "zacharias_malagousia"
-## Persisted receipt contract. Keep old amounts valid if a later catalogue changes.
+## Contrato de recibo persistido. Mantém válidas as quantidades antigas se um catálogo posterior mudar.
 const RECEIPT_PRICES_V1 := [75,85,95,100,115,125,145,155]
 var data := {"version":1,"servings":{},"alcohol":0.0,"cooldown":0.0,"serial":0,"gift_claimed":false}
 

@@ -111,7 +111,7 @@ func _build_yard() -> void:
 		var paving: Material = prewarm_materials()[0]
 		base.material_override = paving
 		finish.material_override = paving
-	# Solid fence panels use thin bars, with one simple collision each.
+	# Os painéis sólidos da cerca usam barras finas, com uma colisão simples cada.
 	_fence(Vector3(-50,0,-30),Vector3(50,0,-30))
 	_fence(Vector3(-50,0,-30),Vector3(-50,0,78))
 	_fence(Vector3(50,0,-30),Vector3(50,0,78))
@@ -148,8 +148,8 @@ func _build_yard() -> void:
 		light.shadow_enabled = false
 		add_child(light)
 		lamps.append(light)
-	# Wall/ceiling fittings use the shared nearby-light pool, not extra permanent
-	# Light3D nodes. They leave the truck lanes and walking floor unchanged.
+	# As luminárias de parede/teto usam o pool compartilhado de luzes próximas, não nós Light3D
+	# permanentes extras. Elas deixam as faixas dos caminhões e o piso de caminhada inalterados.
 	for at in [Vector3(-18,4.3,19.1),Vector3(0,4.3,19.1),Vector3(18,4.3,19.1),Vector3(14,2.7,74.8),Vector3(31,3.1,71)]:
 		var fitting := Node3D.new()
 		fitting.name = "ExteriorTaskLight"
@@ -197,10 +197,10 @@ func _fence(a: Vector3,b: Vector3,parent: Node3D = self) -> void:
 	solids.append(body)
 
 func _build_handler(index: int) -> void:
-	# Yard reach-stacker built as a real machine: twin drive wheels under the
-	# boom, steering axle under the counterweight, glazed cab, engine hood,
-	# lift cylinder and a spreader with twistlocks. Only the chassis, weight and
-	# cab collide; boom and spreader move with the unload cycle.
+	# Reach-stacker do pátio montada como máquina de verdade: rodas de tração duplas sob a
+	# lança, eixo de direção sob o contrapeso, cabine envidraçada, capô do motor,
+	# cilindro de elevação e um spreader com twistlocks. Só o chassi, o peso e a
+	# cabine colidem; lança e spreader se movem com o ciclo de descarga.
 	var rig := Node3D.new()
 	rig.name = "ReachStacker%d"%index
 	rig.position = Vector3(-18+index*18,0,24)
@@ -218,7 +218,7 @@ func _build_handler(index: int) -> void:
 	for i in 5: box("HoodVent",Vector3(1.305,1.72,-1.9+i*.36),Vector3(.02,.5,.14),"1f2324",false,rig)
 	_cyl(rig,Vector3(1.1,2.55,-1.85),.09,1.1,"2c3233")
 	_cyl(rig,Vector3(1.1,3.12,-1.85),.11,.08,"1f2324")
-	# Twin drive wheels up front carry the load; single steer wheels at the rear.
+	# As rodas de tração duplas na frente levam a carga; rodas simples de direção atrás.
 	for side in [-1.0,1.0]:
 		for offset in [0.0,.46]:
 			_wheel(rig,Vector3(side*(1.42+offset),.82,2.2),.82,.42)
@@ -226,7 +226,7 @@ func _build_handler(index: int) -> void:
 		box("Fender",Vector3(side*1.65,1.72,2.2),Vector3(1.0,.08,1.9),"1f2324",false,rig)
 		box("Fender",Vector3(side*1.45,1.44,-1.95),Vector3(.55,.08,1.55),"1f2324",false,rig)
 		box("SideStripe",Vector3(side*1.355,1.05,.3),Vector3(.02,.12,4.6),"1f2324",false,rig)
-	# Cab: dark frame with glass panels, pillars, roof, beacon and access ladder.
+	# Cabine: armação escura com painéis de vidro, colunas, teto, giroflex e escada de acesso.
 	var cab := Vector3(-.78,0,.55)
 	box("Cab",cab+Vector3(0,1.95,0),Vector3(1.3,1.45,1.6),"glass",true,rig)
 	box("CabBase",cab+Vector3(0,1.3,0),Vector3(1.42,.22,1.72),"2c3233",false,rig)
@@ -239,7 +239,7 @@ func _build_handler(index: int) -> void:
 	for y in [.45,.8,1.15]: box("LadderRung",cab+Vector3(-.82,y,.25),Vector3(.3,.04,.5),"8d9596",false,rig)
 	box("Mirror",cab+Vector3(-.95,2.3,.95),Vector3(.05,.3,.2),"1f2324",false,rig)
 	for x in [-.45,.45]: box("WorkLight",cab+Vector3(x,2.83,.95),Vector3(.2,.12,.08),"lamp_white",false,rig)
-	# Telescopic boom: outer and inner sections stretch together from the pivot.
+	# Lança telescópica: as seções externa e interna se estendem juntas a partir do pivô.
 	var boom := Node3D.new()
 	boom.name = "Boom"
 	rig.add_child(boom)
@@ -298,7 +298,7 @@ func _align_boom(index: int) -> void:
 	boom.global_position = (start+end)*.5
 	boom.look_at(end,Vector3.UP)
 	boom.scale.z = start.distance_to(end)
-	# Lift cylinder from the front frame to about a third of the boom.
+	# Cilindro de elevação da armação dianteira até cerca de um terço da lança.
 	var base := movers[index].to_global(Vector3(.4,1.3,1.6))
 	var joint := start.lerp(end,.36)
 	var cylinder := lift_cylinders[index]
@@ -307,9 +307,9 @@ func _align_boom(index: int) -> void:
 	cylinder.scale.z = base.distance_to(joint)
 
 func _build_staff() -> void:
-	# Operator routes use free strips: warehouse aisle z-8.5 between rack rows,
-	# the documented z12 crossing, and the flanks of the yard cargo islands.
-	# Truck lanes (x-37, z34 dock row, exit diagonal) and forklift bays stay clear.
+	# As rotas dos operadores usam faixas livres: corredor do armazém z-8.5 entre as fileiras de racks,
+	# a travessia documentada em z12 e os flancos das ilhas de carga do pátio.
+	# As faixas dos caminhões (x-37, fileira de docas z34, diagonal de saída) e as baias de empilhadeira ficam livres.
 	var specs := [
 		{"point":Vector3(10,.1,73),"route":[Vector3(10,0,73),Vector3(10,0,66)],"guard":true},
 		{"point":Vector3(-43,.1,44),"route":[Vector3(-43,0,44),Vector3(-43,0,-24),Vector3(44,0,-24),Vector3(44,0,44),Vector3(44,0,56),Vector3(-43,0,56)],"guard":true},
@@ -354,15 +354,15 @@ func _build_staff() -> void:
 			model = preload("res://gameplay/routines_v1/DockWorkerModel.gd").new()
 			model.worker_index = i
 		npc.visual.add_child(model)
-		# Actor turns `visual` so its -Z follows the walk; CivilianModel's chest
-		# faces +Z. Without this half turn every staff member walked backwards.
+		# Actor gira `visual` para que o -Z dele siga a caminhada; o peito do CivilianModel
+		# olha para +Z. Sem esta meia volta todo funcionário andava de costas.
 		model.rotation.y = PI
 		model.set_process(false)
 		npc.set_meta("vertice_staff",true)
 		var entry := {"actor":npc,"model":model,"route":specs[i].route,"waypoint":0,"guard":specs[i].guard,"office":office,"pause":2.0+i*.7}
 		staff.append(entry)
 		npc.tree_exiting.connect(_unregister_staff.bind(entry), CONNECT_ONE_SHOT)
-	# Desk staff sit still and type; plain models, no walking body to push around.
+	# Os funcionários de mesa ficam sentados digitando; modelos simples, sem corpo andando para empurrar.
 	for z in [14.0,21.0]:
 		var seated := preload("res://assets/CivilianModel.gd").new()
 		seated.name = "VerticeDeskClerk"
@@ -383,13 +383,13 @@ func _build_staff() -> void:
 		desk_staff.append(seated)
 
 func _unregister_staff(entry: Dictionary) -> void:
-	# Corpse cleanup and emergency pickup own the actor's removal. Stop updating
-	# its model, collision and interactions before those child nodes are freed.
+	# A limpeza de cadáveres e a coleta de emergência são donas da remoção do ator. Para de atualizar
+	# o modelo, a colisão e as interações dele antes que esses nós filhos sejam liberados.
 	staff.erase(entry)
 
 func _build_secrets() -> void:
-	# Collections are ordinary physical objects; the hidden office envelope and
-	# rear-rack cash tin have independent, durable economy receipts.
+	# As coletas são objetos físicos comuns; o envelope escondido do escritório e a
+	# lata de dinheiro do rack dos fundos têm recibos de economia independentes e duráveis.
 	for spec in [{"id":"vertice_office_envelope","point":Vector3(35,.05,3),"amount":700}, {"id":"vertice_rear_cash","point":Vector3(0,.05,-16),"amount":1800}]:
 		var object := box("HiddenFind",spec.point+Vector3(0,.12,0),Vector3(.35,.24,.25),"9a7850")
 		secrets.append({"id":spec.id,"point":spec.point,"amount":spec.amount,"visual":object})
@@ -456,7 +456,7 @@ func _physics_process(delta: float) -> void:
 	var p: Vector3 = player.global_position-ORIGIN
 	building.set_lights_active(near)
 	var open := business_open()
-	# Exit and an occupied threshold remain clear even after the business closes.
+	# A saída e um limiar ocupado continuam livres mesmo depois que a empresa fecha.
 	var exiting := p.x > -50 and p.x < 50 and p.z < 78 and p.z > -30
 	var gate_clearance := absf(p.x)<9 and absf(p.z-78)<4 and gate_amount>.1
 	# Durante a invasão o portão só abre para quem sai por ele, para o alarme ou para a van.
@@ -536,7 +536,7 @@ func _set_inside(value: bool) -> void:
 	if is_instance_valid(dressing): dressing.set_cutaway(value)
 	if value:
 		_previous_shelter = session.world.player.get_meta("mountain_shelter",false)
-		# Shared native weather uses this legacy-named shelter flag in Harbor too.
+		# O clima nativo compartilhado também usa esta flag de abrigo de nome legado no Harbor.
 		session.world.player.set_meta("mountain_shelter",true)
 		interior_camera.make_current()
 		session.world.player.camera = interior_camera

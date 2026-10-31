@@ -62,10 +62,10 @@ static func _palette(variant: int) -> Dictionary:
 static func _sculpt(variant: int) -> Dictionary:
 	var p := _palette(variant)
 	var body := _surface()
-	# The chest, tucked waist and rounded haunches form one continuous closed skin.
+	# O peito, a cintura recolhida e os quartos arredondados formam uma pele fechada contínua.
 	_loft(body, [Vector4(-0.49, 0.65, 0.045, 0.08), Vector4(-0.41, 0.64, 0.15, 0.22), Vector4(-0.27, 0.64, 0.215, 0.275), Vector4(-0.06, 0.67, 0.195, 0.235), Vector4(0.15, 0.675, 0.147, 0.17), Vector4(0.33, 0.64, 0.183, 0.215), Vector4(0.45, 0.635, 0.12, 0.175), Vector4(0.51, 0.65, 0.025, 0.06)], p, "body")
 	_loft(body, [Vector4(-0.625, 0.91, 0.085, 0.09), Vector4(-0.55, 0.865, 0.128, 0.18), Vector4(-0.43, 0.77, 0.17, 0.23), Vector4(-0.30, 0.71, 0.18, 0.21), Vector4(-0.23, 0.70, 0.105, 0.14)], p, "neck")
-	# Fitted straps wrap around the ribcage, with a soft saddle and small hardware.
+	# Tiras ajustadas envolvem a caixa torácica, com uma sela macia e ferragens pequenas.
 	_band(body, -0.235, 0.64, 0.225, 0.282, 0.047, p.harness)
 	_band(body, 0.04, 0.674, 0.184, 0.214, 0.042, p.harness)
 	_sphere(body, Vector3(0, 0.888, -0.105), Vector3(0.295, 0.057, 0.35), p.harness)
@@ -78,7 +78,7 @@ static func _sculpt(variant: int) -> Dictionary:
 	_loft(head, [Vector4(-0.394, -0.042, 0.049, 0.031), Vector4(-0.355, -0.036, 0.065, 0.042), Vector4(-0.27, -0.023, 0.077, 0.054), Vector4(-0.185, -0.006, 0.094, 0.076), Vector4(-0.12, 0.018, 0.09, 0.075)], p, "muzzle")
 	_sphere(head, Vector3(0, -0.047, -0.393), Vector3(0.137, 0.079, 0.073), Color("20262a"))
 	_sphere(head, Vector3(0, -0.025, -0.412), Vector3(0.081, 0.018, 0.033), Color("404348"))
-	# A dark palate remains inside the mouth when the independent jaw opens.
+	# Um palato escuro fica dentro da boca quando a mandíbula independente abre.
 	_sphere(head, Vector3(0, -0.080, -0.275), Vector3(0.117, 0.022, 0.196), Color("332527"))
 	for side in [-1.0, 1.0]:
 		_ear(head, side, p)
@@ -101,8 +101,8 @@ static func _sculpt(variant: int) -> Dictionary:
 
 static func _leg(p: Dictionary, rear: bool) -> ArrayMesh:
 	var surface := _surface()
-	# Tiny upper caps are buried inside the ribcage. Full shoulder/thigh volume
-	# grows below them, so articulation exposes rounded muscle rather than a cut tube.
+	# Tampas superiores minúsculas ficam enterradas na caixa torácica. O volume completo de ombro/coxa
+	# cresce abaixo delas, então a articulação expõe músculo arredondado em vez de um tubo cortado.
 	if rear:
 		_sweep(surface, [Vector3(0, 0.125, 0.015), Vector3(0, 0.05, 0.008), Vector3(0, -0.045, -0.025), Vector3(0, -0.18, -0.084), Vector3(0, -0.295, 0.048), Vector3(0, -0.36, 0.06), Vector3(0, -0.467, -0.015)], [Vector2(0.014, 0.021), Vector2(0.083, 0.11), Vector2(0.101, 0.133), Vector2(0.063, 0.079), Vector2(0.04, 0.051), Vector2(0.042, 0.045), Vector2(0.034, 0.037)], p, "leg")
 	else:
@@ -120,7 +120,7 @@ static func _finish(surface: SurfaceTool) -> ArrayMesh:
 	return surface.commit()
 
 static func _ear(surface: SurfaceTool, side: float, p: Dictionary) -> void:
-	# Flattened, rounded triangular pinnae with actual thickness, not cones.
+	# Orelhas triangulares achatadas e arredondadas com espessura de verdade, não cones.
 	var base := Vector3(side * 0.097, 0.126, 0.045)
 	var points: Array = [base, base + Vector3(side * 0.004, 0.075, 0.004), base + Vector3(side * 0.012, 0.166, 0.014), base + Vector3(side * 0.019, 0.244, 0.024), base + Vector3(side * 0.02, 0.258, 0.027)]
 	_sweep(surface, points, [Vector2(0.068, 0.037), Vector2(0.056, 0.027), Vector2(0.034, 0.018), Vector2(0.008, 0.007), Vector2(0.002, 0.002)], p, "ear")
@@ -187,7 +187,7 @@ static func _sweep(surface: SurfaceTool, controls: Array, sizes: Array, p: Dicti
 					face_normals.append(normals[ring_index][vertex_index])
 					colors.append(_coat(rings[ring_index][vertex_index], sin(TAU * float(vertex_index) / sides), p, kind))
 				_triangle(surface, vertices, face_normals, colors)
-	# Explicit caps keep all parts watertight, including the mouth and ear tips.
+	# Tampas explícitas deixam todas as partes fechadas, incluindo a boca e as pontas das orelhas.
 	for end in [0, rings.size() - 1]:
 		var normal: Vector3 = (centers[0] - centers[1]).normalized() if end == 0 else (centers[-1] - centers[-2]).normalized()
 		for corner in sides:
@@ -234,8 +234,8 @@ static func _sphere(surface: SurfaceTool, center: Vector3, size: Vector3, color:
 			surface.add_vertex(center + vertices[index] * size)
 
 static func _triangle(surface: SurfaceTool, vertices: Array[Vector3], normals: Array[Vector3], colors: Array[Color]) -> void:
-	# Godot fronts use clockwise winding. Analytic normals never depend on
-	# triangulation or on accidental vertex splits at coat boundaries.
+	# No Godot as faces frontais usam enrolamento horário. Normais analíticas nunca dependem
+	# da triangulação nem de divisões acidentais de vértice nas fronteiras da pelagem.
 	var reverse := (vertices[1] - vertices[0]).cross(vertices[2] - vertices[0]).dot(normals[0] + normals[1] + normals[2]) > 0.0
 	for corner in ([0, 2, 1] if reverse else [0, 1, 2]):
 		surface.set_color(colors[corner])

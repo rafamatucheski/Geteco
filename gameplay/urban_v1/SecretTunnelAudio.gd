@@ -1,6 +1,6 @@
 extends Node3D
-## Tunnel sound bed and scoped SFX reverb. Routing is restored when Dante
-## leaves so gunshots, footsteps and impacts only echo underground.
+## Fundo sonoro do túnel e reverb de SFX com escopo. O roteamento é restaurado quando o Dante
+## sai, para que tiros, passos e impactos só ecoem no subterrâneo.
 
 const BUS_NAME := &"SecretTunnelReverb"
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")

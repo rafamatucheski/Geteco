@@ -175,7 +175,7 @@ func _ready() -> void:
 			spark.particle_flag_align_y = true
 			sparks.append(spark)
 		_impact[material_name] = sparks
-	# Reuse the street glass resources/pipeline, with a fixed four-burst budget.
+	# Reaproveita os recursos/pipeline de vidro da rua, com orçamento fixo de quatro estouros.
 	for slot in BURST_POOL:
 		var shards := _emitter(26, .95, preload("res://gameplay/street_physics/StreetPhysics.gd").glass_shard_mesh(), Color(.82,.94,1.0,1.0),2.0,5.0,65.0,-12.0,.8,1.35)
 		shards.material_override = preload("res://gameplay/street_physics/StreetPhysics.gd").glass_shard_material()
@@ -487,7 +487,7 @@ func impact(point: Vector3, normal: Vector3, material: String, damage: float) ->
 		dust.color = Color(color.r, color.g, color.b, 0.35)
 		_fire(dust, point, normal)
 
-## A pane breaking is a falling shower of glass, not the tiny bullet-impact chips.
+## Uma vidraça quebrando é uma chuva de vidro caindo, não as lasquinhas do impacto de bala.
 func glass_shatter(point: Vector3, normal: Vector3) -> void:
 	var emitter := _take("glass_shatter",_glass_shards)
 	_fire(emitter,point + normal*.04,(normal + Vector3.UP*.4).normalized())
@@ -558,8 +558,8 @@ func _free_stain(radius: float) -> int:
 		if best >= 0: return best
 	return 0
 
-## Empty cases leave the action, not the muzzle. Revolvers and break actions
-## retain theirs until the opening part of the reload; pumps eject on cycling.
+## Cápsulas vazias saem do mecanismo, não da boca do cano. Revólveres e armas basculantes
+## as retêm até a parte de abertura da recarga; pumps ejetam ao ciclar.
 func weapon_shot(id: String, origin: Vector3, aim: Vector3, magazine_after: int) -> void:
 	# Vem logo depois de muzzle_smoke no mesmo disparo: dá a arma ao clarão de NPC e à cápsula.
 	if muzzle_fx != null: muzzle_fx.weapon_hint(id)
@@ -607,8 +607,8 @@ func update_weapon_feedback(controller: Node3D, delta: float) -> void:
 			if chamber != null: origin = chamber.global_position
 		shell(origin, -controller.gun.global_basis.z.normalized(), 0.0, id == "sawed_off", true)
 
-## Fixed pool; actual swept collision against floors and walls, never a plane
-## at the shooter's height. The third argument remains for existing callers.
+## Pool fixo; colisão varrida de verdade contra pisos e paredes, nunca um plano
+## na altura do atirador. O terceiro argumento continua para os chamadores existentes.
 func shell(origin: Vector3, aim: Vector3, _floor_y: float, shotgun := false, dropped := false) -> void:
 	if not origin.is_finite() or not aim.is_finite(): return
 	var side := aim.cross(Vector3.UP).normalized()
@@ -642,8 +642,8 @@ func tracer(origin: Vector3, destination: Vector3, speed: float, color: Color, d
 	var weapon_id := String(host.call("equipped")) if host != null and host.has_method("equipped") else ""
 	tracer_fx.shoot(origin, destination, speed, color, damage, weapon_id)
 
-## Police rounds own their swept flight in Gameplay, including impact timing.
-## The token carries a serial, so a reused visual slot is never moved by an older round.
+## Os tiros da polícia são donos do próprio voo varrido em Gameplay, incluindo o tempo de impacto.
+## O token leva um serial, então um slot visual reaproveitado nunca é movido por um tiro mais antigo.
 func police_tracer(origin: Vector3, direction: Vector3, speed := 55.0, color := Color(1.0, 0.9, 0.2), damage := 6.0) -> Dictionary:
 	if tracer_fx == null: return {}
 	if not origin.is_finite() or not direction.is_finite():
@@ -673,9 +673,9 @@ func flame(origin: Vector3, direction: Vector3, distance: float) -> void:
 	_fire(packet, origin, direction + Vector3.UP * 0.02)
 	tongue.global_position = origin
 	tongue.look_at(origin + direction.normalized(), Vector3.UP)
-	# Mesh length is exactly one metre along local -Z. Scale it to the actual
-	# hitscan distance; the previous normalized span capped every visible jet at
-	# ~0.2 m, even when the flame ray hit several metres away.
+	# O comprimento da malha é exatamente um metro ao longo de -Z local. Escala para a distância
+	# real do hitscan; o vão normalizado anterior limitava todo jato visível a
+	# ~0.2 m, mesmo quando o raio da chama acertava a vários metros.
 	var span := clampf(distance * 0.20, 0.35, 2.5)
 	tongue.scale = Vector3(1.0, 1.0, span)
 	tongue.transparency = 0.0

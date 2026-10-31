@@ -210,8 +210,8 @@ func reverse_entry_to_exit() -> bool:
 	if _door_started: vehicle.animate_driver_door(side, true, .20)
 	_motion = create_tween().set_trans(Tween.TRANS_LINEAR if not _layout.is_empty() else Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	if not _layout.is_empty() and _door_started:
-		# Close the leaf at the waiting point before retracing the short approach,
-		# which was planned with the door closed.
+		# Fecha a folha no ponto de espera antes de refazer a aproximação curta,
+		# que foi planejada com a porta fechada.
 		if progress > _approach:
 			_motion.tween_property(self, "progress", _approach, seconds * (progress - _approach) / progress)
 		_motion.tween_callback(func(): vehicle.animate_driver_door(side, false, .28))
@@ -314,8 +314,8 @@ func _finish_break_retreat() -> void:
 	_break_retreat = false
 	if _seated_driver:
 		INTERIOR.attach(vehicle)
-		# Opening the interior changes glazing materials; keep the pane already
-		# broken by this entry missing after that material preparation.
+		# Abrir o interior troca os materiais dos vidros; mantém ausente o vidro já
+		# quebrado por esta entrada depois dessa preparação de material.
 		if break_in.method == "window": BREAK_IN._break_window(vehicle, side)
 	_open_door()
 
@@ -751,8 +751,8 @@ func _prepare_door_path(outside: Vector3, entering: bool) -> void:
 	_grip_side = "Right" if side < 0 else "Left"
 	var ground := vehicle.global_position.y + .04
 	var outside_local: Vector3 = vehicle.to_local(outside)
-	# Approach a closed door before opening it. Planning against the open leaf
-	# sent nearby pedestrians around the entire hull to reach the waiting point.
+	# Aproxima-se de uma porta fechada antes de abri-la. Planejar contra a folha aberta
+	# mandava pedestres próximos contornarem o casco inteiro para chegar ao ponto de espera.
 	_planning_closed = entering
 	var route: Array[Vector2] = _plan(Vector2(outside_local.x, outside_local.z), Vector2(_layout.stand.x, _layout.stand.z))
 	_planning_closed = false
@@ -1023,8 +1023,8 @@ func _begin_close_exit() -> void:
 	vehicle.animate_driver_door(side, false, .32)
 
 func _close_door_later(delay: float) -> void:
-	# The car can leave the world before this delayed door close runs.
-	# Capturing a WeakRef also avoids a freed-object lambda argument.
+	# O carro pode sair do mundo antes de este fechamento atrasado da porta rodar.
+	# Capturar uma WeakRef também evita um argumento de lambda com objeto já liberado.
 	var door_vehicle_ref: WeakRef = weakref(vehicle)
 	var door_side := side
 	vehicle.get_tree().create_timer(delay).timeout.connect(func():
@@ -1060,8 +1060,8 @@ func _finish_entry() -> void:
 		INTERIOR.seat_driver(actor, vehicle, INTERIOR.SEAT_BLEND_SECONDS)
 		actor.show()
 	else:
-		# The crouch belongs to this presentation only. Keeping it on the hidden
-		# actor made the next exit use an already lowered baseline, sinking each trip.
+		# O agachamento pertence só a esta apresentação. Mantê-lo no ator escondido
+		# fazia a próxima saída usar uma base já rebaixada, afundando a cada viagem.
 		actor.visual.position = _visual_position
 		actor.visual.rotation.y = _visual_yaw
 		actor.visual.scale = _visual_scale

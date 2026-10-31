@@ -102,7 +102,7 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, FRICTION * pow(clampf(mass, 0.5, 8.0), -0.65) * delta)
 	if launch_holding: velocity = Vector2.ZERO
-	# Reverse is a maneuvering gear, independent of engine power and tuning.
+	# A ré é uma marcha de manobra, independente da potência do motor e do tuning.
 	if throttle < 0.0:
 		var reverse_limit := minf(REVERSE_SPEED_MPS * PX, max_speed * 0.8)
 		var reverse_speed := velocity.dot(forward)

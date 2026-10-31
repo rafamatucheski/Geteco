@@ -1,6 +1,6 @@
 extends RefCounted
-## The existing bounded local search, with an optional boundary between node
-## expansions. Synchronous callers and queued police requests use the same work.
+## A busca local limitada existente, com uma fronteira opcional entre expansões
+## de nó. Chamadores síncronos e pedidos enfileirados da polícia usam o mesmo trabalho.
 const MAX_EXPANSIONS := 256
 var done := false
 var path := PackedVector3Array()
@@ -32,8 +32,8 @@ func configure(start: Vector3, finish: Vector3, occupancy: Dictionary, walkable:
 	_frontier.append(_from)
 	_costs[_from] = 0.0
 
-## A single expansion has at most four cell probes. The deadline is checked
-## between expansions; individual physics queries cannot be preempted.
+## Uma única expansão tem no máximo quatro sondas de célula. O prazo é checado
+## entre expansões; consultas de física individuais não podem ser interrompidas.
 func advance(max_expansions := MAX_EXPANSIONS, deadline_usec := 0) -> int:
 	var performed := 0
 	while not done and performed < max_expansions:

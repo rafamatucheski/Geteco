@@ -1,6 +1,6 @@
 extends RefCounted
-## Shared manual wheelie for street and dirt bikes. Angles are relative to ground;
-## the collision body keeps its ground support and conservative obstacle hull.
+## Empinada manual compartilhada entre motos de rua e de trilha. Ângulos são relativos ao chão;
+## o corpo de colisão mantém o apoio no chão e o casco conservador contra obstáculos.
 const MIN_SPEED := 2.0
 const FULL_SPEED := 7.0
 const MAX_PITCH := .62

@@ -1,5 +1,5 @@
 extends StaticBody3D
-## Period silhouettes for parked exhibition cars; front is local -Z.
+## Silhuetas de época para carros de exposição estacionados; a frente é -Z local.
 var model_id := "gol"
 var paint := Color("c93c31")
 var hood_open := false
@@ -30,7 +30,7 @@ func _ready() -> void:
 	var cabin_back := half-.20 if model_id == "parati" else (.38 if model_id == "pickup" else 1.35)
 	var roof_back := cabin_back-.12 if model_id in ["parati","pickup"] else cabin_back-.62
 	if model_id == "roadster":
-		# Open cockpit, two seats and a short windshield distinguish the convertible.
+		# Cockpit aberto, dois assentos e para-brisa curto distinguem o conversível.
 		_prism(1.53,1.29,.93,roof_height,-.80,-.48,-.75,-.43,Color("233942"))
 		_box("OpenCockpit",Vector3(0,.96,.24),Vector3(1.48,.045,1.45),Color("171f25"))
 		for x in [-.35,.35]:

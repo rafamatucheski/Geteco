@@ -1,6 +1,6 @@
 extends Control
-## The host owns the world, modal locks, mouse mode and rewards. This panel only
-## times three throws and reports their results; it does no work while closed.
+## O anfitrião é dono do mundo, das travas de modal, do modo do mouse e das recompensas. Este painel só
+## cronometra três arremessos e informa os resultados; não faz trabalho nenhum fechado.
 
 signal throw_released(strength: float, hit: bool)
 signal finished(hits: int)
@@ -60,8 +60,8 @@ func open_game() -> bool:
 	strength = 0.0
 	cooldown = 0.0
 	_phase = 0.0
-	# Always require a released frame, including when opened from an input
-	# callback before Godot has finished dispatching that same input event.
+	# Sempre exige um quadro com o botão solto, inclusive quando aberto a partir de um callback
+	# de entrada antes que o Godot termine de despachar esse mesmo evento de entrada.
 	_awaiting_release = true
 	show()
 	_cancel_button.release_focus()

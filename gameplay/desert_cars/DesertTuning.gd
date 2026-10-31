@@ -1,5 +1,5 @@
 extends RefCounted
-## Slot -> part ID, persisted per vehicle. Unlocks are earned by distinct race wins.
+## Slot -> ID da peça, persistido por veículo. Desbloqueios vêm de vitórias em corridas distintas.
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const STREET := preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd")
 const PARTS := {

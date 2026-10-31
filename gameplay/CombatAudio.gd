@@ -97,7 +97,7 @@ static func variant_has_shots(id: String) -> bool:
 	return not _variant_bank(id,"shot",GUNFIRE_TAKES).is_empty()
 
 static func variant_pitch(id: String) -> float:
-	# Authored deliveries already have their final character and must play at native pitch.
+	# Falas gravadas já têm o caráter final e precisam tocar no pitch nativo.
 	return 1.0 if not _variant_bank(id,"shot",GUNFIRE_TAKES).is_empty() else float(VARIANT_PITCH.get(id,1.0))
 ## Mesma faixa do `AudioStreamRandomizer` da V1 (`audio/combat/CombatAudioBank.gd`):
 ## `random_pitch = 1.035` (multiplicador, tom varia entre 1/1.035 e 1.035) e
@@ -128,9 +128,9 @@ const PAIN_BANK := preload("res://audio/PainVoiceBank.gd")
 static var _body_hits: Dictionary = {}
 static var _last_body_hit: Dictionary = {}
 
-## Load every authored take under the loading curtain, without choosing a take,
-## advancing gameplay RNG, starting a voice or changing the no-repeat history.
-## Batches are bounded to one family; filesystem work runs on loader threads.
+## Carrega todas as tomadas gravadas sob a cortina de carregamento, sem escolher tomada,
+## avançar o RNG de jogo, iniciar voz ou mudar o histórico de não repetição.
+## Lotes ficam limitados a uma família; o trabalho de sistema de arquivos roda nas threads do loader.
 static func prewarm_gameplay_banks(tree: SceneTree) -> void:
 	await FIREFLY.prewarm(tree)
 	for id in VARIANT_BASE:
@@ -156,11 +156,11 @@ static func prewarm_gameplay_banks(tree: SceneTree) -> void:
 	var singles: Array[String] = []
 	for key in SINGLE_SAMPLES: singles.append(key)
 	await _prewarm_samples(singles,tree)
-	# Procedural waveforms also belong to first use, not an active shot/bounce.
+	# Formas de onda procedurais também são do primeiro uso, não de um tiro/quique ativo.
 	for family in GUN_BODY:
 		gun_body(family)
 		await tree.process_frame
-	# Recorded pumps were loaded by FIREFLY.prewarm; selecting a take here would advance gameplay RNG.
+	# Os pumps gravados foram carregados por FIREFLY.prewarm; escolher uma tomada aqui avançaria o RNG de jogo.
 	if FIREFLY.count("weapons_fire","shotgun_pump") == 0: shotgun_pump()
 	punch_swing()
 	bat_swing()
@@ -198,8 +198,8 @@ static func _prewarm_samples(keys: Array[String], tree: SceneTree) -> void:
 		else:
 			wav(key)
 
-## Retain imported reload banks while the loading curtain is still active.
-## Request one weapon's three takes together and fetch only after loading ends.
+## Retém os bancos de recarga importados enquanto a cortina de carregamento está ativa.
+## Pede as três tomadas de uma arma juntas e só busca depois que o carregamento termina.
 static func prewarm_reload_banks(tree: SceneTree) -> void:
 	for weapon_id in RELOAD_WEAPONS:
 		var keys: Array[String] = []
@@ -332,8 +332,8 @@ static func reload_seconds(weapon_id: String) -> float:
 
 # --- Geradores procedurais (cópia das fórmulas V1) ------------------------------
 
-## Temporary tube-loading Foley: two hand-to-belt gestures and a final bolt click.
-## No pump stroke. Deterministic takes are generated only under the loading curtain.
+## Foley provisório de carregamento pelo tubo: dois gestos da mão ao cinto e um clique final do ferrolho.
+## Sem golpe de pump. Tomadas determinísticas só são geradas sob a cortina de carregamento.
 static func _semiauto_reload(index: int) -> AudioStreamWAV:
 	var key := "semiauto_reload_"+str(index)
 	if _generated.has(key): return _generated[key]

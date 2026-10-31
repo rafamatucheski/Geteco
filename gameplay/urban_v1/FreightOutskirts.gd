@@ -1,7 +1,7 @@
 extends Node3D
-## Rural extension in Harbor world coordinates. OriginalWorldData owns its
-## streamed physical ground and road; this node adds static, spatially batched
-## woodland without another overlapping floor collider or a per-frame loop.
+## Extensão rural nas coordenadas de mundo do Harbor. OriginalWorldData é dono do
+## chão físico e da via em streaming; este nó acrescenta mata estática, agrupada
+## espacialmente, sem outro colisor de piso sobreposto nem loop por quadro.
 const LAND := Rect2(-430, -160, 350, 318)
 const SECRET_CELLAR_OPENING := Rect2(-413.25,85.35,6.10,3.30)
 const SITE_CLEARANCE := Rect2(-394, -118, 111, 125)
@@ -26,8 +26,8 @@ func _ready() -> void:
 	add_child(_trunks)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 9282026
-	# A loose, irregular lattice prevents intersecting trunks and keeps all
-	# canopy meshes away from the truck corridor and the company's fence.
+	# Uma grade solta e irregular impede troncos se cruzando e mantém todas as
+	# malhas de copa longe do corredor dos caminhões e da cerca da empresa.
 	for x in range(-422, -99, 12):
 		for z in range(-150, 151, 12):
 			var point := Vector2(float(x)+rng.randf_range(-3.5,3.5),float(z)+rng.randf_range(-3.5,3.5))
@@ -42,7 +42,7 @@ func _ready() -> void:
 	for index in 72:
 		var point := Vector2(rng.randf_range(-422,-101),rng.randf_range(-153,150))
 		if not _available(point,8.6): continue
-		# Low stones are below a normal walking step, not false solid boulders.
+		# Pedras baixas ficam abaixo de um passo normal de caminhada, não pedregulhos sólidos falsos.
 		_put("stone",Vector3(point.x,0.055,point.y),Vector3(rng.randf_range(.25,.65),.11,rng.randf_range(.3,.8)),rng.randf()*TAU,Color.WHITE)
 	for index in 12000:
 		var point := Vector2(rng.randf_range(-422,-101),rng.randf_range(-153,150))
@@ -52,13 +52,13 @@ func _ready() -> void:
 	_flush()
 
 static func _available(point: Vector2, road_clearance: float) -> bool:
-	# Reserve the marked motocross park and its access; trunks must not pierce ramps.
+	# Reserva o parque de motocross marcado e o acesso dele; troncos não podem furar rampas.
 	if preload("res://activities/motocross/MotocrossCourse.gd").BOUNDS.grow(4).has_point(point): return false
 	if Rect2(-229,-40,9,75).has_point(point): return false
-	# Keep the rental porch, picnic seats and parked motorcycle bays free.
+	# Mantém livres a varanda de aluguel, os bancos de piquenique e as vagas de moto.
 	if Rect2(-240,-41,30,18).grow(2).has_point(point): return false
 	if SITE_CLEARANCE.grow(5.0).has_point(point): return false
-	# Keep the village, its back-yard paths and the truck approach free of trunks.
+	# Mantém a vila, os caminhos dos quintais e a aproximação dos caminhões sem troncos.
 	if Rect2(-418,62,176,88).grow(5.0).has_point(point): return false
 	for index in VILLAGE_ROAD.size()-1:
 		if point.distance_to(Geometry2D.get_closest_point_to_segment(point,VILLAGE_ROAD[index],VILLAGE_ROAD[index+1])) < 10.0: return false
@@ -67,8 +67,8 @@ static func _available(point: Vector2, road_clearance: float) -> bool:
 	return true
 
 func _build_resources() -> void:
-	# One shared wood mesh includes the tapered trunk and four forked branches.
-	# Their dark/light faces read as long bark furrows without texture sampling.
+	# Uma malha de madeira compartilhada inclui o tronco afunilado e quatro galhos bifurcados.
+	# As faces escuras/claras parecem sulcos longos de casca sem amostrar textura.
 	_meshes["trunk"] = _wood_mesh()
 	for variant in 3: _meshes["crown_%d"%variant] = _canopy_mesh(variant)
 	var crown := SphereMesh.new()
@@ -90,7 +90,7 @@ func _build_resources() -> void:
 
 static func _face(surface: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, tint: Color) -> void:
 	var normal := (b-a).cross(c-a).normalized()
-	# Godot front faces are clockwise. Keep outward normals and expose the bark.
+	# No Godot as faces frontais são horárias. Mantém as normais para fora e expõe a casca.
 	for point in [a,c,b]:
 		surface.set_normal(normal)
 		surface.set_color(tint)
@@ -113,8 +113,8 @@ static func _limb(surface: SurfaceTool, start: Vector3, finish: Vector3, radius:
 		_face(surface,finish,top_b,top_a,tint)
 
 static func _shrub_mesh() -> ArrayMesh:
-	# Replace the old spherical shrub with 12 broad folded leaves (48 triangles).
-	# Same footprint, placements and MultiMesh batches; no added instances/physics.
+	# Substitui o arbusto esférico antigo por 12 folhas largas dobradas (48 triângulos).
+	# Mesma área, posições e lotes de MultiMesh; sem instâncias/física acrescentadas.
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for leaf in 12:
@@ -143,8 +143,8 @@ static func _wood_mesh() -> ArrayMesh:
 	for root_index in 5:
 		var angle := root_index*TAU/5
 		_limb(surface,Vector3(0,.02,0),Vector3(cos(angle)*.11,-.003,sin(angle)*.11),.012,.15,5)
-	# Keep branch cross sections in normalized tree-height units, then scale
-	# X/Z by radius/.04 and Y by total height (avoids flattened giant limbs).
+	# Mantém as seções dos galhos em unidades normalizadas de altura da árvore e então escala
+	# X/Z por raio/.04 e Y pela altura total (evita galhos gigantes achatados).
 	for index in 4:
 		var angle := float(index)*2.39+.3
 		var start := Vector3(0,.35+float(index)*.045,0)

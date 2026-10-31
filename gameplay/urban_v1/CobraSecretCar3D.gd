@@ -1,6 +1,6 @@
 extends Node
 
-## The original Ashbend corner parking and its single discoverable copper coupe.
+## O estacionamento original da esquina de Ashbend e o único cupê cobre descobrível dele.
 const PARKING := Vector3(7050.0 / 16.0, .12, 2290.0 / 16.0)
 const VEHICLE_ID := "ashbend_copper_coupe"
 var session

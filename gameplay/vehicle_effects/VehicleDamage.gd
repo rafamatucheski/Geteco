@@ -52,8 +52,8 @@ var _driving_layer := 0
 var _driving_mask := 0
 var _driving_physics := false
 var _wreck_fire_time := 0.0
-# Dispatch suspends the current physics owner, which may change while the burn
-# child keeps running. Driving state must survive both wreck and repair.
+# O despacho suspende o dono atual da física, que pode mudar enquanto o filho
+# de queima continua rodando. O estado de direção precisa sobreviver tanto ao destroço quanto ao reparo.
 var _dispatch_suspended := false
 var _suspended_layer := 0
 var _suspended_mask := 0
@@ -149,8 +149,8 @@ func _apply_wear(wear: float) -> void:
 func _stall_apply_wear(wear: float) -> void:
 	var stage: int = clampi(int(ceil(wear * WEAR_STAGES - .35)), 0, WEAR_STAGES)
 	for material: StandardMaterial3D in vehicle._paint.materials if vehicle._paint != null else []:
-		# Compose wear on the dry finish, then restore the same water immediately.
-		# Otherwise a hit replaces wet roughness and the next rain tick rebases wet paint.
+		# Compõe o desgaste sobre o acabamento seco e então restaura na hora a mesma água.
+		# Senão um impacto substitui a rugosidade molhada e o próximo tick de chuva refaz a base da pintura molhada.
 		var water := RAIN.remove_weather_for_edit(material)
 		if not _paint_base.has(material):
 			_paint_base[material] = {"roughness": material.roughness, "metallic": material.metallic,
@@ -428,8 +428,8 @@ func _stall_wreck() -> void:
 			part.set_surface_override_material(index, replacement[_role(part.get_active_material(index) as StandardMaterial3D, surface_key)])
 	STALL_WORK.finish_slow("vehicle_damage.materials_apply",began,5000,self)
 	if vehicle.has_meta("heavy_crush_ratio"):
-		# A tank is supported by this hull. Replacing it with a jumping rigid
-		# body would push the tank up and undo the smooth drive-over collision.
+		# Um tanque é apoiado por este casco. Substituí-lo por um corpo rígido
+		# saltando empurraria o tanque para cima e desfaria a colisão suave de passar por cima.
 		vehicle.controlled = false
 		vehicle.traffic = false
 		vehicle.velocity = Vector3.ZERO
@@ -438,8 +438,8 @@ func _stall_wreck() -> void:
 		_wreck_fire_time = 0.0
 		var world := vehicle.get_parent()
 		var gameplay: Variant = world.get("gameplay") if is_instance_valid(world) else null
-		# Live crush has an owner; a loaded wreck has none. Garage admission
-		# also blocks the residual flames/light, including the fallback path.
+		# Um esmagamento ao vivo tem dono; um destroço carregado não tem. A admissão na garagem
+		# também bloqueia as chamas/luz residuais, incluindo o caminho de fallback.
 		if vehicle.has_meta("heavy_crush_source") and (not is_instance_valid(gameplay) or gameplay.state == null or gameplay.state.weapons_allowed()):
 			_wreck_fire_time = WRECK_FIRE_SECONDS
 		if _wreck_fire_time > 0:

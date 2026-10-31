@@ -1,6 +1,6 @@
 extends RefCounted
-## Accuracy changes only when firing. Recovery uses the combat clock, so pause
-## freezes it and swapping weapons cannot erase a sustained burst's bloom.
+## A precisão só muda ao atirar. A recuperação usa o relógio de combate, então a pausa
+## a congela e trocar de arma não apaga o bloom de uma rajada contínua.
 var _shots: Dictionary = {}
 
 func clear() -> void:
@@ -17,7 +17,7 @@ func shot_spread(id: String, data: Dictionary, clock: float, speed: float, aimed
 	if not data.has("category"): return base
 	var moving := float(data.get("move_spread", 0.0)) * clampf(speed / 4.0, 0.0, 1.0)
 	var extra := bloom(id, data, clock) + moving
-	# Aiming steadies the shooter; it cannot narrow a shotgun's physical pellet cone.
+	# Mirar estabiliza o atirador; não consegue estreitar o cone físico de chumbos da espingarda.
 	if aimed:
 		extra *= 0.60
 		if int(data.get("pellets", 1)) == 1: base *= 0.75

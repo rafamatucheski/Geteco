@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## Four-person rappel transport. Flight and each descending body use physics.
+## Transporte de rapel para quatro pessoas. O voo e cada corpo descendo usam física.
 const MODELS = preload("res://gameplay/police_response/air_k9/AirK9Models.gd")
 const AIRFRAME = preload("res://gameplay/police_response/air_k9/PoliceHelicopterArt.gd")
 const OFFICER = preload("res://gameplay/PoliceAgent.gd")
@@ -34,8 +34,8 @@ var rotor: Node3D
 var tail_rotor: Node3D
 var doors: Array[Node3D] = []
 var rope_mesh: MultiMeshInstance3D
-## CPU geometry is retained for physics/headless inspection; the dummy renderer
-## does not retain MultiMesh instance transforms for get_instance_transform().
+## A geometria na CPU é retida para inspeção de física/headless; o renderizador dummy
+## não retém as transformações de instância do MultiMesh para get_instance_transform().
 var rope_transforms: Array[Transform3D] = []
 var rope_control_points: Array[PackedVector3Array] = []
 var sound: AudioStreamPlayer3D
@@ -72,7 +72,7 @@ func _ready() -> void:
 	add_to_group("v2_damageable")
 	var collider := CollisionShape3D.new()
 	var shape := CylinderShape3D.new()
-	# Protect the rotor sweep and tail, not just the fuselage.
+	# Protege o giro do rotor e a cauda, não só a fuselagem.
 	shape.radius = 7.7
 	shape.height = 5.2
 	collider.shape = shape
@@ -207,15 +207,15 @@ func _physics_process(delta: float) -> void:
 			else: _fly_to(_depart_target, 21.0, delta)
 			if _mode_time > 10.0 and not director.point_on_screen(global_position, 12.0): _finish()
 			elif _mode_time > 25.0 and global_position.distance_to(_depart_target) < 2.0: _finish()
-	# Hands and harness move every physics tick: updating at a lower frequency
-	# would leave visible gaps between the glove and the rope during descent.
+	# Mãos e arnês se movem a cada tick de física: atualizar numa frequência menor
+	# deixaria vãos visíveis entre a luva e a corda durante a descida.
 	if rope_mesh.visible: _update_ropes()
 
 func _fly_to(destination: Vector3, speed: float, delta: float) -> void:
 	var offset := destination - global_position
 	var desired := offset.normalized() * minf(speed, offset.length() * 1.4)
-	# Swept collision stops the full rotor envelope. Climb over an obstruction
-	# only within a bounded ceiling; never teleport through buildings.
+	# A colisão varrida para o envelope completo do rotor. Sobe por cima de uma obstrução
+	# só dentro de um teto limitado; nunca teleporta através de prédios.
 	if offset.length() > 2.0 and test_move(global_transform, desired.normalized() * 2.8):
 		desired = Vector3.UP * 5.0 if global_position.y < (landing_zone.center as Vector3).y + 52.0 else Vector3.ZERO
 	velocity = velocity.move_toward(desired, delta * 9.0)
@@ -246,7 +246,7 @@ func _sense() -> void:
 func _update_searchlight(delta: float) -> void:
 	spotlight.visible = not dead and mode != "depart" and _searchlight_ready and director.exterior_active() and director.point_on_screen(global_position, 72.0)
 	if not spotlight.visible: return
-	# Track each physics frame, with a small search sweep after losing visual contact.
+	# Rastreia a cada quadro de física, com uma pequena varredura de busca depois de perder o contato visual.
 	var point := _searchlight_point
 	var target: Node3D = director.gameplay.pursuit_target()
 	if sees_player and is_instance_valid(target): point = target.global_position
@@ -279,8 +279,8 @@ func _spawn_rappeller(index: int) -> void:
 	if not pose.configure(officer):
 		officer.queue_free()
 		return
-	# The transport shell encloses the door; only the descending officer ignores
-	# its own transport, while remaining solid to scenery, vehicles and people.
+	# A casca do transporte envolve a porta; só o policial descendo ignora
+	# o próprio transporte, continuando sólido para cenário, veículos e pessoas.
 	officer.add_collision_exception_with(self)
 	rappellers.append({"officer": officer, "point": point, "index": index, "blocked": 0.0,
 		"pose": pose, "phase": "attach", "phase_time": 0.0, "start_height": officer.global_position.y, "contacts": {}})
@@ -299,7 +299,7 @@ func _update_rappel(delta: float) -> void:
 			_release_slot()
 			continue
 		if officer.get("dead") == true:
-			# A casualty remains physical while lowered, then is released on the floor.
+			# Uma baixa continua física enquanto é descida e depois é solta no chão.
 			officer.collision_mask = 7
 		var point: Vector3 = entry.point
 		entry.phase_time = float(entry.phase_time) + delta
@@ -343,8 +343,8 @@ func _update_rappel(delta: float) -> void:
 		if _depart_requested: _start_departure()
 		else: _after_drop()
 	elif _mode_time > 25.0:
-		# Abort safely: all remaining live bodies recover their normal collision
-		# and gravity. There is no forced placement through an occupied column.
+		# Aborta com segurança: todos os corpos vivos restantes recuperam a colisão normal
+		# e a gravidade. Não há colocação forçada através de uma coluna ocupada.
 		for entry in rappellers:
 			if is_instance_valid(entry.officer): _release_officer(entry.officer)
 		rappellers.clear()
@@ -421,7 +421,7 @@ func _after_drop() -> void:
 func begin_departure() -> void:
 	if mode == "depart" or dead: return
 	_depart_requested = true
-	# Finish lowering the people already on ropes before moving the aircraft.
+	# Termina de descer as pessoas que já estão nas cordas antes de mover a aeronave.
 	if mode == "rappel" and not rappellers.is_empty():
 		return
 	_start_departure()
@@ -471,7 +471,7 @@ func _build_ropes() -> void:
 	cylinder.bottom_radius = 0.028
 	cylinder.height = 1.0
 	cylinder.radial_segments = 5
-	# Each rope retains ten articulated segments; only redundant rings are removed.
+	# Cada corda mantém dez segmentos articulados; só os anéis redundantes são removidos.
 	cylinder.rings = 0
 	cylinder.material = MODELS.material(Color("b7a477"))
 	var multi := MultiMesh.new()

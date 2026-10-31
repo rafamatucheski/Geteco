@@ -1,6 +1,6 @@
 extends Node
-## Shared collision presentation for player and traffic, backed by offline panel geometry.
-## Originals stay in the vehicle for deformation/repair; detached copies live in the world.
+## Apresentação de colisão compartilhada entre jogador e trânsito, apoiada em geometria de painel preparada offline.
+## Os originais ficam no veículo para deformação/reparo; as cópias soltas moram no mundo.
 const DEBRIS := preload("res://gameplay/vehicle_effects/VehiclePanelDebris.gd")
 const PART_IDS := ["hood","bumper_front","bumper_rear"]
 const MIN_CLOSING_SPEED := 5.0
@@ -51,7 +51,7 @@ func detached_count() -> int:
 
 func impact(point: Vector3, closing_speed: float, inward: Vector3, presentation_velocity := Vector3.INF) -> void:
 	if not is_finite(closing_speed) or closing_speed<MIN_CLOSING_SPEED or not point.is_finite() or not inward.is_finite(): return
-	# Only the actual front/rear contact can tear its fixings. Side scrapes still dent the shell.
+	# Só o contato real na frente/traseira pode arrancar as fixações. Raspões laterais ainda amassam a casca.
 	var longitudinal := absf(point.z)/maxf(vehicle.half_length,.1)
 	var lateral := absf(point.x)/maxf(vehicle.half_width,.1)
 	if longitudinal<.62 or longitudinal<lateral*.80: return
@@ -72,7 +72,7 @@ func impact(point: Vector3, closing_speed: float, inward: Vector3, presentation_
 func _detach(id: String, entry: Dictionary, closing_speed: float, inward: Vector3, point: Vector3, presentation_velocity: Vector3) -> void:
 	var original: MeshInstance3D = entry.node
 	if not is_instance_valid(original) or original.mesh==null: return
-	# Mesh deformation allocates replacements, so this current mesh is immutable thereafter.
+	# A deformação de malha aloca substitutas, então esta malha atual fica imutável dali em diante.
 	var copy := MeshInstance3D.new()
 	copy.name = "DetachedPanel"
 	copy.mesh = original.mesh
@@ -91,7 +91,7 @@ func _detach(id: String, entry: Dictionary, closing_speed: float, inward: Vector
 	body.panel_mesh = copy
 	body.mass = 12.0 if id=="hood" else 8.0
 	body.collision_layer = 0
-	body.collision_mask = 1 # World only. No traffic, pedestrian or owner collision.
+	body.collision_mask = 1 # Só o mundo. Sem colisão com trânsito, pedestres ou o dono.
 	body.continuous_cd = true
 	body.linear_damp = .35
 	body.angular_damp = .8
@@ -122,14 +122,14 @@ func _detach(id: String, entry: Dictionary, closing_speed: float, inward: Vector
 	launch = launch.normalized()
 	var inherited: Vector3 = presentation_velocity if presentation_velocity.is_finite() else vehicle.horizontal_velocity
 	if id=="hood":
-		# Relative travel clears the cabin before descent; the rear edge turns upward.
-		# Clearance includes the panel half-width because its center alone can clear a roof.
+		# O deslocamento relativo passa da cabine antes da descida; a borda traseira vira para cima.
+		# A folga inclui a meia largura do painel porque só o centro dele pode passar de um teto.
 		var side := 1.0 if point.x>=0 else -1.0
 		var lateral := clampf((vehicle.half_width+scaled_bounds.size.x*.5+.20)/.60,3.0,4.0)
 		body.linear_velocity = inherited + launch*clampf(closing_speed*.12,1.0,4.0) + vehicle.global_basis.x*side*lateral + Vector3.UP*5.0
 		body.angular_velocity = vehicle.global_basis*Vector3(-.6,0,.2*side)
 	else:
-		# Broken bumpers fall out of their fixing, away from the owner's body.
+		# Para-choques quebrados caem da fixação, para longe do corpo do dono.
 		var outward := -vehicle.global_basis.z if id=="bumper_front" else vehicle.global_basis.z
 		body.linear_velocity = inherited + outward*(.5 if id=="bumper_front" else 2.0) + Vector3.DOWN*.8
 		body.angular_velocity = vehicle.global_basis*Vector3(1.4,signf(original.position.x)*.6,.7)

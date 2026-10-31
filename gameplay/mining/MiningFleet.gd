@@ -1,5 +1,5 @@
 extends RefCounted
-## Industrial vehicles use the production Vehicle/Driving/save path.
+## Veículos industriais usam o caminho de produção Vehicle/Driving/save.
 const IDS := ["mining_backhoe", "mining_tractor", "mining_haul_truck"]
 const DATA := {
 	"mining_backhoe": {"label":"Retroescavadeira", "bounds_size":[2.8,3.0,4.8], "mass":8.0, "max_speed":150.0, "acceleration":950.0, "turn_speed":1.7, "colors":["d3a238ff"], "durability":950.0},

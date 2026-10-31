@@ -1,6 +1,6 @@
 extends RefCounted
-## Fine room-local routing uses the native solid footprints. Its grid is
-## shared by visitors, rebuilt on room/solid changes, and never moves bodies.
+## O roteamento fino local da sala usa as áreas sólidas nativas. A grade é
+## compartilhada pelos visitantes, reconstruída em mudanças de sala/sólidos e nunca move corpos.
 const CELL := .65
 var room: Node3D
 var grid: AStarGrid2D

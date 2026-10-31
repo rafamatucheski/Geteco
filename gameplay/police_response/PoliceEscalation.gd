@@ -1,5 +1,5 @@
 extends RefCounted
-## Confirmed consequences, not weapon fire rate, govern the response.
+## Consequências confirmadas, não a cadência de tiro da arma, governam a resposta.
 const SHOT_EPISODE_SECONDS := 3.0
 const FATAL_POINTS_FIVE := 180
 const FATAL_POINTS_SIX := 360

@@ -94,7 +94,7 @@ func drink(id: String) -> bool:
 	session.state.equip_weapon("fists")
 	_publish_effect()
 	session.save_game()
-	# Close the modal so the deliberate sip and its effect remain visible.
+	# Fecha o modal para que o gole deliberado e o efeito dele continuem visíveis.
 	if ui.visible: session.close_menu()
 	var sip:=preload("res://gameplay/wine/WineSip.gd").new()
 	sip.player=session.world.player

@@ -1,6 +1,6 @@
 extends "res://gameplay/dispatch/DispatchDriver.gd"
-## Scheduled civilian convoy uses the same collision-aware street controller as
-## normal traffic. The service owns route/formation; Vehicle owns body movement.
+## O comboio civil agendado usa o mesmo controlador de rua com colisão do
+## trânsito normal. O serviço é dono da rota/formação; Vehicle é dono do movimento do corpo.
 const CONTACT_PATIENCE := 5.0
 const CONTACT_ATTEMPTS := 3
 var contact_attempts := 0
@@ -35,8 +35,8 @@ func pending_recovery() -> bool:
 	return is_instance_valid(vehicle) and (vehicle.backoff_time > 0.0 or vehicle.bypass_side != 0.0 or vehicle.bypass_blend > .05 or vehicle._merging_back)
 
 func _recover_contact(delta: float) -> bool:
-	# Native bypass suppresses its stopped home-lane blocker before the whole hull
-	# has necessarily passed it. An oblique bumper can still be physically pinned.
+	# O desvio nativo suprime o bloqueador parado na faixa de origem antes que o casco inteiro
+	# tenha necessariamente passado por ele. Um para-choque oblíquo ainda pode ficar preso fisicamente.
 	if not is_finite(_contact_anchor) or offset-_contact_anchor >= 8.0:
 		_contact_anchor = offset
 		contact_attempts = 0

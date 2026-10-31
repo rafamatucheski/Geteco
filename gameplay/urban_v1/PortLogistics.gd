@@ -1,5 +1,5 @@
 extends "res://gameplay/urban_v1/PortCargoOperations.gd"
-## One conserved truck per quay. Only destroyed trucks enter the 24-hour queue.
+## Um caminhão conservado por cais. Só caminhões destruídos entram na fila de 24 horas.
 const HAUL := preload("res://gameplay/urban_v1/PortHaulRoutes.gd")
 const DEPOT := preload("res://gameplay/urban_v1/VerticeCompany.gd")
 var depot: Node3D
@@ -23,9 +23,9 @@ func _ready() -> void:
 	set_physics_process(true)
 
 func game_seconds() -> float:
-	# Virtual units: one complete visible day = 600, regardless of the weather
-	# system's real-time day length. Sleeping advances the same visible clock;
-	# the activities calendar has its own unrelated 600-second quota period.
+	# Unidades virtuais: um dia visível completo = 600, independente da duração do dia
+	# em tempo real do sistema de clima. Dormir avança o mesmo relógio visível;
+	# o calendário de atividades tem o próprio período de cota de 600 segundos, sem relação.
 	if session.weather == null: return maxf(0,_game_clock)
 	var phase := fposmod(float(session.weather.time_of_day),1.0)
 	if _game_clock<0:
@@ -36,8 +36,8 @@ func game_seconds() -> float:
 	return _game_clock
 
 func _operations_open() -> bool:
-	# The arrival continues the ferry's rainy night. Quay handling runs around
-	# the clock; _shift_open still governs daytime freight offers to the player.
+	# A chegada continua a noite chuvosa da balsa. O manuseio no cais funciona
+	# o dia inteiro; _shift_open ainda governa as ofertas diurnas de carga ao jogador.
 	return session.weather != null
 
 func _physics_process(delta: float) -> void:
@@ -50,8 +50,8 @@ func _physics_process(delta: float) -> void:
 		_tick_replacements()
 		if active: _ensure_work_vehicles()
 		elif session.state.region_id == "harbor" and session.urban_operations.world_is_continuous() and _work_shift_open:
-			# A visitor going straight to the company must still see its fleet.
-			# Budget one spawn per scan, on prepared native port ground.
+			# Um visitante que vai direto à empresa ainda precisa ver a frota dela.
+			# Orçamento de um spawn por varredura, em chão nativo do porto preparado.
 			for i in work_trucks.size():
 				var state: Dictionary = work_trucks[i]
 				if is_instance_valid(state.truck) or state.phase != "approach" or state.respawn_at>=0: continue
@@ -74,8 +74,8 @@ func _physics_process(delta: float) -> void:
 			if freight.parked_for_loading(vehicle,index):
 				_tick_crane(index,delta)
 			else:
-				# Moving out of the marked bay restarts the lift; cargo must never
-				# chase a moving bed or attach remotely.
+				# Sair da baia marcada reinicia o içamento; a carga nunca pode
+				# perseguir uma caçamba em movimento nem se anexar à distância.
 				cranes[index].clock = 0.0
 				_sync_crane(index)
 			continue
@@ -143,8 +143,8 @@ func _finish_truck_load(index: int) -> void:
 	cranes[index].visual.show()
 	var truck = work_trucks[index].truck
 	if not is_instance_valid(truck): return
-	# The load reaches above the empty cab's hull. Raise its physical envelope
-	# and rotation probe while loaded; do not let it pass through low beams.
+	# A carga sobe acima do casco da cabine vazia. Eleva o envelope físico
+	# e a sonda de rotação enquanto carregado; não deixa passar através de vigas baixas.
 	if not truck.has_meta("empty_cargo_hull"):
 		truck.set_meta("empty_cargo_hull",truck.shape.shape.size)
 	var size: Vector3 = truck.get_meta("empty_cargo_hull")
@@ -166,9 +166,9 @@ func _reset_truck_load(index: int) -> void:
 
 func _sync_crane(index: int) -> void:
 	super._sync_crane(index)
-	# A suspended load uses the landing-clearance query. Enabling its old
-	# ground-only static box during the last lowering frame overlaps the truck
-	# hull and collision recovery can push the carrier through the quay floor.
+	# Uma carga suspensa usa a consulta de folga de pouso. Ligar a antiga caixa
+	# estática só de chão durante o último quadro de descida sobrepõe o casco do
+	# caminhão e a recuperação de colisão pode empurrar o veículo através do piso do cais.
 	if work_trucks[index].phase == "loading" or work_trucks[index].loaded:
 		cranes[index].collision.set_deferred("disabled",true)
 
@@ -214,10 +214,10 @@ func _tick_truck(index: int, delta: float) -> void:
 				cranes[index].visual.reparent(self,true)
 				cranes[index].visual.reset_physics_interpolation()
 		"delivering":
-			# Automated dock handling continues after the company's public hours.
+			# O manuseio automatizado da doca continua depois do horário público da empresa.
 			if absf(truck.speed) > .25: return
 			var fraction := 1-float(state.remaining)/12.0
-			# Keep the complete drop zone free; never lower a container onto an actor.
+			# Mantém a zona de descarga inteira livre; nunca desce um contêiner sobre um ator.
 			if fraction > .7 and _cargo_bay_occupied(HAUL.dock(index)+Vector3(0,.18,-5.5),[truck.get_rid()]): return
 			state.remaining = maxf(0,state.remaining-delta)
 			depot.unload_pose(index,cranes[index].visual,state.unload_origin,1-state.remaining/12.0)
@@ -232,9 +232,9 @@ func _tick_truck(index: int, delta: float) -> void:
 			super._tick_truck(index,delta)
 
 func _yield_crossing_vehicle(state: Dictionary,truck,delta: float) -> void:
-	# An eight-metre carrier can meet a turning van nose-to-side. The generic
-	# traffic recovery handles head-on pairs; give this longer vehicle room to
-	# yield physically as well, only when its complete rear corridor is clear.
+	# Um carregador de oito metros pode encontrar uma van fazendo curva de frente contra a lateral. A
+	# recuperação genérica de trânsito trata pares de frente; dá a este veículo mais longo espaço para
+	# ceder fisicamente também, só quando o corredor traseiro inteiro dele está livre.
 	state.yield_wait = maxf(0,float(state.get("yield_wait",0))-delta)
 	var other = truck.blocker
 	if state.yield_wait>0 or truck.junction_wait or truck.stall_time<12 or absf(truck.speed)>.2: return
@@ -258,12 +258,12 @@ func _yield_crossing_vehicle(state: Dictionary,truck,delta: float) -> void:
 func _work_truck_destroyed(index: int) -> void:
 	var state: Dictionary = work_trucks[index]
 	if float(state.get("respawn_at",-1)) >= 0: return
-	# Preserve the shared crane cargo before the wreck's subtree can be removed.
+	# Preserva a carga de guindaste compartilhada antes que a subárvore do destroço possa ser removida.
 	if is_instance_valid(cranes[index].visual):
 		cranes[index].visual.hide()
 		if cranes[index].visual.get_parent() != self:
-			# tree_exiting can arrive after the cargo child has left the tree.
-			# Hidden cargo needs no world transform until the next crane reset.
+			# tree_exiting pode chegar depois que o filho de carga saiu da árvore.
+			# Carga escondida não precisa de transform de mundo até o próximo reinício do guindaste.
 			cranes[index].visual.reparent(self,cranes[index].visual.is_inside_tree())
 	state.loaded = false
 	state.respawn_at = game_seconds()+600.0

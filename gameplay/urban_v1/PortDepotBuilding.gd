@@ -1,6 +1,6 @@
 extends Node3D
 ## Vértice: a working inland distribution warehouse, in local lot coordinates.
-## Pure presentation/physics. Scheduling, workers and freight belong to the depot.
+## Pura apresentação/física. Agendamento, trabalhadores e carga pertencem ao depósito.
 
 class SlidingDoor extends Node3D:
 	var closed_position := Vector3.ZERO
@@ -92,7 +92,7 @@ func set_lights_active(active: bool) -> void:
 	for light in interior_lights: light.visible = active
 
 func _build_shell() -> void:
-	# Native terrain is the support body: the floor finish never creates a step.
+	# O terreno nativo é o corpo de apoio: o acabamento do piso nunca cria degrau.
 	_box("PolishedConcrete", Vector3(0, .02, -1), Vector3(56, .03, 38), "floor")
 	_box("OfficeFloor", Vector3(35, .02, 15), Vector3(14, .03, 30), "floor")
 	_wall("WestWall", Vector3(-28, 0, -1), Vector3(.4, 9, 38))
@@ -134,7 +134,7 @@ func _wall(id: String, base: Vector3, size: Vector3) -> void:
 	var high := size
 	high.y = size.y - 1.15
 	_box(id + "Upper", base + Vector3.UP * (1.15 + high.y * .5), high, "cladding", true, _facade)
-	# Mortar courses are shallow trim within the supporting wall collision.
+	# As fiadas de argamassa são acabamento raso dentro da colisão da parede de apoio.
 	for y in [.3, .6, .9]:
 		var course := low + Vector3(.015, 0, .015)
 		course.y = .022
@@ -161,7 +161,7 @@ func _build_roof() -> void:
 		_box("VentilatorCap", Vector3(0, 12.23, z), Vector3(1.85, .14, 1.85), "seam", false, _roof)
 		for y in [11.6, 11.8, 12.0]:
 			_box("VentLouver", Vector3(0, y, z + .72), Vector3(1.4, .05, .09), "dark", false, _roof)
-	# Interior beams and braces stay with the roof cutaway.
+	# Vigas e escoras internas ficam com o corte do telhado.
 	for z in [-18.0, -6.0, 6.0, 16.0]:
 		_box("RoofTieBeam", Vector3(0, 8.6, z), Vector3(55.5, .24, .22), "steel", false, _roof)
 		for x in [-20.0, 0.0, 20.0]:
@@ -219,7 +219,7 @@ func _build_office() -> void:
 	_box("EntranceCanopy", Vector3(35, 3.4, 31.4), Vector3(5.7, .2, 3.4), "teal", false, _roof)
 	for x in [28.6, 41.4]:
 		_box("OfficeRoofFascia", Vector3(x, 3.6, 15), Vector3(.18, .65, 31), "teal", false, _roof)
-	# Desks stay away from the continuous warehouse/office passage at z8.
+	# As mesas ficam longe da passagem contínua armazém/escritório em z8.
 	for z in [14.0, 21.0]:
 		_box("OfficeDesk", Vector3(39.3, .72, z), Vector3(3, .18, 1.5), "wood", true)
 		for x in [38.0, 40.6]:
@@ -322,8 +322,8 @@ func _box(id: String, at: Vector3, size: Vector3, material_key: String, solid :=
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	var local_transform := Transform3D(Basis.from_euler(angles), at)
-	# The service roof needs each authored object, not the AABB of a material
-	# batch joining distant vents into one invisible wall.
+	# O telhado de serviço precisa de cada objeto definido, não da AABB de um lote de material
+	# que junta respiros distantes numa parede invisível.
 	if group==_roof:
 		var bounds: AABB = local_transform*mesh.get_aabb()
 		if bounds.end.y>11.45 and size.x<10 and size.z<10:

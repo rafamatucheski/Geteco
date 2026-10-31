@@ -1,6 +1,6 @@
 extends RefCounted
-## Submit the two real shared interior materials under the existing loading cover.
-## This prepares their shaders, not every mesh-specific graphics pipeline.
+## Submete os dois materiais de interior compartilhados reais sob a cobertura de carregamento existente.
+## Isso prepara os shaders deles, não cada pipeline gráfico específico de malha.
 const INTERIOR = preload("res://gameplay/VehicleInterior.gd")
 const GUARDS = preload("res://gameplay/emergency/EffectsPrewarm.gd")
 const DRAW_FRAMES := 3

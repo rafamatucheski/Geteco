@@ -1,5 +1,5 @@
 extends RefCounted
-## Ten persistent silhouettes, independent of rank, weapons and collision.
+## Dez silhuetas persistentes, independentes de patente, armas e colisão.
 const PROFILES := [
 	{"height": 1.04, "width": 0.86, "depth": 0.88, "limb": 0.90, "skin": "c99573", "hair": "30251f"},
 	{"height": 1.00, "width": 1.00, "depth": 1.00, "limb": 1.00, "skin": "87583f", "hair": "201c1b", "woman": true, "hairstyle": "bun"},
@@ -14,7 +14,7 @@ const PROFILES := [
 ]
 static var next_model := 0
 
-# Explicit identities survive rebuilding the rig and do not depend on RNG.
+# Identidades explícitas sobrevivem à reconstrução do rig e não dependem do RNG.
 const HAIR := [0, 5, 7, 1, 0, 0, 7, 4, 5, 2]
 const BEARD := [0, 0, 1, 0, 0, 2, 1, 0, 0, 3]
 
@@ -32,11 +32,11 @@ static func body_profile(appearance: Dictionary) -> Dictionary:
 	return p
 
 static func uniform_body(material: Material, woman := false) -> MeshInstance3D:
-	# Same ring construction as Dante's overshirt: shoulder width is retained
-	# up to the sleeve joint instead of tapering into a capsule's rounded tip.
+	# Mesma construção em anéis da camisa do Dante: a largura do ombro é mantida
+	# até a junta da manga em vez de afinar na ponta arredondada de uma cápsula.
 	var rings := [Vector4(-.20, .16, .145, 0), Vector4(-.08, .17, .16, 0), Vector4(.12, .175, .15, 0), Vector4(.20, .18, .12, 0), Vector4(.25, .065, .06, 0)]
 	if woman:
-		# Tailoring stays under the same duty belt, pockets and ballistic vest.
+		# O corte da roupa fica sob o mesmo cinto de serviço, bolsos e colete balístico.
 		rings[0].y *= 1.04
 		rings[1].y *= .90
 		rings[3].y *= .96

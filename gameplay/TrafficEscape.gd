@@ -155,7 +155,7 @@ func tick(car: CharacterBody3D, delta: float) -> void:
 	car.set_meta("traffic_escape_shift",curve.get_meta("traffic_escape_shift"))
 
 func _retire(car: CharacterBody3D) -> void:
-	# Only ambient vehicles may be removed; never a mission car or player property.
+	# Só veículos ambientes podem ser removidos; nunca carro de missão nem propriedade do jogador.
 	if not car.get_meta("ambient_traffic",false): return
 	retiring=true
 	_fade=0

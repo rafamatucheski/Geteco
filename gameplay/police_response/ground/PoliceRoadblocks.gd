@@ -1,6 +1,6 @@
 extends RefCounted
-## Bounded response: at most two physical roadblocks, one placement attempt per
-## 18 seconds and three candidates checked. All positions come from road graph.
+## Resposta limitada: no máximo duas barreiras físicas, uma tentativa de colocação a cada
+## 18 segundos e três candidatos checados. Todas as posições vêm do grafo de vias.
 const BLOCK := preload("res://gameplay/police_response/ground/PoliceRoadblock.gd")
 const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const PURSUIT := preload("res://gameplay/dispatch/PursuitRules.gd")
@@ -113,7 +113,7 @@ func try_place(anchor: Vector3) -> Node3D:
 		if near_existing: continue
 		checked += 1
 		if checked > 3: break
-		# Clearance is checked over the complete formation, including the strip.
+		# A folga é checada sobre a formação completa, incluindo a faixa.
 		if not controller._space_clear(Vector3(width,1.15,2.0),point,yaw,controller.no_exclusions): continue
 		var plan: Dictionary = controller.router.plan(anchor,candidate.point)
 		if not plan.ok or plan.length > 180.0: continue

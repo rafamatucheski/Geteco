@@ -1,5 +1,5 @@
 extends Node3D
-## A small recurring evening meet on the persisted world calendar, never quota time.
+## Um pequeno encontro noturno recorrente no calendário persistido do mundo, nunca no tempo de cota.
 const CAR := preload("res://gameplay/classic_meet/ClassicMeetCar.gd")
 const GUEST := preload("res://gameplay/classic_meet/ClassicMeetGuest.gd")
 const EVENINGS := [1,3,5] # Monday is zero: Tuesday, Thursday, Saturday.
@@ -55,8 +55,8 @@ func refresh_context() -> void:
 	var player: Node3D = session.world.player
 	var near := is_instance_valid(player) and player.global_position.distance_to(site.global_position) < (RELEASE_DISTANCE if active else ACTIVATE_DISTANCE)
 	var wanted_active := outdoors and near
-	# Teleport/restore may place the player in a formerly empty parked footprint.
-	# Keep the population asleep until its physical space is free again.
+	# Teleporte/restauração pode pôr o jogador numa vaga antes vazia.
+	# Mantém a população dormindo até o espaço físico dela ficar livre de novo.
 	if wanted_active and not active and not _sleeping.is_empty():
 		for car in cars:
 			if is_instance_valid(car) and not _car_space_clear(car.global_position,car.rotation.y):
@@ -162,8 +162,8 @@ func _spawn_next() -> void:
 		guest.died.connect(func(_actor): _record_casualties())
 		var path: PackedVector3Array = spec.get("route",PackedVector3Array())
 		for point in path: guest.route.append(site.to_global(point))
-		# Customer routes describe an approach to the facade. Return along that
-		# same aisle, never close the loop diagonally through occupied bays.
+		# As rotas de cliente descrevem uma aproximação até a fachada. Volta pelo
+		# mesmo corredor, nunca fecha o laço na diagonal através de vagas ocupadas.
 		for point_index in range(path.size()-2,0,-1): guest.route.append(site.to_global(path[point_index]))
 		add_child(guest)
 		guests.append(guest)
@@ -171,8 +171,8 @@ func _spawn_next() -> void:
 		return
 
 func _guest_space_clear(point: Vector3) -> bool:
-	# FullSession.position_clear intentionally excludes the player for relocation.
-	# Ambient admission must include them, otherwise a guest can spawn inside them.
+	# FullSession.position_clear exclui o jogador de propósito para realocação.
+	# A admissão ambiente precisa incluí-lo, senão um convidado pode nascer dentro dele.
 	if not session.position_clear(point): return false
 	var shape := CapsuleShape3D.new()
 	shape.radius = .34
@@ -189,7 +189,7 @@ func _car_space_clear(point: Vector3, yaw: float) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = shape
 	query.transform = Transform3D(Basis(Vector3.UP,yaw),point+Vector3.UP*1.0)
-	query.collision_mask = 6 # Dynamic actor/vehicle layers, not the supporting pavement.
+	query.collision_mask = 6 # Camadas dinâmicas de ator/veículo, não o calçamento de apoio.
 	return get_world_3d().direct_space_state.intersect_shape(query,1).is_empty()
 
 func _clear_population() -> void:

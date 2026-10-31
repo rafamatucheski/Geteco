@@ -1,5 +1,5 @@
 extends RefCounted
-## Shared contact identity for a bullet and an empty case at the actual hit.
+## Identidade de contato compartilhada por uma bala e uma cápsula vazia no ponto real de acerto.
 const GROUND := preload("res://gameplay/vehicle_effects/VehicleSurfaceProbe.gd")
 const SOFT := ["dirt", "sand", "grass", "snow"]
 const MATERIALS := ["flesh", "metal", "concrete", "wood", "glass", "dirt", "sand", "grass", "snow"]
@@ -23,7 +23,7 @@ static func resolve(collider: Object, point := Vector3.INF, normal := Vector3.ZE
 		cursor = cursor.get_parent()
 	if floor_kind in SOFT: return floor_kind
 	if floor_kind == "hard": return "concrete"
-	# Geography describes the ground, never a wall above that ground.
+	# A geografia descreve o chão, nunca uma parede acima desse chão.
 	var terrain := "mountainterrain" in labels or "cemeterysolids" in labels or "originalcemetery" in labels or "originalportsurface" in labels or "earthroad" in labels or "dirtroad" in labels
 	if terrain and point.is_finite() and normal.y > 0.55:
 		var kind := GROUND._surface_kind(collider, point)

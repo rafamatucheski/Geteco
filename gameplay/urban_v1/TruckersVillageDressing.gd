@@ -5,7 +5,7 @@ static var _wood_paint: StandardMaterial3D
 static var _leaf_paint: StandardMaterial3D
 
 static func dress_common_yard(v: Node3D) -> void:
-	# The communal coffee table sits off the vehicle turning area, under shade.
+	# A mesa de café comunitária fica fora da área de manobra dos veículos, na sombra.
 	var at := Vector3(-4,0,-24)
 	v._box(at+Vector3(0,.81,0),Vector3(3,.16,1.2),"796347")
 	for x in [-1.12,1.12]: v._box(at+Vector3(x,.4,0),Vector3(.15,.8,1.0),"5b5845")
@@ -13,7 +13,7 @@ static func dress_common_yard(v: Node3D) -> void:
 	for z in [-1.4,1.4]: v._bench(at+Vector3(0,0,z))
 	v._cylinder(at+Vector3(.3,1.03,0),.13,.32,"464c40")
 	for x in [-.5,-.15]: v._cylinder(at+Vector3(x,.94,.2),.055,.1,"c1b58e")
-	# A detached generator, oil drums and tool cart belong beside the workshop.
+	# Um gerador avulso, tambores de óleo e o carrinho de ferramentas ficam ao lado da oficina.
 	at=Vector3(73,0,2)
 	v._box(at+Vector3(0,.55,0),Vector3(1.4,1.1,.85),"696f53")
 	v._box(at+Vector3(0,.64,.45),Vector3(1.08,.55,.025),"333c34")
@@ -69,8 +69,8 @@ static func _shade_tree(v: Node3D,at: Vector3) -> void:
 		mesh.scale=entry[3]
 		v.add_child(mesh)
 	v._solid("YardTree",at+Vector3(0,3.015,0),Vector3(.64,6.03,.64))
-## Household detail, authored in each home's local frame. Closed walls,
-## furniture and yard boundaries use the same transform for visual and physics.
+## Detalhe doméstico, definido no referencial local de cada casa. Paredes fechadas,
+## mobília e limites de quintal usam a mesma transform para visual e física.
 static func dress_home(v: Node3D,index: int) -> void:
 	# Casa com casca pintada: calha, cano, tijolos e remendos colados na parede de
 	# caixa ficariam flutuando diante da imagem (que já tem o próprio desgaste).
@@ -85,7 +85,7 @@ static func dress_home(v: Node3D,index: int) -> void:
 	_barrel(v,Vector3(-5.3,0,-5.8),index%2==0)
 	_pot(v,Vector3(5.4,0,5.0),index)
 	_pot(v,Vector3(6.1,0,5.8),index+1)
-	# Small repairs tell individual stories without text on the homes.
+	# Pequenos consertos contam histórias individuais sem texto nas casas.
 	if index%2 == 0 and not painted:
 		v._box(Vector3(-3.6,1.85,4.77),Vector3(1.65,.13,.075),"7d674d",Vector3(0,0,.17))
 	if index in [1,4] and not painted:
@@ -98,12 +98,12 @@ static func dress_home(v: Node3D,index: int) -> void:
 		for y in [4.5,4.8,5.1]: v._box(Vector3(-3.8,y,-2.2),Vector3(1.4,.035,.035),"797d6d",Vector3.ZERO,true)
 
 static func _fence(v: Node3D,index: int) -> void:
-	# Rear has a broad opening; every yard is reachable without squeezing.
+	# O fundo tem uma abertura larga; todo quintal é alcançável sem se espremer.
 	var rear := -8.9 if index%2==0 else -9.5
 	for x in [-9.5,9.5]:
 		_fence_panel(v,Vector3(x,0,(rear+2.0)*.5),Vector3(.13,1.2,2.0-rear))
 	for x in [-5.6,5.6]: _fence_panel(v,Vector3(x,0,rear),Vector3(7.8,1.2,.13))
-	# The frontage is intentionally open toward the common yard.
+	# A frente é aberta de propósito para o quintal comum.
 	for x in [-9.5,9.5]:
 		v._box(Vector3(x,.7,3.0),Vector3(.16,1.4,.16),"73624a")
 		v._solid("YardGatePost",Vector3(x,.7,3.0),Vector3(.16,1.4,.16))
@@ -131,7 +131,7 @@ static func _facade(v: Node3D,index: int,painted := false) -> void:
 				v._box(Vector3(x,.29+row*.19,4.59),Vector3(.38,.14,.035),"8e6450")
 		for z in [-3.5,-2.7,-1.9]:
 			v._box(Vector3(-6.54,.24,z),Vector3(.04,.33,.56),"8e6450")
-	# A shallow crate keeps the porch occupied while its centre remains clear.
+	# Uma caixa rasa deixa a varanda ocupada enquanto o centro dela continua livre.
 	if index in [1,3,5]:
 		v._box(Vector3(3.0,.23,5.9),Vector3(.9,.46,.65),"8b7556")
 		for x in [2.66,3.0,3.34]: v._box(Vector3(x,.47,5.9),Vector3(.12,.04,.65),"73624a")
@@ -147,7 +147,7 @@ static func _clothesline(v: Node3D,index: int) -> void:
 	var colors := ["929e94","ac8d72","b4aa87","a49673"]
 	for i in 4:
 		var x := -2.8+i*1.6
-		# Flexible laundry hangs above walking headroom. Only the poles are solid.
+		# O varal flexível fica acima da altura livre de caminhada. Só os postes são sólidos.
 		v._box(at+Vector3(x,2.21,.30),Vector3(.84,.64,.035),colors[(i+index)%4],Vector3(0,.08*(i-1),0))
 		for pin in [-.26,.26]: v._box(at+Vector3(x+pin,2.57,.30),Vector3(.035,.09,.025),"8b7556")
 

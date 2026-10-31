@@ -1,6 +1,6 @@
 extends StaticBody3D
-## Instructor remains at the paddock and streams out with the course.
-## Supplied Meshy appearance; gameplay identity and collision stay on this actor.
+## O instrutor fica no paddock e sai do streaming junto com a pista.
+## Aparência Meshy fornecida; a identidade de jogo e a colisão ficam neste ator.
 const HOME := Vector3(-226.7, .13, -39)
 var model: Node3D
 

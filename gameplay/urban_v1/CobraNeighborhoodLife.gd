@@ -58,7 +58,7 @@ func _process(delta: float) -> void:
 		actor.add_to_group("cobra_local")
 		actor.set_meta("character_name",["Aiko","Ryo"][index])
 		residents[index] = actor
-	# Actor has no death signal; retain the outcome across streaming and saves.
+	# Actor não tem sinal de morte; mantém o resultado através do streaming e dos saves.
 	for index in residents:
 		if residents[index].dead: _record_death("cobra_neighbor_dead_%d"%index)
 

@@ -35,7 +35,7 @@ var incident_key := -1
 
 func _ready() -> void:
 	_ensure_visuals()
-	# Only live incidents join the light budget; the cached template never runs.
+	# Só incidentes vivos entram no orçamento de luz; o modelo em cache nunca roda.
 	add_to_group("ground_fire")
 	light.visible = get_tree().get_nodes_in_group("ground_fire").size() <= MAX_LIT_FIRES
 	_apply_intensity()

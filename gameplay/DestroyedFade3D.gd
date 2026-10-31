@@ -1,5 +1,5 @@
 extends RefCounted
-## One-shot cleanup, owned by the destroyed node and paused with gameplay.
+## Limpeza de uso único, pertencente ao nó destruído e pausada junto com o jogo.
 const DELAY := 4.0
 const DURATION := 1.2
 

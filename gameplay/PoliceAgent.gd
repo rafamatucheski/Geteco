@@ -242,8 +242,8 @@ func _stall_physics_tick(delta: float) -> void:
 		visible_aim_time = 0.0
 		if direction.length_squared() > 0.1: visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z) - global_rotation.y, 1.0 - exp(-10.0 * delta))
 	var move := direction.normalized() * _tactic_speed * (WOUNDED_SPEED if hurt_reactions and wounded() else 1.0)
-	# Tactical units may move laterally or retreat at close range; a global
-	# seven-metre hold would erase flanking and containment behavior.
+	# Unidades táticas podem se mover de lado ou recuar a curta distância; uma parada global
+	# a sete metros apagaria o comportamento de flanco e contenção.
 	if _tactic_hold or direction.length() < .45 or (sees_player and not hostile and distance <= ARREST_RANGE): move = Vector3.ZERO
 	_track_progress(destination, move, delta)
 	_move(move, delta)
@@ -251,7 +251,7 @@ func _stall_physics_tick(delta: float) -> void:
 func _force_authorized() -> bool:
 	if controller.has_method("police_surrendering") and controller.police_surrendering(): return false
 	if controller.has_method("police_force_authorized"): return controller.police_force_authorized()
-	# Legacy fixtures and standalone visual scenes predate the policy object.
+	# Fixtures legadas e cenas visuais avulsas são anteriores ao objeto de política.
 	return controller.stars >= 2 or response_aggression > 0.0
 
 func _can_arrest() -> bool:
@@ -266,8 +266,8 @@ func _shared_contact_matches_context() -> bool:
 	var place := str(get_meta("police_place_id", ""))
 	if controller.has_meta("police_contact_place_id"):
 		return place == str(controller.get_meta("police_contact_place_id")) and (place.is_empty() or global_position.distance_to(controller.last_known) < 120.0)
-	# Protect legacy controllers from passing exterior technical coordinates to
-	# an admitted visitor before the first real interior sighting.
+	# Protege os controladores legados de passar coordenadas técnicas do exterior para
+	# um visitante admitido antes do primeiro avistamento real no interior.
 	return place.is_empty() or global_position.distance_to(controller.last_known) < 120.0
 
 func _interior_pursuit() -> Node3D:
@@ -277,8 +277,8 @@ func _interior_pursuit() -> Node3D:
 
 func _plan_navigation(goal: Vector3) -> bool:
 	_navigation_replan_interval = 1.2
-	# A pending request is polled every physics tick. Its direct-path sweep was
-	# already made on admission; repeating it here would escape the search budget.
+	# Um pedido pendente é consultado a cada tick de física. A varredura de caminho direto
+	# já foi feita na admissão; repeti-la aqui escaparia do orçamento de busca.
 	if not _navigation_waiting and _tactics.segment_clear(self, global_position, goal):
 		_cancel_navigation()
 		navigation = PackedVector3Array([goal])
@@ -306,12 +306,12 @@ func _plan_navigation(goal: Vector3) -> bool:
 		navigation = response.path
 		if response.get("refresh", false): _navigation_replan_interval = .15
 	nav_index = 0
-	# An empty path means a physically blocked route, not permission to walk
-	# directly through the obstacle while a future replanning is pending.
+	# Caminho vazio significa rota bloqueada fisicamente, não permissão para andar
+	# direto através do obstáculo enquanto um replanejamento futuro está pendente.
 	if navigation.is_empty(): navigation.append(global_position)
 	else:
-		# The officer can keep moving on its old route while this request runs.
-		# Skip the now-passed prefix only when a physical sweep admits that step.
+		# O policial pode continuar andando na rota antiga enquanto este pedido roda.
+		# Pula o prefixo já percorrido só quando uma varredura física admite esse passo.
 		var nearest := 0
 		var distance := global_position.distance_squared_to(navigation[0])
 		for index in range(1, navigation.size()):
@@ -405,8 +405,8 @@ func _track_progress(destination: Vector3, movement: Vector3, delta: float) -> v
 	else:
 		_stuck_time += delta
 	if _stuck_time >= 0.9:
-		# Dynamic obstacles are intentionally not cached by Gameplay.find_path.
-		# Ask for a new bounded route; CharacterBody3D remains the collision authority.
+		# Obstáculos dinâmicos de propósito não ficam no cache de Gameplay.find_path.
+		# Pede uma rota limitada nova; CharacterBody3D continua sendo a autoridade de colisão.
 		repath = 0.0
 		navigation.clear()
 		nav_index = 0

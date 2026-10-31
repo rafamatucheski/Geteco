@@ -1,5 +1,5 @@
 extends Node
-## Player controls are distinct from the police AI and the accelerator.
+## Os controles do jogador são distintos da IA da polícia e do acelerador.
 var vehicle: CharacterBody3D
 var _reticle: Control
 var _aim := Vector3.ZERO

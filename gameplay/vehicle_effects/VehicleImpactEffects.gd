@@ -35,7 +35,7 @@ func physics_tick(active: bool, incoming_velocity: Vector3) -> void:
 		var audio_closing := maxf(0,-relative.dot(normal))
 		var closing_speed := audio_closing
 		var collider := contact.get_collider()
-		# Audio has its own lighter threshold and pair budget; visual bursts stay unchanged.
+		# O áudio tem limiar mais leve e orçamento por par próprios; os estouros visuais não mudam.
 		CRASH_AUDIO.play_contact(vehicle, collider, contact.get_position(), audio_closing)
 		if closing_speed < MIN_IMPACT_SPEED: continue
 		var collider_id := collider.get_instance_id() if is_instance_valid(collider) else 0

@@ -1,6 +1,6 @@
 extends RefCounted
-## Compact double barrel presentation. The game keeps its own damage and ammo;
-## this module only builds the silhouette and articulates the reload.
+## Apresentação da espingarda compacta de cano duplo. O jogo mantém o próprio dano e munição;
+## este módulo só monta a silhueta e articula a recarga.
 const GEO = preload("res://gameplay/WeaponPresentation3D.gd")
 const PIVOT := Vector3(0.0, -0.014, -0.030)
 const OPEN_ANGLE := -0.68

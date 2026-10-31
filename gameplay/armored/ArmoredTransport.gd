@@ -1,6 +1,6 @@
 extends Node3D
-## Logical service continues outside streaming; physical vehicles exist only nearby.
-## This owner alone snapshots/retires the fleet, crew, vaults and cash receipts.
+## O serviço lógico continua fora do streaming; veículos físicos só existem por perto.
+## Só este dono tira snapshot/aposenta a frota, a equipe, os cofres e os recibos de dinheiro.
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
 const TRUCK := preload("res://gameplay/armored/ArmoredTruck.gd")
 const GUARD := preload("res://gameplay/armored/ArmoredGuard.gd")
@@ -57,7 +57,7 @@ func _ready() -> void:
 	session.world.gameplay.explosion_occurred.connect(_explosion)
 	session.world.gameplay.player_died.connect(_failed)
 	session.world.gameplay.player_arrested.connect(_failed)
-	# Vehicles need their next floor admitted before their own physics callback.
+	# Os veículos precisam do próximo piso admitido antes do próprio callback de física.
 	process_physics_priority = -10
 
 func crew_operational() -> bool:
@@ -90,7 +90,7 @@ func _process(delta: float) -> void:
 		if not _prepare_route(): return
 	for car in fleet:
 		if not is_instance_valid(car) or car.is_queued_for_deletion():
-			# A region jump can evict the owner region; recover the last safe snapshot.
+			# Um salto de região pode despejar a região dona; recupera o último snapshot seguro.
 			_release()
 			return
 	if not fleet.is_empty() and _out_of_sight(RETIRE_DISTANCE):
@@ -126,8 +126,8 @@ func _prepare_route() -> bool:
 	if _private_graph == null:
 		_private_graph = preload("res://gameplay/NativeTrafficRoutes.gd").new()
 		var roads: Array = []
-		# The north bridge is authored player access, deliberately absent from
-		# ordinary traffic. Add it only to this scheduled service's private graph.
+		# A ponte norte é um acesso definido para o jogador, ausente de propósito do
+		# trânsito comum. Só a acrescenta ao grafo privado deste serviço agendado.
 		var bridge := preload("res://world/north_gateway/NorthGatewayLayout.gd").centerline()
 		var projection := Vector3.INF
 		var projection_gap := 4.0
@@ -162,9 +162,9 @@ func _prepare_route() -> bool:
 				if gap < closest_gap:
 					closest_gap = gap
 					destination = point
-	# Starting on the nearest lane can point away from the destination and
-	# make Dijkstra insert a 180-degree return immediately across a frontage.
-	# Cobre departs eastbound; the new North Pier bays join southbound Westgate.
+	# Começar na faixa mais próxima pode apontar para longe do destino e
+	# fazer o Dijkstra inserir um retorno de 180 graus logo em frente a uma fachada.
+	# O Cobre parte para leste; as baias novas do North Pier entram na Westgate para o sul.
 	var edge: Dictionary = router.nearest_edge(origin,false,Vector3.RIGHT)
 	if data.origin == "harbor_bank" and int(data.get("service_layout",0)) == 1:
 		edge = router.nearest_edge(APRON.MERGE,false,Vector3.BACK)
@@ -182,10 +182,10 @@ func _prepare_route() -> bool:
 		admission_status = "origin_lane_missing"
 		return false
 	var heading: Vector3 = (graph.vertices[edge.edge.to]-graph.vertices[edge.edge.from]).normalized()
-	# Start the formation upstream of the bank, on the actual directed lane.
+	# Começa a formação antes do banco, na faixa dirigida real.
 	var desired_start: Vector3 = edge.closest-heading*30.0
-	# The upstream point may belong to a preceding segment of the SAME street
-	# (Cobre's long main road), but never project onto a perpendicular street.
+	# O ponto anterior pode pertencer a um segmento anterior da MESMA rua
+	# (a via principal longa do Cobre), mas nunca é projetado numa rua perpendicular.
 	var staging_edge: Dictionary = edge.edge
 	var staging_gap := INF
 	for from in graph.edges:
@@ -246,8 +246,8 @@ func _near_service() -> bool:
 
 func _advance_virtual(step: float) -> void:
 	if data.hostile: return
-	# Retirement preserves casualties too: a wreck or missing carrier cannot be
-	# replaced with a healthy crew simply because the player left the area.
+	# A aposentadoria também preserva as baixas: um destroço ou carregador ausente não pode ser
+	# substituído por uma equipe saudável só porque o jogador saiu da área.
 	for vehicle_record in data.vehicles:
 		if float(vehicle_record.health) <= 0.0:
 			data.phase = "finished"
@@ -272,7 +272,7 @@ func _advance_virtual(step: float) -> void:
 	elif data.phase == "driving":
 		data.virtual_poses = true
 		data.route_offset = minf(road.get_baked_length()-36.0,float(data.route_offset)+step*float(profile.cruise_speed))
-		# Advance only the off-screen poses, retaining each vehicle's actual damage.
+		# Avança só as poses fora da tela, mantendo o dano real de cada veículo.
 		for index in data.vehicles.size():
 			var offset := _virtual_offset(index)
 			var point := _virtual_point(index)
@@ -291,9 +291,9 @@ func _ground_at(point: Vector3) -> bool:
 	return is_instance_valid(region) and region.has_method("prepare_collision_at") and region.prepare_collision_at(point)
 
 func _admit() -> void:
-	# A persistent or player car may occupy the bank lane. Before creating any
-	# bodies, try a short downstream staging shift on the SAME authored route.
-	# Saved physical fleets retain their poses; nothing already visible is moved.
+	# Um carro persistente ou do jogador pode ocupar a faixa do banco. Antes de criar qualquer
+	# corpo, tenta um deslocamento curto de preparação adiante na MESMA rota definida.
+	# Frotas físicas salvas mantêm as poses; nada que já esteja visível é movido.
 	var initial_offset := float(data.route_offset)
 	if data.vehicles.is_empty() and initial_offset < 25.0 and not _loading_apron():
 		var found := false
@@ -379,9 +379,9 @@ func _admit() -> void:
 	_update_crew()
 
 func _supported_virtual_point(point: Vector3,yaw: float,armored: bool) -> Vector3:
-	# Logical route heights interpolate authored vertices; the rendered desert
-	# descent has its own smooth support profile. Resolve the upright footprint
-	# before publishing new bodies, never relocate a visible or saved physical car.
+	# As alturas lógicas da rota interpolam os vértices definidos; a descida renderizada
+	# do deserto tem o próprio perfil de apoio suave. Resolve a área de apoio em pé
+	# antes de publicar corpos novos, nunca realoca um carro físico visível ou salvo.
 	if not point.is_finite() or not _ground_at(point):
 		admission_status = "virtual_ground_not_ready"
 		return Vector3.INF
@@ -406,8 +406,8 @@ func _supported_virtual_point(point: Vector3,yaw: float,armored: bool) -> Vector
 			authored_floor = authored_floor and (body.has_meta("vehicle_surface") or body.has_meta("vehicle_ramp_structure"))
 			highest = maxf(highest,hit.position.y)
 			lowest = minf(lowest,hit.position.y)
-	# Unknown props cannot be promoted to a road merely by casting onto their top.
-	# Preserve existing admission on untagged city/bridge surfaces instead.
+	# Props desconhecidos não podem virar via só porque um raio caiu no topo deles.
+	# Em vez disso, preserva a admissão existente em superfícies sem tag da cidade/ponte.
 	if not authored_floor: return point
 	var corrected := Vector3(point.x,highest+.04,point.z)
 	if absf(corrected.y-point.y) > .6 or highest-lowest > .5:
@@ -500,13 +500,13 @@ func _physics_process(delta: float) -> void:
 			waiting_for_crew = gap > 26.0 and not _occupies_crossing(car) and not driver.pending_recovery()
 			if waiting_for_crew: driver.holding = true
 		car.set_meta("armored_formation_wait",waiting_for_crew)
-		# Vehicle's street controller owns signals, obstacles and steering. This
-		# service only supplies the route and formation hold, never a body pose.
+		# O controlador de rua de Vehicle é dono de sinais, obstáculos e direção. Este
+		# serviço só fornece a rota e a espera de formação, nunca uma pose de corpo.
 		driver.tick(delta)
 
 func _formation_follower(index: int) -> int:
-	# A lawful bypass can change the order. Keep the nearest real neighbour behind
-	# together with the convoy, including an escort that has passed the lead car.
+	# Um desvio legal pode mudar a ordem. Mantém o vizinho real mais próximo atrás
+	# junto com o comboio, incluindo uma escolta que passou o carro da frente.
 	var follower := -1
 	var progress: float = _formation_progress(index)
 	for candidate in drivers.size():
@@ -518,8 +518,8 @@ func _formation_follower(index: int) -> int:
 	return follower
 
 func _formation_progress(index: int) -> float:
-	# Bay connectors have different lengths. Compare positions on the common
-	# road, never unrelated offsets on four independent driveway curves.
+	# Os conectores das baias têm comprimentos diferentes. Compara posições na via
+	# comum, nunca offsets sem relação em quatro curvas independentes de entrada.
 	var route: Curve3D = drivers[index].route
 	return float(drivers[index].offset)+(float(route.get_meta("formation_origin",0.0)) if route != null else 0.0)
 
@@ -537,9 +537,9 @@ func _occupies_crossing(car: CharacterBody3D) -> bool:
 		var radius: float = JUNCTIONS.EXIT
 		for approach in JUNCTIONS._approaches.get(junction.key,[]): radius = maxf(radius,float(approach.width)*.5)
 		if beyond > radius+car.half_length+24.0: continue
-		# Leave enough exit space for a following vehicle to clear its own lease.
-		# Stopping only our hull outside EXIT can trap that vehicle in the crossing,
-		# which in turn prevents the rear escort from joining us on the other arm.
+		# Deixa espaço de saída suficiente para um veículo seguinte liberar a própria reserva.
+		# Parar só o nosso casco fora do EXIT pode prender esse veículo no cruzamento,
+		# o que por sua vez impede a escolta de trás de se juntar a nós no outro braço.
 		var following_length := 6.0
 		for id in JUNCTIONS.owners.get(junction.key,{}):
 			var occupant = instance_from_id(int(id))
@@ -559,8 +559,8 @@ func _crew_point(index: int) -> Vector3:
 		return car.to_global(Vector3((-1 if index == 0 else 1)*(car.half_width+1.05),.08,.5))
 	var local_rank := floori(float(index-2)/2.0)
 	if APRON.contains(car.global_position):
-		# The west side borders the neighbouring house. Keep every escort in
-		# the open aisle instead of retrying an impossible spawn inside its wall.
+		# O lado oeste faz divisa com a casa vizinha. Mantém toda escolta no
+		# corredor aberto em vez de tentar de novo um spawn impossível dentro do muro dela.
 		return Vector3(car.global_position.x+car.half_width+1.05,car.global_position.y+.08,car.global_position.z+[-.7,1.2,-2.2,2.7][local_rank])
 	var side := -1.0 if local_rank%2 == 0 else 1.0
 	var longitudinal := .7 if local_rank < 2 else -1.2
@@ -634,7 +634,7 @@ func _tick_service() -> void:
 		if int(data.cargo_cycles[0]) < 2 or int(data.cargo_cycles[1]) < 2: return
 		if data.elapsed < 35.0: return
 		if data.phase == "unloading":
-			# Remain at the bank until the player leaves; no visible disappearing convoy.
+			# Fica no banco até o jogador sair; nada de comboio sumindo à vista.
 			if _out_of_sight(95.0): _finish()
 		else:
 			data.phase = "boarding"

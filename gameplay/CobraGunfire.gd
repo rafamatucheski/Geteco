@@ -1,5 +1,5 @@
 extends RefCounted
-## Cobras feed the same swept projectile flight and impacts as police.
+## Os Cobras alimentam o mesmo voo varrido de projétil e os mesmos impactos da polícia.
 const CATALOG := preload("res://gameplay/WeaponCatalog.gd")
 
 static func fire(gameplay, shooter: CharacterBody3D, model: Node3D, target: Node3D, weapon_id: String, amount: float = -1.0, bridge_origin: Vector3 = Vector3.INF) -> bool:

@@ -141,7 +141,7 @@ func _stall_sound(kind: String, point: Vector3, base_volume_db: float = NPC_GUNF
 	var body := AUDIO.gun_body(kind)
 	if body != null: g._play_weapon_stream(body, point, base_volume_db + float(AUDIO.GUN_BODY[kind][3]), pitch, reach * 1.3)
 
-## Fixed pools keep gunfire from consuming the glass-break voice or other effects.
+## Pools fixos impedem que os tiros consumam a voz de vidro quebrando ou outros efeitos.
 func _setup_combat_audio() -> void:
 	AUDIO.ensure_weapon_bus()
 	for index in g.COMBAT_VOICES:
@@ -168,7 +168,7 @@ func _play_weapon_stream(stream: AudioStream, point: Vector3, volume_db: float, 
 			break
 	var channel: AudioStreamPlayer3D = g._weapon_pool[index]
 	g._weapon_audio_next = (index + 1) % g._weapon_pool.size()
-	# At the ceiling replace an old tail, keeping the current shot audible.
+	# No teto, substitui uma cauda antiga, mantendo o tiro atual audível.
 	channel.stop()
 	channel.global_position = point
 	channel.stream = stream
@@ -182,7 +182,7 @@ func _play_glass_break(point: Vector3, volume_offset := 0.0, pitch := 1.0) -> vo
 	if gain <= -60.0: return
 	var voice: AudioStreamPlayer3D = g._glass_audio_pool[g._glass_audio_next]
 	g._glass_audio_next = (g._glass_audio_next + 1) % g._glass_audio_pool.size()
-	# Replace only an earlier glass shower at the fixed ceiling, never a new shot.
+	# Substitui só uma chuva de vidro anterior no teto fixo, nunca um tiro novo.
 	voice.stop()
 	voice.global_position = point
 	voice.stream = AUDIO.impact_take("glass",g._rng)
@@ -357,7 +357,7 @@ func projectile_bounce(point: Vector3, speed: float) -> void:
 	if speed < 1.2: return
 	g._play_stream(AUDIO.grenade_bounce(), point, -16.0 + clampf(speed - 2.0, 0.0, 6.0), g._rng.randf_range(0.9, 1.12))
 
-## Point and normal distinguish real terrain contact from a wall above it.
+## Ponto e normal distinguem contato real com o terreno de uma parede acima dele.
 func _impact_material(collider: Object, point := Vector3.INF, normal := Vector3.ZERO) -> String:
 	return WEAPON_SURFACE.resolve(collider, point, normal)
 
@@ -365,7 +365,7 @@ func _casing_contact(point: Vector3, material: String, speed: float, shotgun: bo
 	var family := WEAPON_SURFACE.casing_family(material)
 	var volume := -20.0 + clampf(speed - 3.0, -4.0, 1.0)
 	if family in ["soft", "snow"]: volume -= 11.0
-	# Polymer shotgun hulls have less ring than a small brass case.
+	# Cartuchos de polímero de espingarda ressoam menos que uma cápsula pequena de latão.
 	if shotgun: volume -= 3.0
 	g._play_weapon_stream(AUDIO.contact_take("casing_" + family, g._rng), point, volume, g._rng.randf_range(0.96, 1.04) * (0.8 if shotgun else 1.0), 9.0)
 

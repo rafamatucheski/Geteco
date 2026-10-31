@@ -245,8 +245,8 @@ func surrender_vehicle(exits: Array[Dictionary]) -> void:
 		if officer.dead: continue
 		if officer.mode == "return": officer.mode = "combat"
 		if not controller.gameplay.police.has(officer): controller.gameplay.police.append(officer)
-		# Gameplay owns this same agent now; the finished unit cannot admit it.
-		# Keep vehicle until physical disembarkation and door closure complete.
+		# Gameplay agora é dono deste mesmo agente; a unidade encerrada não pode admiti-lo.
+		# Mantém o veículo até o desembarque físico e o fechamento da porta terminarem.
 		officer.dispatch_controller = null
 	officers.clear()
 	if service == "mortician" and is_instance_valid(crew) and not crew.dead:
@@ -389,7 +389,7 @@ func _suspend_bodies() -> void:
 ## unidade inteira continua suspensa em vez de sobrepor um sólido novo.
 func _bodies_clear() -> bool:
 	for body_state in _suspended_bodies.values():
-		# References may have been freed by a child effect while the unit slept.
+		# As referências podem ter sido liberadas por um efeito filho enquanto a unidade dormia.
 		var body: Variant = body_state.body
 		if not is_instance_valid(body) or body.is_queued_for_deletion() or body.dead: continue
 		var exclude: Array[RID] = [vehicle.get_rid(), body.get_rid()]
@@ -407,7 +407,7 @@ func _resume_bodies() -> void:
 		# A dead actor must release a paused child owner too; it cannot tick itself.
 		if is_instance_valid(motion): motion.resume_from_dispatch()
 		if body.dead:
-			# Preserve death's collision state; keep the corpse for the mortician.
+			# Preserva o estado de colisão da morte; mantém o cadáver para o agente funerário.
 			body.set_physics_process(false)
 			body.show()
 			continue
@@ -488,8 +488,8 @@ func _police_investigating(delta: float) -> void:
 	if not point.is_finite():
 		_begin_recall(false)
 		return
-	# Investigation deliberately never calls _sees_target or report_contact.
-	# The same crew visits the reported scene, not the hidden player's position.
+	# A investigação de propósito nunca chama _sees_target nem report_contact.
+	# A mesma equipe visita a cena denunciada, não a posição do jogador escondido.
 	var arrived := vehicle.global_position.distance_to(point) < 10.0
 	driver.hold(arrived)
 	if not arrived: _replan_towards(point,delta,4.0)
@@ -555,8 +555,8 @@ func _stall_police_enroute(delta: float) -> void:
 	# no último ponto conhecido (a pé, como antes).
 	var car_search: bool = PURSUIT.enabled and searching and controller.pursuit_in_car and target != null
 	var may_stop := not car_search and ((not in_car) or target_still >= RULES.TARGET_STOPPED_SECONDS)
-	# A stop belongs to the foot pursuit. Once the target drives away, discard
-	# its old parking route before it can strand the pursuing crew behind.
+	# Uma parada pertence à perseguição a pé. Quando o alvo sai dirigindo, descarta
+	# a rota antiga de estacionamento antes que ela possa deixar a equipe perseguidora para trás.
 	if not may_stop and stop_planner.curve != null:
 		stop_planner.reset()
 		_park_reset()
@@ -571,9 +571,9 @@ func _stall_police_enroute(delta: float) -> void:
 		# Sem curva de parada (cruzamento, rua estreita) a viatura já parada perto do alvo
 		# estaciona onde está: antes ela ficava em rota para sempre e a equipe às vezes nunca descia.
 		var arrived := stop_planner.tick(self,anchor,delta)
-		# No usable shoulder curve: brake on the current physical trajectory.
-		# Continuing the previous pursuit route made the stationary fallback
-		# unreachable, leaving both cars and motorcycles circling the pedestrian.
+		# Sem curva de acostamento utilizável: freia na trajetória física atual.
+		# Continuar a rota de perseguição anterior deixava o fallback parado
+		# inalcançável, com carros e motos rodando em volta do pedestre.
 		if stop_planner.curve == null: driver.hold(true)
 		var unused_exits: Array[Vector3] = []
 		# 27/10: eram 3 s de espera fixa com a viatura já parada ao lado do alvo, e a equipe "demorava
@@ -1020,7 +1020,7 @@ func _police_parked(delta: float) -> void:
 		_set_siren(false)
 		_set_state("working")
 		return
-	# Keep blocking while no safe exit/slot is available.
+	# Continua bloqueando enquanto não há saída/vaga segura disponível.
 	if crew_remaining <= 0: return
 	if controller.gameplay.contact_age < 1.0 and _target_velocity(_target()).length() > 3.0 and _target_in_car(_target()):
 		_set_state("enroute")
@@ -1078,7 +1078,7 @@ func _police_working(delta: float) -> void:
 
 func _police_crew_depleted() -> void:
 	controller.emit_dispatch_event("crew_depleted", {"unit": self})
-	# Nobody remains to drive. Retain a stealable parked car, recycle only unseen.
+	# Não sobrou ninguém para dirigir. Mantém um carro estacionado roubável, recicla só fora de vista.
 	vehicle.set_external_driver(false)
 	vehicle.speed = 0.0
 	vehicle.horizontal_velocity = Vector3.ZERO
@@ -1096,8 +1096,8 @@ func _begin_recall(resume: bool) -> void:
 	_set_state("recall")
 
 func _police_recall(delta: float) -> void:
-	# A foot target returning during recall is still confronted by this same
-	# crew; do not finish boarding and immediately recreate the officers.
+	# Um alvo a pé que volta durante o recolhimento ainda é confrontado por esta mesma
+	# equipe; não termina o embarque para logo recriar os policiais.
 	var target := _target()
 	if resume_pursuit and controller.gameplay.stars > 0 and target != null and not _target_in_car(target) and controller.gameplay.contact_age < 1.0:
 		for officer in officers:
@@ -1374,8 +1374,8 @@ func _tick_departing(delta: float) -> void:
 			controller.emit_dispatch_event("departure_escape",{"unit":self})
 	if vehicle.get_meta("dispatch_escape_active",false) and driver.route!=null and driver.offset>=float(driver.route.get_meta("traffic_escape_until",0)):
 		vehicle.remove_meta("dispatch_escape_active")
-	# A departing, unoccupied response may be retired visibly as a last resort,
-	# as requested: its solid hull stays until the end of the short fade.
+	# Uma resposta partindo e desocupada pode ser aposentada à vista como último recurso,
+	# como pedido: o casco sólido fica até o fim do fade curto.
 	if _departure_stall>=28 or _departure_clock>=45:
 		_retirement+=delta
 		driver.hold(true)
@@ -1463,12 +1463,12 @@ func on_gave_up(_reason: String) -> void:
 	var anchor: Vector3 = _goal if _goal_valid else vehicle.global_position
 	if is_instance_valid(actor): anchor = actor.global_position
 	var flat := Vector2(vehicle.global_position.x - anchor.x, vehicle.global_position.z - anchor.z).length()
-	# A blocked junction must not make a police car abandon the pursuit and join
-	# the traffic jam.  Officers can finish the last short approach on foot; the
-	# cap stays below ordinary off-screen spawn distance.
+	# Um cruzamento bloqueado não pode fazer uma viatura abandonar a perseguição e entrar
+	# no engarrafamento. Os policiais podem terminar a última aproximação curta a pé; o
+	# limite fica abaixo da distância comum de spawn fora da tela.
 	var reach := RULES.SPAWN_MAX if is_police() else RULES.FOOT_RANGE
 	if flat <= reach:
-		# Route failure does not authorise unloading in a live traffic lane.
+		# Falha de rota não autoriza descarregar numa faixa de trânsito ativa.
 		stop_planner.tick(self,anchor,.8)
 		# 27/10: sem nenhum acostamento possível (parede ou obra fechando a rua) a viatura ficava
 		# presa replanejando para sempre e a equipe nunca descia (regressão de 12/10; em setembro ela

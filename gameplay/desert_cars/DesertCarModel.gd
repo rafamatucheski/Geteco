@@ -1,6 +1,6 @@
 extends RefCounted
-## Authored silhouettes, open wheel arches and material batches. All geometry is
-## built once per catalog ID; the fleet keeps its normal paint, doors and wheels.
+## Silhuetas feitas à mão, arcos de roda abertos e lotes de material. Toda a geometria é
+## montada uma vez por ID do catálogo; a frota mantém a pintura, portas e rodas normais.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static func create(s: Dictionary) -> Node3D:
 	var root := Node3D.new()
@@ -23,20 +23,20 @@ static func create(s: Dictionary) -> Node3D:
 	var front := l*float(s.cabin_front)
 	var back := l*float(s.cabin_back)
 	var door_back := l*float(s.door_back)
-	# Narrower hood/boot shoulders and a faceted nose stop the shell looking like
-	# a single box. The sides stay planar where the real door cutter needs them.
+	# Ombros mais estreitos no capô/porta-malas e um nariz facetado impedem a casca de parecer
+	# uma caixa só. As laterais continuam planas onde o cortador real de porta precisa.
 	if body=="coupe":
 		preload("res://gameplay/desert_cars/DesertZShape.gd").build(root,s,paint,glass,dark)
 	else:
 		_body(root,s,paint)
 		preload("res://gameplay/desert_cars/DesertCarCabin.gd").create(root,s,paint,glass,dark)
 	for side in [-1.0,1.0]:
-		# The mounting foot sits below the sloped A-pillar. A horizontal stalk at
-		# mirror height would begin in empty air on the tapered cabin.
+		# O pé de montagem fica abaixo da coluna A inclinada. Uma haste horizontal na
+		# altura do retrovisor começaria no ar vazio sobre a cabine afunilada.
 		_beam(root,"MirrorStem",Vector3(side*w*.390,shoulder+.065,front+.17),Vector3(side*w*.510,shoulder+.185,front+.13),.044,dark)
 		_box(root,"Mirror",Vector3(.135,.10,.18),Vector3(side*w*.515,shoulder+.185,front+.13),paint)
-		# Reflective metal avoids including an exterior mirror in the cabin's
-		# glazing bounds, without adding another material batch to every car.
+		# O metal reflexivo evita incluir um retrovisor externo nos limites dos vidros
+		# da cabine, sem acrescentar outro lote de material a cada carro.
 		_box(root,"MirrorGlass",Vector3(.012,.065,.13),Vector3(side*w*.553,shoulder+.19,front+.145),metal)
 		_box(root,"DoorHandle",Vector3(.022,.038,.145),Vector3(side*w*.488,shoulder-.105,door_back-.16),metal)
 		_box(root,"DoorSeam",Vector3(.012,shoulder-radius*.83-.075,.013),Vector3(side*w*.484,(shoulder+radius*.83)*.5-.035,door_back),dark)
@@ -61,7 +61,7 @@ static func create(s: Dictionary) -> Node3D:
 		for side in [-1.0,1.0]:
 			if body!="coupe": _arch(root,s,axle,side,dark if body=="pickup" else paint)
 			_wheel(root,s,axle,side,rubber,wheel_metal,dark,metal)
-	# Consolidate before vinyl so its vertex colours and door semantics stay intact.
+	# Consolida antes do vinil para que as cores de vértice e a semântica de porta dele fiquem intactas.
 	_batch(root)
 	preload("res://gameplay/desert_cars/DesertCarLivery.gd").apply(root,s)
 	root.set_meta("desert_body_style",body)
@@ -82,7 +82,7 @@ static func _body(root: Node3D,s: Dictionary,paint: Material) -> void:
 	var top := [Vector2(-l*.495,nose_y),Vector2(z_flat,shoulder-.045),Vector2(l*.435,shoulder-.045),Vector2(l*.49,tail_y)]
 	var profile: Array = top.duplicate()
 	profile.append(Vector2(l*.485,sill))
-	# Genuine concave openings: the side skin never covers the upper tyre.
+	# Aberturas côncavas de verdade: a pele lateral nunca cobre a parte de cima do pneu.
 	var arch_radius := radius+.036
 	var start := asin((sill-radius)/arch_radius)
 	for axle in [1.0,-1.0]:
@@ -100,16 +100,16 @@ static func _body(root: Node3D,s: Dictionary,paint: Material) -> void:
 			var b := Vector3(side*w*.48,profile[triangles[i+1]].y,profile[triangles[i+1]].x)
 			var c := Vector3(side*w*.48,profile[triangles[i+2]].y,profile[triangles[i+2]].x)
 			_triangle(st,a,b,c,Vector3(side,0,0))
-	# Close the nose, tail and underbody; leave the upper edge for the inset deck.
+	# Fecha o nariz, a traseira e o assoalho; deixa a borda superior para a tampa embutida.
 	for i in range(3,profile.size()):
 		var a: Vector2 = profile[i]
 		var b: Vector2 = profile[(i+1)%profile.size()]
-		# The lower contour runs rear -> front. Its outward normal is the
-		# opposite of the old winding, which culled both end panels from outside.
+		# O contorno inferior vai de trás -> frente. A normal para fora dele é o
+		# oposto do enrolamento antigo, que descartava os dois painéis das pontas vistos de fora.
 		var outward := Vector3(0,b.x-a.x,-(b.y-a.y)).normalized()
 		_quad(st,Vector3(-w*.48,a.y,a.x),Vector3(w*.48,a.y,a.x),Vector3(w*.48,b.y,b.x),Vector3(-w*.48,b.y,b.x),outward)
-	# The inset deck is 45 mm above the side contour. Close its end bevel,
-	# otherwise the engine bay / boot can be seen through a full-width slit.
+	# A tampa embutida fica 45 mm acima do contorno lateral. Fecha o chanfro da ponta,
+	# senão o cofre do motor / porta-malas aparece por uma fresta da largura inteira.
 	for end in [-1,1]:
 		if body=="pickup" and end>0: continue # Open bed has its authored tailgate.
 		var edge: Vector2 = top[0] if end<0 else top[-1]
@@ -122,11 +122,11 @@ static func _body(root: Node3D,s: Dictionary,paint: Material) -> void:
 	for i in range(top.size()-1):
 		var a: Vector2 = top[i]
 		var b: Vector2 = top[i+1]
-		# The truck's bed has an open, lower floor, not a painted solid deck.
+		# A caçamba da picape tem piso aberto e mais baixo, não uma tampa sólida pintada.
 		if body=="pickup" and i==1: b=Vector2(l*.075,b.y)
 		if body=="pickup" and i>1: continue
-		# The cabin is hollow: keep the hood and boot, but no horizontal slab at
-		# the occupants' shoulders under the windscreen and side windows.
+		# A cabine é oca: mantém capô e porta-malas, mas sem laje horizontal na
+		# altura dos ombros dos ocupantes sob o para-brisa e as janelas laterais.
 		var cabin_front := l*float(s.cabin_front)
 		var cabin_back := l*float(s.cabin_back)
 		var spans := [Vector2(a.x,minf(b.x,cabin_front)),Vector2(maxf(a.x,cabin_back),b.x)]
@@ -193,9 +193,9 @@ static func _fascia(root: Node3D,s: Dictionary,paint: Material,metal: Material,d
 				_box(root,"Headlamp",Vector3(w*.245,.105,.060),Vector3(side*w*.31,shoulder-.125,-l*.480),lamp)
 				_box(root,"TailLamp",Vector3(w*.27,.108,.039),Vector3(side*w*.32,shoulder-.135,l*.484),red).set_meta("coupe_damage_material_key","tail")
 				_box(root,"SedanBrakeDuct",Vector3(.17,.13,.045),Vector3(side*w*.37,radius+.10,-l*.478),dark)
-	# The nose and tail are sloped. Fractions of total length placed lenses
-	# behind the skin on some models and suspended beyond it on others.
-	# Mount the actual outward face onto that panel, including its tilt.
+	# O nariz e a traseira são inclinados. Frações do comprimento total punham as lentes
+	# atrás da pele em alguns modelos e suspensas além dela em outros.
+	# Monta a face externa real nesse painel, incluindo a inclinação dele.
 	for index in range(first_part,root.get_child_count()):
 		var part := root.get_child(index) as MeshInstance3D
 		var label := str(part.get_meta("authored_label",part.name))
@@ -338,9 +338,9 @@ static func _wheel(root: Node3D,s: Dictionary,axle: float,side: float,rubber: Ma
 	for i in range(start_count,root.get_child_count()): root.get_child(i).set_meta("wheel_center",center)
 
 static func _tyre(root: Node3D,radius: float,width: float,center: Vector3,mat: Material,rim_ratio := .64) -> void:
-	# Rounded shoulders and inset sidewalls read as rubber, rather than a black
-	# disc pasted onto the fender. Twenty-four segments keep its runtime bounded.
-	# The bead follows each rim: a fixed .68R left visible gaps on .56R/.64R wheels.
+	# Ombros arredondados e laterais embutidas parecem borracha, em vez de um disco
+	# preto colado no para-lama. Vinte e quatro segmentos mantêm o custo em execução limitado.
+	# O talão segue cada aro: um .68R fixo deixava vãos visíveis em rodas .56R/.64R.
 	var bead := radius*rim_ratio*.97
 	var section := [Vector2(-width*.5,bead),Vector2(-width*.5,radius*.89),Vector2(-width*.36,radius),Vector2(width*.36,radius),Vector2(width*.5,radius*.89),Vector2(width*.5,bead)]
 	var st := SurfaceTool.new()
@@ -443,8 +443,8 @@ static func _batch(root: Node3D) -> void:
 		var material := part.material_override
 		var wheel: Variant = part.get_meta("wheel_center") if part.has_meta("wheel_center") else null
 		var key := str(material.get_instance_id())+":"+str(wheel)
-		# Equipment derives the projector mount and damage side from each mesh's
-		# bounds. Merging both lenses moves that mount to the car's centre.
+		# Equipment deriva a montagem do projetor e o lado do dano a partir dos limites
+		# de cada malha. Fundir as duas lentes leva essa montagem para o centro do carro.
 		if material.resource_name == "headlight":
 			var center := part.transform * part.mesh.get_aabb().get_center()
 			key += ":headlight:" + str(signf(center.x))

@@ -1,6 +1,6 @@
 extends Node
-## Wet paint and millimetre-scale beads. Beads use an independent pass so damage
-## normals, paint textures and door/body mesh changes cannot erase them.
+## Pintura molhada e gotas em escala milimétrica. As gotas usam um passe independente para que normais
+## de dano, texturas de pintura e mudanças de malha de porta/carroceria não possam apagá-las.
 const ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
 const DROP_SHADER := preload("res://gameplay/vehicle_effects/VehicleBodyRain.gdshader")
 const STEP := .25
@@ -78,9 +78,9 @@ static func apply(vehicle: Node3D, wet: float) -> void:
 static func apply_material_for_test(material: StandardMaterial3D, wet: float, gloss: float, bead: float) -> void:
 	_apply_material(material, wet, gloss, bead, wet, 0.0)
 
-## Restore only fields still owned by rain. A new paint colour or finish written
-## by another system is retained independently, never used as a reason to darken
-## the already-wet colour a second time.
+## Restaura só os campos ainda pertencentes à chuva. Uma cor ou acabamento novo escrito
+## por outro sistema é guardado à parte, nunca usado como motivo para escurecer
+## pela segunda vez a cor já molhada.
 static func remove_weather_for_edit(material: StandardMaterial3D) -> Dictionary:
 	var record: Dictionary = material.get_meta("rain_base", {})
 	if record.is_empty(): return {}
@@ -112,7 +112,7 @@ static func _apply_material(material: StandardMaterial3D, wet: float, gloss: flo
 		drops.shader = DROP_SHADER
 		material.set_meta("rain_drops", drops)
 	if not has_beads(material):
-		# Preserve an existing extra finish instead of overwriting its chain.
+		# Preserva um acabamento extra existente em vez de sobrescrever a cadeia dele.
 		drops.next_pass = material.next_pass
 		material.next_pass = drops
 	drops.set_shader_parameter("wet", wet)

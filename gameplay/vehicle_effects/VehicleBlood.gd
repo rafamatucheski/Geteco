@@ -24,8 +24,8 @@ static func impact_side(car: Node3D, heading: Vector3) -> int:
 static func eligible(part: MeshInstance3D, visual: Node3D) -> bool:
 	if part.has_meta("vehicle_shadow_proxy"): return false
 	if part.mesh == null: return false
-	# Steering forks/fenders carry wheel_center too, but do not spin with tires.
-	# Their exported names contain "wheel"; name filtering hid blood on bikes.
+	# Garfos de direção/para-lamas também levam wheel_center, mas não giram com os pneus.
+	# Os nomes exportados deles contêm "wheel"; filtrar por nome escondia o sangue nas motos.
 	if part.has_meta("wheel_center") and part.get_meta("wheel_spins",true): return false
 	var ancestor: Node = part
 	while ancestor != null and ancestor != visual:
@@ -51,8 +51,8 @@ static func apply(car: Node3D, mask: int) -> void:
 		material.shader = SHADER
 		material.set_shader_parameter("part_to_car", car.global_transform.affine_inverse() * part.global_transform)
 		material.set_shader_parameter("half_length", float(car.get("half_length")))
-		# Bike collision bounds include handlebars; their narrow tank/fairings sit
-		# inside that width and otherwise receive almost no lateral splatter.
+		# Os limites de colisão da moto incluem o guidão; o tanque/carenagens estreitos ficam
+		# dentro dessa largura e, sem isto, quase não recebem respingo lateral.
 		var width := float(car.get("half_width"))
 		if str(car.get("archetype")).begins_with("bike_"): width=minf(width,.26)
 		material.set_shader_parameter("half_width", width)

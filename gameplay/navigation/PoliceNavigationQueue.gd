@@ -1,6 +1,6 @@
 extends Node
-## Provisional CPU budget, not a measured performance guarantee. Contact,
-## combat and physical movement continue independently of these queued searches.
+## Orçamento de CPU provisório, não uma garantia de desempenho medida. Contato,
+## combate e movimento físico continuam independentes destas buscas enfileiradas.
 const JOB := preload("res://gameplay/navigation/PolicePathJob.gd")
 const EXPANSIONS_PER_FRAME := 32
 const EXPANSIONS_PER_TURN := 4
@@ -21,8 +21,8 @@ func request(actor: CharacterBody3D, goal: Vector3) -> Dictionary:
 	var id := actor.get_instance_id()
 	var context := _context(actor)
 	var entry: Dictionary = _jobs.get(id, {})
-	# Ordinary movement must not continually erase completed expansions. Only a
-	# context change or an actual discontinuity restarts an in-flight request.
+	# O movimento comum não pode apagar sem parar as expansões concluídas. Só uma
+	# mudança de contexto ou uma descontinuidade real reinicia um pedido em andamento.
 	if not entry.is_empty() and (entry.context != context or entry.last_goal.distance_to(goal) > TELEPORT_DISTANCE or entry.last_position.distance_to(actor.global_position) > TELEPORT_DISTANCE):
 		cancel(actor)
 		entry = {}
@@ -68,8 +68,8 @@ func _physics_process(_delta: float) -> void:
 		_order.clear()
 		set_physics_process(false)
 		return
-	# A slow rendered frame may contain several physics ticks. Do not multiply
-	# the search budget during catch-up, which would reinforce the original stall.
+	# Um quadro renderizado lento pode conter vários ticks de física. Não multiplica
+	# o orçamento de busca durante o catch-up, o que reforçaria o travamento original.
 	var frame := Engine.get_process_frames()
 	if frame == _last_frame: return
 	_last_frame = frame

@@ -1,6 +1,6 @@
 extends Node3D
-## White 2014 double cab, black multi-spoke rims and black side steps from Digo's photo.
-## Shared baked batches; wheel and headlight sides stay independent for animation/lights.
+## Cabine dupla branca 2014, aros pretos multirraios e estribos pretos da foto do Digo.
+## Lotes pré-montados compartilhados; os lados de roda e farol ficam independentes para animação/luzes.
 static var _cached: Array[Dictionary] = []
 var _batches: Dictionary = {}
 var _materials: Dictionary = {}
@@ -117,7 +117,7 @@ func _hood_point(ring: Vector4,ratio: float) -> Vector3:
 	return Vector3(ring.y*ratio,lerpf(ring.z,ring.w,pow(absf(ratio),3.4)),ring.x+(pow(absf(ratio),4.0)*.07 if ring.x<-2.5 else 0.0))
 
 func _headlight(side: float) -> void:
-	# Outer end wraps back into the wing instead of sitting on a rectangular block.
+	# A ponta externa se curva de volta para o para-lama em vez de ficar sobre um bloco retangular.
 	var key := "headlight#%s" % str(side)
 	var a := Vector3(side*.515,1.139,-2.550)
 	var b := Vector3(side*.902,1.148,-2.470)
@@ -146,7 +146,7 @@ func _front_bumper() -> void:
 		var xb: float = widths[i+1]
 		var za := _bumper_z(xa)
 		var zb := _bumper_z(xb)
-		# Crown belt above the intakes and a rolled lower lip share curved corners.
+		# A faixa abaulada acima das entradas de ar e um lábio inferior enrolado compartilham cantos curvos.
 		for band in [Vector2(.773,.934),Vector2(.463,.539)]:
 			var setback := .020 if band.x<.5 else 0.0
 			_quad("paint",Vector3(xa,band.x,za+setback),Vector3(xb,band.x,zb+setback),Vector3(xb,band.y,zb),Vector3(xa,band.y,za))

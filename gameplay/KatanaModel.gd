@@ -1,6 +1,6 @@
 extends RefCounted
-## Authored nodachi silhouette: curved steel, hamon, brass fittings and wrapped long grip.
-## The energy conversion is emissive geometry, with no additional dynamic lights.
+## Silhueta de nodachi feita à mão: aço curvo, hamon, guarnições de latão e empunhadura longa enrolada.
+## A conversão de energia é geometria emissiva, sem luzes dinâmicas adicionais.
 ## Fio no +X do modelo. A lâmina curva para o DORSO (−X), como uma katana de verdade: curvada para o
 ## lado do fio, o lado convexo (que o olho lê como o que corta) era o dorso e o Dante parecia segurar a
 ## espada com o fio virado para si (pedido de 19/10/2026).
@@ -55,8 +55,8 @@ static func _oval(root: Node3D, label: String, radius: float, length: float, fla
 	root.add_child(mesh)
 
 static func _wrapping(root: Node3D, material: Material) -> void:
-	# Two counterwound silk ribbons reveal the underwrap between the crossings.
-	# All twelve turns share one surface instead of twelve independent boxes.
+	# Duas fitas de seda enroladas em sentidos opostos revelam o forro entre os cruzamentos.
+	# As doze voltas compartilham uma superfície em vez de doze caixas independentes.
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for turn in 12:
@@ -80,8 +80,8 @@ static func _steel_blade(root: Node3D, steel: Material, edge: Material) -> void:
 	var hamon := SurfaceTool.new()
 	body.begin(Mesh.PRIMITIVE_TRIANGLES)
 	hamon.begin(Mesh.PRIMITIVE_TRIANGLES)
-	# A closed five-facet section has a spine, shinogi ridge and a real cutting edge.
-	# The polished edge and body share their boundary; neither floats over the other.
+	# Uma seção fechada de cinco faces tem dorso, aresta shinogi e um fio de corte real.
+	# O fio polido e o corpo compartilham a borda; nenhum flutua sobre o outro.
 	for segment in 12:
 		var section0 := _section(float(segment) / 12.0)
 		var section1 := _section(float(segment + 1) / 12.0)
@@ -129,7 +129,7 @@ static func _triangle(surface: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, 
 		c = swap
 		normal = -normal
 	surface.set_normal(normal)
-	# Godot front faces are clockwise; normal is supplied explicitly.
+	# No Godot as faces frontais são horárias; a normal é fornecida explicitamente.
 	for point in [a, c, b]: surface.add_vertex(point)
 
 static func _add_mesh(root: Node3D, label: String, surface: SurfaceTool, material: Material) -> void:
@@ -142,7 +142,7 @@ static func _add_mesh(root: Node3D, label: String, surface: SurfaceTool, materia
 static func _blade(root: Node3D, label: String, material: Material, width: float, raised := 0.0) -> void:
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-	# Close the existing energy volume without changing its authored bounds or glow.
+	# Fecha o volume de energia existente sem mudar os limites nem o brilho definidos.
 	for i in 16:
 		var t0 := float(i) / 16.0
 		var t1 := float(i + 1) / 16.0

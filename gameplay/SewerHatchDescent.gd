@@ -118,7 +118,7 @@ func _ladder_descend() -> bool:
 		var k := smoothstep(0.0, 1.0, clampf(clock / STEP_SECONDS, 0.0, 1.0))
 		if not _approach(edge.lerp(stand, k), _yaw()): return _abort()
 		actor._pose_cycle("Walking", fposmod(k * 0.5, 1.0), actor.WALK_START)
-	# Reach the authored ladder, take hold, then lower the body vertically.
+	# Chega à escada definida, segura nela e então desce o corpo na vertical.
 	var walking_pose: Array = actor._capture_pose()
 	_ladder_pose(DESCEND_CLIP, 0.0)
 	var gripping_pose: Array = actor._capture_pose()
@@ -213,8 +213,8 @@ func _walk_descend() -> bool:
 	var info := _info()
 	var p0: Vector3 = actor.global_position
 	var approach := _at(c, p0.y, Vector3(0, 0, float(info.get("approach", 1.8))))
-	# A pushed culvert gate is already open and the player has crossed it.
-	# Continue from that threshold instead of walking backwards and reopening.
+	# Um portão de bueiro empurrado já está aberto e o jogador já o atravessou.
+	# Continua a partir desse limiar em vez de andar de costas e reabrir.
 	var pushed_culvert := str(hatch.get("site_id")) == "desert_under_culvert" and float(hatch.get("open_amount")) >= .85
 	if pushed_culvert: approach = p0
 	var yaw_walk := atan2(-(approach.x - p0.x), -(approach.z - p0.z)) if Vector2(approach.x - p0.x, approach.z - p0.z).length() > 0.05 else _yaw()

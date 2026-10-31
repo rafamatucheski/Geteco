@@ -193,7 +193,7 @@ func _emit(point: Vector3, yaw: float, size: Vector2, alpha: float) -> void:
 func _fade() -> void:
 	var count := _multimesh.visible_instance_count
 	for index in count:
-		# An expired slot remains transparent until _emit reuses it.
+		# Um slot expirado continua transparente até _emit reaproveitá-lo.
 		if _alpha[index] == 0.0: continue
 		var age := _clock - _born[index]
 		if age < MARK_LIFETIME - MARK_FADE: continue

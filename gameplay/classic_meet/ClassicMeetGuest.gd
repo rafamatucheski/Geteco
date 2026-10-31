@@ -20,8 +20,8 @@ func _ready() -> void:
 		if reaction != null: reaction.react_to_aim = true
 
 func _physics_process(delta: float) -> void:
-	# The threat adapter temporarily rotates the CivilianModel directly. Restore
-	# Actor's +Z model / -Z visual convention before ordinary walking resumes.
+	# O adaptador de ameaça gira temporariamente o CivilianModel direto. Restaura
+	# a convenção do Actor de modelo +Z / visual -Z antes de a caminhada normal voltar.
 	if is_instance_valid(person): person.rotation.y = PI
 	if route.is_empty(): visual.rotation.y = initial_yaw
 	super._physics_process(delta)

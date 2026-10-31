@@ -1,7 +1,7 @@
 extends RefCounted
-## Z33-inspired continuous shell, swept lamps and rounded fastback greenhouse.
-## Adapted from the authored V1 Maciota350Z shape; only exterior geometry lives
-## here. Existing desert code retains wheels, door animation, kits and physics.
+## Casca contínua inspirada no Z33, faróis puxados e estufa fastback arredondada.
+## Adaptado da forma Maciota350Z feita à mão da V1; só a geometria externa mora
+## aqui. O código existente do deserto mantém rodas, animação de porta, kits e física.
 const SECTIONS := 64
 const CROSS_SECTIONS := 12
 
@@ -11,8 +11,8 @@ static func build(root: Node3D, s: Dictionary, paint: Material, glass: Material,
 	_lamps_and_intakes(root,s,dark)
 	_arches(root,s,paint)
 
-## Flat door skins preserve the real door cutter and side-vinyl contract;
-## muscular haunches and the rounded ends begin beyond the door area.
+## Peles de porta planas preservam o contrato do cortador real de porta e do vinil lateral;
+## quadris musculosos e pontas arredondadas começam além da área da porta.
 static func _half_width(s: Dictionary, z: float) -> float:
 	var w := float(s["size"][0])
 	var t := absf(z)/float(s["size"][2])
@@ -48,13 +48,13 @@ static func _sections(s: Dictionary) -> Array[float]:
 	var arch := float(s.wheel_radius)+.042
 	var sections: Array[float] = []
 	for i in SECTIONS+1: sections.append(lerpf(-l*.495,l*.495,float(i)/SECTIONS))
-	# Near-vertical arch ends are explicit stations, not a coarse diagonal cut.
+	# As pontas quase verticais dos arcos são estações explícitas, não um corte diagonal grosseiro.
 	for axle in [-1.0,1.0]:
 		for sign_z in [-1.0,1.0]:
 			sections.append(axle*l*.315+sign_z*(arch+.001))
 			sections.append(axle*l*.315+sign_z*(arch-.001))
-	# The cabin aperture starts on exact rows, so no deck triangles extend
-	# underneath the windscreen or hatch when their glass becomes transparent.
+	# A abertura da cabine começa em linhas exatas, então nenhum triângulo da tampa se estende
+	# sob o para-brisa ou a tampa traseira quando o vidro deles fica transparente.
 	sections.append(l*float(s.cabin_front))
 	sections.append(l*float(s.cabin_back))
 	sections.sort()
@@ -132,13 +132,13 @@ static func _cabin_sections(s: Dictionary, window_begin: float, window_end: floa
 	var stations := _stations(s)
 	var sections: Array[float] = []
 	for station in stations: sections.append(station.z)
-	# Share every deck-edge vertex with the cabin foot to avoid tiny cracks
-	# between differently tessellated curves.
+	# Compartilha cada vértice da borda da tampa com o pé da cabine para evitar frestas
+	# minúsculas entre curvas tesseladas de modo diferente.
 	for z in _sections(s):
 		if z > stations[0].z and z < stations[-1].z: sections.append(z)
 	for i in 25: sections.append(lerpf(window_begin,window_end,float(i)/24.0))
-	# Include the exact tapered window tip; the opening closes to one vertex
-	# instead of leaving a skipped segment or a sudden rectangular notch.
+	# Inclui a ponta afunilada exata da janela; a abertura fecha num vértice só
+	# em vez de deixar um segmento pulado ou um entalhe retangular repentino.
 	for i in stations.size()-1:
 		var a := stations[i]
 		var b := stations[i+1]
@@ -161,13 +161,13 @@ static func _cabin(root: Node3D, s: Dictionary, paint: Material, glass: Material
 		for j in 16:
 			var ua := lerpf(-1.0,1.0,float(j)/16.0)
 			var ub := lerpf(-1.0,1.0,float(j+1)/16.0)
-			# Windshield and hatch glazing are bounded by painted outer strips;
-			# no buried rectangular glass planes or opaque cabin box.
+			# Os vidros do para-brisa e da tampa traseira são limitados por faixas externas pintadas;
+			# sem planos de vidro retangulares enterrados nem caixa opaca de cabine.
 			var is_glass := i in [0,1,4,5] and j>0 and j<15
 			var target: SurfaceTool = glazing if is_glass else shell
 			_quad(target,roof_point(s,ua*a.x,a.z),roof_point(s,ub*a.x,a.z),roof_point(s,ub*b.x,b.z),roof_point(s,ua*b.x,b.z),Vector3.UP)
-	# The side windows replace the skin rather than floating on painted panels.
-	# A broad painted rear pillar keeps the Z's fastback silhouette.
+	# As janelas laterais substituem a pele em vez de flutuar sobre painéis pintados.
+	# Uma coluna traseira pintada e larga mantém a silhueta fastback do Z.
 	var l := float(s["size"][2])
 	var window_begin := l*float(s.cabin_front)+.105
 	var window_end := minf(l*float(s.door_back)-.13,l*.235)
@@ -197,16 +197,16 @@ static func _cabin(root: Node3D, s: Dictionary, paint: Material, glass: Material
 			_quad(glazing,_cabin_side(s,side,za,lower_a),_cabin_side(s,side,zb,lower_b),_cabin_side(s,side,zb,upper_b),_cabin_side(s,side,za,upper_a),outward)
 			var rail := Vector3(side*.003,0,0)
 			_quad(trim,_cabin_side(s,side,za,lower_a-.018)+rail,_cabin_side(s,side,zb,lower_b-.018)+rail,_cabin_side(s,side,zb,lower_b)+rail,_cabin_side(s,side,za,lower_a)+rail,outward)
-	# Close the cowl and parcel lip onto the real deck, including its crowned
-	# surface and rounded longitudinal edges. Only the glazing spans the cabin.
+	# Fecha o cowl e a borda do porta-objetos sobre a tampa real, incluindo a superfície
+	# abaulada e as bordas longitudinais arredondadas. Só os vidros atravessam a cabine.
 	for station: Vector3 in [stations[0],stations[-1]]:
 		var outward := Vector3(0,0,-1 if station.z < 0.0 else 1)
 		for j in 16:
 			var ua := lerpf(-1.0,1.0,float(j)/16.0)
 			var ub := lerpf(-1.0,1.0,float(j+1)/16.0)
 			_quad(shell,deck_point(s,ua*half,station.z),deck_point(s,ub*half,station.z),roof_point(s,ub*station.x,station.z),roof_point(s,ua*station.x,station.z),outward)
-	# A recessed underbody closes the aperture below the separate cabin floor;
-	# boarding can reveal the interior without exposing the road through it.
+	# Um assoalho rebaixado fecha a abertura abaixo do piso separado da cabine;
+	# o embarque pode revelar o interior sem expor a via através dele.
 	var floor_front := stations[0].z
 	var floor_back := stations[-1].z
 	var underbody_y := float(s.wheel_radius)*.72-.018
@@ -239,8 +239,8 @@ static func _lamps_and_intakes(root: Node3D, s: Dictionary, dark: Material) -> v
 			var point := Vector2(side*w*p.x,l*p.y)
 			outline.append(point)
 			center += point*.25
-		# Project the entire lens to the curved bonnet. A single four-corner
-		# plane sank into the convex shell and left only two white edge slivers.
+		# Projeta a lente inteira no capô curvo. Um único plano de quatro
+		# cantos afundava na casca convexa e deixava só duas lascas brancas na borda.
 		var housing := _tool()
 		_deck_patch(housing,s,outline,.008)
 		_commit(root,"ZHeadlampHousing",housing,dark)

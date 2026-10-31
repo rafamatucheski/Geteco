@@ -1,9 +1,9 @@
 extends Node3D
-## Lived-in disorder for the Vértice office (company-local metres, office bay
-## x28..42, z0..30). Paper piles, open boxes, a jammed printer and knocked
-## chairs, all static and batched per material like the site dressing.
-## Kept clear: the x35 door walk, the z8 warehouse passage, the clerks' routes
-## (x31/x38.5 at z6, x30.5 at z8) and the hidden envelope at (35, 3).
+## Desordem de lugar habitado para o escritório da Vértice (metros locais da empresa, baia do escritório
+## x28..42, z0..30). Pilhas de papel, caixas abertas, uma impressora travada e cadeiras
+## derrubadas, tudo estático e agrupado por material como a decoração do local.
+## Fica livre: a passagem da porta em x35, a passagem do armazém em z8, as rotas dos atendentes
+## (x31/x38.5 em z6, x30.5 em z8) e o envelope escondido em (35, 3).
 var solids: Array[StaticBody3D] = []
 var _materials := {}
 var _batches := {}
@@ -24,7 +24,7 @@ func set_region_active(active: bool) -> void:
 
 func _desks() -> void:
 	for z in [14.0,21.0]:
-		# Loose, skewed paper piles and folders over the whole desk top.
+		# Pilhas de papel e pastas soltas e tortas sobre todo o tampo da mesa.
 		for spot in [Vector2(38.25,z+.3),Vector2(40.55,z+.4),Vector2(38.4,z-.45)]:
 			_paper_pile(Vector3(spot.x,.81,spot.y),_rng.randi_range(4,9))
 		_box(Vector3(40.7,.83,z-.1),Vector3(.32,.03,.24),"folder_red",Vector3(0,.5,0))
@@ -34,33 +34,33 @@ func _desks() -> void:
 		# Sticky notes around the monitor bezel.
 		for i in 4:
 			_box(Vector3(38.95+i*.22,1.45+(i%2)*.05,z-.29),Vector3(.08,.08,.004),"sticky" if i%3 else "sticky_pink",Vector3(0,0,_rng.randf_range(-.3,.3)))
-		# Cables hanging behind the desk and an overflowing bin beside it.
+		# Cabos pendurados atrás da mesa e uma lixeira transbordando ao lado.
 		_box(Vector3(39.5,.45,z-.72),Vector3(.02,.75,.02),"dark",Vector3(0,0,.2))
 		_bin(Vector3(37.55,0,z+.35))
-	# Pizza box and a toppled binder on the rear desk.
+	# Caixa de pizza e um fichário tombado na mesa dos fundos.
 	_box(Vector3(38.5,.84,21.2),Vector3(.5,.05,.5),"carton",Vector3(0,.35,0))
 	_box(Vector3(40.4,.87,21.25),Vector3(.32,.06,.26),"folder_blue",Vector3(0,-.6,1.4))
-	# A spare rolling chair left askew in the free west bay.
+	# Uma cadeira de rodinhas sobrando, largada torta na baia oeste livre.
 	_chair(Vector3(31.3,0,16.4),.8)
 	_chair(Vector3(31.6,0,22.4),-1.9)
 
 func _floor_mess() -> void:
-	# Archive boxes against the rear wall and in corners, some lids off.
+	# Caixas de arquivo contra a parede dos fundos e nos cantos, algumas sem tampa.
 	_box_stack(Vector3(29.4,0,1.3),3,.1)
 	_box_stack(Vector3(30.7,0,1.1),2,-.15)
 	_box_stack(Vector3(32.0,0,1.4),1,.35,true)
 	_box_stack(Vector3(40.9,0,27.4),2,.2)
 	_box_stack(Vector3(39.6,0,28.3),1,-.4,true)
 	_box_stack(Vector3(41.0,0,8.3),2,.05)
-	# Loose sheets on the floor: flat, no collision.
+	# Folhas soltas no chão: planas, sem colisão.
 	for area in [Rect2(28.6,.6,4.5,3.5),Rect2(36.6,12.5,4.6,3),Rect2(36.6,19.5,4.6,3.2),Rect2(38.5,25,3,3)]:
 		for i in 7:
 			var p := Vector3(_rng.randf_range(area.position.x,area.end.x),.022+i*.001,_rng.randf_range(area.position.y,area.end.y))
 			_box(p,Vector3(.21,.003,.297),"paper_white",Vector3(0,_rng.randf_range(0,TAU),0))
-	# Crumpled balls that missed the bins.
+	# Bolas de papel amassado que erraram as lixeiras.
 	for p in [Vector3(37.9,.05,15.2),Vector3(37.2,.05,14.9),Vector3(37.8,.05,22.3),Vector3(36.9,.05,21.6),Vector3(33.2,.05,2.1)]:
 		_ball(p)
-	# Coat dropped on the waiting bench and a backpack on the floor.
+	# Casaco largado no banco de espera e uma mochila no chão.
 	_box(Vector3(29.2,.9,24.2),Vector3(.55,.12,.9),"coat",Vector3(.2,.3,0))
 	_box(Vector3(29.9,.2,26.9),Vector3(.4,.4,.25),"folder_blue",Vector3(0,.4,.15))
 
@@ -77,7 +77,7 @@ func _printer_corner() -> void:
 	_solid(at+Vector3(0,.6,.1),Vector3(1.1,1.2,.95))
 
 func _walls() -> void:
-	# Whiteboard on the rear wall with scribbles and a crooked calendar.
+	# Quadro branco na parede dos fundos com rabiscos e um calendário torto.
 	_box(Vector3(35.8,1.7,.24),Vector3(2.6,1.2,.04),"board")
 	_box(Vector3(35.8,1.7,.22),Vector3(2.7,1.3,.03),"dark")
 	for i in 9:

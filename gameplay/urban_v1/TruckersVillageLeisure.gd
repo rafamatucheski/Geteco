@@ -1,5 +1,5 @@
 extends Node
-## Exterior skill game and a small local cache. Only active rounds poll context.
+## Jogo de habilidade externo e um pequeno cache local. Só rodadas ativas consultam o contexto.
 const ART := preload("res://gameplay/urban_v1/TruckersVillageLeisureArt.gd")
 const GAME := preload("res://gameplay/urban_v1/TruckersVillageHorseshoes.gd")
 const PREFIX := "truckers_village_leisure_"
@@ -75,7 +75,7 @@ func _throw(strength: float, hit: bool) -> void:
 	if playing and is_instance_valid(art): art.animate_throw(strength,hit)
 
 func _menu_closed() -> void:
-	# FullSession is already closing; never recurse into close_menu here.
+	# FullSession já está fechando; nunca entra recursivamente em close_menu aqui.
 	playing = false
 	if is_instance_valid(ui): ui.cancel_game()
 	_release_controls = _held()
@@ -83,8 +83,8 @@ func _menu_closed() -> void:
 	if _release_controls: _guard_controls_after_close.call_deferred()
 
 func _guard_controls_after_close() -> void:
-	# close_menu applies its own lock after the callback. Guard held controls
-	# afterwards so an external dismissal cannot leak a shot into gameplay.
+	# close_menu aplica a própria trava depois do callback. Guarda os controles segurados
+	# depois disso para que um fechamento externo não vaze um arremesso para o jogo.
 	if _release_controls and not session.modal:
 		session.world.player.input_locked = true
 

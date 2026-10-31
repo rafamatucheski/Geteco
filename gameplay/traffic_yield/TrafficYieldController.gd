@@ -106,8 +106,8 @@ func _hazards() -> Array:
 		if not is_siren_vehicle(vehicle) and not needs_room: continue
 		var forward: Vector3 = -vehicle.global_basis.z
 		if vehicle.speed < 0.0: forward = -forward
-		# Dispatch intent remains meaningful while stopped. Keep the player's
-		# parked siren semantics unchanged and reserve rear clearance on recovery.
+		# A intenção de despacho continua significativa enquanto parado. Mantém inalterada
+		# a semântica da sirene estacionada do jogador e reserva folga traseira na recuperação.
 		var speed: float = absf(vehicle.speed)
 		if vehicle.get_meta("dispatch_unit",false): speed = maxf(speed,RULES.MIN_EMERGENCY_SPEED)
 		result.append({"vehicle": vehicle, "position": vehicle.global_position, "forward": forward, "speed":speed,"rear":needs_room})
@@ -117,7 +117,7 @@ func _hazards() -> Array:
 func _yieldable(vehicle: Variant) -> bool:
 	if not is_instance_valid(vehicle) or not vehicle.traffic or vehicle.controlled or vehicle.route == null: return false
 	if vehicle.traffic_escape!=null and (vehicle.traffic_escape.active or vehicle.traffic_escape.retiring): return false
-	# Convoys use traffic physics but retain ownership of their private route.
+	# Comboios usam a física de trânsito mas continuam donos da rota privada deles.
 	if vehicle.get_meta("armored_transport", false): return false
 	if vehicle.health <= 0.0 or not vehicle.visible or not vehicle.is_physics_processing(): return false
 	if vehicle.has_meta("awaiting_ground") or vehicle.get_meta("dispatch_unit", false) or vehicle.get_meta("residence_vehicle", false): return false
@@ -166,7 +166,7 @@ func _physics_process_traced(delta: float) -> void:
 			if hazard.rear and relative.x > -18 and relative.x < 0 and relative.y < RULES.CORRIDOR: threatened = true
 			if not threatened: continue
 			if hazard.rear and relative.x < 0 and vehicle.speed<.6 and vehicle.traffic_rear_clear(3.0):
-				# First create longitudinal room, then pull aside on a validated curve.
+				# Primeiro cria espaço longitudinal, depois encosta numa curva validada.
 				if not model.in_junction(vehicle.global_position):
 					vehicle.backoff_time = maxf(vehicle.backoff_time,1.6)
 			var agent := AGENT.new()

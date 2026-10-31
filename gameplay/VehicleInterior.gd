@@ -100,7 +100,7 @@ static var _material: StandardMaterial3D
 ## volta à leitura direta, para A/B.
 static var spec_cache := OS.get_environment("GETECO_INTERIOR_SPEC_CACHE") != "0"
 static var _glass_vertices: Dictionary = {}
-## CPU contact arrays shared by models; populated together with glazing under the loading curtain.
+## Arrays de contato na CPU compartilhados pelos modelos; preenchidos junto com os vidros sob a cortina de carregamento.
 static var _contact_arrays: Dictionary = {}
 const GLASS_CACHE_PRUNE := 512
 
@@ -208,8 +208,8 @@ static func _is_glass(part: MeshInstance3D, surface: int, material: Material) ->
 
 static func _derive(vehicle: Node3D) -> Dictionary:
 	var id := str(vehicle.get("archetype"))
-	# Authored models can describe their passenger compartment independently of
-	# glazing geometry (door cuts and exterior mirrors are not cabin dimensions).
+	# Modelos feitos à mão podem descrever o compartimento de passageiros independentemente
+	# da geometria dos vidros (recortes de porta e retrovisores externos não são dimensões da cabine).
 	var authored: Dictionary = vehicle.visual.get_meta("vehicle_interior_spec", {})
 	var kind: String = str(authored.get("kind", KIND_OF.get(id, "car")))
 	if not KINDS.has(kind): kind = "car"
@@ -688,8 +688,8 @@ static func _interior_alpha_material() -> StandardMaterial3D:
 		_alpha_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	return _alpha_material
 
-## Submit the same shared shaders used by mesh_for before gameplay starts.
-## Does not mark any vehicle family warmed or create its geometry.
+## Submete os mesmos shaders compartilhados usados por mesh_for antes do jogo começar.
+## Não marca nenhuma família de veículo como aquecida nem cria a geometria dela.
 static func prepare_shared_materials() -> void:
 	if not enabled: return
 	_interior_material().get_rid()
@@ -962,8 +962,8 @@ static func _steering_wheel(t: SurfaceTool, hub: Vector3, radius: float, tilt: f
 
 ## Banco com encosto inclinado, apoio de cabeça e laterais.
 static func _seat(t: SurfaceTool, x: float, z: float, cush: float, recline: float, width: float, color: Color, headrest := true, tall := 0.0, seat_floor := -INF) -> void:
-	# Low sports cabins need a shallow seat cushion and rails above their floor.
-	# Legacy models retain their original pedestal when no floor is authored.
+	# Cabines esportivas baixas precisam de almofada de assento rasa e trilhos acima do piso.
+	# Modelos legados mantêm o pedestal original quando não há piso definido.
 	var padding := minf(.14, maxf(.035, cush - seat_floor - .035))
 	_box(t, Vector3(x, cush - padding*.5, z), Vector3(width, padding, .50), color)
 	# Base do banco / trilho.
@@ -1091,8 +1091,8 @@ static func _cabin(t: SurfaceTool, s: Dictionary) -> void:
 	# Forro do teto sob o teto, com luz de cortesia; quebra-sóis e retrovisor interno.
 	var roof_z0 := wz1 - .02
 	var roof_z1 := minf(rear - .1, floor_back)
-	# `rear` is the bottom of the rear glass. The flat lining and its trim
-	# must stop at the upper edge, before the glazing slopes toward the boot.
+	# `rear` é a base do vidro traseiro. O forro plano e o acabamento dele
+	# precisam parar na borda superior, antes de o vidro descer em direção ao porta-malas.
 	roof_z1 = minf(roof_z1, float(s.rear_top) - .04)
 	roof_z1 = minf(roof_z1, float(s.get("roof_rear", roof_z1)))
 	if bool(s.get("roof_liner", true)):

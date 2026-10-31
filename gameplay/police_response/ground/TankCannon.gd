@@ -1,6 +1,6 @@
 extends Node3D
-## One weapon for player and police tanks. Only awake during recoil, reload or
-## flight; each shell sweeps its entire step. BlastQuery visits every overlapping body.
+## Uma arma para os tanques do jogador e da polícia. Só fica acordada durante recuo, recarga ou
+## voo; cada projétil varre o passo inteiro. BlastQuery visita todo corpo sobreposto.
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const BLAST_QUERY := preload("res://gameplay/BlastQuery.gd")
 const STREET := preload("res://gameplay/street_physics/StreetPhysics.gd")
@@ -38,8 +38,8 @@ func configure(car: CharacterBody3D) -> void:
 
 func aim_at(point: Vector3, delta: float) -> void:
 	if not point.is_finite() or not is_instance_valid(turret) or not is_instance_valid(barrel) or not turret.is_inside_tree(): return
-	# Derive yaw from the parent's current world transform: the hull can turn
-	# beneath the turret while the gun keeps tracking the same world point.
+	# Deriva o yaw da transformação de mundo atual do pai: o casco pode girar
+	# sob a torre enquanto o canhão continua rastreando o mesmo ponto do mundo.
 	var local_point: Vector3 = turret.get_parent().to_local(point)-turret.position
 	if Vector2(local_point.x,local_point.z).length_squared() < .01: return
 	var yaw := atan2(-local_point.x,-local_point.z)
@@ -62,8 +62,8 @@ func fire(gameplay: Node3D, police_control: bool = false) -> bool:
 	var excluded: Array[RID] = [vehicle.get_rid()]
 	if not police_control and source is CollisionObject3D: excluded.append(source.get_rid())
 	var origin := muzzle_position()
-	# Prevent the long barrel from placing a round beyond a wall. The hull is
-	# excluded only from its own launch, never from other tanks' sweeps.
+	# Impede que o cano longo ponha um projétil além de uma parede. O casco é
+	# excluído só do próprio disparo, nunca das varreduras de outros tanques.
 	var bridge := PhysicsRayQueryParameters3D.create(turret.global_position+Vector3.UP*.28,origin,7,excluded)
 	if not get_world_3d().direct_space_state.intersect_ray(bridge).is_empty(): return false
 	var direction := (-muzzle.global_basis.z).normalized()
@@ -135,7 +135,7 @@ func _detonate(gameplay: Node3D, source: Node3D, hit: Dictionary, direction: Vec
 			gameplay._damage(direct,amount,source)
 			gameplay._hit_effect(hit,amount,direction)
 			_impulse(direct,direction,1.0)
-	# Offset toward the incoming side so the blocking wall also blocks splash.
+	# Desloca para o lado de onde veio o tiro para que a parede que bloqueia também bloqueie o estilhaço.
 	var blast_origin: Vector3 = point+hit.normal*.06
 	var sphere := SphereShape3D.new()
 	sphere.radius = BLAST_RADIUS
@@ -164,7 +164,7 @@ func _detonate(gameplay: Node3D, source: Node3D, hit: Dictionary, direction: Vec
 
 func _damage_allowed(actor: Node3D, source: Node3D, police_control: bool) -> bool:
 	if actor == vehicle or actor == source or vehicle.is_ancestor_of(actor) or source.is_ancestor_of(actor) or PROTECTION.is_protected(actor): return false
-	# The police gun cannot injure its own dismounted crew in the blast.
+	# O canhão da polícia não pode ferir a própria equipe desembarcada na explosão.
 	return not (police_control and (actor.get_meta("gameplay_role","") == "police" or actor.has_meta("dispatch_unit")))
 
 func _impulse(actor: Node3D, direction: Vector3, strength: float) -> void:

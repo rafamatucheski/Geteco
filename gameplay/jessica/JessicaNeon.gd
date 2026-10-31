@@ -1,6 +1,6 @@
 extends Node3D
-## One short-range source, two strips and a depth-tested soft ground pool.
-## Smooth daylight and distance weights avoid flashing at activation edges.
+## Uma fonte de curto alcance, duas faixas e um poço suave no chão com teste de profundidade.
+## Pesos suaves de luz do dia e de distância evitam piscar nas bordas de ativação.
 const ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
 var car: CharacterBody3D
 var ground_light: OmniLight3D
@@ -69,8 +69,8 @@ func _ready() -> void:
 	ground_finish.albedo_color = Color(.92,.022,.048,0)
 	ground_pool.material_override = ground_finish
 	ground_pool.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# The production headlights use the same low plane/depth contract: the
-	# actual car, pavement edges and other solids occlude this short pool.
+	# Os faróis de produção usam o mesmo contrato de plano baixo/profundidade: o
+	# carro real, as bordas do calçamento e outros sólidos ocluem este poço curto.
 	ground_pool.position = Vector3(0,.07,.08)
 	ground_pool.hide()
 	add_child(ground_pool)

@@ -54,7 +54,7 @@ func drop_case() -> void:
 	if case_dropped or not is_instance_valid(cash_case) or not cash_case.visible: return
 	case_dropped = true
 	carrying = false
-	# Drop in the current actor's scope so convoy cleanup also removes the case.
+	# Larga no escopo do ator atual para que a limpeza do comboio também remova a maleta.
 	var actor := get_parent() as Node3D
 	if actor == null or actor.get_parent() == null: return
 	if actor.get("dead") != true: weapon.show()

@@ -1,7 +1,7 @@
 extends RefCounted
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
-## NativeRegion already supplies metres. Junctions are split where the authored
-## centre-lines actually meet; no synthetic cross-block shortcuts or U-turns.
+## NativeRegion já fornece metros. Cruzamentos são divididos onde as linhas centrais
+## desenhadas realmente se encontram; sem atalhos sintéticos entre quarteirões nem retornos.
 var segments: Array[Dictionary] = []
 var vertices: Array[Vector3] = []
 var edges: Dictionary = {}
@@ -42,8 +42,8 @@ func configure(roads: Array, minimum_width: float = 5.0) -> void:
 		var width := float(road.get("width", 7.5))
 		var id := str(road.get("id", "road"))
 		var one_way := id.contains("inbound") or id.contains("outbound")
-		# Single-lane bridges have an explicit direction in the original map.
-		# Narrow two-way service paths remain pedestrian/service access.
+		# Pontes de faixa única têm direção explícita no mapa original.
+		# Caminhos de serviço estreitos de mão dupla continuam como acesso de pedestre/serviço.
 		if width < minimum_width and not one_way: continue
 		for index in range(points.size() - 1):
 			var a: Vector3 = points[index]
@@ -74,9 +74,9 @@ func configure(roads: Array, minimum_width: float = 5.0) -> void:
 			var b: Vector3 = segment.a.lerp(segment.b, segment.splits[index + 1])
 			var from := _vertex(a)
 			var to := _vertex(b)
-			# A junction may split a continuous road only centimetres from a control
-			# point. Keep that link whenever quantization gives distinct vertices;
-			# dropping it would cut both the main road and its branch off the graph.
+			# Um cruzamento pode dividir uma via contínua a poucos centímetros de um ponto de
+			# controle. Mantém essa ligação sempre que a quantização der vértices distintos;
+			# descartá-la cortaria tanto a via principal quanto o ramal do grafo.
 			if from == to: continue
 			_connect(from, to, segment)
 			if not segment.one_way: _connect(to, from, segment)
@@ -174,7 +174,7 @@ func _route_from(selected: Dictionary, lane_index: int) -> Curve3D:
 	return curve
 
 func route_between(start: Vector3, finish: Vector3, arrival_direction: Vector3 = Vector3.ZERO) -> Curve3D:
-	# Mission journeys use the same directed intersections as ambient traffic.
+	# Viagens de missão usam os mesmos cruzamentos dirigidos do trânsito ambiente.
 	if vertices.is_empty(): return null
 	var first := 0
 	var last := 0
@@ -227,8 +227,8 @@ func route_between(start: Vector3, finish: Vector3, arrival_direction: Vector3 =
 	return curve
 
 func _cycle(first: Dictionary) -> Array[int]:
-	# Search from the next junction back to the first without using the same
-	# street in reverse. A cycle must contain at least three distinct nodes.
+	# Busca do próximo cruzamento de volta ao primeiro sem usar a mesma
+	# rua ao contrário. Um ciclo precisa ter pelo menos três nós distintos.
 	var queue: Array[int] = [first.to]
 	var previous: Dictionary = {first.to: -1}
 	var cursor := 0
@@ -300,10 +300,10 @@ func _curve_geometry(path: Array[int], closed: bool) -> Dictionary:
 	var sections: Array[Dictionary] = []
 	for node in nodes: points.append(vertices[node])
 	for index in range(path.size()-1): sections.append(_edge(path[index],path[index+1]))
-	# Graph control points are not corners. A split a few centimetres before a
-	# junction must not shrink its lane turn into a reversing hook. Coalesce only
-	# gentle, same-road control points beside a change of road; keep real forks,
-	# lane/width changes and sharp bends. Graph vertices and lane metadata stay intact.
+	# Pontos de controle do grafo não são esquinas. Uma divisão poucos centímetros antes de um
+	# cruzamento não pode encolher a curva da faixa num gancho de ré. Funde só pontos
+	# suaves da mesma via ao lado de uma troca de via; mantém bifurcações reais,
+	# mudanças de faixa/largura e curvas fechadas. Vértices do grafo e metadados de faixa ficam intactos.
 	var index := 1
 	while index < points.size()-1:
 		var first: Dictionary = sections[index-1]
@@ -371,8 +371,8 @@ func _curve(path: Array[int], closed: bool, lane_index := 0) -> Curve3D:
 		var edge := _edge(path[index],path[index+1])
 		lane_sections.append({"a":vertices[path[index]],"b":vertices[path[index+1]],"lanes":edge.get("lanes",1),"width":edge.width})
 	curve.set_meta("lane_sections",lane_sections)
-	# Only a route that actually uses the tunnel follows its ramp profile.
-	# Quay occupies the same XZ over the covered canal and stays at street level.
+	# Só uma rota que usa de fato o túnel segue o perfil da rampa dele.
+	# O cais ocupa o mesmo XZ sobre o canal coberto e fica no nível da rua.
 	if _source_ids(path).has(CANAL_TUNNEL.TRAFFIC_ID): CANAL_TUNNEL.follow_floor(curve)
 	curve.set_meta("lane_index",lane_index)
 	curve.set_meta("junction_reach",7.0 if lane_index>0 else 4.0)

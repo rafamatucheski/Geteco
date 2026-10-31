@@ -103,8 +103,8 @@ func _seated_head_top(car: Node3D) -> float:
 	if body.head_node.mesh != null:
 		var bounds: AABB = car.global_transform.affine_inverse() * body.head_node.global_transform * body.head_node.mesh.get_aabb()
 		return bounds.end.y
-	# Imported bodies use a meshless pose joint. Carry the authored crown height
-	# from the head's rest space into its seated skeleton pose, not the T-pose AABB.
+	# Corpos importados usam uma junta de pose sem malha. Leva a altura do topo da cabeça
+	# do espaço de repouso da cabeça para a pose sentada do esqueleto, não para a AABB da pose T.
 	var rig: RefCounted = body._meshy
 	rig.sync()
 	var skeleton: Skeleton3D = rig.skeleton

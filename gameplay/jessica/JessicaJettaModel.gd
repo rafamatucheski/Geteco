@@ -1,6 +1,6 @@
 extends Node3D
-## Modern white GLI sedan: four doors, thin lamps, red grille stripe and alloys.
-## Native triangles batch by finish; immutable meshes are cached once.
+## Sedã GLI branco moderno: quatro portas, faróis finos, faixa vermelha na grade e rodas de liga.
+## Triângulos nativos agrupados por acabamento; malhas imutáveis ficam em cache uma vez.
 static var _cached: Array[Dictionary] = []
 var _batches: Dictionary = {}
 var _materials: Dictionary = {}
@@ -39,14 +39,14 @@ func _build() -> void:
 		material.roughness = row[3]
 		material.cull_mode = BaseMaterial3D.CULL_DISABLED
 		_materials[row[0]] = material
-	# Passenger cabin is hollow: no belt-height slab crosses the seats.
+	# A cabine de passageiros é oca: nenhuma laje na altura da cintura atravessa os assentos.
 	_box("rubber#fixed",Vector3(0,.22,0),Vector3(1.65,.12,4.28))
 	_quad("paint#fixed",Vector3(-.86,.84,-2.20),Vector3(.86,.84,-2.20),Vector3(.91,.99,-.90),Vector3(-.91,.99,-.90))
 	_quad("paint#fixed",Vector3(-.70,1.46,-.30),Vector3(.70,1.46,-.30),Vector3(.71,1.44,.79),Vector3(-.71,1.44,.79))
 	_quad("paint#fixed",Vector3(-.88,.99,1.27),Vector3(.88,.99,1.27),Vector3(.87,.89,2.22),Vector3(-.87,.89,2.22))
 	_quad("glass",Vector3(-.865,1.01,-.865),Vector3(.865,1.01,-.865),Vector3(.673,1.438,-.302),Vector3(-.673,1.438,-.302))
 	_quad("glass",Vector3(-.681,1.416,.823),Vector3(.681,1.416,.823),Vector3(.836,1.012,1.254),Vector3(-.836,1.012,1.254))
-	# Solid roof lips and pillars close the seams without overlapping glass.
+	# Bordas de teto e colunas sólidas fecham as emendas sem sobrepor o vidro.
 	_quad("paint#fixed",Vector3(-.70,1.46,-.30),Vector3(.70,1.46,-.30),Vector3(.673,1.438,-.302),Vector3(-.673,1.438,-.302))
 	_quad("paint#fixed",Vector3(-.71,1.44,.79),Vector3(.71,1.44,.79),Vector3(.681,1.416,.823),Vector3(-.681,1.416,.823))
 	for side in [-1.0,1.0]:
@@ -83,7 +83,7 @@ func _build() -> void:
 		_box("paint#fixed",Vector3(side*1.027,1.075,-.56),Vector3(.156,.093,.192))
 		_box("smoked_lens#fixed",Vector3(side*1.027,1.072,-.455),Vector3(.130,.072,.008))
 		_box("trim",Vector3(side*.92,.315,.18),Vector3(.047,.047,1.91))
-	# Wide grille, sharp headlamps and the red GLI line distinguish the sedan.
+	# Grade larga, faróis afiados e a linha vermelha GLI distinguem o sedã.
 	_box("paint#fixed",Vector3(0,.66,-2.27),Vector3(1.83,.43,.13))
 	_box("rubber#fixed",Vector3(0,.775,-2.343),Vector3(.97,.187,.025))
 	for i in 4: _box("trim#fixed",Vector3(0,.710+i*.042,-2.36),Vector3(.96,.013,.015))

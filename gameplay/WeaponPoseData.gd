@@ -1,8 +1,8 @@
 extends RefCounted
 
-## Presentation only: damage, ammo and fire cadence remain owned by Player.
-## Arms use the existing rig lengths. Gun orientation is independent of the
-## forearm so raising the elbow never points the barrel into the sky.
+## Só apresentação: dano, munição e cadência de tiro continuam pertencendo a Player.
+## Os braços usam os comprimentos existentes do rig. A orientação da arma é independente do
+## antebraço para que erguer o cotovelo nunca aponte o cano para o céu.
 const PROFILES := {
 	"pistol_suppressed": [Vector3(0.19, 0.96, -0.27), Vector3.ZERO, 0.09, 16.0],
 	"smg_compact": [Vector3(0.07, 0.94, -0.16), Vector3(-0.05, 0.0, -0.12), 0.07, 19.0],
@@ -28,7 +28,7 @@ const PROFILES := {
 	"fists": [Vector3(0.24, 0.68, -0.02), Vector3.ZERO, 0.0, 12.0],
 }
 
-# Mesh-space centres of the actual handles, not the receiver or barrel.
+# Centros, no espaço da malha, das empunhaduras reais, não do receptor nem do cano.
 const GRIPS := {
 	"pistol_suppressed": Vector3(0, -0.03, 0.02),
 	"smg_compact": Vector3(0, -0.05, 0.03), "smg_tactical": Vector3(0, -0.05, 0.03),
@@ -57,7 +57,7 @@ const SUPPORT_GRIPS := {
 	"smg_compact": Vector3(-0.02, -0.02, -0.15), "smg_tactical": Vector3(-0.02, -0.02, -0.15),
 	"shotgun_auto": Vector3(-0.02, -0.025, -0.16),
 	"pistol": Vector3(-0.038, -0.033, 0.02),
-	# Compact pistol grip: the support palm wraps the firing hand, not the barrels.
+	# Empunhadura compacta de pistola: a palma de apoio envolve a mão que atira, não os canos.
 	"sawed_off": Vector3(-0.038, -0.053, 0.05),
 	# Mão esquerda no fim do cabo, junto ao calcanhar (vai até 0,16): mais acima, o pé
 	# do cabo entrava no peito quando as mãos passavam junto ao tronco.
@@ -68,5 +68,5 @@ const SUPPORT_GRIPS := {
 	"rpg": Vector3(-0.012, 0.0, -0.22), "flamethrower": Vector3(-0.012, -0.055, -0.14),
 	"bat": Vector3(0, 0, 0.10),
 }
-# Rear faces of the stocks, including the compact SMG wire stock.
+# Faces traseiras das coronhas, incluindo a coronha de arame da SMG compacta.
 const STOCK_ENDS := {"smg_compact": Vector3(0, 0.03, 0.19), "smg_tactical": Vector3(0, 0.03, 0.19), "shotgun_auto": Vector3(0, -0.04, 0.27), "smg": Vector3(0, 0.03, 0.19), "shotgun": Vector3(0, -0.04, 0.27), "ak47": Vector3(0, -0.02, 0.29), "m4a1": Vector3(0, 0, 0.25), "hunting_rifle": Vector3(0, -0.02, 0.19)}

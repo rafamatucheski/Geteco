@@ -1,6 +1,6 @@
 extends RefCounted
-## Lofted rescue/patrol airframe. Static pieces are batched by material; moving
-## doors/rotors retain their own transforms. All cockpit glass is opaque.
+## Fuselagem de resgate/patrulha feita por loft. As peças estáticas são agrupadas por material; portas/rotores
+## que se movem mantêm as próprias transformações. Todo o vidro da cabine é opaco.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const ART = preload("res://gameplay/police_response/air_k9/AirK9Models.gd")
 const NAVY := Color("182c3c")
@@ -69,11 +69,11 @@ static func _build_uncached(parent: Node3D) -> Dictionary:
 			_tube(parent, "RappelOutrigger", Vector3(side * 0.8, 0.68, z), Vector3(side * 1.7, 0.68, z), 0.067, STEEL)
 			_tube(parent, "RappelBrace", Vector3(side * 1.18, 0.13, z), Vector3(side * 1.67, 0.65, z), 0.043, STEEL)
 			_polyline(parent, "RopeAnchorEye", [Vector3(side * 1.7, 0.7, z - 0.06), Vector3(side * 1.7, 0.58, z - 0.06), Vector3(side * 1.7, 0.58, z + 0.06), Vector3(side * 1.7, 0.7, z + 0.06)], 0.024, Color("adb8b1"))
-		# Tubular skids curve upwards at the front. Cross struts are swept tubes.
+		# Os esquis tubulares se curvam para cima na frente. As travessas são tubos varridos.
 		_polyline(parent, "LandingSkid", [Vector3(side * 1.48, -1.28, -2.55), Vector3(side * 1.53, -1.57, -2.1), Vector3(side * 1.53, -1.6, 1.93), Vector3(side * 1.50, -1.5, 2.15)], 0.085, STEEL)
 		for z in [-1.18, 1.2]:
 			_polyline(parent, "LandingStrut", [Vector3(side * 0.72, -0.74, z), Vector3(side * 1.03, -1.15, z), Vector3(side * 1.53, -1.54, z)], 0.072, STEEL)
-		# Swept engine pod and intake/exhaust are separate from the fuselage shell.
+		# A nacele do motor varrida e a entrada/escape ficam separadas da casca da fuselagem.
 		ART.ellipsoid(parent, "TurbineFairing", Vector3(side * 0.46, 1.05, 0.83), Vector3(0.72, 0.78, 2.55), NAVY)
 		ART.ellipsoid(parent, "EngineIntake", Vector3(side * 0.46, 1.09, -0.36), Vector3(0.49, 0.41, 0.15), BLACK)
 		_tube(parent, "Exhaust", Vector3(side * 0.49, 1.08, 1.79), Vector3(side * 0.53, 1.11, 2.22), 0.16, STEEL)
@@ -163,8 +163,8 @@ static func _loft_body(parent: Node3D) -> void:
 			if section == 4 and absf(cos(mid)) > 0.69: continue
 			var color := WHITE if sin(mid) > 0.04 else NAVY
 			if sin(mid) > -0.12 and sin(mid) < 0.06: color = Color("79979a")
-			# Outside faces must wind clockwise for Godot. Advance along the
-			# fuselage before advancing around its section, not the reverse.
+			# Para o Godot, as faces externas precisam enrolar no sentido horário. Avança ao longo da
+			# fuselagem antes de avançar em volta da seção, não o contrário.
 			_quad(st, _ring(SECTION[section], a), _ring(SECTION[section + 1], a), _ring(SECTION[section + 1], b), _ring(SECTION[section], b), color)
 	st.generate_normals()
 	var mat := ART.material(WHITE).duplicate() as StandardMaterial3D
@@ -236,7 +236,7 @@ static func _tube(parent: Node3D, label: String, a: Vector3, b: Vector3, radius:
 	mesh.bottom_radius = radius
 	mesh.height = a.distance_to(b)
 	mesh.radial_segments = 8
-	# Straight tubes need no intermediate axial rings; keep the round silhouette.
+	# Tubos retos não precisam de anéis axiais intermediários; mantém a silhueta redonda.
 	mesh.rings = 0
 	var node := ART.part(parent, label, mesh, (a + b) * 0.5, color)
 	node.quaternion = Quaternion(Vector3.UP, (b - a).normalized())
@@ -260,9 +260,9 @@ static func _bake_static(parent: Node3D) -> void:
 			var arrays: Array = MESH_ARRAYS.arrays_of(child.mesh, surface).duplicate()
 			var indices: Variant = arrays[Mesh.ARRAY_INDEX]
 			if indices == null or indices.is_empty():
-				# append_from does not synthesize indices for a non-indexed source.
-				# Mixing its loose vertices with an indexed primitive leaves those
-				# triangles unreferenced in the merged surface (the entire tail boom).
+				# append_from não sintetiza índices para uma origem sem índices.
+				# Misturar os vértices soltos dela com uma primitiva indexada deixa esses
+				# triângulos sem referência na superfície fundida (o cone de cauda inteiro).
 				var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 				var sequential := PackedInt32Array()
 				sequential.resize(vertices.size())

@@ -18,9 +18,9 @@ extends RefCounted
 ## Carregar usa o espaço V2 do Actor (+X direita, −Z frente, Y para cima), medido no esqueleto do Dante
 ## (tools/capture_katana_locomotion.gd): ombro direito em (0,18; 1,35; 0,02), palma alcança ~0,47 m do
 ## ombro, centro da cabeça em ~(0; 1,56; −0,05) com raio de 0,14 m (cabelo).
-## Cortes de reserva: two-handed vertical, diagonal and rising cuts, with controlled recovery.
-## Reference: https://www.auskf.org/department/iaido/iaido-judging-points
-## Their keys use V1 rig coordinates; hands are converted to Dante's current scale.
+## Cortes de reserva: cortes verticais, diagonais e ascendentes com as duas mãos, com recuperação controlada.
+## Referência: https://www.auskf.org/department/iaido/iaido-judging-points
+## As chaves usam coordenadas do rig da V1; as mãos são convertidas para a escala atual do Dante.
 const MOVES = preload("res://gameplay/MeleeMoveset.gd")
 const V1_TO_V2 := 1.03 / 0.82
 const CONTACT := [0.32, 0.32, 0.32]

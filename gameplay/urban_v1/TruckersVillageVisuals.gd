@@ -1,5 +1,5 @@
 extends Node3D
-## Static roadside stop in Harbor coordinates. Homes are closed exterior scenery.
+## Parada estática de beira de estrada em coordenadas do Harbor. As casas são cenário externo fechado.
 const ORIGIN := Vector3(-330,0,108)
 const FOOTPRINT := Rect2(-418,62,176,88)
 const TONICO_POINT := Vector3(-353,0,101)
@@ -142,8 +142,8 @@ func set_cutaway(active: bool) -> void:
 	for mesh in _roof.get_children(): _fade_mesh(mesh,active)
 
 func _fade_mesh(mesh: GeometryInstance3D,active: bool) -> void:
-	# Material alpha is supported by the Mobile renderer; the outline of the
-	# roof remains visible while people, pumps and interactions stay readable.
+	# O alfa de material é suportado pelo renderizador Mobile; o contorno do
+	# telhado continua visível enquanto pessoas, bombas e interações ficam legíveis.
 	if not mesh.has_meta("cutaway_paint"):
 		var source: Material = mesh.material_override
 		if source == null and mesh is MultiMeshInstance3D: source=mesh.multimesh.mesh.surface_get_material(0)
@@ -166,8 +166,8 @@ func set_repaired(value: bool) -> void:
 		_pump_lens.material_override = material
 
 func _ground() -> void:
-	# The approach is a real editor road. Only worn yards and walking paths
-	# belong to this place; there is no rectangle spanning the highway.
+	# A aproximação é uma via real do editor. Só os quintais gastos e as trilhas
+	# pertencem a este lugar; não há retângulo atravessando a rodovia.
 	preload("res://gameplay/urban_v1/TruckersVillageGround.gd").build(self,HOME_LAYOUT)
 	if compact_station_enabled():
 		for x in [-38.0,-33.0,-28.0,-23.0,-18.0]: _box(Vector3(x,.056,-15.62),Vector3(.025,.008,20),"747466")
@@ -221,7 +221,7 @@ func _station() -> void:
 	_bench(Vector3(-39,0,-26))
 	_box(Vector3(-34,.47,-26),Vector3(1.1,.94,.55),"536051")
 	_solid("ShopCooler",Vector3(-34,.47,-26),Vector3(1.1,.94,.55))
-	# Compressor is separate from the old fuel pumps; restoring it enables repairs.
+	# O compressor é separado das bombas de combustível antigas; restaurá-lo habilita reparos.
 	_cylinder(Vector3(-9,.55,-7),.45,1.6,"89694c",Vector3(0,0,PI*.5))
 	_box(Vector3(-9,1.04,-7),Vector3(.6,.3,.45),"494e43")
 	_pump_lens = MeshInstance3D.new()
@@ -339,8 +339,8 @@ func _tire_shop() -> void:
 	for x in [-7.5,7.5]:
 		_box(at+Vector3(x,1.7,0),Vector3(.22,3.4,10),"8c7960")
 		_solid("TireShopSide",at+Vector3(x,1.7,0),Vector3(.22,3.4,10))
-	# The open workshop is walkable too: its roof must reveal the same floor
-	# and native actors when entered, independently of the fuel canopy.
+	# A oficina aberta também é andável: o telhado dela precisa revelar o mesmo piso
+	# e os atores nativos quando se entra, independentemente da cobertura do posto.
 	_tire_roof = MeshInstance3D.new()
 	_tire_roof.name = "TireShopRoof"
 	var roof_mesh := BoxMesh.new()
@@ -369,7 +369,7 @@ func _tire_shop() -> void:
 
 func _farm_cart(at: Vector3) -> void:
 	_detail_context = "cart"
-	# A retired hand cart keeps the east scavenging corner pedestrian.
+	# Um carrinho de mão aposentado mantém o canto de coleta leste para pedestres.
 	for x in [-1.1,1.1]:
 		for z in [-1.6,1.6]:
 			_cylinder(at+Vector3(x,.55,z),.52,.18,"403c2f",Vector3(0,0,PI*.5))
@@ -467,8 +467,8 @@ func _cylinder(at: Vector3,radius: float,height: float,color: String,angles := V
 func _put(kind: String,at: Vector3,size: Vector3,color: String,angles: Vector3,roof: bool) -> void:
 	var authored := _author_transform*Transform3D(Basis.from_euler(angles).scaled(size),at)
 	var cell := Vector2i(floori(authored.origin.x/32),floori(authored.origin.z/32))
-	# Authored paint is material albedo: MultiMesh instance-color readback and
-	# some renderer paths cannot reliably preserve that channel for this scene.
+	# A pintura definida é albedo do material: a leitura de cor de instância do MultiMesh e
+	# alguns caminhos do renderizador não conseguem preservar esse canal de forma confiável nesta cena.
 	var source_owner: Node3D = (_current_home_roof if is_instance_valid(_current_home_roof) else _roof) if roof else _fixed
 	var finish: String = DETAIL_RECIPES.get(_detail_context,{}).get(color,"") if painted_details_enabled() else ""
 	var key := "%s_%s_%s_%s"%[kind,cell,source_owner.get_instance_id(),color]

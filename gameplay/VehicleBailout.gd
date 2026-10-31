@@ -1,5 +1,5 @@
 extends Node
-## Owns Dante's physical body only during a moving dismount, never the car.
+## É dono do corpo físico do Dante só durante um desembarque em movimento, nunca do carro.
 signal exited(point: Vector3)
 signal cancelled(reason: String, point: Vector3)
 
@@ -34,8 +34,8 @@ func begin(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBody3D,
 	world = owner_world
 	actor = pedestrian
 	vehicle = car
-	# Suppress stale broadphase contacts while the seated body is reactivated.
-	# Admission already swept the door and the landing hull against the world.
+	# Suprime contatos velhos da broadphase enquanto o corpo sentado é reativado.
+	# A admissão já varreu a porta e o casco de aterrissagem contra o mundo.
 	actor.add_collision_exception_with(vehicle)
 	vehicle.add_collision_exception_with(actor)
 	_source_excepted = true
@@ -52,7 +52,7 @@ func begin(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBody3D,
 	actor.input_locked = true
 	actor.set_physics_process(false)
 	actor.clear_combat_weapon_pose()
-	# Conservative standing-height hull also protects the tucked body at walls.
+	# O casco conservador da altura de pé também protege o corpo encolhido junto a paredes.
 	for child in actor.get_children():
 		if child is CollisionShape3D and child.shape is CapsuleShape3D:
 			_shape = child
@@ -87,7 +87,7 @@ func _physics_process(delta: float) -> void:
 		landed = true
 		phase = "slide"
 		BODY_AUDIO.play_body_impact(actor,actor,actor.global_position,landing_speed,true)
-		# Armor does not protect against a fall. Apply once, at ground contact.
+		# O colete não protege contra queda. Aplica uma vez, no contato com o chão.
 		if is_instance_valid(world.get("gameplay")):
 			world.gameplay.damage_environment(damage_for_speed(impact_speed))
 		if not active: return # Death/respawn may synchronously cancel the transition.
@@ -120,13 +120,13 @@ func _present(roll: float, recover: float) -> void:
 			_tuck_limb(prefix+"UpLeg",prefix+"Leg",Vector3(sign_side*.04,.02,.36),tuck)
 			_tuck_limb(prefix+"Leg",prefix+"Foot",Vector3(0,-.24,-.20),tuck)
 	var fall := smoothstep(0.0,0.22,age)
-	# Brace, settle on one side and rise. Never force a full somersault.
+	# Apoia, assenta de lado e levanta. Nunca força uma cambalhota completa.
 	var pitch := lerpf(-1.15,-1.38,smoothstep(0.0,0.55,roll))*fall*(1.0-recover)
 	var bank := float(side)*.22*fall*(1.0-recover)
 	var facing := lerp_angle(_yaw,_visual_transform.basis.get_euler().y,recover)
 	var basis := Basis(Vector3.UP,facing)*Basis(Vector3.RIGHT,pitch)*Basis(Vector3.FORWARD,bank)
 	actor.visual.basis = basis.scaled(_visual_transform.basis.get_scale())
-	# Rotate around the tucked torso, not the feet; keep the body above ground.
+	# Gira em torno do torso encolhido, não dos pés; mantém o corpo acima do chão.
 	var height := lerpf(0.88,0.30,fall)*(1.0-recover)+0.88*recover
 	actor.visual.position = _visual_transform.origin+Vector3.UP*height-basis*Vector3.UP*0.88
 

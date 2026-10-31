@@ -65,7 +65,7 @@ static func _covered_loading(host: Variant, curtain: Variant) -> bool:
 	if not bool(curtain.get("stage_only")):
 		var direct_cover := curtain.get("_root") as Control
 		return is_instance_valid(direct_cover) and direct_cover.is_visible_in_tree() and direct_cover.modulate.a >= 1.0
-	# In the menu the stage-only curtain delegates coverage to its static backdrop.
+	# No menu, a cortina só do palco delega a cobertura ao cenário estático dela.
 	var preview: Variant = host.get_meta("menu_preview", null)
 	if not is_instance_valid(preview) or preview.get("loading") != true or preview.get("is_ready") == true: return false
 	var cover := preview.get("loading_cover") as Control

@@ -34,8 +34,8 @@ static func build(v: Node3D) -> Node3D:
 	return art
 
 func _build_court(v: Node3D) -> void:
-	# A straight boundary belongs to this intentionally level playing court.
-	# Earth shares the village's filtered material and has no shadow/collider.
+	# Uma borda reta pertence a esta quadra de jogo nivelada de propósito.
+	# A terra compartilha o material filtrado da vila e não tem sombra/colisor.
 	var polygon := PackedVector2Array([
 		COURT.position,COURT.position+Vector2(COURT.size.x,0),
 		COURT.end,COURT.position+Vector2(0,COURT.size.y)])
@@ -51,7 +51,7 @@ func _build_court(v: Node3D) -> void:
 		for z in [COURT.position.y,COURT.position.y+4,COURT.position.y+8,COURT.end.y]:
 			v._box(Vector3(x,.13,z),Vector3(.22,.26,.22),"635e4c")
 			v._solid("HorseshoeCourtPeg",Vector3(x,.13,z),Vector3(.22,.26,.22))
-	# The front stays completely open so the player can step across the line.
+	# A frente fica totalmente aberta para o jogador poder passar pela linha.
 	v._box(Vector3(28,.09,COURT.position.y),Vector3(5.6,.18,.15),"73624a")
 	v._solid("HorseshoeCourtBack",Vector3(28,.09,COURT.position.y),Vector3(5.6,.18,.15))
 	for z in [-35.0,-25.3]:
@@ -83,8 +83,8 @@ func _build_common_yard(v: Node3D) -> void:
 	for x in [-7.28,-6.96,-6.64]:
 		v._cylinder(Vector3(x,.72,-20.6),.11,.16,"b4aa87")
 		v._box(Vector3(x+.025,.82,-20.6),Vector3(.06,.10,.05),"54665e")
-	# A woven basket is solid only as a complete object; small handles have no
-	# separate collision. The coffee-table approaches remain wider than a person.
+	# Um cesto trançado só é sólido como objeto completo; as alças pequenas não têm
+	# colisão separada. Os acessos à mesa de café continuam mais largos que uma pessoa.
 	v._cylinder(Vector3(-1.45,.24,-25.8),.36,.48,"8b7556")
 	for y in [.13,.25,.37,.48]: v._cylinder(Vector3(-1.45,y,-25.8),.37,.04,"73624a")
 	v._solid("VillageMarketBasket",Vector3(-1.45,.27,-25.8),Vector3(.76,.54,.76))
@@ -93,7 +93,7 @@ func _build_common_yard(v: Node3D) -> void:
 
 func _build_windmill(v: Node3D) -> void:
 	var at := Vector3(-2,0,-16.6)
-	# The old garden windmill is static, with no new lighting or idle animation.
+	# O velho cata-vento do jardim é estático, sem iluminação nova nem animação ociosa.
 	for x in [-.50,.50]:
 		for z in [-.50,.50]:
 			v._box(at+Vector3(x,1.70,z),Vector3(.12,3.4,.12),"797d6d")
@@ -110,7 +110,7 @@ func _build_windmill(v: Node3D) -> void:
 		var along := Vector3(sin(angle),cos(angle),0)
 		v._box(hub+along*.48,Vector3(.055,.92,.04),"797d6d",Vector3(0,0,-angle))
 		v._box(hub+along*.96+Vector3(0,0,.06),Vector3(.33,.58,.08),"8b7556" if index%3==0 else "797d6d",Vector3(0,.12,-angle-.12))
-	# A shallow raised garden has an irregular flower grouping and visible boards.
+	# Um canteiro elevado raso tem um agrupamento irregular de flores e tábuas visíveis.
 	var garden := Vector3(-4.15,0,-16.6)
 	v._box(garden+Vector3(0,.14,0),Vector3(1.42,.28,2.05),"635e4c")
 	for x in [-.75,.75]: v._box(garden+Vector3(x,.24,0),Vector3(.08,.26,2.2),"8b7556")
@@ -121,8 +121,8 @@ func _build_windmill(v: Node3D) -> void:
 		v._cylinder(p,.032,.54,"54665e")
 		v._box(p+Vector3(.11,-.04,0),Vector3(.31,.065,.13),"54665e",Vector3(0,.4,.32))
 		v._cylinder(p+Vector3(0,.27,0),.115,.10,"b4aa87" if index%2 else "ac8d72")
-	# Weathered metal toolbox: the lid belongs to the dynamic child, while the
-	# complete lower volume always remains physical, including after opening.
+	# Caixa de ferramentas de metal gasto: a tampa pertence ao filho dinâmico, enquanto o
+	# volume inferior completo sempre continua físico, inclusive depois de aberta.
 	v._box(CACHE_LOCAL+Vector3(0,.18,0),Vector3(.90,.36,.62),"54665e")
 	for x in [-.38,.38]: v._box(CACHE_LOCAL+Vector3(x,.18,0),Vector3(.055,.34,.65),"797d6d")
 	v._box(CACHE_LOCAL+Vector3(0,.23,.33),Vector3(.11,.17,.04),"795b48")

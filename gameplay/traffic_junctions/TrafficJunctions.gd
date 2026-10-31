@@ -27,8 +27,8 @@ const EXIT := 7.0
 const DEFAULT_STOP_LINE := 7.0
 ## Reserva abandonada expira; um casco ainda no miolo continua bloqueando o eixo cruzado.
 const HOLD_LIMIT_MSEC := 9000
-## Vehicle limits traffic hull height to 3.6 m; include its 0.4 m floor snap.
-## This separates road occupancy from bodies on another vertical road level.
+## Vehicle limita a altura do casco do trânsito a 3.6 m; inclui o snap de piso de 0.4 m dele.
+## Isso separa a ocupação da via de corpos em outro nível vertical de via.
 const OCCUPANCY_HEIGHT := 4.0
 const GREEN_SECONDS := 11.0
 const AMBER_SECONDS := 3.0
@@ -109,8 +109,8 @@ static func configure(graph, layouts: Array = []) -> void:
 			if distance < nearest:
 				nearest = distance
 				_approaches[key] = layout.entries
-	# Rebuilding the graph must not erase physical occupants of surviving crossings.
-	# Keep only IDs; changed/removed road levels cannot inherit the old reservation.
+	# Reconstruir o grafo não pode apagar os ocupantes físicos dos cruzamentos que sobrevivem.
+	# Mantém só os IDs; níveis de via alterados/removidos não podem herdar a reserva antiga.
 	for key in previous_owners:
 		if not junctions.has(key) or not previous_centers.has(key): continue
 		if (junctions[key] as Vector3).distance_to(previous_centers[key]) > .5: continue
@@ -148,8 +148,8 @@ static func _along(route: Curve3D) -> Array:
 		var closed := route.get_point_position(0).distance_to(route.get_point_position(route.point_count-1)) < .1
 		var before := route.sample_baked(fposmod(offset-12.0,length) if closed else maxf(0,offset-12.0),true)
 		var approach := Vector2(before.x-center.x,before.z-center.z).normalized()
-		# Signal phases belong to the arrival arm, not to the tangent of a
-		# turning curve near its centre (outer lanes may already point across).
+		# As fases do sinal pertencem ao braço de chegada, não à tangente de uma
+		# curva perto do centro (as faixas externas já podem estar apontando de través).
 		item.heading = Vector3(-approach.x,0,-approach.y)
 		var score := .7
 		for entry in _approaches.get(key,[]):
@@ -158,7 +158,7 @@ static func _along(route: Curve3D) -> Array:
 			var stop: Vector2 = entry.stop_position+entry.direction.orthogonal()*entry.width*.25
 			var stop_offset := route.get_closest_offset(Vector3(stop.x,center.y,stop.y))
 			var distance := fposmod(offset-stop_offset,length) if closed else offset-stop_offset
-			# Maximum legal street width/offset/depth can put the stop beyond 30 m.
+			# A largura/offset/profundidade máxima legal da rua pode pôr a parada além de 30 m.
 			if distance < .1 or distance > 45.0: continue
 			score = alignment
 			item.heading = Vector3(-entry.direction.x,0,-entry.direction.y)
@@ -231,8 +231,8 @@ static func signal_state(key: Vector3i, heading: Vector3) -> String:
 
 # --- Ocupação do miolo ---------------------------------------------------------------
 
-## A token is valid only while the registry still owns it. Checking one token
-## avoids scanning unrelated owners on every Vehicle physics tick.
+## Um token só é válido enquanto o registro ainda é dono dele. Checar um token
+## evita varrer donos sem relação a cada tick de física de Vehicle.
 static func has_reservation(key: Vector3i, id: int) -> bool:
 	var inside: Dictionary = owners.get(key, {})
 	if not inside.has(id): return false
@@ -244,8 +244,8 @@ static func _reservation_alive(key: Vector3i, id: int, entry: Array, now: int) -
 	if not is_instance_id_valid(id): return false
 	if now - int(entry[1]) <= HOLD_LIMIT_MSEC: return true
 	if not occupies(key, id): return false
-	# Renew only after observing physical occupancy, never just because an AI
-	# heartbeat is alive. This bounds geometry work in a stationary traffic jam.
+	# Renova só depois de observar ocupação física, nunca só porque um heartbeat
+	# de IA está vivo. Isso limita o trabalho geométrico num engarrafamento parado.
 	entry[1] = now
 	return true
 
@@ -256,8 +256,8 @@ static func _prune(key: Vector3i) -> Dictionary:
 		if not _reservation_alive(key, id, inside[id], now): inside.erase(id)
 	return inside
 
-## Only lease expiry and departure need geometry. No physics-world query, renderer
-## readback, persistent Node references, visibility or driver-health heuristic.
+## Só a expiração da reserva e a partida precisam de geometria. Sem consulta ao mundo de física, leitura
+## do renderizador, referências persistentes a Node, visibilidade ou heurística de vida do motorista.
 static func occupies(key: Vector3i, id: int) -> bool:
 	if not junctions.has(key) or not is_instance_id_valid(id): return false
 	var owner := instance_from_id(id) as Node3D
@@ -269,8 +269,8 @@ static func occupies(key: Vector3i, id: int) -> bool:
 	for entry in _approaches.get(key, []): radius = maxf(radius, float(entry.width) * .5)
 	for body: CollisionObject3D in owner.call("junction_collision_bodies"):
 		if not is_instance_valid(body) or not body.is_inside_tree(): continue
-		# Other vehicles scan layer 4. The owner's own mask can be zero and it
-		# remains an obstacle to them. Paused callbacks do not remove collision.
+		# Os outros veículos varrem a camada 4. A máscara do próprio dono pode ser zero e ele
+		# continua sendo obstáculo para eles. Callbacks pausados não removem a colisão.
 		if (body.collision_layer & 4) == 0 or _removed_from_physics(body): continue
 		for shape_owner in body.get_shape_owners():
 			if body.is_shape_owner_disabled(shape_owner): continue
@@ -282,7 +282,7 @@ static func occupies(key: Vector3i, id: int) -> bool:
 
 static func _removed_from_physics(body: CollisionObject3D) -> bool:
 	if body.disable_mode != CollisionObject3D.DISABLE_MODE_REMOVE: return false
-	# Resolve inherited process mode, not can_process() (which also sees pause).
+	# Resolve o process mode herdado, não can_process() (que também enxerga a pausa).
 	var node: Node = body
 	while node != null and node.process_mode == Node.PROCESS_MODE_INHERIT: node = node.get_parent()
 	return node != null and node.process_mode == Node.PROCESS_MODE_DISABLED
@@ -298,8 +298,8 @@ static func _box_in_crossing(half: Vector3, pose: Transform3D, center: Vector3, 
 	var py := Vector2(y.x, y.z)
 	var pz := Vector2(z.x, z.z)
 	var across := axis.orthogonal()
-	# SAT of the box's projected footprint and the protected crossing square.
-	# Includes the vertical basis projection when the vehicle is tilted.
+	# SAT da área projetada da caixa contra o quadrado protegido do cruzamento.
+	# Inclui a projeção da base vertical quando o veículo está inclinado.
 	for normal: Vector2 in [axis, across, px.orthogonal(), py.orthogonal(), pz.orthogonal()]:
 		if normal.length_squared() < .000001: continue
 		var hull_radius := absf(px.dot(normal)) + absf(py.dot(normal)) + absf(pz.dot(normal))
@@ -308,9 +308,9 @@ static func _box_in_crossing(half: Vector3, pose: Transform3D, center: Vector3, 
 	return true
 
 static func _completed_exit_axis(key: Vector3i, id: int, entry_axis: bool) -> bool:
-	# Nearby crossings can overlap a car's tail after its turn has finished.
-	# Keep the physical lease, but classify that completed movement by its exit.
-	# Otherwise two opposite turns each hold N/S while waiting to enter E/W.
+	# Cruzamentos próximos podem se sobrepor à traseira de um carro depois que a curva dele terminou.
+	# Mantém a reserva física, mas classifica esse movimento concluído pela saída dele.
+	# Senão duas curvas opostas seguram N/S enquanto esperam para entrar em E/W.
 	if not junctions.has(key) or not is_instance_id_valid(id): return entry_axis
 	var car := instance_from_id(id) as Node3D
 	if car == null or not car.is_inside_tree() or not car.has_method("junction_collision_bodies") or not car.has_method("_route_ahead"): return entry_axis
@@ -341,7 +341,7 @@ static func _completed_exit_axis(key: Vector3i, id: int, entry_axis: bool) -> bo
 	if center.distance_to(car.global_position) > .8: return entry_axis
 	var rear := route.sample_baked(maxf(0.0, at - span) if open else fposmod(at - span, length), true)
 	var front := route.sample_baked(minf(length, at + span) if open else fposmod(at + span, length), true)
-	# Both halves of the entire hull must lie on the straight outgoing segment.
+	# As duas metades do casco inteiro precisam ficar no segmento reto de saída.
 	if rear.direction_to(center).dot(heading) < .985 or center.direction_to(front).dot(heading) < .985: return entry_axis
 	if not occupies(key, id): return entry_axis
 	return exit_axis
@@ -376,9 +376,9 @@ static func _tight_turn(car: Node3D, key: Vector3i) -> Dictionary:
 static func _turn_queue_blocked(key: Vector3i, car: Node3D, gap: float) -> bool:
 	var turn := _tight_turn(car,key)
 	if turn.is_empty(): return false
-	# Drivers keep an admitted token until departure. On this short turning link,
-	# early reservations could admit a whole queue before its leader reaches the
-	# crossing. Decide at the stop line, where physical queue occupancy is known.
+	# Os motoristas mantêm um token admitido até a partida. Nesta ligação curta de curva,
+	# reservas antecipadas poderiam admitir uma fila inteira antes que o líder chegasse ao
+	# cruzamento. Decide na linha de parada, onde a ocupação física da fila é conhecida.
 	if gap > 1.6: return true
 	for other in _prune(key):
 		if other == car.get_instance_id(): continue
@@ -396,8 +396,8 @@ static func _cross_traffic_inside(key: Vector3i, id: int, axis_a: bool) -> bool:
 	var world: World3D = requester.get_world_3d() if requester != null and requester.is_inside_tree() else null
 	for other in inside:
 		if other == id: continue
-		# A graph rebuild can overlap two scene lifetimes. Bodies in independent
-		# physics worlds cannot obstruct this requester, even at identical XYZ.
+		# Uma reconstrução do grafo pode sobrepor dois ciclos de vida de cena. Corpos em mundos
+		# de física independentes não podem obstruir este solicitante, mesmo em XYZ idêntico.
 		if world != null:
 			var body := instance_from_id(other) as Node3D
 			if body != null and body.is_inside_tree() and body.get_world_3d() != world: continue
@@ -469,12 +469,12 @@ static func update_lenses() -> void:
 		var state := _state_at(center, axis_a, now)
 		if lens.get("state", "") != state:
 			mesh.set_instance_color(int(lens.index), LENS_GREEN if state == "green" else (LENS_AMBER if state == "amber" else LENS_RED))
-			# A signal is a discrete state. Physics interpolation must not blend
-			# red and green into an intermediate color after the phase changes.
+			# Um sinal é um estado discreto. A interpolação de física não pode misturar
+			# vermelho e verde numa cor intermediária depois que a fase muda.
 			mesh.reset_instance_physics_interpolation(int(lens.index))
 			lens.state = state
-		# Both axes change at the same half-cycle boundaries. Wake on the first
-		# frame of a real transition, without rewriting every instance each frame.
+		# Os dois eixos mudam nas mesmas fronteiras de meio ciclo. Acorda no primeiro
+		# quadro de uma transição real, sem reescrever todas as instâncias a cada quadro.
 		var half := CYCLE * .5
 		var phase := fposmod(now + _offset(center), half)
 		var boundary := GREEN_SECONDS if phase < GREEN_SECONDS else (GREEN_SECONDS + AMBER_SECONDS if phase < GREEN_SECONDS + AMBER_SECONDS else half)

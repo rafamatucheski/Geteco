@@ -68,9 +68,9 @@ func operate(direction: Vector4, delta: float, excluded: Array[RID]) -> bool:
 	return not pose.is_equal_approx(start)
 
 func _self_clear() -> bool:
-	# The carrier RID is excluded from world sweeps because the boom's mounting
-	# pivot intentionally meets it. Protect the cab/chassis separately so the
-	# digging end cannot fold through the operator or engine.
+	# O RID do veículo é excluído das varreduras do mundo porque o pivô de montagem
+	# da lança o encontra de propósito. Protege a cabine/chassi à parte para que a
+	# ponta de escavação não possa dobrar através do operador ou do motor.
 	var solids := [AABB(Vector3(-1.0,.95,-.82),Vector3(2.0,2.05,1.84)), AABB(Vector3(-1.25,.30,-2.15),Vector3(2.5,.65,4.05))]
 	for index in [1,2]:
 		var shape := shapes[index]
@@ -105,8 +105,8 @@ func motion_clear(before: Array[Transform3D], excluded: Array[RID]) -> bool:
 		query.collision_mask = 7
 		query.exclude = excluded
 		query.margin = .015
-		# Translation is swept. Rotation is sampled in <=.025 rad increments;
-		# an added margin covers the maximum corner arc between samples.
+		# A translação é varrida. A rotação é amostrada em incrementos de <=.025 rad;
+		# uma margem extra cobre o arco máximo de canto entre amostras.
 		var angle := before[index].basis.get_rotation_quaternion().angle_to(after.basis.get_rotation_quaternion())
 		var steps := maxi(1,ceili(angle/SWEEP_ANGLE))
 		for step in steps:

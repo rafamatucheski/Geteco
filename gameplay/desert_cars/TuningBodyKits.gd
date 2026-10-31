@@ -43,7 +43,7 @@ func bind(source: Node3D, painter: RefCounted) -> void:
 					if surface < keys.size(): key = str(keys[surface])
 			if key != "tail" and material.resource_name != "tail": continue
 			var instance := material
-			# VehicleEquipment already owns its tail instances and must keep them.
+			# VehicleEquipment já é dono das instâncias da traseira e precisa mantê-las.
 			if equipment == null:
 				if not local_tails.has(material): local_tails[material] = material.duplicate()
 				instance = local_tails[material]
@@ -78,7 +78,7 @@ func apply(parts: Dictionary, catalog: Dictionary, paint: Color) -> void:
 			var kit := WHEEL.build(str(wheel_part.get("wheel_design","five_spoke")),float(group.radius),Color(str(color_part.get("wheel_color","bfc7c8"))),clampf(float(group.width),.15,.45),float(size_part.get("rim_ratio",.70)))
 			var parent: Node3D = group.parts[0].get_parent()
 			parent.add_child(kit)
-			# Driving wheels are already reparented to a pivot at their centre.
+			# As rodas de tração já foram reparentadas para um pivô no centro delas.
 			kit.position = Vector3.ZERO if parent != model else group.center
 			group.kit = kit
 	for group in wheels:
@@ -100,8 +100,8 @@ func _apply_tails(part: Dictionary) -> void:
 	var vehicle: Node = model.get_parent()
 	var equipment: Node = vehicle.get("equipment") if vehicle is CharacterBody3D else null
 	var rebound := false
-	# Equipment is attached lazily on boarding and owns another local material
-	# instance. Follow that instance so removal restores the original lens too.
+	# Equipment é anexado sob demanda no embarque e é dono de outra instância local
+	# de material. Segue essa instância para que a remoção restaure também a lente original.
 	for row in tails:
 		if not is_instance_valid(row.part): continue
 		var current: Material = row.part.get_active_material(row.surface)

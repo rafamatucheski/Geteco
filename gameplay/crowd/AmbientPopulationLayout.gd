@@ -15,8 +15,8 @@ func configure(roads: Array) -> void:
 			var count := maxi(1,ceili(length/22.0))
 			for n in count:
 				slots.append({"a":a,"b":b,"point":a.lerp(b,(n+.5)/count),"width":road.width,"road":road})
-	# The traffic graph is narrower than the authored bridge carriageway.
-	# Sample its actual sidewalks rather than offsetting a vehicle lane.
+	# O grafo de trânsito é mais estreito que a pista definida da ponte.
+	# Amostra as calçadas reais dela em vez de deslocar uma faixa de veículos.
 	slots.append_array(preload("res://world/regions/unified_bridge/BridgeWalkSafety.gd").population_slots())
 
 func select(production, vehicle := false) -> Dictionary:

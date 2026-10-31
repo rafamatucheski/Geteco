@@ -1,6 +1,6 @@
 extends RefCounted
-## All designs keep the donor tyre's outside radius and contact patch.
-## X is the spin axis; the same kit works in the showroom and driving pivots.
+## Todos os desenhos mantêm o raio externo e a área de contato do pneu doador.
+## X é o eixo de giro; o mesmo kit funciona no showroom e nos pivôs de direção.
 static func build(design: String, radius: float, color: Color, width: float = .22, rim_ratio: float = .70) -> Node3D:
 	var root := Node3D.new()
 	root.name = "TuningWheel"

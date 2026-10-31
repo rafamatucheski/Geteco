@@ -28,7 +28,7 @@ static func normalized(row: Dictionary) -> Dictionary:
 	return {"opened":row.get("opened",false),"looted":row.get("looted",false),"cycle":int(row.get("cycle",0)),"elapsed":float(row.get("elapsed",0.0))}
 
 static func receipt(id: String, cycle: int) -> String:
-	# Cycle zero keeps receipts from saves made before restocking existed.
+	# O ciclo zero mantém os recibos de saves feitos antes de existir reabastecimento.
 	return "container_loot:"+id+(":%d" % cycle if cycle > 0 else "")
 
 static func validate_snapshot(data: Variant) -> bool:

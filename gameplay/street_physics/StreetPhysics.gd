@@ -175,7 +175,7 @@ func _pre_move(vehicle: CharacterBody3D, delta: float) -> void:
 ## limiar sai voando e o carro não para nela; pessoa já caída não vira parede.
 func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> void:
 	var player = controller.world.get("player") if controller != null else null
-	# Traffic uses the proximity cache; the player's car also reaches uncached NPCs.
+	# O trânsito usa o cache de proximidade; o carro do jogador também alcança NPCs fora do cache.
 	var half_length: Variant = vehicle.get("half_length")
 	var reach := motion.length() + float(half_length if half_length != null else 2.3) + 1.5
 	var reach_squared := reach * reach
@@ -185,7 +185,7 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 		if is_instance_valid(person) and person != player and person.global_position.distance_squared_to(origin) < reach_squared:
 			anyone = true
 			break
-	# The controlled car must also reach authored/nested NPCs absent from the cache.
+	# O carro controlado também precisa alcançar NPCs definidos/aninhados ausentes do cache.
 	if not anyone and vehicle.get("controlled") != true: return
 	for attempt in 4:
 		var contact := KinematicCollision3D.new()
@@ -213,8 +213,8 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 			soft_fall = true
 		_except(vehicle, person)
 		if person.is_in_group("skate_boards"):
-			# The mounted capsule represents the rider, not a solid road barrier.
-			# Bail before moving the car; the loose board keeps only floor collision.
+			# A cápsula montada representa o piloto, não uma barreira sólida na via.
+			# Pula fora antes de mover o carro; a prancha solta mantém só a colisão com o piso.
 			person.receive_damage(maxf(1.0, closing * 4.0), vehicle)
 			person.rotation.y = atan2(-planar.x, -planar.z)
 			person.speed = minf(closing * 0.35, 8.0)
@@ -294,8 +294,8 @@ func _nudge(vehicle: CharacterBody3D, person: CharacterBody3D, planar: Vector3, 
 
 
 func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> void:
-	# Closing speed cannot exceed planar speed. Below the existing impact limit,
-	# FragileProps.hit has no effect; skip collecting candidates for creeping cars.
+	# A velocidade de aproximação não pode passar da velocidade planar. Abaixo do limite de impacto existente,
+	# FragileProps.hit não tem efeito; pula a coleta de candidatos para carros se arrastando.
 	# Postes que não cedem seguram o carro até parado; abaixo disso nada mais reage.
 	if planar.length() < 0.05: return
 	var start := vehicle.global_transform
@@ -307,9 +307,9 @@ func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> v
 	var candidates := FRAGILE.query(start.origin + motion * 0.5, motion.length() * 0.5 + half_length + 2.0)
 	STALL_WORK.finish_slow("street.pre.props.query", query_began, 5000, vehicle)
 	if candidates.is_empty(): return
-	# The spatial index returns whole 8 m cells. Only query native movement
-	# when a decoration can intersect the sweep; keep the wall-clipped check
-	# below authoritative, including its existing safe-margin extension.
+	# O índice espacial devolve células inteiras de 8 m. Só consulta o movimento nativo
+	# quando uma decoração pode cruzar a varredura; mantém a checagem recortada por parede
+	# abaixo como autoridade, incluindo a extensão de margem segura existente.
 	var possible_contact := false
 	var full_motion := inverse.basis * (motion + motion.normalized() * vehicle.safe_margin)
 	for item in candidates:
@@ -320,7 +320,7 @@ func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> v
 			possible_contact = true
 			break
 	if not possible_contact: return
-	# A wall or campaign barrier blocks the sweep before decorations behind it.
+	# Uma parede ou barreira de campanha bloqueia a varredura antes das decorações atrás dela.
 	var obstruction := KinematicCollision3D.new()
 	var cast_began := STALL_WORK.begin()
 	var obstructed := vehicle.test_move(start, motion, obstruction)
@@ -332,7 +332,7 @@ func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> v
 		var local := inverse * (item.point as Vector3)
 		var radius: float = float(item.get("radius",FRAGILE.spec(item).radius))
 		if not swept_prop_contact(local, local_motion, half_width + radius, half_length + radius): continue
-		# Decorations on another level must not break beneath a bridge.
+		# Decorações em outro nível não podem quebrar debaixo de uma ponte.
 		if absf(local.y) > 2.0: continue
 		var toward: Vector3 = item.point - vehicle.global_position
 		toward.y = 0
@@ -381,7 +381,7 @@ func _hold_at_post(vehicle: CharacterBody3D, item: Dictionary, toward: Vector3) 
 
 
 static func swept_prop_contact(point: Vector3, motion: Vector3, width: float, length: float) -> bool:
-	# Segment against the prop-expanded car footprint, including the starting pose.
+	# Segmento contra a área do carro expandida pelo prop, incluindo a pose inicial.
 	var enter := 0.0
 	var leave := 1.0
 	for axis in [0, 2]:
@@ -470,8 +470,8 @@ func _crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, c
 func _stall_crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, closing: float, point: Vector3, incoming: Vector3) -> void:
 	# Alvos protegidos continuam sendo sólidos, sem dano nem impulso disfarçado.
 	if PROTECTION.is_protected(other): return
-	# Predict the same resolved motion for detached parts before damage presentation.
-	# Applying gameplay velocity stays after damage, in the existing order.
+	# Prevê o mesmo movimento resolvido para as peças soltas antes da apresentação de dano.
+	# Aplicar a velocidade de jogo fica depois do dano, na ordem existente.
 	var driving: Node = controller.world.get("driving") if controller != null else null
 	if driving != null and driving.has_method("motorcycle_crash") and closing >= 5.0:
 		driving.motorcycle_crash(vehicle, incoming)
@@ -485,11 +485,11 @@ func _stall_crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vect
 	var push := into * impulse / theirs
 	var presentation_other: Vector3 = other.get("horizontal_velocity") + push
 	var after := incoming - into * impulse / mine
-	# Apply damage here, behind the pair cooldown, instead of every contact frame.
+	# Aplica o dano aqui, atrás do cooldown do par, em vez de a cada quadro de contato.
 	var stage := STALL_WORK.begin()
 	var self_damage:=minf(closing * CRASH_DAMAGE_PER_SPEED, float(vehicle.get("max_health")) * CRASH_DAMAGE_MAX_RATIO)
-	# Keep the uncapped physical severity for bodywork; mechanical health retains its balance.
-	# The contact normal points into this car; the other car receives the opposite direction.
+	# Mantém a severidade física sem limite para a lataria; a vida mecânica mantém o balanceamento.
+	# A normal de contato aponta para dentro deste carro; o outro carro recebe a direção oposta.
 	if vehicle.has_method("receive_impact"): vehicle.receive_impact(self_damage,vehicle.to_local(point),other,closing,vehicle.global_basis.inverse()*normal,after)
 	else: vehicle.receive_damage(self_damage,other)
 	STALL_WORK.finish_slow("street.crash.damage_self",stage,5000,vehicle)
@@ -604,7 +604,7 @@ func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_s
 	# Centro no tronco: a queda da V2 desloca o corpo ~0,65 m para a frente.
 	if not soft or dead: blood.spawn_pool(actor.global_position + heading.normalized() * 0.6, dead, actor if _counts_as_corpse(actor) else null, heading)
 	_watch[actor.get_instance_id()] = {"health": float(actor.get("health")), "dead": dead}
-	# BodyFlight emits ground Foley at actual contact, before restitution.
+	# BodyFlight emite o Foley de chão no contato real, antes da restituição.
 
 
 func play_body_thud(point: Vector3, strength: float) -> void:
@@ -806,7 +806,7 @@ func _on_player_wounded(lethal: bool) -> void:
 	_player_wound_lethal = _player_wound_lethal or lethal
 
 func _watch_player() -> void:
-	# Preserve the existing 0.2 s budget even for multiple pellets in one shot.
+	# Preserva o orçamento existente de 0.2 s mesmo para vários chumbos num tiro só.
 	if not _player_wound_pending: return
 	var lethal := _player_wound_lethal
 	_player_wound_pending = false

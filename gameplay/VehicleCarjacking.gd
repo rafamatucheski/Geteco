@@ -1,6 +1,6 @@
 extends RefCounted
-## Finite, boarding-owned choreography. The displaced actor keeps its identity
-## and resumes its original AI only after reaching a collision-checked landing.
+## Coreografia finita, pertencente ao embarque. O ator deslocado mantém a identidade
+## e só retoma a IA original depois de chegar a um ponto de aterrissagem checado contra colisão.
 const ACTOR := preload("res://scripts/Actor.gd")
 const BODY_FLIGHT := preload("res://gameplay/street_physics/BodyFlight3D.gd")
 ## Arrastar e arremessar (2026-10-14): antes a vítima deslizava em linha reta do banco para trás do ladrão,
@@ -167,7 +167,7 @@ func apply(thief: CharacterBody3D, progress: float) -> void:
 	var pull := smoothstep(.26, .78, t)
 	if is_instance_valid(_body): _body.sit_amount = 1.0 - pull
 	var seat_now: Vector3 = vehicle.to_global(_seat_root.origin)
-	# Through the actual doorway first, then behind the thief and out of the swing.
+	# Primeiro pelo vão real da porta, depois por trás do ladrão e fora do arco de abertura.
 	victim.global_position = seat_now.lerp(gate, minf(pull * 2.0, 1.0)).lerp(landing, maxf(pull * 2.0 - 1.0, 0.0))
 	victim.visual.transform = _seat_visual.interpolate_with(_visual_transform, pull)
 	victim.visual.rotation.z += float(side) * sin(pull * PI) * (.85 if motorcycle else .45)
@@ -337,8 +337,8 @@ func release() -> void:
 	if not victim.is_inside_tree() or not is_instance_valid(world) or not world.is_inside_tree(): return
 	victim.global_position = landing
 	victim.visual.transform = _visual_transform
-	# Actor locomotion steers Visual in world yaw. Remove the seat's root
-	# rotation while retaining the current appearance before handing AI back.
+	# A locomoção do ator orienta Visual no yaw do mundo. Remove a rotação de raiz
+	# do assento mantendo a aparência atual antes de devolver a IA.
 	if victim.get_script() == ACTOR:
 		var facing: Basis = victim.visual.global_basis
 		victim.global_rotation = Vector3.ZERO

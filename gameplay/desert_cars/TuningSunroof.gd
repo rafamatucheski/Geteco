@@ -1,7 +1,7 @@
 extends RefCounted
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
-## Replace a bounded part of the actual roof surface with glass. The original
-## opaque triangles are clipped away, never covered by a dark decal.
+## Substitui uma parte limitada da superfície real do teto por vidro. Os triângulos
+## opacos originais são recortados, nunca cobertos por um decalque escuro.
 var model: Node3D
 var surfaces: Array = []
 var glass_node: MeshInstance3D
@@ -22,8 +22,8 @@ func apply(style: String) -> void:
 	if is_instance_valid(glass_node):
 		glass_node.visible = not style.is_empty()
 		glass_material.albedo_color = Color(.14,.23,.27,.32) if style == "glass" else Color(.65,.78,.81,.16)
-	# Dents keep rest topology and rebuild from it after every impact/repair.
-	# Adopt this new rest mesh before they can resurrect the previous roof skin.
+	# Os amassados mantêm a topologia de repouso e se reconstroem dela a cada impacto/reparo.
+	# Adota esta nova malha de repouso antes que eles possam ressuscitar a pele anterior do teto.
 	var vehicle: Node = model.get_parent()
 	if not surfaces.is_empty() and vehicle is CharacterBody3D and is_instance_valid(vehicle.get("body_dents")):
 		vehicle.body_dents.geometry_changed()
@@ -31,12 +31,12 @@ func apply(style: String) -> void:
 func _build() -> void:
 	_built = true
 	var vehicle: Node = model.get_parent()
-	# The door builder owns its own atomic shell swap. Finish that first so
-	# removing a saved roof kit cannot restore a pre-door shell over its leaves.
+	# O builder de porta é dono da própria troca atômica de casca. Termina isso primeiro para que
+	# remover um kit de teto salvo não possa restaurar uma casca anterior às portas sobre as folhas.
 	if vehicle is CharacterBody3D and vehicle.has_method("finish_doors"): vehicle.finish_doors()
 	var cabin: Dictionary = model.get_meta("vehicle_interior_spec",{})
-	# A separate opaque/alpha liner would obstruct the aperture; these models are
-	# deliberately excluded by the compatibility catalog until their liner is split.
+	# Um forro opaco/alfa separado obstruiria a abertura; esses modelos ficam
+	# excluídos de propósito pelo catálogo de compatibilidade até o forro deles ser separado.
 	if cabin.is_empty() or bool(cabin.get("roof_liner",true)) or bool(cabin.get("open_top",false)): return
 	var front := float(cabin.get("wz1",-.25))+.13
 	var rear := float(cabin.get("rear_top",.55))-.13
@@ -49,8 +49,8 @@ func _build() -> void:
 	for part: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
 		if part.mesh == null or part.has_meta("wheel_center"): continue
 		if part.name in ["Interior","InteriorAlpha","RoofCut"]: continue
-		# Cutting already-deformed vertices then asking BodyDents to reapply its
-		# records would deform the same impact twice. Always cut its rest mesh.
+		# Cortar vértices já deformados e depois pedir a BodyDents que reaplique os
+		# registros deformaria o mesmo impacto duas vezes. Sempre corta a malha de repouso.
 		var original: Mesh = part.get_meta("body_dents_rest_mesh",part.mesh)
 		var replacement := ArrayMesh.new()
 		var changed := false
@@ -83,7 +83,7 @@ func _build() -> void:
 					emit_polygon(tool,polygon)
 					continue
 				var remaining := polygon
-				# The outside pieces are disjoint; the final remainder is the hole.
+				# As peças de fora são disjuntas; o resto final é o furo.
 				for plane in [[0,rectangle.x,1.0],[0,rectangle.y,-1.0],[2,rectangle.z,1.0],[2,rectangle.w,-1.0]]:
 					var outside := clip(remaining,xf,int(plane[0]),float(plane[1]),float(plane[2]),false)
 					emit_polygon(tool,outside)
@@ -99,8 +99,8 @@ func _build() -> void:
 						copy.n = (xf.basis*vertex.n).normalized()
 						copy.c = Color.WHITE
 						glass_polygon.append(copy)
-					# Roof vinyl/trim is clipped too, but cannot create another pane
-					# over the glass. Keep one top-facing skin from the body shell.
+					# O vinil/acabamento do teto também é recortado, mas não pode criar outro vidro
+					# sobre o vidro. Mantém uma pele voltada para cima da casca da carroceria.
 					if material.resource_name in ["paint","roof_paint"] and (xf.basis*polygon[0].n).y > .1:
 						emit_polygon(glass,glass_polygon)
 			if surface_changed:

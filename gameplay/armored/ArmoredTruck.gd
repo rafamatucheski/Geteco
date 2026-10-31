@@ -15,7 +15,7 @@ func _ready() -> void:
 	set_vault(opened)
 
 func door_point() -> Vector3:
-	# Outside the rear bumper and vehicle collider, reachable from the ground.
+	# Fora do para-choque traseiro e do colisor do veículo, alcançável do chão.
 	return to_global(Vector3(0,.4,half_length+.8))
 
 func set_vault(value: bool, empty := false) -> void:

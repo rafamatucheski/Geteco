@@ -1,6 +1,6 @@
 extends Node
-## One active hydraulic controller. Cargo retains its collider while lifted;
-## swept shape queries reject walls and restore the carrier's last safe pose.
+## Um controlador hidráulico ativo. A carga mantém o colisor enquanto erguida;
+## consultas de forma varrida rejeitam paredes e restauram a última pose segura do veículo.
 const MAX_LIFT := 3.4
 const LIFT_RATE := 1.35
 var vehicle: CharacterBody3D
@@ -60,8 +60,8 @@ func _ready() -> void:
 	add_to_group("mining_machine")
 	vehicle.destroyed.connect(_carrier_destroyed)
 	_update_model()
-	# Idle industrial vehicles sleep alongside the base vehicle. Only this tiny
-	# gate runs; no broad-phase scans, HUD nodes or load queries until occupied.
+	# Veículos industriais ociosos dormem junto com o veículo base. Só este pequeno
+	# bloqueio roda; sem varreduras de broad-phase, nós de HUD ou consultas de carga até ser ocupado.
 
 func active() -> bool:
 	if not is_instance_valid(vehicle) or not vehicle.controlled or vehicle.external_input or vehicle.input_locked or vehicle.engine_disabled or vehicle.health <= 0: return false
@@ -154,7 +154,7 @@ func _make_hud() -> void:
 	_label.add_theme_constant_override("shadow_offset_y",2)
 	_hud_panel.add_child(_label)
 
-## Also used by the deterministic contract test; production input calls this.
+## Também usado pelo teste de contrato determinístico; a entrada de produção chama isto.
 func operate(direction: float, delta: float) -> bool:
 	if _arm == null: return false
 	var previous := lift
@@ -204,9 +204,9 @@ func _bucket_motion_clear(previous: Transform3D) -> bool:
 	query.exclude = excluded
 	var released := _withdrawal_load()
 	var withdrawing := released != null and _separating_from(released,previous)
-	# A just-released load keeps native physical contact with the scoop. The
-	# extra arm query must let that existing
-	# contact separate when withdrawing/lowering, instead of undoing every move.
+	# Uma carga recém-solta mantém contato físico nativo com a caçamba. A
+	# consulta extra do braço precisa deixar esse contato
+	# existente se separar ao recolher/abaixar, em vez de desfazer cada movimento.
 	if withdrawing: query.exclude = excluded+[released.get_rid()]
 	var state := vehicle.get_world_3d().direct_space_state
 	var sweep := state.cast_motion(query)
@@ -231,9 +231,9 @@ func _withdrawal_load() -> PhysicsBody3D:
 	if not is_instance_valid(body) or body.is_queued_for_deletion(): return null
 	var wreck := body.get_node_or_null("WreckBody") as PhysicsBody3D
 	var physical := wreck if wreck != null else body
-	# Initial release has a tiny vertical clearance before gravity establishes
-	# contact. Retain ownership history until the load leaves the support footprint,
-	# not merely for a single overlap-free frame while it is falling onto the scoop.
+	# A soltura inicial tem uma folga vertical mínima antes que a gravidade estabeleça
+	# contato. Mantém o histórico de posse até a carga sair da área de apoio,
+	# não só por um quadro sem sobreposição enquanto ela cai na caçamba.
 	var radius := .85
 	if body.get("half_length") != null: radius=Vector2(float(body.get("half_length")),float(body.get("half_width"))).length()
 	var local := _bucket_shape.to_local(physical.global_position)
@@ -271,13 +271,13 @@ func _cargo_transform() -> Transform3D:
 	target.basis = vehicle.global_basis*Basis(Vector3.UP,float(_saved.get("relative_yaw",0.0)))
 	var half_length := float(cargo.get("half_length")) if cargo.get("half_length") != null else .0
 	target.origin = cargo_anchor()-vehicle.global_basis.z*half_length*.6
-	# Match the actual supporting collider. The visual anchor sits below its
-	# top; placing the load there made release start inside the scoop, trapping
-	# the carrier between its load and the floor during collision recovery.
+	# Corresponde ao colisor de apoio real. A âncora visual fica abaixo do
+	# topo dele; pôr a carga ali fazia a soltura começar dentro da caçamba, prendendo
+	# o veículo entre a carga e o piso durante a recuperação de colisão.
 	var half: Vector3 = _bucket_shape.shape.size*.5
 	var basis := _bucket_shape.global_basis
 	var top := _bucket_shape.global_position.y+absf(basis.x.y)*half.x+absf(basis.y.y)*half.y+absf(basis.z.y)*half.z
-	# Rocks have their origin at the centre; vehicles use the ground plane.
+	# Pedras têm a origem no centro; veículos usam o plano do chão.
 	target.origin.y = top+float(cargo.get_meta("mining_origin_height",.0))+.015
 	return target
 
@@ -389,8 +389,8 @@ func release_cargo() -> void:
 		body.sleeping = false
 		body.linear_velocity = Vector3.ZERO
 	else:
-		# Native death transfers motion to WreckBody. Never run its old character
-		# controller in parallel with the rigid wreck or overwrite its transform.
+		# A morte nativa transfere o movimento para WreckBody. Nunca roda o controlador
+		# de personagem antigo em paralelo com o destroço rígido nem sobrescreve a transform dele.
 		if body.get_node_or_null("WreckBody") == null:
 			body.set_physics_process(bool(_saved.get("physics",true)))
 		body.velocity = Vector3.DOWN*.1
@@ -402,8 +402,8 @@ func release_cargo() -> void:
 	_saved.clear()
 
 func _cargo_destroyed() -> void:
-	# Vehicle emits destroyed before VehicleDamage creates its rigid wreck.
-	# Release now so the native death system captures the restored driver state.
+	# Vehicle emite destroyed antes que VehicleDamage crie o destroço rígido.
+	# Solta agora para que o sistema de morte nativo capture o estado restaurado do motorista.
 	release_cargo()
 
 func _carrier_rids() -> Array[RID]:

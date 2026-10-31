@@ -103,8 +103,8 @@ static func begin(visual: Node3D, spec: Dictionary, forced_skin := -1.0) -> Job:
 	job.result.skin = forced_skin if forced_skin >= 0.0 else _measure_skin(job.parts, job.transforms, spec)
 	return job
 
-## Budget checks run between setup, <=16-triangle batches and upload stages.
-## Native surface upload remains indivisible; this is a soft time budget.
+## As checagens de orçamento rodam entre a montagem, lotes de <=16 triângulos e as etapas de upload.
+## O upload nativo de superfície continua indivisível; este é um orçamento de tempo flexível.
 const TRIANGLES_PER_BATCH := 16
 static func step(job: Job, budget_usec: int) -> bool:
 	if job.finished: return true
@@ -184,7 +184,7 @@ static func _cut_part(part: MeshInstance3D, xf: Transform3D, spec: Dictionary, r
 		if _advance_part(work): return
 
 static func _begin_part(part: MeshInstance3D, xf: Transform3D, spec: Dictionary, destination: Result) -> Dictionary:
-	# Authored detachable panels and their internal supports are never door leaves.
+	# Painéis destacáveis definidos e seus suportes internos nunca são folhas de porta.
 	if part.has_meta("breakaway_part_id") or part.get_meta("breakaway_hardware",false): return {}
 	var mesh: Mesh = part.get_meta("body_dents_rest_mesh",part.mesh)
 	var box: AABB = xf * mesh.get_aabb()
@@ -205,8 +205,8 @@ static func _begin_part(part: MeshInstance3D, xf: Transform3D, spec: Dictionary,
 	return {"part": part, "mesh": mesh, "expected_mesh":part.mesh, "xf": xf, "inverse": xf.affine_inverse(), "spec": spec, "result": Result.new(), "destination": destination, "collect_side": collect_side, "materials": active_materials, "stage": "surface", "surface": 0, "triangle": 0, "changed": false, "rebuilt": [], "replacement": null, "upload_surface": 0}
 
 static func _advance_part(work: Dictionary, job: Job = null) -> bool:
-	# A freed source has no presentation to replace. Keep partial contribution
-	# private until commit so its half-built leaf cannot survive that source.
+	# Uma origem liberada não tem apresentação a substituir. Mantém a contribuição parcial
+	# privada até o commit para que a folha montada pela metade não sobreviva a essa origem.
 	if not is_instance_valid(work.part): return true
 	var mesh: Mesh = work.mesh
 	if work.stage == "surface":
@@ -296,8 +296,8 @@ static func _triangle_batch(work: Dictionary) -> int:
 			_add_leaf(result, int(work.collect_side), material, part, surface, polygon, false)
 		work.triangle = last
 		return int((last - first) / 3.0)
-	# Transfer accumulated packed buffers into locals before appending. Leaving
-	# a second owner in the state would detach the full prefix on every batch.
+	# Transfere os buffers empacotados acumulados para locais antes de anexar. Deixar
+	# um segundo dono no estado desanexaria o prefixo inteiro a cada lote.
 	var kept: PackedInt32Array = work.kept
 	var extra_vertices: PackedVector3Array = work.extra_vertices
 	var extra_normals: PackedVector3Array = work.extra_normals

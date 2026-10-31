@@ -1,6 +1,6 @@
 extends Node
-## Keep the wearer's body out of its own lamps' shadow maps, not the world's.
-## Layer 16 is reserved for the player; 17/18 belong to coastal reflections.
+## Mantém o corpo de quem usa fora dos shadow maps das próprias lâmpadas, não dos do mundo.
+## A camada 16 é reservada ao jogador; 17/18 pertencem aos reflexos costeiros.
 const PLAYER_LAYER := 1 << 15
 const CAPTURE_LAYERS := (1 << 16) | (1 << 17)
 const SHADOW_MASK := 0xFFFFF & ~(PLAYER_LAYER | CAPTURE_LAYERS)
@@ -21,11 +21,11 @@ func _visit(node: Node) -> void:
 
 func _node_added(node: Node) -> void:
 	if not node is GeometryInstance3D: return
-	# Reflection-only proxies and explicitly hidden geometry must stay invisible
-	# to the main camera. Only migrate ordinary, publicly rendered geometry.
+	# Proxies só de reflexo e geometria escondida explicitamente precisam continuar invisíveis
+	# para a câmera principal. Só migra geometria comum, renderizada publicamente.
 	if node.layers & (1 | PLAYER_LAYER) == 0: return
 	if not (is_instance_valid(gameplay.player) and gameplay.player.is_ancestor_of(node)) \
 		and not (is_instance_valid(gameplay.gun) and gameplay.gun.is_ancestor_of(node)): return
-	# Keep reflection/cutaway bits. Ordinary cameras and lights include layer 16;
-	# personal shadow masks omit it, without disabling the mesh's cast_shadow.
+	# Mantém os bits de reflexo/corte. Câmeras e luzes comuns incluem a camada 16;
+	# máscaras de sombra pessoais a omitem, sem desligar o cast_shadow da malha.
 	node.layers = (node.layers & ~1) | PLAYER_LAYER

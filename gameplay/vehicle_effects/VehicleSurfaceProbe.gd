@@ -1,5 +1,5 @@
 extends RefCounted
-## Wheel-local raycasts are the sole authority for ground contact and orientation.
+## Raycasts locais da roda são a única autoridade para contato com o chão e orientação.
 
 const RESOLVER := preload("res://audio/v1_ambience/SurfaceResolver3D.gd")
 const SNOW_EDGE_Z := (-1350.0-4960.0)/16.0

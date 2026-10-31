@@ -1,9 +1,9 @@
 extends Node
-## One owner for global slow motion. Only charge survives saving; active time never does.
+## Dono único da câmera lenta global. Só a carga sobrevive ao save; o tempo ativo nunca.
 const DURATION := 15.0
 const WORLD_SCALE := 0.1
 const CAPACITY := 100.0
-## Forty points of combat damage fill the meter, including armor absorption.
+## Quarenta pontos de dano de combate enchem o medidor, incluindo o absorvido pelo colete.
 const DAMAGE_GAIN := 2.5
 var gameplay: Node
 var charge := 0.0
@@ -57,7 +57,7 @@ func activate() -> bool:
 
 func _process(_delta: float) -> void:
 	if not active: return
-	# Pausing or opening a modal ends the effect; it cannot leave the next scene slowed.
+	# Pausar ou abrir um modal encerra o efeito; ele não pode deixar a próxima cena lenta.
 	if not _permitted():
 		cancel("interrupted")
 		return

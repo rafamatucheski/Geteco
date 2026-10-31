@@ -37,7 +37,7 @@ static func capture(item: Dictionary) -> void:
 static func schedule(item: Dictionary, director: Node, delay := DELAY) -> void:
 	var chunk = item.chunk.get_ref()
 	if not is_instance_valid(chunk) or not chunk.is_inside_tree(): return
-	# Timer owned by the chunk: unloading it cancels recovery with it.
+	# Timer pertencente ao chunk: descarregá-lo cancela a recuperação junto.
 	var timer: Tween = chunk.create_tween()
 	timer.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	timer.tween_interval(delay)

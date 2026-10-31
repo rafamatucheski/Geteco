@@ -1,6 +1,6 @@
 extends RefCounted
-## Bounded decisions shared by native officers. Tactical points are admitted
-## by capsule/floor queries; normal navigation and physical movement prevail.
+## Decisões limitadas compartilhadas pelos policiais nativos. Os pontos táticos são admitidos
+## por consultas de cápsula/piso; a navegação normal e o movimento físico prevalecem.
 const RADII := [7.0, 7.0, 9.0, 12.0, 10.0]
 const SPEEDS := [3.3, 3.6, 3.5, 3.4, 2.7]
 const NAMES := ["approach", "flank", "cover_team", "contain", "controlled_advance"]
@@ -42,7 +42,7 @@ func plan(officer: CharacterBody3D, target: Vector3, hostile: bool, elapsed: flo
 			result.goal = cover
 			result.doctrine = "reload_in_cover"
 			return result
-	# Alternate pairs covering one another, with slower bounds for the Army.
+	# Pares alternados cobrindo um ao outro, com avanços mais lentos para o Exército.
 	if tier in [2, 4] and bool(officer.get("sees_player")) and distance <= 18.0:
 		var phase := int(elapsed / (2.4 if tier == 2 else 3.0)) % 2
 		if slot % 2 != phase and distance >= 5.0:

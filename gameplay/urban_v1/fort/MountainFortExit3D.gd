@@ -1,5 +1,5 @@
 extends Node3D
-## Discreet natural rock entrance; the moving slab and rocks own native 3D depth.
+## Entrada discreta em rocha natural; a laje móvel e as pedras são donas da profundidade 3D nativa.
 const WORLD_POSITION := Vector3(740.0,0.0,-880.0)
 const FORM_SIZE := Vector3(.70,.90,.80)
 const ACTIVE_DISTANCE := 170.0
@@ -62,8 +62,8 @@ func set_open(open: bool,animate := true) -> void:
 	_tween.tween_callback(func(): dust.emitting = false)
 
 func _build() -> void:
-	# Authored dimensions below are baked to a 1.34 m wide, 2.05 m tall passage.
-	# Bake geometry before creating collision: physics bodies retain unit scale.
+	# As dimensões definidas abaixo são pré-aplicadas para uma passagem de 1.34 m de largura e 2.05 m de altura.
+	# Aplica a geometria antes de criar a colisão: corpos de física mantêm escala unitária.
 	for spec in [
 		[Vector3(-2.05,1.3,-1.65),Vector3(2.65,2.6,2.7),.22],
 		[Vector3(2.15,1.38,-1.7),Vector3(2.7,2.76,2.6),-.25],
@@ -74,12 +74,12 @@ func _build() -> void:
 		[Vector3(-3.22,.4,-1.4),Vector3(1.3,.8,1.45),.43],
 	]:
 		_rock(spec[0],spec[1],spec[2])
-	# Dark recess belongs to the rear wall, so it occludes rather than overlays actors.
+	# O recesso escuro pertence à parede dos fundos, então ele oclui os atores em vez de se sobrepor a eles.
 	_box(self,Vector3(0,1.1,-1.83),Vector3(1.9,2.2,.04),"0a0d0f")
 	_box(self,Vector3(-1.01,1.16,-.18),Vector3(.10,2.32,.18),"394340",Vector3.ZERO,true)
 	_box(self,Vector3(1.01,1.16,-.18),Vector3(.10,2.32,.18),"394340",Vector3.ZERO,true)
 	_box(self,Vector3(0,2.36,-.18),Vector3(2.12,.10,.18),"394340",Vector3.ZERO,true)
-	# Recessed sliding track remains below the foot plane; no raised curb at the exit.
+	# O trilho deslizante rebaixado fica abaixo do plano dos pés; sem meio-fio elevado na saída.
 	_box(self,Vector3(1.28,-.028,.04),Vector3(4.6,.045,.34),"454d49")
 	slab = Node3D.new()
 	slab.name = "StoneSlab"
@@ -151,7 +151,7 @@ func _rock(at: Vector3,size: Vector3,yaw: float) -> void:
 	_solid_from_mesh(display)
 
 func _face(surface: SurfaceTool,a: Vector3,b: Vector3,c: Vector3,color: Color) -> void:
-	# Clockwise vertices face out in Godot; explicit flat normals keep the facets legible.
+	# No Godot, vértices em sentido horário olham para fora; normais planas explícitas mantêm as facetas legíveis.
 	var normal := (b-a).cross(c-a).normalized()
 	surface.set_normal(normal)
 	surface.set_color(color)

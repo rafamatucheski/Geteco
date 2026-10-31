@@ -1,6 +1,6 @@
 extends RefCounted
-## Authored, opaque race vinyl. One vertex-coloured mesh/material per car, shared
-## by the catalog cache. The door cutter carries its triangles onto the door.
+## Vinil de corrida opaco feito à mão. Uma malha/material com cor de vértice por carro, compartilhada
+## pelo cache do catálogo. O cortador de porta leva os triângulos dele para a porta.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const OFFSET := .006
 const LAYER_GAP := .002
@@ -60,8 +60,8 @@ static func apply(root: Node3D, spec: Dictionary) -> void:
 	part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	part.set_meta("desert_livery", style)
 	part.set_meta("race_number", number)
-	# Deliberately not door_cut_exempt: a vinyl-covered door must take its vinyl
-	# with it. The material role is not paint, so respraying preserves the design.
+	# De propósito não é door_cut_exempt: uma porta coberta de vinil precisa levar o vinil
+	# junto. O papel do material não é pintura, então repintar preserva o desenho.
 	root.add_child(part)
 
 
@@ -72,8 +72,8 @@ static func _material() -> StandardMaterial3D:
 		_vinyl.vertex_color_use_as_albedo = true
 		_vinyl.roughness = .40
 		_vinyl.metallic = .08
-		# The thin decal has no inner door card and must never become the
-		# dominant door paint. VehicleDoorBuilder explicitly handles this flag.
+		# O decalque fino não tem forro interno de porta e nunca pode virar a
+		# pintura dominante da porta. VehicleDoorBuilder trata esta flag explicitamente.
 		_vinyl.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return _vinyl
 
@@ -96,8 +96,8 @@ static func _side_graphics(
 	var span := maxf(.24, high - low)
 	var cream := Color("eee8cf")
 	var charcoal := Color("131e27")
-	# All broad shapes live between the wheel wells. Fender pinstripes sit
-	# above their crowns, leaving tyres and the authored arch openings clear.
+	# Todas as formas largas ficam entre as caixas de roda. Os filetes do para-lama ficam
+	# acima do topo delas, deixando livres os pneus e as aberturas definidas dos arcos.
 	match style:
 		"rally":
 			_side_poly(
@@ -150,7 +150,7 @@ static func _side_graphics(
 				accent,
 				1
 			)
-			# Three staggered rally checks, broad enough to read from the drag camera.
+			# Três xadrezes de rali escalonados, largos o bastante para ler da câmera do drag.
 			for check in 3:
 				var z := length * (-.193 + float(check) * .028)
 				_side_rect(st, x, side, z, shoulder - .045, length * .021, .030, cream, 1)
@@ -223,8 +223,8 @@ static func _side_graphics(
 			)
 			_fender_line(st, x, side, length, radius, shoulder, accent)
 		"gt":
-			# Broken forward chevrons with a second, narrow pinline: an original
-			# tuner graphic that remains legible as the car passes side-on.
+			# Chevrons quebrados para a frente com um segundo filete estreito: um grafismo
+			# original de tuner que continua legível quando o carro passa de lado.
 			_side_poly(
 				st,
 				x,
@@ -345,8 +345,8 @@ static func _number_badge(
 		return
 	var width := height * 1.49
 	_side_rect(st, x, side, z, y, width, height * 1.16, background, layer)
-	# Seven-segment numerals are geometric race identifiers, not a font/label
-	# viewport. Reverse the local horizontal axis on the far side for legibility.
+	# Numerais de sete segmentos são identificadores geométricos de corrida, não uma fonte/viewport
+	# de rótulo. Inverte o eixo horizontal local no lado oposto para ficar legível.
 	_digit(st, x, side, z + side * height * .34, y, floori(float(number) / 10.0), height, ink, layer + 1)
 	_digit(st, x, side, z - side * height * .34, y, number % 10, height, ink, layer + 1)
 
@@ -428,8 +428,8 @@ static func _top_graphics(
 	var roof_y := height - .0075 + OFFSET
 	var charcoal := Color("131e27")
 	if style == "drag":
-		# Two longitudinal stripes continue over the roof; leave the central
-		# bonnet scoop visible and separate from the vinyl.
+		# Duas faixas longitudinais continuam sobre o teto; deixa a entrada de ar central
+		# do capô visível e separada do vinil.
 		for sign_x: float in [-1.0, 1.0]:
 			var x: float = sign_x * width * .205
 			_top_rect(st, x, hood_y, hood_front, hood_back, width * .13, charcoal)
@@ -572,8 +572,8 @@ static func _top_polygon(st: SurfaceTool, y: float, points: Array, color: Color)
 			st.add_vertex(Vector3(point.x, y, point.y))
 
 
-## Curved coupe panels share the exact sampling functions used by the body.
-## Tessellation happens once per catalog mesh; no projection runs per frame.
+## Painéis curvos do cupê compartilham exatamente as funções de amostragem usadas pela carroceria.
+## A tesselação acontece uma vez por malha do catálogo; nenhuma projeção roda por quadro.
 static func _curved_mesh(
 	source: ArrayMesh, spec: Dictionary, shape: Script, roof_only := false
 ) -> ArrayMesh:
@@ -652,8 +652,8 @@ static func _curve_point(
 		var side := signf(normal.x)
 		var side_gap := absf(point.x) - float(spec["size"][0]) * .48 + .002
 		var side_y := point.y
-		# The upper fender stripe follows the descending haunch, keeping its
-		# thickness instead of hovering above the rounded nose and rear deck.
+		# A faixa superior do para-lama segue o quadril que desce, mantendo a
+		# espessura em vez de pairar acima do nariz arredondado e da tampa traseira.
 		if point.y > shoulder - .055 and absf(point.z) > float(spec["size"][2]) * .22:
 			var top: Vector3 = shape.call(
 				"deck_point", spec, side * float(spec["size"][0]) * .48, point.z

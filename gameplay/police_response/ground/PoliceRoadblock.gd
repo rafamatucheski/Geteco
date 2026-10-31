@@ -1,7 +1,7 @@
 extends Node3D
 ## Só o fura-pneu: tapete de espetos retráteis no meio da pista (2026-10-01: os dois blocos de
 ## concreto que fechavam as laterais foram removidos, bloqueavam a passagem do jogador).
-## The sweep tests wheel trajectories, so even fast cars cannot skip the strip.
+## A varredura testa as trajetórias das rodas, então nem carros rápidos conseguem pular a faixa.
 const TIRES := preload("res://gameplay/police_response/ground/TirePuncture.gd")
 const ART := preload("res://gameplay/police_response/ground/PoliceGroundModels.gd")
 var age := 0.0

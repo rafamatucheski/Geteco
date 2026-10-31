@@ -201,7 +201,7 @@ const _RELOAD_SLOW := ["rpg", "shotgun", "hunting_rifle"]
 static func supports(id: String, part: String) -> bool:
 	if id not in CUSTOMIZABLE or not PARTS.has(part): return false
 	var base := String(preload("res://gameplay/WeaponCatalog.gd").get_weapon(id).get("model_base", id))
-	# The quiet pistol's suppressor/barrel are integral, not a removable second kit.
+	# Supressor/cano da pistola silenciosa são integrais, não um segundo kit removível.
 	if id == "pistol_suppressed" and String(PARTS[part].slot) in ["muzzle", "barrel"]: return false
 	if id == "shotgun_auto" and part == "slick_pump": return false
 	return id in PARTS[part].get("for", []) or base in PARTS[part].get("for", [])
@@ -352,7 +352,7 @@ static func fit(root: Node3D, id: String, state: Dictionary, muzzle: Vector3) ->
 	var mount := Node3D.new()
 	mount.name = "TacticalFlashlight"
 	root.add_child(mount)
-	# Side clamp clears shotgun pumps and the supporting hand.
+	# A braçadeira lateral livra o pump das espingardas e a mão de apoio.
 	mount.position = Vector3(0.049, muzzle.y - 0.018, muzzle.z + 0.09)
 	if base == "pistol": mount.position = Vector3(0.0, 0.006, -0.11 if id == "pistol_suppressed" else muzzle.z + 0.04)
 	var metal := StandardMaterial3D.new()

@@ -200,8 +200,8 @@ func _tick_pulling(delta: float) -> void:
 
 func _tick_slow(delta: float) -> void:
 	_cap_speed(RULES.SLOW_ONLY_SPEED)
-	# A car that initially lacked space may have just backed away or gained a
-	# free shoulder. Retry the physical manoeuvre instead of remaining slow forever.
+	# Um carro que no início não tinha espaço pode ter acabado de recuar ou ganhado um
+	# acostamento livre. Tenta de novo a manobra física em vez de ficar lento para sempre.
 	_retry -= delta
 	if _retry>0 or vehicle.backoff_time>0: return
 	_retry = 1.0

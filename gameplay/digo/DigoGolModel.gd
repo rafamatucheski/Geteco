@@ -1,6 +1,6 @@
 extends Node3D
-## Photo-matched Gol quadrado: short flat nose, long two-door cabin and sloped hatch.
-## Static panels batch by material; each wheel remains separate for Vehicle's pivots.
+## Gol quadrado igual à foto: nariz curto e reto, cabine longa de duas portas e tampa traseira inclinada.
+## Painéis estáticos agrupados por material; cada roda continua separada para os pivôs de Vehicle.
 static var _cached: Array[Dictionary] = []
 var _batches: Dictionary = {}
 var _materials: Dictionary = {}
@@ -29,7 +29,7 @@ func _init() -> void:
 	set_meta("model_identity", "Gol quadrado 1993")
 	set_meta("rim_inches", 15)
 	set_meta("body_doors", 2)
-	# Batched lenses also contain fog/reverse lights; their combined center is not a headlamp.
+	# Lentes agrupadas também contêm luzes de neblina/ré; o centro combinado delas não é um farol.
 	set_meta("headlight_mounts", [Vector3(-.576, .794, -1.856), Vector3(.576, .794, -1.856)])
 
 func _build() -> void:
@@ -41,26 +41,26 @@ func _build() -> void:
 		material.roughness = row[3]
 		material.cull_mode = BaseMaterial3D.CULL_DISABLED
 		_materials[row[0]] = material
-	# Underbody sits inside the wheel wells, leaving genuine cutouts around the tires.
+	# O assoalho fica dentro das caixas de roda, deixando recortes de verdade em volta dos pneus.
 	_box("rubber", Vector3(0, .28, 0), Vector3(1.37, .12, 3.5))
-	# Hollow passenger compartment: the former full-width belt-height slab
-	# crossed the seats and became visible as soon as the windows opened.
+	# Compartimento de passageiros oco: a antiga laje da largura inteira na altura da cintura
+	# atravessava os assentos e ficava visível assim que as janelas abriam.
 	_box("paint#fixed",Vector3(0,.80,-1.22),Vector3(1.61,.16,1.13))
 	_box("paint#fixed",Vector3(0,.80,1.685),Vector3(1.61,.16,.20))
 	_box("rubber#fixed",Vector3(0,.18,.46),Vector3(1.50,.05,2.16))
 	_quad("paint", Vector3(-.81,.86,-1.82),Vector3(.81,.86,-1.82),Vector3(.79,.94,-.64),Vector3(-.79,.94,-.64))
 	_quad("paint#fixed", Vector3(-.64,1.43,-.13),Vector3(.64,1.43,-.13),Vector3(.65,1.42,.87),Vector3(-.65,1.42,.87))
-	# Close the roof edge above the glass; an open 3 cm seam exposed the far gutter.
+	# Fecha a borda do teto acima do vidro; uma emenda aberta de 3 cm expunha a calha do outro lado.
 	_quad("paint#fixed",Vector3(-.64,1.43,-.13),Vector3(.64,1.43,-.13),Vector3(.611,1.399,-.136),Vector3(-.611,1.399,-.136))
 	_quad("paint#fixed",Vector3(-.65,1.42,.87),Vector3(.65,1.42,.87),Vector3(.612,1.391,.91),Vector3(-.612,1.391,.91))
 	_quad("glass", Vector3(-.744,.96,-.617),Vector3(.744,.96,-.617),Vector3(.611,1.399,-.136),Vector3(-.611,1.399,-.136))
 	_quad("glass", Vector3(-.612,1.391,.91),Vector3(.612,1.391,.91),Vector3(.743,.967,1.587),Vector3(-.743,.967,1.587))
-	# A/C pillars, gutters and window seals deliberately follow the photograph.
+	# Colunas A/C, calhas e borrachas de janela seguem a fotografia de propósito.
 	for side in [-1.0,1.0]:
 		var x: float = side*.817
 		for z in [-1.22, 1.19]:
 			_wheel(side,z)
-		# Side sheet has raised lower edge over each arch; silver rolled lip follows it.
+		# A chapa lateral tem a borda inferior elevada sobre cada arco; o friso prateado a acompanha.
 		var samples: Array[float] = [-1.80,-1.60,-1.57,-1.50,-1.39,-1.22,-1.05,-.94,-.87,-.84,-.62,.61,.81,.84,.91,1.02,1.19,1.36,1.47,1.54,1.57,1.78]
 		for i in samples.size()-1:
 			var za := samples[i]
@@ -69,7 +69,7 @@ func _build() -> void:
 			var yb := _arch_height(zb)
 			_quad("paint",Vector3(x,ya,za),Vector3(x,yb,zb),Vector3(x,.906,zb),Vector3(x,.906,za))
 			if ya>.32 or yb>.32: _beam("paint",Vector3(x*1.014,ya+.013,za),Vector3(x*1.014,yb+.013,zb),.025)
-		# Black rubbing strip is interrupted at wheel arches, never laid across a tire.
+		# O friso preto de proteção é interrompido nos arcos de roda, nunca passa por cima do pneu.
 		for span in [Vector2(-1.78,-1.57),Vector2(-.84,.81),Vector2(1.57,1.78)]:
 			_box("trim",Vector3(x,.50,(span.x+span.y)*.5),Vector3(.024,.105,span.y-span.x))
 		var a := Vector3(side*.78,.955,-.60)
@@ -124,7 +124,7 @@ func _build() -> void:
 		_box("amber",Vector3(side*.734,.80,1.833),Vector3(.11,.073,.015))
 		_box("headlight",Vector3(side*.555,.735,1.834),Vector3(.10,.052,.015))
 	_plate(1.825)
-	# Turbo intercooler behind the low intake; polished exhaust and visible parcel-shelf sound box.
+	# Intercooler do turbo atrás da entrada de ar baixa; escapamento polido e caixa de som visível no tampão.
 	_box("alloy",Vector3(0,.37,-1.879),Vector3(.55,.062,.016))
 	_box("rubber",Vector3(0,.927,1.18),Vector3(1.12,.07,.35))
 	for side in [-1.0,1.0]:
@@ -132,7 +132,7 @@ func _build() -> void:
 		_cylinder("rubber",Vector3(side*.31,.983,1.18),.062,.010,Vector3.ZERO,16)
 	_cylinder("alloy",Vector3(-.57,.27,1.81),.039,.22,Vector3(PI*.5,0,0),16)
 	_cylinder("rubber",Vector3(-.57,.27,1.925),.029,.008,Vector3(PI*.5,0,0),16)
-	# Two wipers rest at the lower windshield edge.
+	# Dois limpadores descansam na borda inferior do para-brisa.
 	for side in [-1.0,1.0]: _beam("rubber",Vector3(side*.36,.968,-.626),Vector3(side*.07,1.023,-.565),.012)
 
 func _arch_height(z: float) -> float:
@@ -148,7 +148,7 @@ func _wheel(side: float,z: float) -> void:
 	_cylinder("alloy"+suffix,center+Vector3(side*.103,0,0),.1905,.017,Vector3(0,0,PI*.5),32)
 	_cylinder("rubber"+suffix,center+Vector3(side*.115,0,0),.168,.009,Vector3(0,0,PI*.5),32)
 	_cylinder("alloy"+suffix,center+Vector3(side*.127,0,0),.067,.020,Vector3(0,0,PI*.5),20)
-	# Six broad machined spokes, with open dark cutouts matching the reference wheels.
+	# Seis raios usinados largos, com recortes escuros abertos iguais às rodas de referência.
 	for i in 6:
 		var angle := TAU*i/6.0
 		var p := center+Vector3(side*.124,sin(angle)*.122,cos(angle)*.122)
@@ -200,8 +200,8 @@ func _beam(key: String,a: Vector3,b: Vector3,width: float) -> void:
 
 func _quad(key: String,a: Vector3,b: Vector3,c: Vector3,d: Vector3) -> void:
 	var normal := (c-a).cross(b-a).normalized()
-	# append_from primitives already use indices. Quads must contribute their own
-	# indices too; naked add_vertex triangles otherwise vanish from the batch.
+	# As primitivas de append_from já usam índices. Os quads também precisam contribuir
+	# com índices próprios; senão triângulos soltos de add_vertex somem do lote.
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = PackedVector3Array([a,b,c,d])

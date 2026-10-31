@@ -1,6 +1,6 @@
 extends Node3D
-## Exterior underbody kit. Session supplies the clock and the current camera;
-## there is no scene search, autonomous process or per-car physics probe.
+## Kit externo sob a carroceria. A sessão fornece o relógio e a câmera atual;
+## não há busca na cena, process autônomo nem sonda física por carro.
 const ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
 const GROUP := "desert_car_neon"
 const FADE_BEGIN := 34.0
@@ -24,8 +24,8 @@ var _ground_strength := 0.0
 var _last_strength := -1.0
 var _last_ground_strength := -1.0
 
-## Call after Vehicle._ready. Passing a stock/legacy spec creates no effect.
-## Reapplying tuning/save state reuses the exact same kit and light source.
+## Chame depois de Vehicle._ready. Passar uma especificação de fábrica/legada não cria efeito.
+## Reaplicar o estado de tuning/save reaproveita exatamente o mesmo kit e a mesma fonte de luz.
 static func install(owner_car: CharacterBody3D, specification: Dictionary = {}) -> Node3D:
 	if not is_instance_valid(owner_car): return null
 	var existing := owner_car.get_node_or_null("DesertCarNeon")
@@ -59,8 +59,8 @@ func _ready() -> void:
 	strip_finish.emission = color
 	strip_finish.emission_energy_multiplier = 0.0
 	for side in [-1.0,1.0]:
-		# The dark mounting rail joins the tube to the sill; the luminous core
-		# hangs underneath it, between the tyres, and reads from the drag camera.
+		# O trilho escuro de montagem une o tubo à soleira; o núcleo luminoso
+		# fica pendurado embaixo dele, entre os pneus, e aparece na câmera do drag.
 		var point := Vector3(side*width*.475,strip_height,.035)
 		_mesh("NeonRail",_box_mesh(Vector3(.058,.044,strip_length+.06)),point+Vector3.UP*.023,_housing_material())
 		var strip := _mesh("NeonTube",_box_mesh(Vector3(.034,.030,strip_length)),point,strip_finish)
@@ -92,8 +92,8 @@ func _build_ground(width: float, length: float) -> void:
 func _build_light(width: float) -> void:
 	ground_light = SpotLight3D.new()
 	ground_light.name = "NeonDownlight"
-	# One downward, shadowless source: it cannot illuminate the roof or distant
-	# facades. The depth-tested side wash supplies the elongated footprint.
+	# Uma fonte para baixo e sem sombra: não consegue iluminar o teto nem fachadas
+	# distantes. O banho lateral com teste de profundidade fornece a marca alongada.
 	ground_light.position = Vector3(0,.42,.035)
 	ground_light.rotation.x = -PI*.5
 	ground_light.light_color = color
@@ -125,8 +125,8 @@ func update(time_of_day: float, camera: Camera3D, exterior: bool, delta: float) 
 	if exterior and is_instance_valid(camera) and car.is_visible_in_tree() and float(car.get("health")) > 0.0 and not car.has_meta("awaiting_ground"):
 		target = maximum_strength*night_weight(time_of_day)*distance_weight(camera.global_position.distance_to(car.global_position))
 	strength = move_toward(strength,target,delta*1.8)
-	# Use the body's actual floor contact. A jump keeps the installed tubes lit
-	# while the floor wash immediately vanishes, instead of floating with it.
+	# Usa o contato real do corpo com o chão. Um salto mantém os tubos instalados acesos
+	# enquanto o banho no chão some na hora, em vez de flutuar junto.
 	var supported := car.is_on_floor()
 	var ground_target := strength if supported else 0.0
 	_ground_strength = move_toward(_ground_strength,ground_target,delta*4.0) if supported else 0.0
@@ -156,7 +156,7 @@ static func _ground_texture() -> ImageTexture:
 		var end_fade := 1.0-smoothstep(.53,1.0,along)
 		for x in 96:
 			var across := absf(float(x)/95.0*2.0-1.0)
-			# Two soft ribbons under the sills, rather than one giant oval.
+			# Duas fitas suaves sob as soleiras, em vez de um oval gigante.
 			var ribbon := exp(-pow((across-.57)/.26,2.0)*2.0)
 			var spill := .12*(1.0-smoothstep(.18,.95,across))
 			var value := (ribbon+spill)*end_fade*(1.0-smoothstep(.82,1.0,across))
