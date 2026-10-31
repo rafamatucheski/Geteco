@@ -1,6 +1,6 @@
 extends RefCounted
-## Elevated rails can enter the orthographic near plane while Dante is on the
-## road underneath. Retreat along the viewing axis, preserving screen framing.
+## Trilhos elevados podem entrar no plano próximo ortográfico enquanto o Dante está na
+## rua embaixo. Recua ao longo do eixo de visão, preservando o enquadramento da tela.
 const NETWORK := preload("res://world/railway/RailwayNetwork.gd")
 const MARGIN := 2.0
 var _segments: Array[PackedVector3Array] = []
@@ -24,8 +24,8 @@ func offset_for(focus: Vector3, nominal: Vector3, view: Vector2, near_clip: floa
 	var right := Vector3.UP.cross(back).normalized()
 	var up := back.cross(right).normalized()
 	var distance := nominal.length()
-	# Include the full elevated deck/parapet volume and an entry guard, rather
-	# than only the rail centre-line. This does not load or reveal any chunks.
+	# Inclui o volume inteiro do tabuleiro/parapeito elevado e uma guarda de entrada, em vez
+	# de só a linha central do trilho. Isto não carrega nem revela chunk nenhum.
 	var half_view := view*.5+Vector2.ONE*8.0
 	for points in _segments:
 		for i in points.size()-1:

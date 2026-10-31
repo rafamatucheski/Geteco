@@ -381,12 +381,12 @@ func _stall_physics_tick(delta: float) -> void:
 			target_speed *= 0.35
 	if is_player and not is_nan(combat_facing) and direction.length_squared() > 0.001:
 		if combat_stance == "melee":
-			# Facing the cursor does not put a blade in the firearm's braced walk.
-			# Gameplay owns the short committed phase; recovery/guard use 1.0.
+			# Olhar para o cursor não põe uma lâmina na caminhada firme da arma de fogo.
+			# O Gameplay cuida da fase curta comprometida; recuperação/guarda usam 1.0.
 			target_speed *= clampf(float(get_meta("melee_movement_scale", 1.0)), 0.0, 1.0)
 		else:
-			# A braced backwards/side step is not a forward sprint played in reverse.
-			# Match actual displacement to the native directional clips' stride.
+			# Um passo firme para trás/de lado não é uma corrida para frente tocada ao contrário.
+			# Ajusta o deslocamento real à passada dos clipes direcionais nativos.
 			var forward := Vector3(-sin(combat_facing), 0, -cos(combat_facing))
 			var alignment := direction.normalized().dot(forward)
 			var combat_speed := lerpf(2.3, 2.4 if alignment < 0.0 else 3.2, absf(alignment))
@@ -395,8 +395,8 @@ func _stall_physics_tick(delta: float) -> void:
 	move_intent = direction
 	velocity.x = direction.x * target_speed * lod_scale
 	velocity.z = direction.z * target_speed * lod_scale
-	# Floor snapping maintains support on flat ground and descents. Pushing an
-	# already grounded capsule down repeats floor collisions on every walk tick.
+	# O snap de chão mantém o apoio no plano e nas descidas. Empurrar para baixo uma
+	# cápsula já no chão repete colisões de piso em cada tick de caminhada.
 	if air_movement != null:
 		air_movement.before_move(delta, direction)
 	else:
@@ -405,8 +405,8 @@ func _stall_physics_tick(delta: float) -> void:
 	if air_movement == null or air_movement.phase == "ground": STEP.try_step(self, Vector3(velocity.x, 0, velocity.z) * (delta / lod_scale))
 	if step_began != 0: STALL_WORK.finish_slow("actor.step",step_began,10000,self)
 	var move_began := STALL_WORK.begin()
-	# move_and_slide reads engine delta internally. Compensate only the player's
-	# swept velocity, then restore physical units for camera, footsteps and combat.
+	# move_and_slide lê o delta do motor internamente. Compensa só a velocidade varrida
+	# do jogador e depois restaura as unidades físicas para câmera, passos e combate.
 	velocity *= rage_speed
 	move_and_slide()
 	velocity /= rage_speed
@@ -506,8 +506,8 @@ func _pose_locomotion(direction: Vector3, _target_speed: float, displacement: Ve
 	var directional_stride := lerpf(walk_stride, 1.06 if combat_stance == "grenade" else 0.91, clampf(backward, 0, 1))
 	directional_stride = lerpf(directional_stride, 0.89, clampf(lateral, 0, 1))
 	if melee_directional:
-		# Forward melee movement can actually run now. Keep the authored side/back
-		# stride where those clips take over instead of speeding up a forward walk.
+		# O movimento de corpo a corpo para frente agora pode correr de verdade. Mantém a passada
+		# escrita de lado/para trás onde esses clipes assumem em vez de acelerar uma caminhada para frente.
 		var forward_share := (1.0 - clampf(backward, 0.0, 1.0)) * (1.0 - clampf(lateral, 0.0, 1.0))
 		directional_stride = lerpf(directional_stride, SWORD_RUN_STRIDE if sword else 3.4, _run_weight * forward_share)
 	var stride := lerpf(lerpf(walk_stride, SWORD_RUN_STRIDE if sword else 3.4, _run_weight), directional_stride, _directional_weight)
@@ -580,17 +580,17 @@ func _build_idle_pose() -> void:
 	for side in ["Left", "Right"]:
 		var foot: int = _combat_bones[side + "Foot"]
 		var foot_rest := skeleton.get_bone_global_rest(foot)
-		# Walking's blended feet still point down: its toe can touch the floor
-		# while the heel floats ~10 cm. Build a flat planted foot once, before
-		# caching idle and turn targets, without changing the moving clips.
-		# The heel also follows the shin's skin weights. This small pitch keeps
-		# its sole level after the wider idle stance bends the knees.
+		# Os pés mesclados da caminhada ainda apontam para baixo: a ponta pode tocar o chão
+		# enquanto o calcanhar flutua ~10 cm. Monta um pé plano apoiado uma vez, antes
+		# de guardar os alvos de parado e de giro, sem mudar os clipes em movimento.
+		# O calcanhar também segue os pesos de pele da canela. Este pequeno pitch mantém
+		# a sola nivelada depois que a postura parada mais aberta dobra os joelhos.
 		_set_combat_bone_rotation(foot, Basis(Vector3.RIGHT, deg_to_rad(-1.0)) * foot_rest.basis)
 		var toe: int = _combat_bones[side + "ToeBase"]
 		skeleton.set_bone_pose(toe, skeleton.get_bone_rest(toe))
 		var point := visual.to_local(skeleton.to_global(foot_rest.origin))
-		# The capsule bottom is .01 above Actor's origin; compensate the last
-		# 3 mm of sole lift from the shin weights, with both toe and heel clear.
+		# A base da cápsula fica .01 acima da origem do Actor; compensa os últimos
+		# 3 mm de elevação da sola vindos dos pesos da canela, com ponta e calcanhar livres.
 		point.y += 0.007
 		point.x = -0.12 if side == "Left" else 0.12
 		point.z = -0.025 if side == "Left" else 0.025
@@ -709,7 +709,7 @@ func pose_vehicle(sitting: float, stepping: float = 0.0, side: int = -1, reach: 
 	if handlebars.has("Left") and handlebars.has("Right"):
 		var center: Vector3 = visual.to_local((handlebars.Left.origin + handlebars.Right.origin) * .5)
 		if hips >= 0:
-			# Lean from the waist instead of stretching arm bones to a distant bar.
+			# Inclina a partir da cintura em vez de esticar os ossos do braço até uma barra distante.
 			var toward := Vector3(center.x, 0, center.z).normalized()
 			var lean_mult = handlebars.get("lean_multiplier", 1.8)
 			var lean_min = handlebars.get("lean_min", 0.5)
@@ -747,8 +747,8 @@ func _fit_motorcycle_reach(handlebars: Dictionary) -> void:
 		var offset := wrist - shoulder
 		var correction := offset.normalized() * maxf(0.0, offset.length() - length)
 		if correction.length_squared() > shift.length_squared(): shift = correction
-	# The outside grip travels farther during steering. Scoot on the saddle
-	# within 28 cm instead of stretching the arm; leg IK keeps both foot targets.
+	# A mão de fora percorre mais ao esterçar. Desliza no selim
+	# até 28 cm em vez de esticar o braço; o IK das pernas mantém os dois alvos dos pés.
 	shift = shift.limit_length(.28)
 	var parent := skeleton.get_bone_parent(hips)
 	var parent_basis := skeleton.get_bone_global_pose(parent).basis if parent >= 0 else Basis.IDENTITY
@@ -886,8 +886,8 @@ func _two_hand_sword_transform(grip: Transform3D) -> Transform3D:
 	var left_bone: int = _combat_bones.get("LeftHand", -1)
 	if right_bone < 0: return combat_weapon_transform(combat_weapon_grip)
 	var right := (skeleton.global_transform * skeleton.get_bone_global_pose(right_bone)).orthonormalized()
-	# Authored grips are rounded; normalize after composition so slerp receives
-	# a proper rotation even when the hand itself was already orthonormalized.
+	# As pegadas escritas são arredondadas; normaliza depois da composição para o slerp receber
+	# uma rotação válida mesmo quando a própria mão já estava ortonormalizada.
 	var result := (right * grip).orthonormalized()
 	# Espada e escudo: a esquerda segura o escudo e nunca entra no cabo, mesmo passando perto dele.
 	if left_bone >= 0 and combat_weapon_id != "sword_shield":
@@ -960,7 +960,7 @@ func _apply_combat_weapon_pose() -> void:
 	var native_sword: bool = combat_weapon_pose.get("native_sword", false) and skeleton != null
 	if combat_weapon_id in NATIVE_SWORDS: _track_sword_switch(native_sword)
 	if native_sword:
-		# Preserve the imported sword move, including its elbow and wrist arcs.
+		# Preserva o golpe de espada importado, incluindo os arcos de cotovelo e pulso.
 		# A esquerda fecha no cabo quando o clipe a põe junto da direita (guarda, andar e golpes de duas mãos).
 		var two_hands := _clip_palm("Left").distance_to(_clip_palm("Right")) < 0.25
 		_set_combat_grips(true, two_hands, true, two_hands, false, not two_hands)
@@ -1110,8 +1110,8 @@ func _apply_combat_weapon_pose() -> void:
 	_set_combat_grips(right_grip, left_grip, bool(pose.get("right_fist", false)) or (fist_grip and right_grip), bool(pose.get("left_fist", false)) or (fist_grip and left_grip), not right_solve, not left_solve or left_weight < 0.5)
 	_stabilize_combat_pose()
 	if lock_support and bool(pose.get("support_locked", false)):
-		# Resolve support against the realized (angularly constrained) weapon,
-		# never the pre-interpolation hand. This keeps both palms on the prop.
+		# Resolve o apoio contra a arma realizada (com restrição angular),
+		# nunca a mão antes da interpolação. Isso mantém as duas palmas no objeto.
 		var delta_world: Vector3 = visual.global_basis * (pose.left - pose.right)
 		var support_target := visual.to_local(combat_palm_position("Right") + delta_world)
 		_solve_combat_arm("Left", support_target, left_basis, true, -1.0, left_free)
@@ -1137,7 +1137,7 @@ func _apply_combat_weapon_pose() -> void:
 			var twist := Quaternion(projected.x, projected.y, projected.z, change.w).normalized()
 			var turn := 2.0 * atan2(Vector3(twist.x, twist.y, twist.z).dot(axis), twist.w)
 			var swing := change * twist.inverse()
-			# Bound axial roll without moving the wrist off the handle.
+			# Limita a rolagem axial sem tirar o pulso do cabo.
 			# Limites da prontidão (14 e 18 rad/s) escalados pela taxa do golpe: o cabo do
 			# taco gira mais rápido que isso e a palma de apoio escorregava do cabo.
 			# Teto de 1,4×: o antebraço também recebe o balanço do IK (sem limite), e
@@ -1175,9 +1175,9 @@ func _apply_combat_weapon_pose() -> void:
 func _stabilize_combat_pose() -> void:
 	# 18 rad/s na prontidão; o golpe pede mais (`WeaponRigPose.STRIKE_ARM_RATE`).
 	var arm_rate := float(combat_weapon_pose.get("arm_rate", 18.0))
-	# Joint angular velocity is part of the presentation constraint, including
-	# entry/exit and changes of reach constraints. Mounts follow the realized
-	# hand after this pass, so interpolation cannot detach the held weapon.
+	# A velocidade angular da junta faz parte da restrição de apresentação, incluindo
+	# entrada/saída e mudanças nas restrições de alcance. Os suportes seguem a mão
+	# realizada depois desta passada, então a interpolação não solta a arma empunhada.
 	for side in ["Right", "Left"]:
 		for part in ["Shoulder", "Arm", "ForeArm", "Hand"]:
 			var bone: int = _combat_bones.get(side + part, -1)
@@ -1235,8 +1235,8 @@ func _set_combat_grips(right: bool, left: bool, right_fist := false, left_fist :
 const PALM_ROLL := {"Right": 0.358, "Left": -0.392}
 const FREE_ARM_BONES := ["LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand", "RightShoulder", "RightArm", "RightForeArm", "RightHand"]
 
-## Two-bone IK adapted from the V1 Meshy rig. `target_local` and
-## `palm_basis_local` use the Actor's facing space, with the muzzle along -Z.
+## IK de dois ossos adaptado do rig Meshy da V1. `target_local` e
+## `palm_basis_local` usam o espaço de frente do Actor, com o cano em -Z.
 ## Mão aberta e fechada usam a mesma cadeia e o mesmo polo contínuo.
 func _solve_combat_arm(side: String, target_local: Vector3, palm_basis_local: Basis, _gripping: bool, sign_side: float, _free_weight: float = 0.0) -> void:
 	var upper: int = _combat_bones[side + "Arm"]
@@ -1247,8 +1247,8 @@ func _solve_combat_arm(side: String, target_local: Vector3, palm_basis_local: Ba
 	var palm_world_basis := visual.global_basis.orthonormalized() * palm_basis_local.orthonormalized()
 	var model_basis := skeleton.global_basis.orthonormalized().inverse() * palm_world_basis
 	var roll: float = PALM_ROLL[side]
-	# Opening the fingers must not change the wrist solver or bone length.
-	# Fists, reloads and grips all honor the authored palm orientation.
+	# Abrir os dedos não pode mudar o solver do pulso nem o comprimento do osso.
+	# Punhos, recargas e pegadas respeitam todos a orientação de palma escrita.
 	var wrist_alignment := Basis(Vector3.RIGHT, -PI * 0.5)
 	var hand_basis := model_basis * wrist_alignment * Basis(Vector3.UP, -roll)
 	var palm_offset := Vector3(0, 0.065, 0)
@@ -1367,9 +1367,9 @@ func _solve_combat_arm(side: String, target_local: Vector3, palm_basis_local: Ba
 			if pole_bend.is_zero_approx(): pole_bend = bend
 			along = (a * a - b * b + distance * distance) / (2.0 * distance)
 			elbow = shoulder + axis * along + bend * sqrt(maxf(0.0, a * a - along * along))
-	# Build both segment frames from the elbow plane, not from the previous
-	# clip's arbitrary axial roll. This avoids the shortest-arc singularity
-	# when a punch or a reload crosses that clip's reference direction.
+	# Monta os dois referenciais de segmento a partir do plano do cotovelo, não da rolagem
+	# axial arbitrária do clipe anterior. Isso evita a singularidade do arco mais curto
+	# quando um soco ou uma recarga cruza a direção de referência desse clipe.
 	var rest_upper := skeleton.get_bone_global_rest(upper)
 	var rest_fore := skeleton.get_bone_global_rest(fore)
 	var rest_hand := skeleton.get_bone_global_rest(hand)
@@ -1388,9 +1388,9 @@ func _solve_combat_arm(side: String, target_local: Vector3, palm_basis_local: Ba
 		# A maior parte da rotação de pegada fica no pulso: rolar muito o
 		# antebraço colapsa a manga na dobra interna do cotovelo.
 		var twist := atan2(axis_fore.dot(current_normal.cross(desired_normal)), current_normal.dot(desired_normal))
-		# clamp(atan2(...), -1.2, 1.2) jumped by 2.4 rad at the +/-PI
-		# branch cut. A periodic bounded share has no discontinuity there;
-		# the wrist still realizes the exact requested palm orientation.
+		# clamp(atan2(...), -1.2, 1.2) pulava 2.4 rad no corte de ramo
+		# em +/-PI. Uma fração periódica limitada não tem descontinuidade ali;
+		# o pulso ainda realiza exatamente a orientação de palma pedida.
 		var share := float(combat_weapon_pose.get("forearm_twist_share", 0.0))
 		if share > 0.0:
 			# Pegada de taco/machado: o antebraço gira (pronação/supinação) e o pulso
@@ -1449,11 +1449,11 @@ func _point_combat_bone(bone: int, child: int, target: Vector3) -> void:
 	pose.basis = Basis(Quaternion(current, desired)) * pose.basis
 	_set_combat_bone_rotation(bone, pose.basis)
 
-## IK changes orientation only. Decomposing a global Transform3D back into a
-## local pose on each bilateral iteration feeds floating-point scale/shear
-## back into the next solve. Animation rotation tracks do not reset that scale;
-## over hundreds of frames it grows until the sleeves span the screen.
-## Keep authored translations/scales and convert only orthonormal rotations.
+## O IK muda só a orientação. Decompor um Transform3D global de volta em
+## pose local a cada iteração bilateral realimenta escala/cisalhamento de ponto flutuante
+## na próxima solução. As trilhas de rotação da animação não zeram essa escala;
+## em centenas de quadros ela cresce até as mangas ocuparem a tela.
+## Mantém translações/escalas escritas e converte só rotações ortonormais.
 func _set_combat_bone_rotation(bone: int, p_global_rotation: Basis) -> void:
 	var parent := skeleton.get_bone_parent(bone)
 	var parent_rotation := Basis.IDENTITY

@@ -1,5 +1,5 @@
 extends RefCounted
-## Presentation-only factory. Geometry is shared with the original prepared car.
+## Fábrica só de apresentação. A geometria é compartilhada com o carro preparado original.
 const COUPE := preload("res://assets/Coupe.scn")
 static var materials: Dictionary = {}
 

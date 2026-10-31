@@ -80,9 +80,9 @@ func _entry_option(allow_transition := false) -> Dictionary:
 		if not candidate.is_visible_in_tree() or candidate.collision_layer == 0 or candidate.has_meta("awaiting_ground"): continue
 		if candidate.health <= 0 or not _speed_allows_entry(candidate): continue
 		var reach := JACK_DOOR_REACH if absf(candidate.speed) > .5 else 2.4
-		# A haul-truck door can be over five metres from its centre. Keep the
-		# broad phase proportional to the hull, then choose by actual door reach;
-		# a nearby car with an inaccessible door must not hide another car's door.
+		# A porta de um caminhão fora de estrada pode ficar a mais de cinco metros do centro. Mantém a
+		# fase ampla proporcional ao casco e escolhe pelo alcance real da porta;
+		# um carro próximo com porta inacessível não pode esconder a porta de outro carro.
 		var radius := Vector2(float(candidate.half_width) + .54, float(candidate.half_length)).length() + reach
 		if candidate.global_position.distance_squared_to(world.player.position) > radius * radius: continue
 		for side in (candidate.boarding_sides() if candidate.has_method("boarding_sides") else [-1,1]):
@@ -107,7 +107,7 @@ var _jacking := false
 var _jack_generation := 0
 
 func _speed_allows_entry(candidate: CharacterBody3D) -> bool:
-	# Ambient parking keeps ownership while it is maneuvering or its occupants board.
+	# O estacionamento ambiente mantém a posse enquanto manobra ou os ocupantes embarcam.
 	if candidate.get_meta("roadside_parking", false) and candidate.external_input: return false
 	if absf(candidate.speed) <= .5: return true
 	return candidate.traffic and not candidate.get_meta("dispatch_unit",false) and absf(candidate.speed) <= JACK_MAX_SPEED
@@ -171,12 +171,12 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 		if not car.get_meta("parked_theft_reported", false):
 			car.set_meta("parked_theft_reported", true)
 			if world.get("gameplay") != null: world.gameplay.report_observed_crime(15,car.global_position,"theft",car)
-	# A crash temporarily suspends traffic. Its pending recovery still belongs
-	# to the NPC until theft transfers ownership, otherwise it resumes mid-entry.
+	# Uma batida suspende o trânsito temporariamente. A recuperação pendente ainda pertence
+	# ao NPC até o roubo transferir a posse; senão ela retoma no meio da entrada.
 	if (car.traffic or car.get_meta("crash_was_traffic", false)) and not dispatch_car:
 		car.traffic = false
 		car.remove_meta("crash_was_traffic")
-		# It is now a persistent player vehicle, including after dismounting.
+		# Agora é um veículo persistente do jogador, inclusive depois de desmontar.
 		car.remove_meta("ambient_traffic")
 		if world.get("gameplay") != null: world.gameplay.report_observed_crime(15,car.global_position,"theft",car)
 	if had_driver:
@@ -193,7 +193,7 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 	car.controlled = false
 	car.external_input = false
 	car.input_locked = true
-	# Door construction and VehicleInterior must read the original materials.
+	# A construção da porta e o VehicleInterior precisam ler os materiais originais.
 	if world.camera.has_method("release_exterior_reveal"): world.camera.release_exterior_reveal()
 	if is_instance_valid(world.production): car.ensure_equipment(world)
 	# A folha da porta é recortada do casco ANTES de vidro e teto ficarem translúcidos: o
@@ -254,8 +254,8 @@ func _start_boarding(side: int) -> void:
 	if transition.break_in == null and car.has_method("shows_seated_driver") and car.shows_seated_driver(): INTERIOR.attach(car)
 
 
-## Keep the real gang driver; civilians are materialized in their seat, never
-## teleported onto the street by a timer. Boarding owns their forced extraction.
+## Mantém o motorista real da gangue; civis são materializados no assento, nunca
+## teletransportados para a rua por um timer. O embarque cuida da retirada forçada deles.
 func _eject_civilian_driver(candidate: CharacterBody3D, thief_side: int) -> CharacterBody3D:
 	var gang_driver: Callable = candidate.get_meta("gang_theft_handler",Callable())
 	if gang_driver.is_valid():
@@ -322,8 +322,8 @@ func exit_position(moving := false) -> Vector3:
 				var bus_floor: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(point+Vector3.UP*1.2,point-Vector3.UP*1.2,1))
 				if bus_floor.is_empty(): continue
 				point.y=bus_floor.position.y+.04
-			# An upright vehicle rests on its highest supporting corner. Its origin
-			# is not the ground height beside the door on a canyon slope.
+			# Um veículo em pé apoia no canto de suporte mais alto. A origem dele
+			# não é a altura do chão ao lado da porta numa encosta do cânion.
 			if terrain_height.is_valid(): point.y = float(terrain_height.call(Vector2(point.x,point.z)))+.04
 			var query := PhysicsShapeQueryParameters3D.new()
 			query.shape = exit_capsule
@@ -361,7 +361,7 @@ func leave() -> bool:
 	if exit_handler.is_valid() and not car.get_meta("exit_gate_ready",false):
 		exit_handler.call(car)
 		if car.has_meta("exit_station"):
-			# Station gate collision is deferred; admit the body after the physics sync.
+			# A colisão do portão do posto é adiada; admite o corpo depois da sincronia de física.
 			_jacking=true; _jack_generation+=1
 			car.stop_boarding_motion(); car.input_locked=true
 			_station_exit_ready(car,_jack_generation)
@@ -516,7 +516,7 @@ func _on_car_destroyed(candidate: CharacterBody3D) -> void:
 	# O dano do veículo troca materiais por papel logo depois deste sinal: o teto recortado
 	# volta ao casco antes disso (ver VehicleInterior).
 	INTERIOR.close_view(candidate)
-	if transition is BAILOUT: return # Dante has already left the vehicle.
+	if transition is BAILOUT: return # O Dante já saiu do veículo.
 	if candidate != car or not (occupied or is_body_transition_active()): return
 	var gameplay = world.get("gameplay")
 	cancel_transition("vehicle_destroyed")
@@ -527,8 +527,8 @@ func _on_car_tree_exiting(candidate: CharacterBody3D) -> void:
 	if candidate != car: return
 	_last_vehicle_position = candidate.global_position
 	if occupied or (is_body_transition_active() and not transition is BAILOUT): cancel_transition("vehicle_removed")
-	# The persistence owner retires deliberate removals while this body is still
-	# valid; teardown/reparenting can capture without ever reading a freed ref.
+	# O dono da persistência aposenta remoções deliberadas enquanto este corpo ainda é
+	# válido; desmontagem/troca de pai pode capturar sem nunca ler uma referência liberada.
 	if is_instance_valid(world.get("production")):
 		world.production.release_player_vehicle()
 	car = null
@@ -600,7 +600,7 @@ func _update_mounted_player() -> void:
 	world.player.pose_motorcycle_foot(_bike_foot, car.global_position.y)
 	world.player.show()
 
-## A collision ejects the exposed rider through the same physical fall used by road impacts.
+## Uma colisão ejeta o piloto exposto pela mesma queda física usada nos impactos de rua.
 func motorcycle_crash(candidate: CharacterBody3D, momentum: Vector3) -> void:
 	if not is_instance_valid(candidate) or not candidate.archetype.begins_with("bike_") or candidate.has_meta("rider_ejected"): return
 	if momentum.length() < 5.0: return

@@ -22,7 +22,7 @@ var dispatch: Node3D
 var traffic_yield: Node
 
 func _ready() -> void:
-	# Absolute aiming, confined so an invisible cursor cannot click another window.
+	# Mira absoluta, confinada para um cursor invisível não clicar em outra janela.
 	Input.mouse_mode = Input.MOUSE_MODE_CONFINED_HIDDEN
 	seed(21092026)
 	production = preload("res://runtime/ProductionWorld.gd").new()
@@ -45,14 +45,14 @@ func _build_hud() -> void:
 	pause_panel = preload("res://ui/PauseMenu.tscn").instantiate()
 	pause_panel.world = self
 	add_child(pause_panel)
-	# Only this small UI handler processes while paused.
+	# Só este pequeno handler de UI processa durante a pausa.
 	var handler := Node.new()
 	handler.set_script(preload("res://scripts/PauseInput.gd"))
 	handler.world = self
 	handler.process_mode = Node.PROCESS_MODE_ALWAYS
 	hud.add_child(handler)
-	# The loaded world is promoted in place by SkyMenu. Its touch layer must
-	# exist before the handoff; SkyMenu hides and suspends it with the HUD.
+	# O mundo carregado é promovido no lugar pelo SkyMenu. A camada de toque precisa
+	# existir antes da troca; o SkyMenu a esconde e suspende junto com o HUD.
 	if OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args():
 		var touch_layer := CanvasLayer.new()
 		touch_layer.layer = 90

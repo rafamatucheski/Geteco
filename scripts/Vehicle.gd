@@ -3,7 +3,7 @@ const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const DAMAGE_PANELS := preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd")
 const SHADOW_PROXY := preload("res://gameplay/vehicle_effects/VehicleShadowProxy.gd")
 var _shadow_proxy: RefCounted
-## Process-local comparison; normal gameplay uses the prototype on authored models.
+## Comparação local ao processo; o jogo normal usa o protótipo nos modelos escritos.
 static var damage_prototype_enabled := not ("--vehicle-damage-baseline" in OS.get_cmdline_user_args())
 
 const VISUAL := preload("res://scripts/VehicleVisual.gd")
@@ -131,7 +131,7 @@ var junction_gap := INF
 var _junction_route: Curve3D
 var _junction_list: Array = []
 var _held_junction: Variant = null
-# Previous crossings whose physical footprint is still occupied by this vehicle.
+# Cruzamentos anteriores cuja pegada física ainda está ocupada por este veículo.
 var _clearing_junctions: Array[Vector3i] = []
 var _held_offset := 0.0
 var sensor_clock := 0.0
@@ -365,9 +365,9 @@ func _lod_stride() -> int:
 	if not is_instance_valid(_lod_camera): return 1
 	var distance_squared := _lod_camera.global_position.distance_squared_to(global_position)
 	if distance_squared > LOD_FAR*LOD_FAR: return 4
-	# Only off-screen ambient cars enter the existing 4-step simulation earlier.
-	# Keep a generous border for the car, lights and approaching camera; visible
-	# traffic retains its original cadence. Physics sweeps/support remain active.
+	# Só carros ambientes fora da tela entram mais cedo na simulação de 4 passos existente.
+	# Mantém uma borda generosa para o carro, as luzes e a câmera se aproximando; o trânsito
+	# visível mantém a cadência original. Varreduras/apoio de física continuam ativos.
 	if distance_squared > LOD_OFFSCREEN_NEAR*LOD_OFFSCREEN_NEAR and is_instance_valid(_lod_player) and _lod_player.global_position.distance_squared_to(global_position) > LOD_OFFSCREEN_NEAR*LOD_OFFSCREEN_NEAR:
 		if _lod_frustum_frame != frame:
 			_lod_frustum_frame = frame
@@ -385,8 +385,8 @@ func _lod_gate(delta: float) -> float:
 		return 1.0
 	var stride := _lod_stride()
 	if stride == 1:
-		# Catch up elapsed traffic time when returning to the near simulation.
-		# Control, impacts and airborne state above deliberately discard it instead.
+		# Recupera o tempo de trânsito decorrido ao voltar para a simulação próxima.
+		# Controle, impactos e estado no ar acima o descartam de propósito.
 		var steps := (_lod_pending + delta)/maxf(delta,0.0001)
 		_lod_skipped = -1
 		_lod_pending = 0.0
@@ -475,7 +475,7 @@ func _stall_physics_tick(delta: float) -> void:
 	var stage := STALL_WORK.begin()
 	if controlled and not external_input and (not _traffic_retirement_meshes.is_empty() or _retire_sunk > 0.0): fade_traffic_retirement(0)
 	if traffic_escape!=null and (controlled or not traffic): traffic_escape.tick(self,delta)
-	# Also clean during backoff, player control and resting; no geometry work when empty.
+	# Limpa também durante o recuo, controle do jogador e repouso; nenhum trabalho de geometria quando vazio.
 	if not _clearing_junctions.is_empty(): _clear_departed_junctions()
 	STALL_WORK.finish_slow("vehicle.pre_tick", stage, 2000, self)
 	stage = STALL_WORK.begin()
@@ -551,8 +551,8 @@ func _stall_physics_tick(delta: float) -> void:
 	velocity.z = horizontal_velocity.z
 	# floor_snap_length mantém o apoio, inclusive na descida. Empurrar contra o
 	# piso já apoiado repetia colisões/deslizamentos do mesmo chão a cada passo.
-	# A released mining load can lose the bucket that supported it. Its temporary
-	# monitor confirms static ground; cached is_on_floor cannot suppress gravity.
+	# Uma carga de mineração solta pode perder a caçamba que a apoiava. O monitor
+	# temporário confirma chão estático; is_on_floor em cache não pode suprimir a gravidade.
 	velocity.y = 0.0 if is_on_floor() and not has_meta("mining_released_load") else velocity.y-20.0*delta
 	# Física de rua: atropelamento e mobília derrubável antes de mover (o carro
 	# atravessa o que cedeu); batida carro x carro e deslize depois.
@@ -564,8 +564,8 @@ func _stall_physics_tick(delta: float) -> void:
 		velocity.x *= lod
 		velocity.z *= lod
 	var terrain_supported := false
-	# Exact upright-box support on the authored canyon and quarry. The helper verifies
-	# the physical floor, including frames whose support was established by snap.
+	# Apoio exato de caixa em pé no cânion e na pedreira escritos. O helper verifica
+	# o piso físico, incluindo quadros cujo apoio veio do snap.
 	stage = STALL_WORK.begin()
 	var support_y := DESERT_GROUND.vertical_velocity(self,velocity,get_physics_process_delta_time())
 	STALL_WORK.finish_slow("vehicle.ground_support", stage, 2000, self)
@@ -583,7 +583,7 @@ func _stall_physics_tick(delta: float) -> void:
 	var motion := global_position-previous
 	motion.y = 0
 	distance_travelled += motion.length()
-	# Contact removes forward speed, instead of accumulating motion into a wall.
+	# O contato remove a velocidade para frente, em vez de acumular movimento contra a parede.
 	if is_on_wall():
 		speed = motion.dot(forward)/maxf(delta,0.001)
 		horizontal_velocity = Vector3(velocity.x,0,velocity.z)
@@ -626,9 +626,9 @@ func _stall_physics_tick(delta: float) -> void:
 func _tick_motion_presentation(delta: float, motion: Vector3, incoming_velocity: Vector3, forward: Vector3) -> void:
 	var stage := STALL_WORK.begin()
 	if traffic:
-		# Heading error becomes tiny once the body tracks its route, even in a
-		# sustained bend. Match the wheels to the turn actually applied, including
-		# rail movement and collision-rejected turns, using the bicycle relation.
+		# O erro de direção fica minúsculo quando o corpo segue a rota, mesmo numa
+		# curva longa. Ajusta as rodas à curva realmente aplicada, incluindo
+		# movimento em trilho e curvas recusadas por colisão, usando a relação de bicicleta.
 		var travel := speed * delta
 		steering = clampf(atan(WHEELBASE * angle_difference(_motion_start_yaw, rotation.y) / travel), -0.48, 0.48) if absf(travel) > 0.001 else 0.0
 	wheel_spin += motion.dot(forward)/0.355
@@ -647,14 +647,14 @@ func _tick_motion_presentation(delta: float, motion: Vector3, incoming_velocity:
 
 func stop_boarding_motion() -> void:
 	reset_motorcycle_wheelie()
-	# The body animation uses fixed door/seat anchors. Speed alone left the
-	# smoothed horizontal velocity dragging the vehicle out from under them.
+	# A animação do corpo usa âncoras fixas de porta/assento. Só a velocidade deixava a
+	# velocidade horizontal suavizada arrastar o veículo para fora de baixo delas.
 	speed = 0.0
 	horizontal_velocity = Vector3.ZERO
 	velocity.x = 0.0
 	velocity.z = 0.0
-	# StreetPhysics keeps impact momentum outside velocity. Retaining it let a
-	# stopped car slide metres away from the fixed boarding anchors at 0 km/h.
+	# A StreetPhysics mantém o momento do impacto fora da velocidade. Mantê-lo deixava um
+	# carro parado escorregar metros para longe das âncoras fixas de embarque a 0 km/h.
 	for key in ["crash_slide", "crash_spin", "crash_stun"]:
 		if has_meta(key): remove_meta(key)
 	if handling != null: handling.reset()
@@ -677,8 +677,8 @@ func _tick_motorcycle_wheelie(delta: float) -> void:
 func _bind_motorcycle_rider() -> void:
 	if not archetype.begins_with("bike_"): return
 	_motorcycle_seat = visual.get_meta("motorcycle_seat", _motorcycle_seat)
-	# Prepared V1 bikes bake the pilot into sibling meshes. Separate only the
-	# authored pilot palette/accessories once, before paint and wheel reparenting.
+	# As motos preparadas da V1 trazem o piloto embutido em malhas irmãs. Separa só a
+	# paleta/acessórios escritos do piloto, uma vez, antes da pintura e da troca de pai das rodas.
 	for child in visual.get_children():
 		if not child is MeshInstance3D: continue
 		var part := child as MeshInstance3D
@@ -710,8 +710,8 @@ func _bind_motorcycle_rider() -> void:
 		part.visible = traffic
 		if color == "253043" and absf(center.x) < .01:
 			_motorcycle_seat = center - Vector3(0, .95, 0)
-	# Keep the authored chassis/grips, replacing only the obsolete baked person.
-	# Offline fleet baking still needs the original authored geometry.
+	# Mantém chassi/manoplas escritos, trocando só a pessoa embutida obsoleta.
+	# O bake offline da frota ainda precisa da geometria escrita original.
 	if not is_inside_tree(): return
 	for part in _motorcycle_rider_parts:
 		part.get_parent().remove_child(part)
@@ -729,8 +729,8 @@ func motorcycle_handholds() -> Dictionary:
 	for side in _motorcycle_grips:
 		var part: MeshInstance3D = _motorcycle_grips[side]
 		if not is_instance_valid(part): continue
-		# The mesh is already a child of the steering pivot. Follow its actual
-		# presentation, including steer and vehicle yaw, without another scene scan.
+		# A malha já é filha do pivô de direção. Segue a apresentação real dela,
+		# incluindo esterço e yaw do veículo, sem outra varredura da cena.
 		var sign_side := -1.0 if side == "Left" else 1.0
 		var palm_basis: Basis = part.get_parent().global_basis.orthonormalized() * Basis(Vector3.BACK, -sign_side * PI * .5)
 		holds[side] = Transform3D(palm_basis, part.to_global(part.mesh.get_aabb().get_center()))
@@ -859,7 +859,7 @@ func _route_ahead(offset: float, length: float, open: bool) -> float:
 	if open: return offset-route_distance
 	return fposmod(offset-route_distance+length*.5,length)-length*.5
 
-## Physical bodies that can keep an expired junction lease occupied.
+## Corpos físicos que podem manter ocupada uma reserva de cruzamento expirada.
 func junction_collision_bodies() -> Array[CharacterBody3D]:
 	return [self]
 
@@ -867,7 +867,7 @@ func _release_current_junction() -> void:
 	if _held_junction != null: JUNCTIONS.release(_held_junction,get_instance_id())
 	_held_junction = null
 
-# Explicit resets and scene exit release every token, including the trailing hull.
+# Resets explícitos e a saída da cena liberam todo token, incluindo o casco de trás.
 func _release_junction() -> void:
 	_release_current_junction()
 	for key in _clearing_junctions: JUNCTIONS.release(key, get_instance_id())
@@ -905,7 +905,7 @@ func _junction_gate(length: float, open: bool) -> bool:
 		var offset := float(junction.offset)
 		var ahead := _route_ahead(offset,length,open)
 		if ahead <= -(JUNCTIONS.EXIT + half_length) or ahead > float(junction.get("approach_distance",JUNCTIONS.APPROACH)): continue
-		# A previous occupied crossing must not replace the newer approach token.
+		# Um cruzamento ocupado anterior não pode substituir o token de aproximação mais novo.
 		if _clearing_junctions.has(junction.key): continue
 		if _held_junction == junction.key:
 			if ahead <= 0.0: continue
@@ -915,8 +915,8 @@ func _junction_gate(length: float, open: bool) -> bool:
 			gap = _route_ahead(float(junction.stop_offset),length,open)-half_length
 		else:
 			gap = ahead-half_length-JUNCTIONS.stop_line(junction.key)
-		# Use the arrival arm resolved with its stop line. The curve tangent
-		# near the centre can already face the cross street during a turn.
+		# Usa o braço de chegada resolvido com a linha de parada. A tangente da curva
+		# perto do centro pode já apontar para a rua transversal durante a curva.
 		var heading: Vector3 = junction.get("heading",Vector3.ZERO)
 		if heading.length_squared()<.0001:
 			var before := route.sample_baked(offset-12.0 if open else fposmod(offset-12.0,length),true)
@@ -945,8 +945,8 @@ func _exit_tree() -> void:
 func _invalidate_route_projection() -> void:
 	_projection_valid = false
 
-## Stopped cars reuse only the geometric projection. Decisions and sensors still
-## run each tick; any exact position change or edited curve requires a fresh scan.
+## Carros parados reaproveitam só a projeção geométrica. Decisões e sensores ainda
+## rodam a cada tick; qualquer mudança exata de posição ou curva editada exige nova varredura.
 func _traffic_route_offset(point: Vector3) -> float:
 	if route != _projection_route:
 		if _projection_route != null:
@@ -1007,7 +1007,7 @@ func _drive_traffic(delta: float) -> void:
 			blocked_time = 0.0
 			unjam_time = 3.0
 			set_meta("unjam_partner",blocker)
-	# Progress uses actual position, so a collision cannot advance the car's route.
+	# O progresso usa a posição real, então uma colisão não avança a rota do carro.
 	var previous_distance := route_distance
 	if not _traffic_rail_drive: route_distance = _traffic_route_offset(global_position)
 	var length := route.get_baked_length()
@@ -1132,8 +1132,8 @@ func _try_bypass() -> bool:
 	for junction in _junction_list:
 		var ahead := _route_ahead(float(junction.offset),length,open)
 		if ahead > -JUNCTIONS.EXIT and ahead < 14.0: return false
-	# On a four-lane avenue, use only the adjacent lane travelling in the same
-	# direction. Look behind as well as ahead before merging around a stopped bus.
+	# Numa avenida de quatro faixas, usa só a faixa vizinha no mesmo
+	# sentido. Olha para trás e para frente antes de desviar de um ônibus parado.
 	var nearest := INF
 	var profile := {}
 	for section in route.get_meta("lane_sections",[]):
@@ -1350,8 +1350,8 @@ func animate_driver_door(side: int, opened: bool, duration := .28) -> void:
 		FIREFLY.door(self, side, opened)
 
 func _refresh_tuning_appearance() -> void:
-	# Restore paths may assign factory paint/identity after installing saved parts.
-	# Reapply the local finish without rebuilding meshes, charging or touching state.
+	# Caminhos de restauração podem aplicar pintura/identidade de fábrica depois de instalar peças salvas.
+	# Reaplica o acabamento local sem reconstruir malhas, cobrar nem mexer no estado.
 	if has_meta("tuning_appearance"):
 		invalidate_shadow_proxy()
 		get_meta("tuning_appearance").apply(get_meta("desert_parts",{}),paint_color)
@@ -1403,7 +1403,7 @@ func receive_impact(amount: float, local_point: Vector3, source: Node = null, cl
 	var inward := Vector3(local_normal.x,0,local_normal.z).normalized()
 	var visual_amount := amount*damage_resistance
 	if damage_prototype_enabled and closing_speed>=0:
-		# HP remains balanced for long chases; the sheet metal responds to actual closing speed.
+		# O HP fica equilibrado para perseguições longas; a lataria responde à velocidade real de aproximação.
 		visual_amount = maxf(visual_amount,maxf(0.0,closing_speed-3.0)*1.2*damage_resistance)
 	# Spans por etapa (21/10): no estresse de release a batida custou 8–19 ms por carro sem dizer onde.
 	var stage := STALL_WORK.begin()
@@ -1434,7 +1434,7 @@ func restore_blood_stains(mask: int) -> void:
 func restore_body_dents(records: Array, panel_state: Dictionary = {}, broken_glass: Array = []) -> void:
 	if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(records) or not preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").valid_state(panel_state) or not preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").valid_records(broken_glass): return
 	invalidate_shadow_proxy()
-	# Restore geometry first, then hide absent panels. No debris or collision event is replayed.
+	# Restaura a geometria primeiro e depois esconde os painéis ausentes. Nenhum detrito ou evento de colisão é repetido.
 	if is_instance_valid(breakaway_parts): breakaway_parts.repair()
 	if is_instance_valid(body_dents): body_dents.restore_records(records)
 	if is_instance_valid(breakaway_parts): breakaway_parts.restore_state(panel_state)
@@ -1458,13 +1458,13 @@ func receive_damage(amount: float, _source: Node = null) -> void:
 	elif look: look.refresh()
 
 func crush(source: Node3D) -> bool:
-	# The street solver has already installed the flattened, load-bearing hull.
+	# O solver de rua já instalou o casco achatado que aguenta carga.
 	if health <= 0 or not has_meta("heavy_crush_ratio") or PROTECTION.is_protected(self): return false
 	if is_instance_valid(source): set_meta("heavy_crush_source",weakref(source))
-	# Crushing is terminal even for a car with damage resistance.
+	# Esmagar é terminal mesmo para carro com resistência a dano.
 	receive_damage((health+1.0)/maxf(damage_resistance,.05),source)
-	# Production/dispatch cars explode from their destroyed listener. Vehicles
-	# built elsewhere use this fallback; Gameplay deduplicates both paths.
+	# Carros de produção/despacho explodem pelo ouvinte de destruição. Veículos
+	# montados em outro lugar usam este recurso; o Gameplay deduplica os dois caminhos.
 	var world := get_parent()
 	var gameplay: Variant = world.get("gameplay") if is_instance_valid(world) else null
 	if is_instance_valid(gameplay) and not get_meta("heavy_crush_exploded",false):
@@ -1472,7 +1472,7 @@ func crush(source: Node3D) -> bool:
 	return true
 
 func restore_health(saved_health: float) -> void:
-	# Loading damage must not apply armor again and silently heal the vehicle.
+	# Carregar dano não pode aplicar a blindagem de novo e curar o veículo em silêncio.
 	if not is_finite(saved_health): return
 	if saved_health < max_health: invalidate_shadow_proxy()
 	health = clampf(saved_health, 0.0, max_health)

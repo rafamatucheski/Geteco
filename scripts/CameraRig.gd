@@ -34,9 +34,9 @@ const DRIVE_VIEW_SIZE_SCALE := 1.12
 const DRIVE_VIEW_BLEND_SECONDS := 0.6
 const PREVIEW_HEADING := PI / 4.0
 const STORE_FOCUS_OFFSET := Vector3(0,12.0,25.3)
-# Camera3D.size measures the vertical camera plane. The productive V1 zoom
-# measured visible ground, so compensate for the exterior pitch instead of
-# copying Camera2D numbers into metres. Equals sin(pitch) of EXTERIOR_OFFSET.
+# Camera3D.size mede o plano vertical da câmera. O zoom produtivo da V1
+# media o chão visível, então compensa o pitch exterior em vez de
+# copiar números da Camera2D para metros. Igual a sin(pitch) de EXTERIOR_OFFSET.
 const EXTERIOR_GROUND_PROJECTION := 0.7071067811865476 # sin(45°)
 # A escala aparente de quem está de pé é proporcional a cot(inclinação)/size.
 # As medições V1 abaixo foram calibradas com a câmera antiga (cot = 22/28);
@@ -45,10 +45,10 @@ const EXTERIOR_GROUND_PROJECTION := 0.7071067811865476 # sin(45°)
 # personagem da V1 e a relação andar/dirigir.
 const V1_CALIBRATION_PITCH_COT := 22.0 / 28.0
 const PITCH_APPARENT_COMPENSATION := (EXTERIOR_OFFSET.z / EXTERIOR_OFFSET.y) / V1_CALIBRATION_PITCH_COT
-# Equivalent 1280x720 captures measured the productive V1 Dante alpha rig at
-# 34.312 px and the native 1.80 m V2 actor at 46.886 px with ground-only
-# conversion. Walking framing compensates that presentation difference while
-# vehicle framing keeps the V1 road/vehicle projection independently.
+# Capturas equivalentes em 1280x720 mediram o rig alpha produtivo do Dante na V1 com
+# 34.312 px e o ator nativo de 1.80 m da V2 com 46.886 px, convertendo só pelo
+# chão. O enquadramento a pé compensa essa diferença de apresentação enquanto
+# o enquadramento de veículo mantém a projeção de rua/veículo da V1 de forma independente.
 const V1_WALK_APPARENT_SCALE := 46.8863525390625 / 34.3123196752596
 # Pedido de jogo (2026-09-22): a câmera parecia longe demais. Aproxima 25% o
 # enquadramento inteiro (andar, dirigir e mira) sem mexer na calibração V1
@@ -57,7 +57,7 @@ const V1_WALK_APPARENT_SCALE := 46.8863525390625 / 34.3123196752596
 const FRAMING_ZOOM_SCALE := 0.75 * 0.87
 const WALK_SIZE_CLOSE := V1_VIEWPORT_HEIGHT / (V1_WALK_ZOOM_CLOSE * V1_PIXELS_PER_METRE) * EXTERIOR_GROUND_PROJECTION * PITCH_APPARENT_COMPENSATION * V1_WALK_APPARENT_SCALE * FRAMING_ZOOM_SCALE
 const TARGET_TELEPORT_DISTANCE := 8.0
-# Session-only developer framing; normal gameplay framing remains authoritative after reset.
+# Enquadramento de desenvolvedor só da sessão; o enquadramento normal do jogo volta a valer depois do reset.
 var developer_zoom := 1.0
 var developer_view := 0
 var developer_chase := false
@@ -84,8 +84,8 @@ func reset_developer_zoom() -> void:
 	initialized = false
 
 func developer_ground_rect() -> Rect2:
-	# Project the four viewport corners onto the focus plane, including perspective
-	# and orbit. Height margin prevents terrain at the screen edge loading too late.
+	# Projeta os quatro cantos da viewport no plano do foco, incluindo perspectiva
+	# e órbita. A margem de altura evita que o terreno na borda da tela carregue tarde demais.
 	var screen := get_viewport().get_visible_rect().size
 	var bounds := Rect2(Vector2(focus.x, focus.z), Vector2.ZERO)
 	for corner in [Vector2.ZERO, Vector2(screen.x, 0), screen, Vector2(0, screen.y)]:
@@ -223,15 +223,15 @@ func _exterior_view_offset() -> Vector3:
 	# que continuam mandando no enquadramento quando ativas.
 	var drive_offset := DRIVE_OFFSET.lerp(PREVIEW_DRIVE_OFFSET.rotated(Vector3.UP, PREVIEW_HEADING), _preview_blend)
 	exterior = exterior.lerp(drive_offset, smoothstep(0.0, 1.0, _drive_view_blend))
-	# Two narrow building entrances sit behind neighboring rooflines. Raise
-	# only the approaching walking view, retaining the player's orbit heading.
+	# Duas entradas estreitas de prédio ficam atrás de telhados vizinhos. Eleva
+	# só a vista a pé de aproximação, mantendo a direção de órbita do jogador.
 	var approach_direction := Vector2(exterior.x,exterior.z).normalized()*5.0
 	exterior = exterior.lerp(Vector3(approach_direction.x,35.0,approach_direction.y),_building_approach_blend)
 	exterior = exterior.lerp(TUNNEL_OFFSET, smoothstep(0.0, 1.0, _tunnel_blend))
 	# A asa alta cruza a visão diagonal do corredor. Elevar apenas esta área
 	# conserva o avião sólido e libera a visão de Dante/carga em toda a órbita.
 	exterior = exterior.lerp(Vector3(0,33.6,12.2),smoothstep(0.0,1.0,_cargo_plane_blend))
-	# Tiny Z offset keeps look_at's up vector non-collinear at the overhead view.
+	# Um offset mínimo em Z mantém o vetor up do look_at não colinear na vista de cima.
 	return exterior.lerp(Vector3(0,35,.15),_container_blend)
 
 const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
@@ -244,8 +244,8 @@ func _process(delta: float) -> void:
 func _process_traced(delta: float) -> void:
 	if _mouse_orbit and (_camera_input_blocked() or not Input.is_action_pressed("camera_drag")):
 		_end_mouse_orbit()
-	# Dante moves in real time during his katana ability. Follow/orbit must share
-	# that clock; the rest of the world and cameras following vehicles stay scaled.
+	# O Dante se move em tempo real durante a habilidade da katana. Seguir/orbitar precisa usar
+	# esse relógio; o resto do mundo e as câmeras que seguem veículos continuam escalados.
 	if not locked and is_instance_valid(target) and target.has_meta("katana_rage_speed"):
 		delta *= float(target.get_meta("katana_rage_speed", 1.0))
 	if not get_tree().paused:
@@ -298,14 +298,14 @@ func _process_traced(delta: float) -> void:
 	var base := actual if teleported or locked else interpolated
 	var snap := not initialized or teleported or locked != _was_locked
 	_view_heading = heading if snap or _mouse_orbit else lerp_angle(_view_heading, heading, 1.0 - exp(-ORBIT_FOLLOW_RATE * delta))
-	# Small paving steps must not kick the entire street vertically. Keep
-	# horizontal tracking immediate and preserve snaps/locked interior framing.
+	# Degraus pequenos de calçamento não podem sacudir a rua inteira na vertical. Mantém
+	# o acompanhamento horizontal imediato e preserva snaps/enquadramento travado de interior.
 	if not snap and not target_changed and not locked and target is CharacterBody3D and not _is_vehicle_target():
 		base.y = lerpf(focus.y - _smoothed_lead.y, base.y, 1.0 - exp(-HEIGHT_FOLLOW_RATE * delta))
 	if target_changed:
 		if initialized and not snap and focus.distance_to(base) <= TARGET_TELEPORT_DISTANCE:
-			# V1 handed the old screen centre to the new actor camera. Retain that
-			# centre when boarding/leaving a nearby vehicle, then converge to lead.
+			# A V1 passava o centro antigo da tela para a câmera do novo ator. Mantém esse
+			# centro ao embarcar/sair de um veículo próximo e depois converge para a antecipação.
 			_smoothed_lead = focus-base
 		else:
 			_smoothed_lead = Vector3.ZERO
@@ -315,15 +315,15 @@ func _process_traced(delta: float) -> void:
 	else:
 		var aiming_camera := scoped or _manual_aim_active()
 		_smoothed_lead = _smoothed_lead.lerp(desired_lead,1.0-exp(-(AIM_FOLLOW_RATE if aiming_camera else FOLLOW_RATE)*delta))
-	# Physics interpolation already smooths the actor itself. Only lead is
-	# damped, matching V1 and avoiding a second full-target trail.
+	# A interpolação de física já suaviza o próprio ator. Só a antecipação é
+	# amortecida, como na V1, evitando um segundo rastro do alvo inteiro.
 	focus = base+_smoothed_lead
 	if not locked and _container_blend > 0:
 		focus = focus.lerp(_container_focus,_container_blend)
 	initialized = true
 	var base_size := _base_size()
-	# Local bridge reveal exposes the rock rim and deep slot on both sides.
-	# Preserve explicit review/user framing, interior locks and normal scope ratio.
+	# A revelação local da ponte expõe a borda de rocha e a fenda funda dos dois lados.
+	# Preserva enquadramento explícito de revisão/usuário, travas de interior e a proporção normal do escopo.
 	if not locked and _external_size_target_id==0:
 		base_size=lerpf(base_size,maxf(base_size,SMUGGLER_CANYON.CAMERA_SIZE),SMUGGLER_CANYON.camera_weight(actual))
 	var desired_size := base_size*SCOPE_SIZE_MULTIPLIER if scoped else base_size
@@ -349,17 +349,17 @@ func _process_traced(delta: float) -> void:
 		var view := Vector2(size*get_viewport().get_visible_rect().size.aspect(),size)
 		var safe := _railway_clearance.offset_for(focus,nominal,view,near,delta)
 		safe = _building_clearance.offset_for(get_world_3d().direct_space_state,focus,safe,view,near,delta)
-		# Moving on the orthographic axis changes depth only. Keep the original
-		# distant plane in world space while making room for foreground bridges.
+		# Mover no eixo ortográfico muda só a profundidade. Mantém o plano distante
+		# original no espaço do mundo enquanto abre espaço para pontes em primeiro plano.
 		global_position=focus+safe
 		exterior_retreat=maxf(0.0,safe.length()-nominal.length())
 		if not _exterior_depth.enabled(): far=EXTERIOR_FAR+exterior_retreat
-	# look_at resets this basis each frame; the small roll never accumulates.
+	# look_at zera esta base a cada quadro; a pequena rolagem nunca acumula.
 	var alcohol_roll := float(get_meta("alcohol_intensity",0.0)) * float(get_meta("alcohol_sway",0.0)) * .016
 	if not is_zero_approx(alcohol_roll): rotate_object_local(Vector3.FORWARD,alcohol_roll)
 	if _exterior_depth.enabled(): _update_exterior_depth_range(exterior_retreat)
-	# Exterior transparency is diagnostic-only; normal play keeps the silhouette.
-	# Authored tunnel/interior visibility still owns its independent cutaway.
+	# A transparência exterior é só diagnóstico; o jogo normal mantém a silhueta.
+	# A visibilidade escrita de túnel/interior ainda cuida do próprio recorte independente.
 	if _exterior_reveal.enabled:
 		_exterior_reveal.update(self,target,_is_vehicle_target(),_flat_velocity(),delta,not locked and _tunnel_blend < .001 and _tunnel_chase_blend < .001 and projection == Camera3D.PROJECTION_ORTHOGONAL and not get_tree().paused)
 	_update_cutaway()
@@ -407,8 +407,8 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	if mountain_weight >= 1.0 and desired > 0.0: _tunnel_chase_blend = 1.0
 	if locked:
 		_tunnel_chase_blend = 0.0
-	# Keep the local atmosphere through the exit blend, but never carry it
-	# into another tunnel or an authored interior after a target handoff.
+	# Mantém a atmosfera local durante a mescla de saída, mas nunca a leva
+	# para outro túnel ou um interior escrito depois de uma troca de alvo.
 	var mountain_exit := actual.x >= MOUNTAIN_CONNECTION.TUNNEL_START_X-48.0 and actual.x <= MOUNTAIN_CONNECTION.TUNNEL_END_X+48.0 and absf(actual.z-MOUNTAIN_CONNECTION.CENTER_Z) < 30.0
 	_mountain_chase_active = mountain_weight > 0.0 or (_mountain_chase_active and mountain_exit and desired <= .001 and _tunnel_chase_blend > .001)
 	var blend := smoothstep(0.0, 1.0, _tunnel_chase_blend)
@@ -446,13 +446,13 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	fov = lerpf(street_fov, TUNNEL_CHASE_FOV, blend)
 	var candidate := street_position.lerp(chase, blend)
 	if _mountain_chase_active:
-		# A boom can pass above the low rail yet put it in front of Dante and
-		# his motorcycle. Keep the low view on the pedestrian side of it.
+		# Uma lança pode passar acima do trilho baixo e ainda pô-lo na frente do Dante e
+		# da moto dele. Mantém a vista baixa do lado do pedestre.
 		var limit := MOUNTAIN_CONNECTION.TUNNEL_CLEAR_HALF_WIDTH - .4
 		var corridor_z := clampf(candidate.z, MOUNTAIN_CONNECTION.CENTER_Z-limit, MOUNTAIN_CONNECTION.CENTER_Z+limit)
 		candidate.z = lerpf(candidate.z, corridor_z, smoothstep(.2, .65, blend))
-	# Protect the FINAL interpolated pose, including the lens volume: checking
-	# only the chase endpoint allowed the street-to-tunnel blend through solids.
+	# Protege a pose FINAL interpolada, incluindo o volume da lente: checar
+	# só o ponto final da perseguição deixava a mescla rua-túnel atravessar sólidos.
 	global_position = _tunnel_safety.solve(self, target, eye, candidate)
 	var boom_fraction := clampf((global_position-base).dot(rear)/maxf(_tunnel_chase_distance,.1),0.0,1.0)
 	look_at(focus.lerp(eye - rear * (3.0 if vehicle else 1.4) * boom_fraction, blend))
@@ -549,8 +549,8 @@ func _track_target() -> bool:
 
 func _base_size() -> float:
 	if locked: return clampf(target_size,1.0,200.0)
-	# Capture/review tools set target_size directly. Honour that explicit value
-	# for the current target without disabling productive automatic framing.
+	# Ferramentas de captura/revisão definem target_size direto. Respeita esse valor explícito
+	# para o alvo atual sem desligar o enquadramento automático produtivo.
 	if not is_equal_approx(target_size,_last_auto_size) and _external_size_target_id == 0:
 		_external_size_target_id = _tracked_target_id
 	if _external_size_target_id == _tracked_target_id:
@@ -570,9 +570,9 @@ func _vehicle_size() -> float:
 	var maximum := maxf(.1,_target_number(&"max_forward_speed",V1_CAMERA_SPEED))
 	var zoom := lerpf(V1_DRIVE_ZOOM_CLOSE,V1_DRIVE_ZOOM_FAR,clampf(speed/maximum,0.0,1.0))
 	if _target_bool(&"is_boosting"): zoom = V1_DRIVE_ZOOM_NITRO
-	# The V1 vehicle camera opens from the pedestrian view. The native actor
-	# needs an apparent-scale adaptation, so a stationary handoff may retain the
-	# current frame but must never tighten it.
+	# A câmera de veículo da V1 abre a partir da vista de pedestre. O ator nativo
+	# precisa de uma adaptação de escala aparente, então uma troca parada pode manter o
+	# quadro atual, mas nunca apertá-lo.
 	return maxf(WALK_SIZE_CLOSE,size_for_v1_zoom(zoom)) * DRIVE_VIEW_SIZE_SCALE
 
 func _desired_lead(base: Vector3,scoped: bool) -> Vector3:
@@ -603,8 +603,8 @@ func _manual_aim_active() -> bool:
 	var combat := _gameplay()
 	return combat != null and combat.has_method("aim_feedback_active") and combat.aim_feedback_active()
 
-## Subtracting the centre ray cancels translation. Following aim_point itself
-## gave the scope unit feedback gain: a stationary cursor drove it away.
+## Subtrair o raio central cancela a translação. Seguir o próprio aim_point
+## dava ao escopo ganho de realimentação unitário: um cursor parado o empurrava para longe.
 func mouse_aim_lead(base: Vector3, scoped: bool, screen: Vector2) -> Vector3:
 	var rect := get_viewport().get_visible_rect()
 	var cursor := screen.clamp(rect.position, rect.end)
@@ -625,7 +625,7 @@ func mouse_orbit_active() -> bool:
 func _end_mouse_orbit(restore_pointer := true) -> void:
 	if not _mouse_orbit: return
 	_mouse_orbit = false
-	# A menu or another camera may already own the cursor. Never override it.
+	# Um menu ou outra câmera pode já ser dono do cursor. Nunca o sobrescreve.
 	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		Input.mouse_mode = _mouse_orbit_previous_mode
 		if restore_pointer: get_viewport().warp_mouse(_mouse_orbit_screen)
@@ -635,7 +635,7 @@ func _notification(what: int) -> void:
 		_end_mouse_orbit(false)
 
 func _input(event: InputEvent) -> void:
-	# Release must work even when GUI controls consume the corresponding event.
+	# Soltar precisa funcionar mesmo quando controles de GUI consomem o evento correspondente.
 	if _mouse_orbit and (event.is_action_pressed("aim") or event.is_action_pressed("fire")):
 		_end_mouse_orbit()
 	if _mouse_orbit and event.is_action_released("camera_drag"):
@@ -727,14 +727,14 @@ func _camera_input_blocked() -> bool:
 func _update_gamepad_rotation(delta: float) -> void:
 	var controls := get_node_or_null("/root/GameInput")
 	if controls == null or not controls.has_method("camera_rotation"): return
-	# Read only analog bindings. Buttons, keyboard and touch actions retain the
-	# authored 45-degree step in _unhandled_input, without a second frame update.
+	# Lê só ligações analógicas. Botões, teclado e ações de toque mantêm o
+	# passo escrito de 45 graus em _unhandled_input, sem uma segunda atualização de quadro.
 	var turn: float = controls.camera_rotation()
 	if is_zero_approx(turn) or _camera_input_blocked(): return
 	if _is_vehicle_target() and &"archetype" in target and target.get("archetype") == "army_tank": return
 	var combat := _gameplay()
-	# Ski/skate and ordinary driving disable attacks; their triggers remain
-	# available while looking around. Aiming/firing on foot owns the right stick.
+	# Esqui/skate e direção comum desligam ataques; os gatilhos continuam
+	# disponíveis para olhar em volta. Mirar/atirar a pé é dono do analógico direito.
 	if combat != null and combat.has_method("attack_allowed") and combat.attack_allowed():
 		if Input.is_action_pressed("aim") or Input.is_action_pressed("fire"): return
 	heading -= turn * GAMEPAD_ORBIT_SPEED * delta

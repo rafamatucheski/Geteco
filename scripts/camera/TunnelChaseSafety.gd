@@ -1,6 +1,6 @@
 extends RefCounted
-## A volume sweep protects the rendered lens, including the blended street pose.
-## Mountain distance haze belongs to this camera; the weather resource stays intact.
+## Uma varredura de volume protege a lente renderizada, incluindo a pose mesclada de rua.
+## A névoa de distância da montanha pertence a esta câmera; o recurso de clima fica intacto.
 const LENS_RADIUS := .25
 const CLEARANCE := .02
 const ENVIRONMENT_SYNC_INTERVAL := .1
@@ -18,8 +18,8 @@ var clear_origin_found := true
 var last_endpoint_repaired := false
 
 func _init() -> void:
-	# Use geometric padding: a query margin alone does not reliably keep a
-	# grazing cast off the narrow tunnel-rib corners at its final endpoint.
+	# Usa preenchimento geométrico: só a margem da consulta não mantém com segurança um
+	# cast rasante longe dos cantos estreitos das nervuras do túnel no ponto final.
 	_lens.radius = LENS_RADIUS + CLEARANCE
 	_query.shape = _lens
 	_query.collision_mask = 1
@@ -52,8 +52,8 @@ func resolve_position(space: PhysicsDirectSpaceState3D, eye: Vector3, candidate:
 					clear_origin_found = true
 					break
 			if clear_origin_found: break
-		# A deeply embedded target has no valid nearby lens origin. Do not cast
-		# through its containing solid and place the lens on the far side of it.
+		# Um alvo muito enterrado não tem origem de lente válida por perto. Não lança
+		# através do sólido que o contém nem põe a lente do outro lado dele.
 		if not clear_origin_found: return eye
 	var motion := candidate-origin
 	if motion.length_squared() < .000001: return origin
@@ -64,9 +64,9 @@ func resolve_position(space: PhysicsDirectSpaceState3D, eye: Vector3, candidate:
 	if fraction < 1.0: fraction = maxf(0.0, fraction-CLEARANCE/motion.length())
 	var result := origin+motion*fraction
 	if _clear_at(space,result): return result
-	# Keep the proven-clear origin as the lower bound. A grazing sweep can
-	# report a safe fraction whose endpoint still overlaps a thin support.
-	# Refine only those contacts, never return an unverified lens position.
+	# Mantém a origem comprovadamente livre como limite inferior. Uma varredura rasante pode
+	# relatar uma fração segura cujo ponto final ainda encosta num suporte fino.
+	# Refina só esses contatos, nunca devolve posição de lente não verificada.
 	last_endpoint_repaired = true
 	var clear_fraction := 0.0
 	var blocked_fraction := fraction
@@ -83,8 +83,8 @@ func _clear_at(space: PhysicsDirectSpaceState3D, point: Vector3) -> bool:
 	_query.motion = Vector3.ZERO
 	return space.intersect_shape(_query, 1).is_empty()
 
-## Call only with the mountain contribution, after the final camera transform.
-## Passing zero (including locked/interior views) restores its original environment.
+## Chame só com a contribuição da montanha, depois da transformação final da câmera.
+## Passar zero (incluindo vistas travadas/de interior) restaura o ambiente original.
 ## `fog_end` > 0 fixa o fim da neblina (túnel do canal, cujo alcance da câmera é encurtado).
 func update_environment(camera: Camera3D, mountain_blend: float, delta: float, target_position: Vector3, fog_end := -1.0) -> void:
 	if not is_instance_valid(camera) or mountain_blend <= .001 or not camera.is_inside_tree():

@@ -1,6 +1,6 @@
 extends RefCounted
-## Opt-in diagnostic exterior window. Normal play keeps authored walls opaque
-## and uses CityLook's actor/vehicle silhouette without this material effect.
+## Janela exterior de diagnóstico, opcional. O jogo normal mantém as paredes escritas opacas
+## e usa a silhueta de ator/veículo do CityLook sem este efeito de material.
 const SHADER := preload("res://scripts/camera/ExteriorReveal.gdshader")
 const OPTIMIZATION_GUARD := preload("res://world/chunk_bake/RevealOptimizationGuard.gd")
 const BUILDING_GROUP := &"exterior_reveal_building"
@@ -53,7 +53,7 @@ func update(camera: Camera3D, target: Node3D, vehicle: bool, velocity: Vector3, 
 	_radius = move_toward(_radius, 7.0 if vehicle else 4.0, dt * 16.0)
 	var desired := velocity.limit_length(24.0) * (0.42 if vehicle else 0.18)
 	_lead = _lead.lerp(desired, 1.0-exp(-8.0*dt))
-	# Orthographic rays stay parallel even with camera lead or an orbit.
+	# Raios ortográficos ficam paralelos mesmo com antecipação de câmera ou órbita.
 	_to_camera = camera.global_basis.z * maxf(1.0, (_origin-camera.global_position).length())
 	if _clock >= _next_scan:
 		_next_scan = _clock + SCAN_INTERVAL
@@ -75,9 +75,9 @@ func update(camera: Camera3D, target: Node3D, vehicle: bool, velocity: Vector3, 
 		if not wanted and state.amount <= 0.0: _restore(id)
 
 func _set_parameter_if_changed(entry: Dictionary, parameter: StringName, value: Variant) -> void:
-	# Each replacement owns its cache: newly streamed geometry receives all
-	# uniforms even when the camera is still. Exact comparison preserves motion
-	# and authored animation without re-uploading settled values every frame.
+	# Cada substituição tem o próprio cache: geometria recém-carregada recebe todos os
+	# uniforms mesmo com a câmera parada. A comparação exata preserva movimento
+	# e animação escrita sem reenviar valores assentados a cada quadro.
 	var sent: Dictionary = entry.sent
 	if sent.has(parameter) and sent[parameter] == value: return
 	entry.material.set_shader_parameter(parameter,value)
@@ -126,7 +126,7 @@ func _visual_scope(body: Node, world: Node) -> Node:
 	if body is CharacterBody3D or body is RigidBody3D: return body
 	var parent := body.get_parent()
 	if parent == null or parent == world: return body
-	# Native buildings keep sibling Visuals and Collision roots.
+	# Prédios nativos mantêm raízes irmãs Visuals e Collision.
 	if parent.name == "Collision" and parent.get_parent() != world: return parent.get_parent()
 	return parent
 
@@ -171,7 +171,7 @@ func _replace(node: GeometryInstance3D, surface: int, source: Material, saved: A
 		_replace_shader(node,surface,source,saved)
 		return
 	if not source is StandardMaterial3D: return
-	# Terrain/custom surfaces and multi-pass authored effects keep their owner.
+	# Superfícies de terreno/customizadas e efeitos escritos de várias passadas ficam com o dono.
 	if source.next_pass != null or source.billboard_mode != BaseMaterial3D.BILLBOARD_DISABLED: return
 	var id := source.get_instance_id()
 	if not _materials.has(id):
