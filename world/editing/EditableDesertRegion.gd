@@ -1,5 +1,5 @@
 extends "res://world/desert/DesertRegion.gd"
-## Same production scenery and streaming, with constructor-time editor overrides.
+## Mesmo cenário e streaming de produção, com sobreposições do editor na hora do construtor.
 const EDIT_DATA := preload("res://world/editing/WorldEditData.gd")
 const PIECES := preload("res://world/editing/WorldEditPieces.gd")
 const UNITS := preload("res://world/editing/WorldUnits.gd")
@@ -44,7 +44,7 @@ func prepare_data() -> void:
 	_pull = UNITS.pull_map("desert",edit_changes,CELL)
 	for id in edit_changes:
 		if str(edit_changes[id].get("clone_of","")) != "" and not edit_changes[id].get("deleted",false): clone_sources[str(edit_changes[id].clone_of)] = true
-	# Move the owning record too: edits must survive unloading the original cell.
+	# Move também o registro dono: edições precisam sobreviver ao descarregar a célula original.
 	var moved: Array[Dictionary] = []
 	for cell in records:
 		var kept: Array = []
@@ -57,7 +57,7 @@ func prepare_data() -> void:
 						building.position = EDIT_DATA.xyz(change.get("position",EDIT_DATA.xy(record.data.position)))
 						var stretch := EDIT_DATA.point(change.get("stretch",[1,1]))
 						building.size *= stretch
-						# Reserve the rotated footprint for scenery/actor consumers.
+						# Reserva a área girada para consumidores de cenário/atores.
 						var angle := deg_to_rad(float(change.get("rotation",0)))
 						var size: Vector2 = building.size
 						building.size = Vector2(absf(cos(angle))*size.x+absf(sin(angle))*size.y,absf(sin(angle))*size.x+absf(cos(angle))*size.y)
@@ -137,8 +137,8 @@ func _build_added(chunk: Node3D,row: Dictionary) -> void:
 
 ## Chunk pronto: pedras, cactos, relevo e ruínas (não são registros) viram peças editáveis.
 func _process(delta: float) -> void:
-	# An edited object's physical source is required by the destination, rather than
-	# optional dressing behind the drag strip's large background residency queue.
+	# A fonte física de um objeto editado é exigida pelo destino, em vez de ser
+	# mobiliário opcional atrás da grande fila de residência em segundo plano da pista de arrancada.
 	if not _pull.is_empty():
 		var required := {}
 		for target in _pull:

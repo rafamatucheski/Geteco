@@ -1,6 +1,6 @@
 extends RefCounted
-## Resolve small endpoint gaps inside another street's asphalt before both
-## rendering and traffic consume the edited roads. Never changes the saved map.
+## Resolve pequenos vãos de ponta dentro do asfalto de outra rua antes que
+## o render e o trânsito consumam as ruas editadas. Nunca muda o mapa salvo.
 static func resolve(source: Array) -> Array:
 	var result := source.duplicate(true)
 	for pass_index in 2:
@@ -31,7 +31,7 @@ static func resolve(source: Array) -> Array:
 						var parallel := absf(forward.dot(a.direction_to(b)))>.85
 						var target_endpoint := -1
 						if parallel and at.distance_to(closest)>.1:
-							# Parallel lanes are not junctions. Only end-to-end continuations.
+							# Faixas paralelas não são cruzamentos. Só continuações de ponta a ponta.
 							var first := target_points[0]
 							var last := target_points[-1]
 							closest = first if at.distance_to(first)<at.distance_to(last) else last

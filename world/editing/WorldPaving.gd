@@ -33,7 +33,7 @@ static func apply(surface: RefCounted, changes: Dictionary) -> void:
 		if row.surface != originals[id].surface:
 			replacement.kind = "concrete" if row.surface == "concrete" else "stone"
 		surface._surfaces.remove_at(index)
-		# Preserve the sewer opening even when an edited rectangle crosses it.
+		# Preserva a abertura do esgoto mesmo quando um retângulo editado a cruza.
 		for piece in surface._carved(Rect2((center-size*.5)/SURFACE.SCALE,size/SURFACE.SCALE)):
 			var item := replacement.duplicate()
 			item.rect = Rect2(piece.position*SURFACE.SCALE,piece.size*SURFACE.SCALE)

@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
-## One derived layout for the road mesh, editor handles and vehicle stop targets.
-## Overrides live on roads; identities use road IDs and order, not world coordinates.
+## Um layout derivado para a malha da rua, as alças do editor e os alvos de parada dos veículos.
+## As sobreposições vivem nas ruas; identidades usam IDs e ordem das ruas, não coordenadas do mundo.
 static func build(geometry) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var groups := {}
@@ -40,7 +40,7 @@ static func build(geometry) -> Array[Dictionary]:
 				var offset := float(setting.get("offset",road.crossing_offset))
 				var direction: Vector2 = arm.direction
 				var maximum := minf(setback+10.0,float(arm.length)-depth*.5-1.25)
-				# Leave room for the opposite approach of the next junction as well.
+				# Deixa espaço também para a aproximação oposta do próximo cruzamento.
 				for other in geometry._junctions:
 					var delta: Vector2 = other.position-center
 					var forward := delta.dot(direction)

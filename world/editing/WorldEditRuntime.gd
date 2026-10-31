@@ -86,7 +86,7 @@ static func apply(region: Node) -> void:
 						region._record(Vector3(x*64+32,0,z*64+32),{"kind":"editor_ground","data":row,"clip":clip,"masks":masks})
 			"prop": region._record(position, {"kind":"editor_prop", "position":position, "data":row})
 			"light": region._record(position, {"kind": "editor_light", "position": position, "data": row})
-	# Keep forest outside authored roads after a move/widen, without reseeding.
+	# Mantém a floresta fora das estradas autoradas depois de mover/alargar, sem trocar a semente.
 	if roads_changed:
 		for key in region.records:
 			region.records[key] = region.records[key].filter(func(row):
@@ -101,7 +101,7 @@ static func clearings(region: Node) -> Array:
 	var result: Array = []
 	for b in region.buildings:
 		if not b.has("editor_id"): continue
-		# Circumscribed square reserves the whole rotated footprint and its access.
+		# Um quadrado circunscrito reserva a área girada inteira e o acesso.
 		var radius: float = b.size.length()*.5 + 2.0
 		result.append(Rect2(Vector2(b.position.x, b.position.z)-Vector2.ONE*radius, Vector2.ONE*radius*2))
 	return result
@@ -116,8 +116,8 @@ static func build_light(region: Node, chunk: Node3D, record: Dictionary) -> void
 	var terrain: Variant = region.get("terrain")
 	if terrain != null: lamp.position.y = terrain.surface_height_at(Vector2(lamp.position.x, lamp.position.z))
 	chunk.add_child(lamp)
-	# Same cached mast, lateral arm and housing as the normal street lamps.
-	# Keep editor-owned light names: the city night pass must not add another source.
+	# Mesmo mastro em cache, braço lateral e carcaça dos postes de rua normais.
+	# Mantém os nomes de luz do editor: o passo noturno da cidade não pode somar outra fonte.
 	var height_scale := float(row.height) / CITY_DRESSING.LAMP_HEIGHT
 	var pole := MeshInstance3D.new()
 	pole.name = "Pole"

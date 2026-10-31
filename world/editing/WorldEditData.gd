@@ -1,6 +1,6 @@
 @tool
 extends RefCounted
-## JSON shared by editor and production; no editor nodes or frame loop in the game.
+## JSON compartilhado por editor e produção; sem nós de editor nem laço por quadro no jogo.
 const PATH := "res://world/editing/world_edits.json"
 const TYPES := ["tree", "building", "road", "light", "prop", "piece", "ground", "manhole", "terrain"]
 const PROP_TYPES := ["pallet", "pallet_stack", "crate", "barrel", "dumpster", "trash_bags", "bin", "barrier", "footbridge", "desert_cactus", "desert_rock"]
@@ -206,8 +206,8 @@ static func record_id(record: Dictionary) -> String:
 	return ""
 
 static func normalize_catalog_heights(regions: Dictionary) -> void:
-	# Old cached catalogs used 7.5 for every unoverridden building. Upgrade base
-	# rows only; saved user edits retain their explicitly authored heights.
+	# Catálogos antigos em cache usavam 7.5 para todo prédio sem sobreposição. Atualiza só
+	# linhas base; edições salvas do usuário mantêm as alturas autoradas explicitamente.
 	for area in regions.values():
 		for row in area.get("objects",{}).values():
 			if row.get("type","") != "building" or row.get("height_resolved",false): continue

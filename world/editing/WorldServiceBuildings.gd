@@ -60,8 +60,8 @@ static func apply_art(art: Node3D, row: Dictionary) -> void:
 	var target := Transform3D(Basis(Vector3.UP,deg_to_rad(float(row.rotation)))*origin.basis,Vector3(row.position[0],origin.origin.y,row.position[1]))
 	preload("res://world/editing/WorldPieceShape.gd").apply(art,{"stretch":[stretch.x,stretch.z],"height_stretch":stretch.y,"rigid_pivots":true},origin,target)
 	if row.id == "building/Police":
-		# CityLook builds the precinct pilasters, canopy and helipad afterwards.
-		# Its nominal dimensions must match the already-deformed native shell.
+		# O CityLook monta depois as pilastras, a cobertura e o heliponto da delegacia.
+		# As dimensões nominais precisam bater com a casca nativa já deformada.
 		art.building_size = Vector2(float(row.size[0]), float(row.size[1]))
 		art.height = float(row.height)
 	if "fire_door_body" in art and is_instance_valid(art.fire_door_body):

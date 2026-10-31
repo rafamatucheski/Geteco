@@ -1,5 +1,5 @@
 extends RefCounted
-## Constructor-only deformation: bodies stay rigid and shapes contain their scale.
+## Deformação só no construtor: corpos ficam rígidos e as formas contêm a escala.
 const GROUND_KEYS := ["cobra_dry_meadow", "cobra_approach_ground", "cobra_footpath_edge", "cobra_footpath", "cobra_garden_path", "cobra_entrance_path", "cobra_secret_drive", "cobra_home_gravel", "cobra_workshop_forecourt", "cobra_secret_parking", "cobra_parking_stripe", "cobra_parking_oil_wear"]
 
 static func is_shape_editable(id: String) -> bool:

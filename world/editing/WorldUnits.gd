@@ -190,8 +190,8 @@ static func _explode(source: MultiMeshInstance3D) -> void:
 				body.reparent(instance, true)
 				bodies.erase(body)
 				break
-			# Course stakes/rocks share one body containing a shape at each instance.
-			# Transfer only that shape, keeping its exact world pose and physical layer.
+			# Estacas/pedras do percurso dividem um corpo que contém uma forma em cada instância.
+			# Transfere só essa forma, mantendo a pose exata no mundo e a camada física.
 			var found := false
 			for shape in shapes:
 				if shape.global_position.distance_to(instance.global_position) >= .02: continue

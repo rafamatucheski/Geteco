@@ -1,5 +1,5 @@
 extends "res://world/regions/NativeRegion.gd"
-## Production adapter. The original generator remains untouched for concurrent work.
+## Adaptador de produção. O gerador original fica intocado para trabalho concorrente.
 const EDITS := preload("res://world/editing/WorldEditRuntime.gd")
 const EDIT_DATA := preload("res://world/editing/WorldEditData.gd")
 const PIECES := preload("res://world/editing/WorldEditPieces.gd")
@@ -20,7 +20,7 @@ static func build_region(id: String, first_focus: Vector3 = Vector3.INF) -> Node
 
 func prepare_data() -> void:
 	super.prepare_data()
-	# Reserve only validated pull-offs before streamed sidewalk props are built.
+	# Reserva só recuos validados antes de montar os props de calçada em streaming.
 	if "--parking-baseline" not in OS.get_cmdline_user_args():
 		preload("res://world/roadside_parking/RoadsideParkingLayout.gd").prepare(self)
 
@@ -114,8 +114,8 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			for node in chunk.get_children().slice(first_child): node.set_meta("world_unit_skip",true)
 	if record.has("editor_piece_ids"):
 		var ground := UNITS.ground_of(self)
-		# Root pieces can produce sibling copies: build all of them before taking the
-		# list to apply/filter, so remote copies are pruned from the source chunk too.
+		# Peças raiz podem gerar cópias irmãs: monta todas antes de pegar a
+		# lista para aplicar/filtrar, para que cópias remotas também sejam podadas do chunk fonte.
 		for node in chunk.get_children().slice(first_child):
 			for piece in PIECES.collect(node): PIECES.spawn_clones(piece,_piece_changes,ground)
 		for node in chunk.get_children().slice(first_child):
@@ -136,8 +136,8 @@ func _building(chunk: Node3D, data: Dictionary) -> void:
 		art.rotation.y = float(data.editor_rotation)
 		art.set_meta("editor_id", data.editor_id)
 		if data.has("editor_service"):
-			# NativeRegion mounts the original facade; deform it once, including
-			# baked collision shapes, instead of rebuilding a generic replacement.
+			# O NativeRegion monta a fachada original; deforma-a uma vez, incluindo
+			# formas de colisão embutidas, em vez de reconstruir um substituto genérico.
 			art.rotation.y = 0
 			preload("res://world/editing/WorldServiceBuildings.gd").apply_art(art,data.editor_service)
 
