@@ -1,0 +1,108 @@
+# CI mínimo: compila o C# e roda os contratos rápidos (lista FAST de tools/run_core_suite.sh).
+# Não mede desempenho: o runner é headless (driver dummy), então FPS e GPU não significam nada aqui.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  GODOT_VERSION: 4.7.2-stable
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  build:
+    name: dotnet build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+      - name: Compilar Harbor.csproj
+        run: dotnet build Harbor.csproj -nologo
+
+  contracts:
+    name: contratos (headless)
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      # Binário oficial (godotengine/godot-builds); o projeto exige a variante .NET (mono).
+      - name: Baixar Godot ${{ env.GODOT_VERSION }} mono
+        run: |
+          name="Godot_v${GODOT_VERSION}_mono_linux_x86_64"
+          curl -fsSL -o godot.zip \
+            "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}/${name}.zip"
+          unzip -q godot.zip -d "$RUNNER_TEMP/godot"
+          bin="$RUNNER_TEMP/godot/${name}/${name}.x86_64"
+          chmod +x "$bin"
+          echo "GODOT=$bin" >> "$GITHUB_ENV"
+
+      - name: Compilar Harbor.csproj
+        run: dotnet build Harbor.csproj -nologo
+
+      # Cache da importação: reimportar os assets do zero é a parte mais lenta do job.
+      - name: Cache de .godot/imported
+        uses: actions/cache@v4
+        with:
+          path: .godot/imported
+          key: godot-imported-${{ env.GODOT_VERSION }}-${{ hashFiles('**/*.import') }}
+          restore-keys: godot-imported-${{ env.GODOT_VERSION }}-
+
+      # Importar reconstrói também o registro de class_name, sem o qual os testes não resolvem classes.
+      # O import às vezes não sai sozinho; o timeout (código 124) não reprova, os testes decidem.
+      - name: Importar projeto
+        run: timeout 1200 "$GODOT" --headless --path . --import || [ $? -eq 124 ]
+
+      # Chama os testes direto porque tools/run_core_suite.sh usa a fila local
+      # (run_godot_locked.sh) e cygpath do Windows. Mesma regra de falha: código != 0 ou erro no log.
+      - name: Contratos rápidos
+        run: |
+          tests=(
+            tests/test_core_contracts.gd
+            tests/test_prologue_save_contract.gd
+            tests/test_session_cleanup_registry.gd
+            tests/test_orphan_save_slots.gd
+            tests/test_full_save.gd
+            tests/test_save_store_byte_preflight.gd
+            tests/test_consumed_world_reward_save.gd
+            tests/test_campaign_economy.gd
+            tests/test_garage_rewards.gd
+            tests/test_police_crime_contract.gd
+            tests/test_private_security_crime.gd
+            tests/test_gpu_release_scene_swap.gd
+            tests/test_localization_coverage.gd
+          )
+          mkdir -p ci-logs
+          failed=0
+          for t in "${tests[@]}"; do
+            name="$(basename "$t" .gd)"
+            # Pasta de save isolada por teste, como na suíte local (preferências nunca vazam).
+            save_root="$(mktemp -d)"
+            echo "::group::$name"
+            timeout 180 "$GODOT" --headless --path . --script "res://$t" -- \
+              "--isolated-save-root=$save_root" 2>&1 | tee "ci-logs/$name.log"
+            code=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            if [ "$code" != 0 ]; then
+              echo "::error::$name saiu com código $code"; failed=1
+            elif grep -E '^\s*ERROR:|SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid (call|access|assignment)' \
+                "ci-logs/$name.log" | grep -qv 'at exit'; then
+              echo "::error::$name tem erro de script/engine no log"; failed=1
+            fi
+          done
+          exit $failed
+
+      - name: Guardar logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-logs
+          path: ci-logs/
