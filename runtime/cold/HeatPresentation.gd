@@ -75,8 +75,10 @@ func update_sources(delta: float,point: Vector3,enabled: bool,retain_existing: b
 	if elapsed<.25: return
 	elapsed = 0
 	var wanted: Dictionary = {}
-	var providers: Array[Node] = get_tree().get_nodes_in_group("native_heat_source")
 	if enabled:
+		# Revisão estática de custo: a consulta ao grupo só serve ao ramo habilitado; fora da
+		# montanha ela alocava um array a cada 0,25 s sem uso.
+		var providers: Array[Node] = get_tree().get_nodes_in_group("native_heat_source")
 		for source in SOURCES.SOURCES:
 			var at := SOURCES.to_world(source.point)
 			if at.distance_squared_to(point)>radius*radius: continue

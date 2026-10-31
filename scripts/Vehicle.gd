@@ -207,6 +207,11 @@ func _ready() -> void:
 	if damage_prototype_enabled and DAMAGE_PANELS.supports(archetype): visual = DAMAGE_PANELS.create(archetype)
 	if visual == null:
 		visual = preload("res://runtime/FleetCatalog.gd").create(archetype) if not specification.is_empty() else VISUAL.create(paint_color)
+	if visual == null:
+		# Revisão estática de loading: FleetCatalog.create devolve null quando a cena assada
+		# falta ou não entra no pacote. Sem este recuo a montagem do mundo parava aqui.
+		push_error("Veículo %s sem cena da frota; usando a carroceria genérica." % archetype)
+		visual = VISUAL.create(paint_color)
 	if variant_scale != Vector3.ONE:
 		visual.scale = variant_scale
 	traced = _trace_ready("visual",traced)

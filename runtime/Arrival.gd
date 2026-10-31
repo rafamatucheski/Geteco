@@ -229,11 +229,16 @@ func _begin_disembark() -> void:
 	player.hide()
 	player.teleport(ARRIVAL + Vector3.UP * .06)
 	session.controller.region.set_focus(ARRIVAL)
+	# Revisão estática LIFE-04: a pausa/troca de cena pode liberar a chegada durante estas
+	# esperas. Sem conferir a geração, a corrotina antiga retomaria e mexeria no terminal
+	# e no jogador do mundo novo (ou em nós já liberados).
+	var generation := _generation
 	for i in 3: await get_tree().physics_frame
-	if not active: return
+	if not _disembark_current(generation): return
 	var terminal = session.urban_operations.passenger_terminal
 	terminal.prepare_arrival()
 	await get_tree().physics_frame
+	if not _disembark_current(generation): return
 	var door: Vector3 = terminal.ARRIVAL
 	if not session.position_clear(door):
 		_set_phase("disembark", "Aguarde um espaço livre para descer.", ARRIVAL)
@@ -245,8 +250,10 @@ func _begin_disembark() -> void:
 	player.show()
 	player.set_physics_process(true)
 	if not await _walk(player, ARRIVAL + Vector3.UP * .06, true):
-		_lock(false)
+		# Fora da árvore o mundo antigo já foi liberado; dentro dela, nunca deixar o jogador preso.
+		if is_inside_tree() and is_instance_valid(session.world.player): _lock(false)
 		return
+	if not _disembark_current(generation): return
 	terminal.finish_arrival()
 	_milestone("harbor_arrival_seen")
 	_lock(false)
@@ -412,6 +419,11 @@ func _board() -> void:
 	_note_car_mode("board")
 	_milestone("harbor_city_tour_started")
 	_set_phase("city_tour", "Conheça a cidade com Maciota.", session.world.maciota_place.entry_position)
+
+func _disembark_current(generation: int) -> bool:
+	# Uma chegada liberada ou reiniciada não pode continuar o desembarque antigo.
+	if generation != _generation or not active or not is_inside_tree() or is_queued_for_deletion(): return false
+	return phase == "disembark" and is_instance_valid(session.world.player)
 
 func _boarding_current(generation: int, expected_car, expected_driver) -> bool:
 	# Uma caminhada cancelada também retoma quem a chamou. O chamador antigo não pode liberar

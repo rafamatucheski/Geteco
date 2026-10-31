@@ -89,7 +89,7 @@ func pause_game() -> void:
 	%BtnLoadGame.disabled = not has_session
 	if has_session:
 		var session = world.session
-		var in_transit: bool = session.controller.travel_busy or session.vehicle_transition_busy or session.respawn_busy or (session.passenger_transport != null and session.passenger_transport.riding) or (session.get("railway") != null and session.railway.busy())
+		var in_transit: bool = session.is_transition_blocked() or session.controller.travel_busy or session.vehicle_transition_busy or session.respawn_busy or (session.passenger_transport != null and session.passenger_transport.riding) or (session.get("railway") != null and session.railway.busy())
 		var save_reason: String = session.save_block_reason()
 		%BtnSaveGame.disabled = not save_reason.is_empty()
 		%BtnLoadGame.disabled = in_transit or world.driving.occupied
