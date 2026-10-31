@@ -1,6 +1,6 @@
 extends RefCounted
-## Spatially bounded static batches. One material/primitive draw per chunk;
-## explicit colliders remain independent from ornament and visual batching.
+## Lotes estáticos limitados no espaço. Um draw de material/primitiva por chunk;
+## colisores explícitos ficam independentes do ornamento e do lote visual.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 static var _meshes: Dictionary={}
@@ -146,9 +146,9 @@ static func mesh(kind: String) -> Mesh:
 	if kind=="rock":
 		var builder := SurfaceTool.new()
 		builder.begin(Mesh.PRIMITIVE_TRIANGLES)
-		# Fractured pentagonal block, not a surface of revolution. Broad broken
-		# planes, a slanted crown and asymmetric corners replace the old pebbles.
-		# Every vertex remains within the previous collision/placement envelope.
+		# Bloco pentagonal fraturado, não uma superfície de revolução. Largas
+		# faces partidas, uma coroa inclinada e cantos assimétricos substituem as pedrinhas antigas.
+		# Todo vértice fica dentro do envelope anterior de colisão/posicionamento.
 		var vertices := PackedVector3Array([
 			Vector3(-.38,-.5,-.33), Vector3(.31,-.46,-.43), Vector3(.5,-.42,-.08),
 			Vector3(.27,-.48,.43), Vector3(-.47,-.41,.31),
@@ -163,7 +163,7 @@ static func mesh(kind: String) -> Mesh:
 			var b := vertices[indices[index+1]]
 			var c := vertices[indices[index+2]]
 			var normal := (b-a).cross(c-a).normalized()
-			# Godot uses clockwise fronts; orient every face out of the block.
+			# O Godot usa frentes horárias; orienta cada face para fora do bloco.
 			if normal.dot((a+b+c)/3.0) > 0:
 				var swap := b
 				b = c

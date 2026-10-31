@@ -1,7 +1,7 @@
 extends Node3D
-## Local quarry wind: two lit batches, no extra environment, light or audio bed.
-## The resident region supplies its real ground sampler and suspends this node
-## during interiors/unloading. Dormant GPU simulations have speed_scale == 0.
+## Vento local da pedreira: dois lotes iluminados, sem ambiente, luz ou fundo de áudio extras.
+## A região residente fornece o amostrador de chão real e suspende este nó
+## durante interiores/descarga. Simulações de GPU dormentes têm speed_scale == 0.
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const DUST_SHADER := preload("res://world/desert/desert_dust.gdshader")
 const WIND_DIRECTION := Vector3(1,.03,-.24)
@@ -58,8 +58,8 @@ func set_focus(point: Vector3) -> void:
 		_low.speed_scale=1.0
 		_fine.speed_scale=1.0
 	if reset_particles:
-		# Move origins before restarting. World-space particles left behind by an
-		# ordinary walk keep their trajectories instead of following the camera.
+		# Move as origens antes de reiniciar. Partículas no espaço do mundo deixadas para trás por
+		# uma caminhada comum mantêm as trajetórias em vez de seguir a câmera.
 		_strength=0.0
 		_tick=0.0
 		_outside_age=0.0
@@ -90,8 +90,8 @@ func _physics_process(delta: float) -> void:
 	_tick+=delta
 	if _target_strength<=0.0:
 		_outside_age+=delta
-		# Allow already emitted particles to fade before sleeping outside the
-		# quarry. Explicit region/interior suspension remains immediate.
+		# Deixa as partículas já emitidas apagarem antes de dormir fora da
+		# pedreira. A suspensão explícita de região/interior continua imediata.
 		if _outside_age>MAX_LIFETIME+.6:
 			suspend()
 			return

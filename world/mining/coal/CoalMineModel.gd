@@ -1,6 +1,6 @@
 extends Node3D
-## Authored native cutaway: the near walls stay physically full-height.
-## Static gravel/sleepers/coal share MultiMeshes; only the one-shot reveal animates.
+## Corte nativo autorado: as paredes próximas continuam fisicamente com altura total.
+## Cascalho/dormentes/carvão estáticos dividem MultiMeshes; só a revelação de uma vez é animada.
 const RELIC_HIDDEN_Y := .4
 var solid_bodies: Array[StaticBody3D] = []
 var solid_bounds: Array[AABB] = []
@@ -98,8 +98,8 @@ func _wall(id: String, center: Vector3, size: Vector3, cutaway := false) -> void
 	if cutaway:
 		visual_size.y = .6
 		visual_center.y = .3
-	# Recess the flat core; exposed faceted strata stay entirely inside the
-	# existing physical wall. The gameplay aisle and its capsule clearance stay put.
+	# Rebaixa o núcleo plano; os estratos facetados expostos ficam inteiramente dentro da
+	# parede física existente. O corredor de jogo e a folga da cápsula não mudam.
 	if size.x >= size.z: visual_size.z *= .6
 	else: visual_size.x *= .6
 	visual_size.y *= .82
@@ -130,7 +130,7 @@ func _append_wall_rocks(center: Vector3, size: Vector3, cutaway: bool) -> void:
 			_wall_rocks.append(Transform3D(Basis.IDENTITY.scaled(extent), point))
 
 func _rough_rock_mesh() -> ArrayMesh:
-	# Angular strata fit the same unit AABB and the existing full wall bodies.
+	# Estratos angulosos cabem no mesmo AABB unitário e nos corpos de parede inteiros existentes.
 	return preload("res://world/mining/MiningBatch.gd").mesh("rock") as ArrayMesh
 
 func _build_rock_faces() -> void:
@@ -186,7 +186,7 @@ func _build_floor_and_walls() -> void:
 	_wall("RaidEast", Vector3(31.5, 1.9, 2), Vector3(1, 3.8, 17))
 	_wall("RaidSouth", Vector3(23, 1.9, 10.5), Vector3(18, 3.8, 1), true)
 	_build_rock_faces()
-	# Short drainage channels, flush enough for the actor capsule to cross.
+	# Canais de drenagem curtos, rentes o bastante para a cápsula do ator atravessar.
 	var water := _mat("water", Color("142021"), .28)
 	_box(self, "GalleryDrain", Vector3(-11.8, .009, -4.5), Vector3(.22, .012, 12.5), water)
 	_box(self, "TunnelDrain", Vector3(10.7, .009, 3), Vector3(.17, .012, 17), water)
@@ -207,7 +207,7 @@ func _build_supports() -> void:
 		_solid("TunnelBeam%d" % index, Vector3(9, 3.2, z), Vector3(4.35, .26, .34), false)
 	for z in [-8.8, -3.0]:
 		for x in [-12.55, 2.5]: _post(Vector3(x, 1.625, z), "GalleryPost%d_%d" % [int(x), int(z)])
-		# Broken upper members leave the chamber readable from the fixed camera.
+		# Peças superiores quebradas deixam a câmara legível da câmera fixa.
 		for x in [-10.8, .75]:
 			_box(self, "GalleryBeam", Vector3(x, 3.26, z), Vector3(4.0, .28, .35), timber)
 			_solid("GalleryBeam", Vector3(x, 3.26, z), Vector3(4.0, .28, .35), false)
@@ -249,7 +249,7 @@ func _build_work_corner() -> void:
 	_box(self, "RestBench", Vector3(-11.6, .5, .65), Vector3(2.3, .15, .6), wood)
 	_solid("RestBench", Vector3(-11.6, .3, .65), Vector3(2.3, .6, .6))
 	for x in [-12.35, -10.85]: _box(self, "BenchLeg", Vector3(x, .24, .65), Vector3(.15, .48, .48), wood)
-	# Abandoned lamp, boots and enamel cup; clutter is confined to the bench.
+	# Lampião abandonado, botas e caneca esmaltada; a bagunça fica restrita à bancada.
 	_sphere(self, "OldHardhat", Vector3(-11.5, .74, .65), Vector3(.42, .25, .36), _mat("helmet", Color("b78933")))
 	_box(self, "LunchTin", Vector3(-12.05, .67, .62), Vector3(.32, .25, .24), _mat("tin", Color("74807e"), .6))
 	# Pickaxe propped against the rear wall; its entire footprint blocks actors.
@@ -257,7 +257,7 @@ func _build_work_corner() -> void:
 	pick.rotation.z = -.18
 	_box(self, "PickHead", Vector3(-2.85, 1.53, -10.6), Vector3(.9, .1, .12), _mat("iron", Color("3a4547"), .65))
 	_solid("Pickaxe", Vector3(-2.92, .87, -10.6), Vector3(1.12, 1.74, .18))
-	# Lever sits in the open aisle, reachable south of the secret wagon.
+	# A alavanca fica no corredor aberto, alcançável ao sul do vagão secreto.
 	_box(self, "LeverBase", Vector3(-10.65, .36, -4.05), Vector3(.6, .72, .6), _mat("iron", Color("3a4547"), .65))
 	_solid("LeverBase", Vector3(-10.65, .75, -4.05), Vector3(1.2, 1.5, .72))
 	_lever = Node3D.new()
@@ -325,7 +325,7 @@ func _build_secret_cart() -> void:
 	for x in [.04, .17]: _sphere(_relic, "DuckEye", Vector3(x, .19, .862), Vector3(.04, .045, .025), _mat("eye", Color("192022")))
 	for index in 7:
 		var angle := index * TAU / 7
-		# Keep the whole orbit inside the closed lid/side silhouette at birth.
+		# Mantém a órbita inteira dentro da silhueta fechada de tampa/lados no nascimento.
 		_sphere(_relic, "SuspendedCoal", Vector3(cos(angle) * .90, .2 + sin(angle * 2) * .32, sin(angle) * .88), Vector3(.23, .29, .22), stone)
 	_relic_light = OmniLight3D.new()
 	_relic_light.name = "MeteoriteGlow"
@@ -353,8 +353,8 @@ func _build_lamps() -> void:
 	_lamp("BendLamp", Vector3(9.8, 2.35, -3.6), Color("f1ba76"), 9.0, 2.8)
 	_lamp("GalleryLamp", Vector3(-1.5, 2.5, -10.95), Color("f1ba76"), 12, 3.2)
 	_lamp("OldWorkLamp", Vector3(-11.7, 2.4, -3.0), Color("84b8bd"), 10, 2.6)
-	# A caged work lamp hangs from a cross-wire above the central walking aisle.
-	# It fills the route to the lever without relying on daytime exterior sun.
+	# Uma lâmpada de trabalho engaiolada pende de um fio transversal acima do corredor central.
+	# Ela ilumina a rota até a alavanca sem depender do sol externo diurno.
 	_box(self, "CenterLampCable", Vector3(-4, 3.55, -3), Vector3(12.5, .035, .035), _mat("cable", Color("1c2223")))
 	_box(self, "CenterLampDrop", Vector3(-4, 3.2, -3), Vector3(.035, .7, .035), _mat("cable", Color("1c2223")))
 	_lamp("CenterWorkLamp", Vector3(-4, 2.86, -3), Color("e8bf8b"), 10.5, 3.1)
@@ -385,7 +385,7 @@ func _build_scatter() -> void:
 	node.multimesh = batch
 	node.material_override = _mat("coal", Color("101517"), .23)
 	add_child(node)
-	# Faceted exposed seams protrude from the flat rock face and need coverage too.
+	# Veios facetados expostos saem da face plana de rocha e também precisam de cobertura.
 	_solid("WestCoalVein", Vector3(-13.06, 1.65, -4.65), Vector3(.88, 3.3, 12.8))
 	for point in [Vector3(-11.2, .45, -9.95), Vector3(.85, .55, -.3), Vector3(-3.15, .35, -10.45)]:
 		var heap := MeshInstance3D.new()
@@ -400,8 +400,8 @@ func _build_scatter() -> void:
 func _build_clandestine_gallery() -> void:
 	var crate := _mat("raid_crate", Color("62533f"))
 	var iron := _mat("iron", Color("3a4547"), .65)
-	# Three divided stacks provide actual ballistic and movement cover, with
-	# a clear northern aisle and enough room to flank each stack.
+	# Três pilhas divididas dão cobertura balística e de movimento de verdade, com
+	# um corredor norte livre e espaço suficiente para flanquear cada pilha.
 	for item in [
 		["WestCover", Vector3(19, .66, 3.5), Vector3(2.6, 1.32, 1.2)],
 		["CenterCover", Vector3(24, .64, 1), Vector3(3, 1.28, 1.3)],
@@ -410,8 +410,8 @@ func _build_clandestine_gallery() -> void:
 		_solid(item[0], item[1], item[2])
 		for x_offset in [-.9, .9]:
 			_box(self, "CrateStrap", item[1] + Vector3(x_offset, 0, item[2].z * .5 + .005), Vector3(.075, item[2].y, .02), iron)
-	# Pallet of taped white packages: an occupied contraband store, no signs or
-	# expository labels. The pallet reserves the complete stack footprint.
+	# Palete de pacotes brancos com fita: um depósito de contrabando ocupado, sem placas nem
+	# etiquetas expositivas. O palete reserva a área completa da pilha.
 	_box(self, "ContrabandPallet", Vector3(19.2, .1, -4.7), Vector3(3.2, .2, 1.35), crate)
 	_solid("ContrabandPallet", Vector3(19.2, .63, -4.7), Vector3(3.2, 1.26, 1.35))
 	var packages: Array[Vector3] = []
@@ -424,7 +424,7 @@ func _build_clandestine_gallery() -> void:
 				tapes.append(position_value)
 	_multibox("WrappedPackages", packages, Vector3(.45, .27, .33), _mat("wrapping", Color("cbc9ad")))
 	_multibox("PackageTape", tapes, Vector3(.085, .278, .339), _mat("black_tape", Color("242925")))
-	# Packing table and scales, with a full-volume blocker below the tabletop.
+	# Mesa de embalagem e balanças, com um bloqueio de volume inteiro abaixo do tampo.
 	_box(self, "PackingTable", Vector3(24.5, .87, -4.6), Vector3(2.6, .15, 1.2), iron)
 	_solid("PackingTable", Vector3(24.5, .66, -4.6), Vector3(2.6, 1.32, 1.2))
 	for x in [23.5, 25.5]:
@@ -432,8 +432,8 @@ func _build_clandestine_gallery() -> void:
 	_box(self, "ScalesBase", Vector3(24.1, 1.01, -4.55), Vector3(.56, .13, .48), _mat("scale", Color("afb2a6"), .4))
 	_box(self, "ScalesTray", Vector3(24.1, 1.15, -4.55), Vector3(.62, .06, .48), iron)
 	_box(self, "PackingRoll", Vector3(25.15, 1.01, -4.55), Vector3(.33, .18, .25), _mat("black_tape", Color("242925")))
-	# Cash sits on its own table; the functional approach remains clear at
-	# RAID_LOOT (28,-3), a metre in front of the solid furniture.
+	# O dinheiro fica na própria mesa; a aproximação funcional continua livre em
+	# RAID_LOOT (28,-3), um metro à frente do móvel sólido.
 	_box(self, "CashTable", Vector3(28.5, .91, -4.6), Vector3(3, .18, 1.2), crate)
 	_solid("CashTable", Vector3(28.5, .72, -4.6), Vector3(3, 1.44, 1.2))
 	for x in [27.25, 29.75]: _box(self, "CashTableLeg", Vector3(x, .41, -4.6), Vector3(.14, .82, .85), crate)
@@ -451,8 +451,8 @@ func _build_clandestine_gallery() -> void:
 		var position_value := Vector3((index % 4) * .22 - .34, .24 + floori(float(index) / 4.0) * .10, .14)
 		_box(_raid_loot, "CashBundle", position_value, Vector3(.19, .085, .32), note)
 		_box(_raid_loot, "BundleBand", position_value + Vector3(0, .044, 0), Vector3(.045, .006, .323), band)
-	# Empty canisters and a rolled tarp stay at the rear east wall, away from
-	# authored guards, loot access and the flanking route.
+	# Galões vazios e uma lona enrolada ficam na parede leste do fundo, longe dos
+	# guardas autorados, do acesso ao saque e da rota de flanco.
 	for z in [-2.9, -1.55]:
 		_box(self, "SupplyCanister", Vector3(30.35, .53, z), Vector3(.65, 1.06, .72), _mat("canister", Color("596256")))
 		_solid("SupplyCanister", Vector3(30.35, .53, z), Vector3(.65, 1.06, .72))
@@ -480,7 +480,7 @@ func reveal_secret(animate: bool, revealed := true) -> void:
 		_relic.position.y = 2.0 if revealed else RELIC_HIDDEN_Y
 		_relic_light.light_energy = 1.75 if revealed else 0.0
 		return
-	# Radius .95 leaves the top at 1.35, below the lid underside at 1.435.
+	# Raio .95 deixa o topo em 1.35, abaixo da face de baixo da tampa em 1.435.
 	_relic.position.y = RELIC_HIDDEN_Y
 	_relic_light.light_energy = 0
 	_reveal_tween = create_tween().set_parallel(true)

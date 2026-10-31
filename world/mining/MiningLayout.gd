@@ -1,6 +1,6 @@
 extends RefCounted
-## One metre-space contract for the remote quarry, dirt access and activities.
-## A 28 m excavation and a 14 m haul spiral share one sampled XYZ centreline.
+## Um contrato de espaço em metros para a pedreira remota, o acesso de terra e as atividades.
+## Uma escavação de 28 m e uma espiral de transporte de 14 m dividem uma linha central XYZ amostrada.
 const CENTER := Vector3(-180,0,-1080)
 const BOUNDS := Rect2(-326,-1230,300,310)
 const PIT_CENTER := Vector2(0,-18)
@@ -12,8 +12,8 @@ const SECRET_ENTRY := SECRET_EXTERIOR+Vector3(0,0,3.7)
 const SECRET_RETURN := SECRET_EXTERIOR+Vector3(0,0,6.5)
 const SECRET_RESERVE := Rect2(-34,-20,16,22)
 const MACHINE_BAYS := []
-## The loaded 8 m haul truck must reach the gate square-on. Keep the final
-## approach centred between the existing perimeter posts and raised barrier.
+## O caminhão de 8 m carregado precisa chegar ao portão de frente. Mantém a aproximação
+## final centrada entre os postes de perímetro existentes e a cancela levantada.
 const ACCESS := [Vector2(-180,-900),Vector2(-180,-914),Vector2(-180,-928),Vector2(-180,-939),Vector2(-180,-950)]
 const ACCESS_WIDTH := 10.5
 static var _haul_points := PackedVector3Array()
@@ -35,17 +35,17 @@ static func haul_points() -> PackedVector3Array:
 	var approach := preload("res://world/desert/DesertLayout.gd")._rounded([Vector2(0,130),Vector2(-22,123),Vector2(-75,111),Vector2(-116,69),Vector2(-123,29),Vector2(-113,3),Vector2(-105,-18)],18.0)
 	for point in approach:
 		var next := CENTER+Vector3(point.x,0,point.y)
-		# The generic corner smoother can emit centimetre-long spans where two
-		# headings nearly agree. Such 14 m wide slivers are dropped by collision
-		# meshing; keep a clean continuous centreline before producing the strip.
+		# O suavizador genérico de cantos pode emitir trechos de centímetros onde dois
+		# rumos quase coincidem. Essas lascas de 14 m de largura são descartadas pela
+		# malha de colisão; mantém uma linha central contínua limpa antes de produzir a faixa.
 		if not _haul_points.is_empty() and _haul_points[-1].distance_to(next)<.35: continue
 		_haul_points.append(next)
 	for i in range(1,161):
 		var t := float(i)/160.0
 		var angle := PI+TAU*1.25*t
 		var radius := lerpf(105,27,t)
-		# Zero grade at both landings: a loaded 8 m truck must not straddle an
-		# abrupt 12% ramp-to-flat kink at the excavation floor.
+		# Inclinação zero nos dois patamares: um caminhão de 8 m carregado não pode ficar montado numa
+		# dobra abrupta de rampa de 12% para plano no piso da escavação.
 		var descent := t*t*(3.0-2.0*t)
 		_haul_points.append(CENTER+Vector3(cos(angle)*radius,-PIT_DEPTH*descent,PIT_CENTER.y+sin(angle)*radius))
 	_haul_points.append(CENTER+Vector3(8,-PIT_DEPTH,-44))
@@ -81,9 +81,9 @@ static func haul_sample(local: Vector2) -> Vector2:
 
 static func terrain_height(local: Vector2) -> float:
 	var radius := (local-PIT_CENTER).length()
-	# Authored fault sectors break concentric circles into uneven quarry cuts.
-	# Preserve the entire 36 m work floor and blend the first ledge gradually;
-	# the unchanged road sampler below still owns the complete 14 m haul route.
+	# Setores de falha autorados quebram círculos concêntricos em cortes irregulares de pedreira.
+	# Preserva o piso de trabalho inteiro de 36 m e mistura a primeira saliência aos poucos;
+	# o amostrador de estrada inalterado abaixo continua dono da rota completa de transporte de 14 m.
 	var angle := fposmod((local-PIT_CENTER).angle(), TAU)
 	var sector := angle / TAU * 12.0
 	var index := floori(sector)
@@ -106,8 +106,8 @@ static func machine_spawns() -> Array[Dictionary]:
 		{"id":"mineradora_tractor","archetype":"mining_tractor","point":world(Vector3(-11,-28,5)),"yaw":0.0},
 		{"id":"mineradora_haul","archetype":"mining_haul_truck","point":world(Vector3(-100,0,55)),"yaw":.12},
 		{"id":"mineradora_haul_pit","archetype":"mining_haul_truck","point":world(Vector3(6,-28,6)),"yaw":PI*.5},
-		# Clear of the conveyor stockpile (centred at -14,-23) and adit spoil.
-		# Nose points southeast into the open aisle, away from the ore at z=-3.
+		# Longe da pilha da esteira (centrada em -14,-23) e do rejeito da galeria.
+		# O bico aponta para sudeste, para o corredor aberto, longe do minério em z=-3.
 		{"id":"mineradora_escape","archetype":"desert_bison","point":world(Vector3(-12,-28,-10)),"yaw":-PI*.75},
 		{"id":"mineradora_employee_1","archetype":"desert_faisca","point":world(Vector3(-58.6,0,100)),"yaw":0.0},
 		{"id":"mineradora_employee_2","archetype":"ranch_single","point":world(Vector3(-49.2,0,100)),"yaw":0.0},

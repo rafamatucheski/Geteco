@@ -1,6 +1,6 @@
 extends Node3D
-## Six authored work stations, one shared clock, zero work when the site is far.
-## Bodies stay at real floor stations; the production human rig supplies hand IK.
+## Seis postos de trabalho autorados, um relógio compartilhado, zero trabalho quando o sítio está longe.
+## Os corpos ficam em postos reais no piso; o rig humano de produção fornece IK das mãos.
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const WORKER := preload("res://gameplay/mining/MiningWorker.gd")
 const MODEL := preload("res://world/north_gateway/NorthGatewayWorkerModel.gd")
@@ -51,8 +51,8 @@ func _update_presence() -> void:
 		suspend()
 		return
 	var distance := Vector2(_focus.x-LAYOUT.CENTER.x,_focus.z-(LAYOUT.CENTER.z+35)).length()
-	# Replacement shifts arrive only after the cooldown and while the player
-	# is outside the entire worksite. No new per-frame clock for sleeping crews.
+	# Turnos substitutos só chegam depois do cooldown e enquanto o jogador
+	# está fora da obra inteira. Nenhum relógio novo por quadro para equipes dormindo.
 	if distance > SLEEP_RADIUS:
 		var now := Time.get_ticks_msec() / 1000.0
 		for id in _defeated.keys():
@@ -76,8 +76,8 @@ func suspend() -> void:
 	set_physics_process(false)
 	for worker in _workers:
 		if is_instance_valid(worker): worker.collision_layer=0
-	# No work fixtures remain on unloaded terrain. On the next visit the same
-	# six stations are rebuilt; there are no orphan colliders or autonomous rigs.
+	# Nenhum aparato de trabalho fica em terreno descarregado. Na próxima visita os mesmos
+	# seis postos são reconstruídos; não há colisores órfãos nem rigs autônomos.
 	if is_instance_valid(_work_root):
 		remove_child(_work_root)
 		_work_root.queue_free()
