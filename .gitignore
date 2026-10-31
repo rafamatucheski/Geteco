@@ -54,3 +54,9 @@ evidence/auditoria-viaria/20260929-correcoes/perf-projects/
 # Experimentos, capturas e copias locais; fontes e assets ativos ficam versionados.
 /output/
 /tmp/
+
+# Saídas de testes e capturas (res://artifacts): geradas a cada execução, ficam no disco.
+/artifacts/
+# Logs e sondas soltas de evidência; só relatórios .md/.json/.patch entram no Git.
+evidence/**/*.log
+evidence/**/*.gd
