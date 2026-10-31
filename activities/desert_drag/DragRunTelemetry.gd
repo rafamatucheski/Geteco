@@ -1,5 +1,5 @@
 extends RefCounted
-## Bounded observations of actual wheel movement; never drives or scores a car.
+## Observações limitadas do movimento real das rodas; nunca dirige nem pontua um carro.
 const SPLITS := [60.0,201.0,402.0,800.0]
 var launch := ""
 var launch_score := 0.0

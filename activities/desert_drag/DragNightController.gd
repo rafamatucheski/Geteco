@@ -1,5 +1,5 @@
 extends Node
-## UI and physical-entry adapter for a durable night. Never synthesizes finishes.
+## Adaptador de UI e de entrada física para uma noite durável. Nunca sintetiza chegadas.
 const PROGRESS := preload("res://activities/desert_drag/DragNightProgress.gd")
 const PANEL := preload("res://activities/desert_drag/DragNightPanel.gd")
 const GARAGE := preload("res://runtime/desert/DesertGarageState.gd")
@@ -110,8 +110,8 @@ func _action(action: String) -> void:
 		return
 	if action=="abandon":
 		var episode := PROGRESS.current(session.state.world_state)
-		# Remove the queued entry before disarming its context. Otherwise its
-		# eventual dispatch would fall through to an ordinary ranked 800 m race.
+		# Remove a entrada enfileirada antes de desarmar o contexto. Senão o
+		# despacho eventual cairia numa corrida comum ranqueada de 800 m.
 		if not episode.is_empty() and _armed.get("episode_id",-1)==episode.id and is_instance_valid(race.open_meet) and race.open_meet.pending==episode.rival_id:
 			race.open_meet.cancel_ticket(false,"Noite encerrada.")
 		PROGRESS.abandon(session.state.world_state)

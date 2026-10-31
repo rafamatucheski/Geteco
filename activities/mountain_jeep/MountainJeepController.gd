@@ -127,7 +127,7 @@ func _show_briefing() -> void:
 
 func _start_attempt() -> bool:
 	session.close_menu()
-	# Recheck admission after closing the modal; the world may have changed.
+	# Rechecha a admissão depois de fechar o modal; o mundo pode ter mudado.
 	if nearest_action().get("target","")!="start": return false
 	var car: CharacterBody3D=session.world.driving.car
 	if car.archetype!=COURSE.VEHICLE or car.health<=0 or absf(car.speed)>.8:
@@ -148,7 +148,7 @@ func cancel_attempt() -> void:
 	if is_instance_valid(_status):
 		_status.text=""
 		_status.hide()
-	# The physical jeep remains parked or under the existing driver's control.
+	# O jipe físico continua estacionado ou sob o controle do motorista existente.
 	_capture_loan()
 
 func _physics_process(delta: float) -> void:
@@ -216,7 +216,7 @@ func _bind_loan(car: CharacterBody3D) -> void:
 
 func _ensure_loan() -> void:
 	if is_instance_valid(loan): return
-	# ProductionWorld may already have restored the player's last driven jeep.
+	# O ProductionWorld pode já ter restaurado o último jipe dirigido pelo jogador.
 	for existing in session.controller.vehicles:
 		if is_instance_valid(existing) and not existing.is_queued_for_deletion() and existing.vehicle_id==COURSE.LOAN_ID:
 			if existing.archetype!=COURSE.VEHICLE:

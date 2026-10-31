@@ -44,7 +44,7 @@ func open_board() -> bool:
 
 func _build() -> void:
 	layer=CanvasLayer.new()
-	# The normal HUD is layer 50. Keep its notifications below the modal backdrop.
+	# O HUD normal fica na camada 50. Mantém as notificações dele abaixo do fundo do modal.
 	layer.layer=70
 	add_child(layer)
 	backdrop=ColorRect.new()

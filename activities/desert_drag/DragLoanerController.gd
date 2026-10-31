@@ -1,6 +1,6 @@
 extends Node
-## One physical workshop car per visit. Saved progress returns the driver to the
-## lending point and preserves the original car; a loan never becomes property.
+## Um carro físico da oficina por visita. O progresso salvo devolve o motorista ao
+## ponto de empréstimo e preserva o carro original; um empréstimo nunca vira propriedade.
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const FLEET := preload("res://runtime/FleetState.gd")
 const GARAGE := preload("res://runtime/desert/DesertGarageState.gd")
@@ -32,8 +32,8 @@ func _blocked(identity: String = "") -> String:
 	if session.world.gameplay.health<=0 or session.world.gameplay.stars>0: return "Volte à oficina em segurança."
 	if session.world.driving.occupied or session.world.driving.is_body_transition_active(): return "Desembarque para retirar ou devolver o carro."
 	var night: Dictionary=preload("res://activities/desert_drag/DragNightProgress.gd").current(session.state.world_state)
-	# A checkpoint returns the loan, but a saved series can recover its exact
-	# workshop model and installed setup on the next visit.
+	# Um checkpoint devolve o empréstimo, mas uma série salva pode recuperar o modelo exato
+	# da oficina e a preparação instalada na próxima visita.
 	if not night.is_empty() and (identity.is_empty() or night.vehicle_id!="drag_loaner_"+identity): return "Retire o mesmo carro da noite em andamento ou encerre a série no quadro."
 	return ""
 
@@ -129,8 +129,8 @@ func _release_original_pin() -> void:
 
 func prepare_save() -> void:
 	if not is_instance_valid(car) or session.world.driving.car!=car: return
-	# World capture normally stores the selected car. Substitute only the loan,
-	# never the reward ledger, cash, owned parts, or campaign state.
+	# A captura do mundo normalmente guarda o carro escolhido. Substitui só o empréstimo,
+	# nunca o livro de recompensas, o dinheiro, as peças possuídas nem o estado da campanha.
 	var saved := previous_vehicles.duplicate(true)
 	if is_instance_valid(previous_car) and not previous_car.get_meta("garage_reward",false) and not previous_car.get_meta("residence_vehicle",false) and previous_car.vehicle_id not in ["story_tow_vehicle","neco_tow_truck","jessica_jetta_gli"]:
 		var record := FLEET.capture(previous_car,previous_region)

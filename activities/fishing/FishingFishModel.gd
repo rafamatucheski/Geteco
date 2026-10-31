@@ -1,7 +1,7 @@
 extends Node3D
-## Reusable, genuinely volumetric fish. Forward is -Z; Y is up.
-## configure() leaves the caller's transform alone. animate() is caller driven.
-## Four draw surfaces per fish, five with barbels; no per-frame mesh generation.
+## Peixe reaproveitável e realmente volumétrico. A frente é -Z; Y é para cima.
+## configure() não mexe na transformação de quem chama. animate() é guiado por quem chama.
+## Quatro superfícies de desenho por peixe, cinco com barbilhões; sem gerar malha por quadro.
 
 const RULES := preload("res://activities/fishing/FishingRules.gd")
 const RINGS := 42
@@ -137,7 +137,7 @@ static func _load_species(id: String) -> Dictionary:
 		if bundle != null:
 			var art: Dictionary = bundle.get_meta("art", {})
 			if art.has_all(["body", "tail", "left", "right", "barbels", "mouth_y"]): return art
-	# Keep the authoring path available for new species and resource regeneration.
+	# Mantém o caminho de autoria disponível para espécies novas e regeneração de recursos.
 	return _build_species(id)
 
 static func _build_species(id: String) -> Dictionary:
@@ -155,7 +155,7 @@ static func _build_species(id: String) -> Dictionary:
 			var p3 := _surface(profile, t0, a1)
 			body.smooth_triangle(p0, p1, p2, _normal(profile, t0, a0), _normal(profile, t1, a0), _normal(profile, t1, a1), _skin_color(profile, t0, a0), _skin_color(profile, t1, a0), _skin_color(profile, t1, a1))
 			body.smooth_triangle(p0, p2, p3, _normal(profile, t0, a0), _normal(profile, t1, a1), _normal(profile, t0, a1), _skin_color(profile, t0, a0), _skin_color(profile, t1, a1), _skin_color(profile, t0, a1))
-	# Close both ends: the lips sit over the snout cap, the tail covers the peduncle.
+	# Fecha as duas pontas: os lábios ficam sobre a tampa do focinho, a cauda cobre o pedúnculo.
 	for side in SIDES:
 		var a0 := TAU * float(side) / SIDES
 		var a1 := TAU * float(side + 1) / SIDES
@@ -203,7 +203,7 @@ static func _station_radius(profile: Dictionary, index: int) -> Vector2:
 static func _surface(profile: Dictionary, t: float, angle: float) -> Vector3:
 	var radii := _radii(profile, t)
 	var y := sin(angle) * radii.y
-	# Flatter ventral surface and a gentle dorsal shoulder, especially in deep fish.
+	# Superfície ventral mais chata e um ombro dorsal suave, principalmente em peixes altos.
 	if y < 0: y *= .86
 	return Vector3(cos(angle) * radii.x, y, -.5 + .9 * t)
 
@@ -229,7 +229,7 @@ static func _skin_color(profile: Dictionary, t: float, angle: float) -> Color:
 			"cream_band":
 				color = color.lerp(Color(profile.belly), (1.0 - smoothstep(.09, .26, absf(vertical + .27))) * .92)
 	if marking > 0: color = color.lerp(Color("25382b"), marking)
-	# Small, staggered scale facets are baked into vertices, never separate objects.
+	# Facetas de escama pequenas e alternadas são bakeadas nos vértices, nunca objetos separados.
 	if pattern not in ["spots", "cream_band", "mottle"] and t > .18:
 		var scale_row := floorf(angle * 12.0)
 		var scale_wave := sin(t * 210.0 + scale_row * PI) * sin(angle * 24.0)
@@ -237,8 +237,8 @@ static func _skin_color(profile: Dictionary, t: float, angle: float) -> Color:
 	return color
 
 static func _add_spots(builder: FishMesh, profile: Dictionary) -> void:
-	# Distinct irregular spots follow the skin surface; baked into the same draw.
-	# A coarse vertex noise pattern aliases into stripes on a slender catfish.
+	# Manchas irregulares distintas seguem a superfície da pele; bakeadas no mesmo desenho.
+	# Um padrão grosseiro de ruído por vértice vira listras por aliasing num bagre esguio.
 	for sign_value in [-1.0, 1.0]:
 		for row in 5:
 			for column in 9:
@@ -284,7 +284,7 @@ static func _add_fixed_fins(builder: FishMesh, profile: Dictionary, id: String) 
 		builder.tube(base, tip, .0021, fin.darkened(.20), 4)
 		previous_base = base
 		previous_tip = tip
-	# Anal and paired pelvic fins remain attached to the anatomical body surface.
+	# A nadadeira anal e as pélvicas pareadas ficam presas à superfície anatômica do corpo.
 	var anal_start := Vector3(0, -depth * .65, .12)
 	var anal_tip := Vector3(0, -depth * .72 - .09, .23)
 	var anal_end := Vector3(0, -depth * .26, .30)
@@ -293,7 +293,7 @@ static func _add_fixed_fins(builder: FishMesh, profile: Dictionary, id: String) 
 	for sign_value in [-1.0, 1.0]:
 		var root := Vector3(sign_value * float(profile.width) * .4, -depth * .8, .015)
 		_membrane(builder, root, root + Vector3(sign_value * .07, -.075, .11), root + Vector3(0, .025, .12), fin, 6)
-	# Characins and catfish have a small adipose fin behind the dorsal fin.
+	# Caracídeos e bagres têm uma pequena nadadeira adiposa atrás da dorsal.
 	if id in ["pacu", "tambacu", "pintado", "pirarara", "matrinxa", "dourado"]:
 		_membrane(builder, Vector3(0, depth * .43, .25), Vector3(0, depth * .43 + .055, .28), Vector3(0, depth * .19, .33), fin, 5)
 
@@ -316,7 +316,7 @@ static func _add_tail(builder: FishMesh, profile: Dictionary, id: String) -> voi
 		builder.tube(Vector3(0, y * .11, 0), point, .0018, fin.darkened(.2), 4)
 		previous = point
 	if id == "tucunare":
-		# Diagnostic ocellus at the caudal peduncle, visible from either side.
+		# Ocelo diagnóstico no pedúnculo caudal, visível dos dois lados.
 		for sign_value in [-1.0, 1.0]:
 			builder.ellipsoid(Vector3(sign_value * .011, .035, .047), Vector3(.006, .029, .023), Color("e0c74d"), 12, 8)
 			builder.ellipsoid(Vector3(sign_value * .016, .035, .047), Vector3(.003, .019, .015), Color("29382b"), 12, 8)

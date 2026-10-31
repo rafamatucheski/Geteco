@@ -1,13 +1,13 @@
 extends RefCounted
-## Instrument cosmetics share the game's wallet and save envelope. They never
-## change the race drivetrain, prizes, or championship ledger.
+## Os cosméticos de instrumento dividem a carteira e o envelope de save do jogo. Eles nunca
+## mudam o trem de força da corrida, os prêmios nem o livro do campeonato.
 const KEY := "drag_instruments"
 const RECEIPT_PREFIX := "drag_instrument:"
 const PROGRESS := preload("res://activities/desert_drag/DesertDragProgress.gd")
 const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
 const IDS := ["classic","bar","street","pro","champion"]
-## Version-1 prices also define saved receipt amounts. Future price changes need
-## an explicit migration; do not reinterpret already purchased ownership.
+## Os preços da versão 1 também definem os valores dos recibos salvos. Mudanças futuras de preço precisam
+## de migração explícita; não reinterpreta posse já comprada.
 const CATALOG := {
 	"classic":{"name":"Clássico","price":0,"wins":0},
 	"bar":{"name":"Barras","price":0,"wins":0},
@@ -62,8 +62,8 @@ static func validate_wallet(world: Dictionary, wallet: Dictionary) -> bool:
 	if not PROGRESS.validate_snapshot(progress): return false
 	var transactions: Variant=wallet.get("transactions",{})
 	if not transactions is Dictionary: return false
-	# These three one-time receipts remain ordinary exact receipts; recurring
-	# range compaction is neither needed nor applicable to cosmetic ownership.
+	# Estes três recibos únicos continuam recibos exatos comuns; a compactação de faixa
+	# recorrente não é necessária nem se aplica a posse cosmética.
 	for key in transactions:
 		if not str(key).begins_with("spend:"+RECEIPT_PREFIX): continue
 		var identity := str(key).trim_prefix("spend:"+RECEIPT_PREFIX)
@@ -100,8 +100,8 @@ static func _apply(world: Dictionary, economy, identity: String, allow_purchase:
 	if not unlocked(world,identity): return _failure("locked")
 	var price := int(CATALOG[identity].price) if purchased else 0
 	if economy.balance<price: return _failure("insufficient_funds")
-	# Every precondition is settled before debit; no await, callback or fallible
-	# operation separates the wallet receipt from ownership in this world state.
+	# Toda pré-condição é resolvida antes do débito; nenhum await, callback ou operação
+	# que pode falhar separa o recibo da carteira da posse neste estado do mundo.
 	if purchased and not economy.spend(price,RECEIPT_PREFIX+identity): return _failure("transaction_refused")
 	var changed: bool=purchased or value.selected!=identity
 	if purchased: value.owned.append(identity)

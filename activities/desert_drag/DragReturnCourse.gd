@@ -1,6 +1,6 @@
 extends Node3D
-## Assisted steering keeps the drag controls. Bodies still own every metre and
-## gate: a blocked car cannot advance the route or receive a finish time.
+## A direção assistida mantém os controles do arrancadão. Os corpos ainda são donos de cada metro e
+## portão: um carro bloqueado não pode avançar a rota nem receber tempo de chegada.
 const TURN_AT := 760.0
 const RADIUS := 3.4
 const ARC := PI*RADIUS
@@ -75,7 +75,7 @@ func observe(entry: Dictionary) -> float:
 		if along>=TURN_AT-.08 and absf(across+RADIUS)<.7: entry.return_gate=1
 	elif gate==1:
 		var angle := atan2(along-TURN_AT,-across)
-		# Ordered far-side and return gates prevent cutting through the barrel.
+		# Portões ordenados do lado de lá e de retorno impedem cortar pelo tambor.
 		var radius := Vector2(along-TURN_AT,across).length()
 		if radius>RADIUS-1.0 and radius<RADIUS+1.0 and angle>=0.0 and angle<float(entry.return_angle)+.5:
 			entry.return_angle=maxf(float(entry.return_angle),angle)
@@ -94,7 +94,7 @@ func brake(entry: Dictionary) -> float:
 	var remaining := TURN_AT-progress if entry.return_gate==0 else LENGTH-progress
 	var target := 5.5 if entry.return_gate<2 else 17.0
 	if entry.return_gate==1: return 1.0 if speed>target else 0.0
-	# Physical service braking, including room to stop after the return line.
+	# Frenagem física de serviço, incluindo espaço para parar depois da linha de retorno.
 	return 1.0 if remaining<(speed*speed-target*target)/18.0+8.0 and speed>target else 0.0
 
 func runoff(entry: Dictionary, delta: float) -> void:
@@ -109,8 +109,8 @@ func camera_frame(entry: Dictionary, opponent: Vector3) -> Dictionary:
 	var setback := clampf(16.5+maxf(0,absf(gap)-12.0)*.28,16.5,25.5)
 	var progress: float=entry.return_progress
 	var turn_view := smoothstep(TURN_AT-70.0,TURN_AT,progress)*(1.0-smoothstep(TURN_AT+ARC,TURN_AT+ARC+70.0,progress))
-	# The launch sweep joins the ordinary side frame exactly. Rise gently around
-	# the barrel and retain the same world side while the cars reverse direction.
+	# A varredura da largada encontra exatamente o referencial lateral comum. Sobe suave em volta
+	# do tambor e mantém o mesmo lado do mundo enquanto os carros invertem o sentido.
 	return {"target":center,"position":center+side*setback-forward*4.0+Vector3.UP*(4.4+4.0*turn_view)}
 
 static func record_finish(world: Dictionary, identity: String, seconds: float, other: float) -> Dictionary:

@@ -225,8 +225,8 @@ func handle_input(event: InputEvent) -> bool:
 	if not controls_locked() or session.modal or get_tree().paused: return false
 	if event.is_action_pressed("pause_game") or event.is_action("camera_left") or event.is_action("camera_right"): return false
 	if event is InputEventScreenTouch or event is InputEventScreenDrag: return false
-	# Enter also maps to exit_vehicle, and Space maps to jump. During a decision,
-	# the focused choice owns both keys before the shared gameplay handlers.
+	# O Enter também mapeia para exit_vehicle, e o Espaço para pular. Durante uma decisão,
+	# a escolha focada é dona das duas teclas antes dos handlers de jogo compartilhados.
 	if phase == "caught" and event.is_action("ui_accept"):
 		if event.is_action_pressed("ui_accept") and not event.is_echo(): _hud.activate_focused_choice()
 		return true
@@ -290,7 +290,7 @@ func _physics_process(delta: float) -> void:
 		_clock -= delta
 		if _clock <= 0: _clock = .2; _update_hud()
 		return
-	# The real character retains its collision, gravity, damage and recovery.
+	# O personagem real mantém colisão, gravidade, dano e recuperação.
 	session.world.player.input_locked = true
 	if session.state.equipped_weapon != "fists": session.state.equip_weapon("fists")
 	_phase_time += delta
@@ -299,8 +299,8 @@ func _physics_process(delta: float) -> void:
 		var competition_delta := minf(delta, remaining)
 		remaining = maxf(0, remaining - delta)
 		if competition_delta > 0.0: _update_rivals(competition_delta)
-		# Finish an already-earned landing before closing the camera; no new fight
-		# or rival catch can advance once the competition clock reaches zero.
+		# Termina um pouso já conquistado antes de fechar a câmera; nenhuma luta nova
+		# ou captura de rival pode avançar quando o relógio da competição chega a zero.
 		if remaining <= 0 and phase not in ["landing", "caught", "storing", "releasing"]: _finish_tournament(); return
 	match phase:
 		"charging":
@@ -410,7 +410,7 @@ func _rivals_available() -> bool:
 	return true
 
 func _land() -> void:
-	# A catch is awarded only after the same fish has cleared the bank and reached Dante.
+	# Uma captura só é dada depois que o mesmo peixe passou da margem e chegou ao Dante.
 	phase = "landing"
 	_phase_time = 0.0
 	_held = false
@@ -443,12 +443,12 @@ func choose_catch(action: String) -> bool:
 			return false
 		phase = "storing"
 	else: phase = "releasing"
-	# The phase guards repeated callbacks, including taps in the same frame.
+	# A fase protege contra callbacks repetidos, incluindo toques no mesmo quadro.
 	_phase_time = 0.0
 	_held = false
 	_choice_message = ""
 	_update_hud()
-	# Active fishing queues this checkpoint until record and inventory can save together.
+	# A pesca ativa enfileira este checkpoint até o recorde e o inventário poderem salvar juntos.
 	session.save_game()
 	return true
 

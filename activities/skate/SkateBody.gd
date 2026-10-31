@@ -104,15 +104,15 @@ func _physics_process(delta: float) -> void:
 		velocity.y = -.5 if is_on_floor() else velocity.y - 20 * delta
 		move_and_slide()
 		return
-	# Positive vertical velocity is normal while climbing. Only an actual
-	# takeoff (ollie/airborne) suspends contact and pushing.
+	# Velocidade vertical positiva é normal ao subir. Só uma decolagem
+	# real (ollie/no ar) suspende o contato e a remada.
 	var grounded := is_on_floor() and not airborne
 	var forward := -global_basis.z
-	# Small gravity rollback during the approach is not a reverse command.
-	# Otherwise an uphill rider cancels every stroke before the sole lands.
+	# Um pequeno recuo por gravidade na aproximação não é comando de ré.
+	# Senão um piloto subindo cancela toda remada antes de a sola pousar.
 	var opposing := _throttle * speed < -.1 and not (pushing and absf(speed) < .6 and signf(_throttle) == push_direction)
-	# Finish the stroke even when the AI reaches cruising speed mid-remada.
-	# Braking, takeoff and collisions still release contact immediately.
+	# Termina a remada mesmo quando a IA chega à velocidade de cruzeiro no meio dela.
+	# Frenagem, decolagem e colisões ainda soltam o contato na hora.
 	var cruise_speed := 8.5 * absf(_throttle) if _throttle > 0 else 3.0 * absf(_throttle)
 	var wants_push := grounded and absf(_throttle) > .1 and not _brake and not opposing and absf(speed) < cruise_speed * .92
 	if not grounded or _brake or opposing:
@@ -124,8 +124,8 @@ func _physics_process(delta: float) -> void:
 		push_phase = 0.0
 		push_contact = false
 	if pushing:
-		# A planted shoe can only stay in reach for the length of the stroke.
-		# Shorter contact at speed prevents sliding or stretching the leg.
+		# Um tênis apoiado só fica ao alcance pelo comprimento da remada.
+		# Um contato mais curto em velocidade evita deslizar ou esticar a perna.
 		var rate := 1.0 / .72
 		if push_phase >= .18 and push_phase < .65:
 			rate = maxf(rate, absf(speed) * .47 / .56)
@@ -134,7 +134,7 @@ func _physics_process(delta: float) -> void:
 			pushing = false
 			push_phase = 0.0
 			push_contact = false
-		# Apply the push over sole contact, not a single tiny impulse per cycle.
+		# Aplica o empurrão durante o contato da sola, não num único impulso minúsculo por ciclo.
 		if pushing and wants_push and push_phase >= .18 and push_phase <= .65:
 			var target_speed := 8.5 * _throttle if _throttle > 0 else 3.0 * _throttle
 			speed = move_toward(speed, target_speed, 20 * absf(_throttle) * delta)
@@ -163,7 +163,7 @@ func _physics_process(delta: float) -> void:
 			airborne = true
 			air_time = 0
 			_takeoff_direction = forward
-			# Momentum up the transition carries through the lip, as in motocross.
+			# O embalo subindo a transição passa pela borda, como no motocross.
 			velocity.y = maxf(velocity.y, _previous_up)
 		air_time += delta
 		if not trick.is_empty():
@@ -188,8 +188,8 @@ func _physics_process(delta: float) -> void:
 	landing_compression = move_toward(landing_compression, 0, delta * .65)
 	if now_grounded:
 		var n := get_floor_normal()
-		# Follow both longitudinal and lateral slope. Banking belongs to the
-		# rider, not the deck: rolling the board lifted its wheels off the floor.
+		# Segue as inclinações longitudinal e lateral. A inclinação lateral pertence ao
+		# piloto, não à prancha: rolar o skate erguia as rodas do chão.
 		var along := forward.slide(n).normalized()
 		var ground_basis := Basis(along.cross(n).normalized(), n, -along)
 		var target_basis := (global_basis.inverse() * ground_basis).orthonormalized()

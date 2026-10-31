@@ -1,5 +1,5 @@
 extends Node3D
-## Shaded spectator shore and one central floodlight tower, streamed with the park.
+## Margem de espectadores na sombra e uma torre central de refletores, em streaming com o parque.
 var course: Node3D
 var _materials := {}
 var _lights: Array[SpotLight3D] = []
@@ -155,7 +155,7 @@ func set_lighting(night: float, viewer: Vector3) -> void:
 	for lens in _lenses: lens.emission_energy_multiplier = night*2.5
 
 func _shore_boat(i: int) -> void:
-	# Moored in real water east of Harbor's rural shoreline (x = -80).
+	# Ancorado em água de verdade a leste da margem rural do Harbor (x = -80).
 	var boat := Node3D.new()
 	boat.name = "SpectatorBoat%d"%i
 	boat.position = Vector3(-74,-.72,-113+float(i)*23)

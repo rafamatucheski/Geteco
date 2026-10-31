@@ -1,5 +1,5 @@
 extends RefCounted
-## Seven-bag falling blocks with wall kicks, landing preview and a finite board.
+## Blocos caindo com saco de sete, wall kicks, prévia de pouso e tabuleiro finito.
 
 const WIDTH := 10
 const HEIGHT := 18

@@ -1,5 +1,5 @@
 extends Node
-## Optional honor duel. The championship keeps its six ordinary opponents.
+## Duelo de honra opcional. O campeonato mantém os seis adversários comuns.
 const HONOR := preload("res://runtime/TakeshiHonor.gd")
 const INTRO := "Um carro bonito não vence uma arrancada, Dante. Motor, sangue-frio e a troca certa. Mostre que sabe usar os três."
 const VICTORY := "Pela honra, eu te subestimei. Você pode escolher o meu carro ou o tesouro da minha família."

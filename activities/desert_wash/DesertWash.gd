@@ -178,8 +178,8 @@ func _release() -> void:
 	if is_instance_valid(session) and is_instance_valid(session.world.player): session.world.player.input_locked=_player_was_locked or keep_locked
 	active=false; phase=""
 	set_physics_process(false)
-	# The shared HUD can own this label now; freeing the old layer alone would
-	# leave an orphaned result on screen after finishing or cancelling the race.
+	# O HUD compartilhado pode ser dono deste rótulo agora; liberar só a camada antiga
+	# deixaria um resultado órfão na tela depois de terminar ou cancelar a corrida.
 	if is_instance_valid(_label):
 		_label.hide()
 		_label.queue_free()
@@ -198,8 +198,8 @@ func controls_locked() -> bool:
 	return active and phase=="countdown"
 
 func objective() -> String:
-	# The shared HUD announces changes as a new objective; a ticking clock here
-	# would repeatedly restart that notification. The local race HUD owns time.
+	# O HUD compartilhado anuncia mudanças como novo objetivo; um relógio correndo aqui
+	# reiniciaria essa notificação o tempo todo. O HUD local da corrida é dono do tempo.
 	return "Leito seco · Atravesse os portões na ordem · Meta 45 s" if active else ""
 
 func target_position() -> Vector3:

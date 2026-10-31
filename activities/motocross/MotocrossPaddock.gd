@@ -1,6 +1,6 @@
 extends Node3D
-## Exterior rental hut and rest area. The hut is solid and has no accessible
-## interior; the counter, parked bikes and seated riders stay off the race path.
+## Cabana de aluguel externa e área de descanso. A cabana é sólida e não tem interior
+## acessível; o balcão, as motos estacionadas e os pilotos sentados ficam fora do caminho da corrida.
 const BIKE := preload("res://activities/motocross/MotocrossBike.gd")
 var player: Node3D
 var parked_bikes: Array[CharacterBody3D] = []
@@ -44,8 +44,8 @@ func _build_hut() -> void:
 	var roof := _material(Color("576064"), 0.15)
 	var red := _material(Color("a65132"))
 	var center := Vector3(-234, 0.13, -35)
-	# Full closed shell is collision-solid; no decorative open doorway implies
-	# an interior that the player can accidentally enter or spawn inside.
+	# A casca fechada inteira é sólida para colisão; nenhuma porta decorativa aberta sugere
+	# um interior em que o jogador possa entrar ou nascer por acidente.
 	_box(Vector3(6.0, 2.65, 5.0), center + Vector3(0, 1.325, 0), pale)
 	_solid("ClosedRentalHut", center + Vector3(0, 1.325, 0), Vector3(6.0, 2.65, 5.0))
 	_box(Vector3(9.1, 0.12, 6.0), center + Vector3(1.4, -0.06, 0), dark)
@@ -60,13 +60,13 @@ func _build_hut() -> void:
 		for rib in 15:
 			_box(Vector3(0.045, 0.05, 3.10), center + Vector3(-3.25 + float(rib) * 0.46, 3.18, side * 1.37), dark, Vector3(side * 0.30, 0, 0))
 	_box(Vector3(6.9, 0.12, 0.16), center + Vector3(0, 3.53, 0), dark)
-	# Closed shutter and framed side window: the service is on the porch.
+	# Porta de enrolar fechada e janela lateral com moldura: o atendimento é na varanda.
 	_box(Vector3(0.05, 1.05, 1.35), center + Vector3(3.03, 1.78, -0.35), dark)
 	_box(Vector3(0.07, 0.06, 1.47), center + Vector3(3.065, 2.34, -0.35), timber)
 	_box(Vector3(0.07, 0.06, 1.47), center + Vector3(3.065, 1.22, -0.35), timber)
 	for z in [-1.06, 0.36]: _box(Vector3(0.07, 1.14, 0.06), center + Vector3(3.065, 1.78, z), timber)
-	# Porch faces east, with its front edge at x=-227.2. ENTRY and the owned
-	# motorcycle slot (-220,-40) remain unobstructed.
+	# A varanda fica de frente para o leste, com a borda da frente em x=-227.2. ENTRY e a vaga
+	# da moto própria (-220,-40) continuam desobstruídas.
 	_box(Vector3(3.8, 0.12, 5.8), Vector3(-229.15, 2.80, -35), roof, Vector3(0, 0, -0.08))
 	for z in [-37.6, -32.4]:
 		_box(Vector3(0.14, 2.65, 0.14), Vector3(-227.35, 1.455, z), timber)
@@ -74,7 +74,7 @@ func _build_hut() -> void:
 	_box(Vector3(0.64, 0.98, 2.65), Vector3(-228.35, 0.62, -35.05), timber)
 	_box(Vector3(0.91, 0.09, 2.86), Vector3(-228.35, 1.155, -35.05), dark)
 	_solid("RentalCounter", Vector3(-228.35, 0.67, -35.05), Vector3(0.91, 1.08, 2.86))
-	# Helmets and a pair of gloves identify the rental counter visually.
+	# Capacetes e um par de luvas identificam visualmente o balcão de aluguel.
 	_helmet(self, Vector3(-228.30, 1.42, -34.18), red)
 	_box(Vector3(0.14, 0.055, 0.21), Vector3(-228.40, 1.23, -35.70), dark)
 	_box(Vector3(0.14, 0.055, 0.21), Vector3(-228.20, 1.23, -35.65), dark, Vector3(0, 0.3, 0))
@@ -121,8 +121,8 @@ func _build_seating() -> void:
 	_solid("RiderCooler", center + Vector3(2.2, 0.26, 0.05), Vector3(0.74, 0.54, 0.51))
 
 func _build_tent() -> void:
-	# Mechanic's pop-up canopy on the yard floor (13 cm), east of the counter and
-	# clear of the service corridor at z=-35 and the parked bikes at x=-214.
+	# Tenda dobrável do mecânico no piso do pátio (13 cm), a leste do balcão e
+	# longe do corredor de serviço em z=-35 e das motos estacionadas em x=-214.
 	var center := Vector3(-219.5, 0.13, -30.5)
 	var frame := _material(Color("c9ccc6"), 0.4)
 	var canvas := _material(Color("2f6f9a"))
@@ -148,7 +148,7 @@ func _build_tent() -> void:
 	_box(Vector3(0.26, 0.035, 0.04), table + Vector3(-0.2, 0.8, -0.1), _material(Color("b8342c")), Vector3(0, -0.3, 0))
 	_box(Vector3(0.42, 0.2, 0.28), table + Vector3(0.45, 0.885, 0.02), _material(Color("596a5c")))
 	_helmet(self, table + Vector3(0.05, 1.0, 0.1), _material(Color("e1b43d")))
-	# Rolling tool chest and fuel cans against the back of the tent.
+	# Carrinho de ferramentas e galões de combustível contra o fundo da tenda.
 	var chest := center + Vector3(0.95, 0.0, 0.85)
 	var red := _material(Color("b3372d"), 0.2)
 	_box(Vector3(0.78, 0.96, 0.5), chest + Vector3(0, 0.52, 0), red)
@@ -160,7 +160,7 @@ func _build_tent() -> void:
 		_box(Vector3(0.22, 0.34, 0.15), can + Vector3(0, 0.17, 0), red if index == 0 else _material(Color("d8a834")))
 		_bar(can + Vector3(0.05, 0.34, 0), can + Vector3(0.1, 0.43, 0), 0.016, dark)
 	_solid("FuelCans", center + Vector3(-0.95, 0.17, 1.05), Vector3(0.55, 0.34, 0.2))
-	# Spare wheels stacked flat on the tent floor.
+	# Rodas reserva empilhadas deitadas no chão da tenda.
 	for level in 2:
 		_bar(center + Vector3(-1.0, float(level) * 0.12, -0.05), center + Vector3(-1.0, float(level) * 0.12 + 0.11, -0.05), 0.35, dark)
 		_bar(center + Vector3(-1.0, float(level) * 0.12 - 0.002, -0.05), center + Vector3(-1.0, float(level) * 0.12 + 0.112, -0.05), 0.15, _material(Color("9da6a3"), 0.6))
@@ -213,7 +213,7 @@ func _person(at: Vector3, yaw: float, color: Color, seated: bool) -> Node3D:
 	return actor
 
 func _helmet(parent: Node3D, at: Vector3, material: Material) -> void:
-	# Caller batches all non-animated props into the paddock mesh.
+	# Quem chama junta todos os objetos não animados na malha do paddock.
 	_ellipsoid(at, Vector3(0.23, 0.22, 0.25), material)
 	_box(Vector3(0.33, 0.12, 0.065), at + Vector3(0, 0.02, -0.23), _material(Color("202a29")))
 	_box(Vector3(0.36, 0.035, 0.23), at + Vector3(0, 0.15, -0.22), material)

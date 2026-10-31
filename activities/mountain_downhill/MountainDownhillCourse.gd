@@ -1,6 +1,6 @@
 extends RefCounted
-## Exact production pass, reversed summit to base. NativeRegion keeps the road
-## corridor flat; retain authored Y instead of assuming all terrain is flat.
+## Passo exato da produção, invertido do cume para a base. O NativeRegion mantém o corredor
+## da estrada plano; preserva o Y escrito em vez de supor que todo terreno é plano.
 const LAYOUT := preload("res://world/mountain_detail/MountainRouteLayout.gd")
 const TIME_LIMIT := 240.0
 const HALF_GATE := 4.2
@@ -65,6 +65,6 @@ func speed_at(offset: float, cap: float) -> float:
 	for turn in turns:
 		var gap: float = float(turn.offset)-offset
 		if gap < -5.0 or gap > 85.0: continue
-		# v²=u²+2as: lift/brake before corners without handbrake drift.
+		# v²=u²+2as: tira o pé/freia antes das curvas sem derrapar no freio de mão.
 		desired = minf(desired,sqrt(float(turn.speed)*float(turn.speed)+8.0*maxf(0.0,gap-6.0)))
 	return minf(desired,sqrt(maxf(0.0,8.0*(length-offset-4.0))))

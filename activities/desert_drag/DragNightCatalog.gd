@@ -7,7 +7,7 @@ const CATEGORIES := {
 }
 const COSMETIC := ["paint","finish","wheels","neon"]
 const GIFT_VALUES := {"rival_digo_ecu":1800,"rival_livia_tires":2400,"rival_raul_gear":2200,"rival_jessica_turbo":4300,"rival_nadir_weight":2600,"rival_rauhz_nitro":3900}
-## The specialty explains an actionable setup choice, never decorative signage.
+## A especialidade explica uma escolha de preparação acionável, nunca uma placa decorativa.
 const RIVALS := {
 	"digo":{"specialty":"Resposta em baixa","parts":"ECU · COMANDO DE RUA","advice":"201 m: resposta rápida e tração antes de potência.","voice":"O acerto bom aparece no primeiro metro. Depois a gente conversa de cavalo."},
 	"livia":{"specialty":"Tração na saída","parts":"PNEUS · SUSPENSÃO","advice":"201 m: patinar menos vale mais que subir o giro.","voice":"Escuta o pneu. Se ele grita o tempo todo, a força está ficando no chão."},
@@ -35,8 +35,8 @@ static func fits_category(parts: Dictionary, category: String) -> bool:
 static func rival_preparation(parts: Dictionary, category: String) -> Dictionary:
 	if category=="livre": return parts.duplicate(true)
 	var result := {}
-	# Prefer usable traction and gearing before a high-power build. Every candidate
-	# is still one of this rival's authored parts and obeys the same installed cap.
+	# Prefere tração e relação de marchas utilizáveis antes de uma preparação de alta potência. Todo candidato
+	# ainda é uma das peças escritas deste rival e obedece ao mesmo teto de instalação.
 	for slot in ["tires","gearbox","ecu","suspension","engine","turbo","weight","nitro","exhaust"]:
 		if not parts.has(slot): continue
 		var candidate := result.duplicate()

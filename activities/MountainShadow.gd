@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## Native collision adapter for V1 MountainMonster. The legend never dies/pays loot.
+## Adaptador nativo de colisão para o MountainMonster da V1. A lenda nunca morre nem dá saque.
 var progression
 var home := Vector3.ZERO
 var patrol := PackedVector3Array()

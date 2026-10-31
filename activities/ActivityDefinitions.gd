@@ -4,12 +4,12 @@ const MOUNTAIN_OFFSET := Vector2(4300,-4960)
 const RACES := preload("res://data/catalogs/RaceCatalog.gd")
 const DRIFT := preload("res://data/catalogs/DriftZoneCatalog.gd")
 const HOMES := preload("res://data/catalogs/ResidenceCatalog.gd")
-# RaceCatalog/DriftZoneCatalog are CityDemo legacy, not the live Harbor map.
+# RaceCatalog/DriftZoneCatalog são legado do CityDemo, não o mapa vivo do Harbor.
 static func races(region: String) -> Dictionary:
 	if region == "legacy": return RACES.RACES
 	if region != "harbor": return {}
-	# Production V1: HarborGame._spawn_motorsport_weather. Keep its authored
-	# street coordinates here; at() performs the sole pixels-to-metres conversion.
+	# Produção V1: HarborGame._spawn_motorsport_weather. Mantém as coordenadas de rua
+	# escritas aqui; at() faz a única conversão de pixels para metros.
 	return {
 		"harbor_docks": {"id":"harbor_docks","name":"VOLTA DO PORTO","length_label":"CURTA",
 			"start":Vector2(1100,2200),"phone":Vector2(1052,2332),"phone_yaw":PI,

@@ -1,7 +1,7 @@
 extends CharacterBody3D
-## Park residents use the same shared mesh kit, proportions and IK as street NPCs.
-## Configure before adding to the tree; position is the floor under the seat/body.
-## Bounds are in `deck` coordinates (or the parent when deck is omitted).
+## Os moradores do parque usam o mesmo kit de malhas, proporções e IK dos NPCs de rua.
+## Configura antes de adicionar à árvore; a posição é o chão sob o assento/corpo.
+## Os limites estão em coordenadas de `deck` (ou do pai quando deck é omitido).
 const MODEL := preload("res://assets/CivilianModel.gd")
 const FALL := preload("res://gameplay/CharacterFallPresentation3D.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
@@ -23,8 +23,8 @@ var jersey := Color("d86729")
 var deck: Node3D
 var bounds := Rect2()
 var flee_radius := 9.0
-## Still actors settle their seated pose, then stop the model's per-frame IK
-## until a threat or hit needs animation again (bleacher fans).
+## Atores parados assentam a pose sentada e depois param o IK por quadro do modelo
+## até uma ameaça ou golpe precisar de animação de novo (torcedores da arquibancada).
 var still := false
 var _settle := .6
 var state := "watching"
@@ -57,7 +57,7 @@ func configure(options: Dictionary) -> void:
 func _ready() -> void:
 	add_to_group("motocross_spectator")
 	add_to_group("v2_damageable")
-	# Own bounded movement; the street crowd director must not seize this actor.
+	# Cuida do próprio movimento limitado; o diretor da multidão de rua não pode tomar este ator.
 	set_meta("gameplay_role", "motocross_spectator")
 	set_meta("reaction_exempt", true)
 	set_meta("impact_material", "flesh")
@@ -89,7 +89,7 @@ func _ready() -> void:
 	model.appearance_variant = 120 + posmod(identity, 6)
 	model.coat_color = jersey
 	model.pants_color = Color("293444")
-	# Long sleeves, trousers and boots are existing wardrobe cuts, not new humans.
+	# Mangas longas, calças e botas são cortes de roupa existentes, não humanos novos.
 	model.wardrobe_overrides = {"female": false, "build": 1, "height": 1.0,
 		"top": 2, "bottom": 0, "shoe": 1, "hat": 0, "backpack": false,
 		"bag": 0, "glasses": false, "inner": Color("e9e7dc"),
@@ -102,7 +102,7 @@ func _ready() -> void:
 	model.hand_provider = _hands
 	visual.add_child(model)
 	if drinking: _build_bottle()
-	# Idle actors need no physics loop. CivilianModel keeps its existing pose LOD.
+	# Atores parados não precisam de laço de física. O CivilianModel mantém o LOD de pose existente.
 	set_physics_process(false)
 	set_process(still)
 
@@ -158,8 +158,8 @@ func _physics_process(delta: float) -> void:
 	if dead: return
 	_quiet = maxf(0.0, _quiet - delta)
 	if seated:
-		# Slide clear of the bench with the seated torso capsule before expanding.
-		# If blocked by a table/wall, stay seated and protect the head instead.
+		# Desliza para longe do banco com a cápsula do tronco sentado antes de expandir.
+		# Se bloqueado por mesa/parede, fica sentado e protege a cabeça.
 		var step := -global_basis.z * minf(.9 * delta, maxf(0.0, .8 - _rise_distance))
 		if _rise_allowed and _rise_distance < .8 and _safe_motion(step):
 			velocity = step / maxf(delta, .001)
@@ -173,7 +173,7 @@ func _physics_process(delta: float) -> void:
 			_shape.position.y = .88
 			state = "fleeing"
 		elif _quiet <= 0.0:
-			# Never slide back through the bench or teleport into the old pose.
+			# Nunca desliza de volta através do banco nem teleporta para a pose antiga.
 			frightened = false
 			state = "watching"
 			if is_instance_valid(_bottle): _bottle.show()
@@ -218,7 +218,7 @@ func _inside_limits(point: Vector3) -> bool:
 	if bounds.has_area():
 		var anchor: Node3D = deck if is_instance_valid(deck) else get_parent() as Node3D
 		var local: Vector3 = anchor.to_local(point) if anchor != null else point
-		# Bounds describe walkable deck, with a capsule-radius margin inside it.
+		# Os limites descrevem o deck andável, com uma margem do raio da cápsula por dentro.
 		if not bounds.grow(-.28).has_point(Vector2(local.x, local.z)): return false
 	var flat := point - _home
 	flat.y = 0.0
@@ -270,7 +270,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 		model.set_process(false)
 		if is_instance_valid(_bottle): _bottle.hide()
 		if has_meta("v2_burning"): preload("res://gameplay/BurningActor.gd").char_body(self)
-		# On boats fall toward the deck center, not outward over the gunwale.
+		# Em barcos cai para o centro do convés, não para fora sobre a borda.
 		if is_instance_valid(deck): impact = deck.to_global(Vector3(bounds.get_center().x, 0, bounds.get_center().y)) - global_position
 		FALL.apply_fall(self, visual, impact)
 		died.emit(self)

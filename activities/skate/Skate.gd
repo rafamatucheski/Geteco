@@ -81,10 +81,10 @@ func _new_board(at: Vector3, tint: Color = Color("d36c3e")) -> CharacterBody3D:
 func mount(board: CharacterBody3D) -> bool:
 	if not available() or mounted or recovering or not is_instance_valid(board) or board.riding: return false
 	if session.world.player.position.distance_to(board.position) > 1.7: return false
-	# Taking a loose board brings it under the player's feet; never move Dante
-	# into the fallen rider's capsule or across a wall to mount.
-	# The real player's swept body already established this support. A second
-	# wider capsule at the foot origin incorrectly rejected sloping bowl floors.
+	# Pegar um skate solto o traz para baixo dos pés do jogador; nunca move o Dante
+	# para a cápsula do piloto caído nem através de uma parede para montar.
+	# O corpo varrido real do jogador já estabeleceu este apoio. Uma segunda
+	# cápsula mais larga na origem do pé recusava errado pisos inclinados da bowl.
 	if not session.world.player.is_on_floor(): return false
 	board.position = session.world.player.position
 	if is_instance_valid(parked) and parked != board:
@@ -195,7 +195,7 @@ func _player_bailed(damage: float) -> void:
 	_recovery_time = 0
 	player.input_locked = true
 	score = 0
-	# Falls injure the body, not the armor, just like environmental accidents.
+	# Quedas ferem o corpo, não a armadura, como acidentes do ambiente.
 	session.world.gameplay.damage_environment(damage)
 	session.show_message("Caiu do skate")
 
@@ -272,7 +272,7 @@ func _update_population() -> void:
 				_park_people.append(weakref(actor))
 				var board := _new_board(actor.position, Color("487d9b") if i == 0 else Color("c3a842"))
 				_attach_ambient(actor, board, true)
-	# Retire only distant riders: street skaters must survive leaving the park.
+	# Aposenta só pilotos distantes: skatistas de rua precisam sobreviver a sair do parque.
 	for row in ambient.duplicate():
 		if not is_instance_valid(row.actor) or row.actor.position.distance_to(p) > (80 if row.park else 100):
 			_retire_ambient(row)
@@ -316,8 +316,8 @@ func _attach_ambient(actor, board, park: bool) -> void:
 	var route: PackedVector3Array = actor.route
 	if park:
 		route = _park_route()
-		# The board owns the bowl circuit. The pedestrian needs an independent
-		# walking exit if they lose the board, instead of an empty route.
+		# O skate é dono do circuito da bowl. O pedestre precisa de uma saída a pé
+		# independente se perder o skate, em vez de uma rota vazia.
 		actor.route = PackedVector3Array([LAYOUT.ENTRY, LAYOUT.ENTRY + Vector3(0, 0, 2)])
 		actor.waypoint = 0
 	var waypoint: int = int(actor.waypoint) % route.size()
@@ -336,8 +336,8 @@ func release_for_civilian_danger(actor: CharacterBody3D) -> bool:
 		ambient.erase(row)
 		board.rider=null
 		board.riding=false
-		# The rider capsule must retire with its owner, as on normal dismount
-		# and bail. A loose deck rests on scenery without blocking vehicles.
+		# A cápsula do piloto precisa se aposentar com o dono, como na descida normal
+		# e na queda. Um skate solto descansa no cenário sem bloquear veículos.
 		board.collision_layer=0
 		board.collision_mask=1
 		board.former_rider=weakref(actor)
@@ -374,14 +374,14 @@ func _update_ambient(delta: float) -> void:
 		toward.y = 0
 		if toward.length() < (.65 if row.park else 1.5): row.waypoint = (int(row.waypoint) + 1) % row.route.size()
 		var angle := angle_difference(row.board.rotation.y, atan2(-toward.x, -toward.z))
-		# Keep the turn latched until aligned; do not alternate acceleration
-		# and braking around the same speed and cancel each new foot stroke.
+		# Mantém a curva travada até alinhar; não alterna aceleração
+		# e frenagem em volta da mesma velocidade cancelando cada nova remada.
 		var turning: bool = row.get("turning", false)
 		if absf(angle) > .65: turning = true
 		elif absf(angle) < .30: turning = false
 		row.turning = turning
 		var pace: float = 1.4 if turning else row.pace
-		# Coast between strokes instead of toggling throttle at one exact speed.
+		# Desliza entre remadas em vez de alternar o acelerador numa velocidade exata.
 		if row.board.speed >= pace: row.push_requested = false
 		elif row.board.speed < pace - .65: row.push_requested = true
 		var braking: bool = row.get("braking", false)
@@ -411,7 +411,7 @@ func _ambient_bail(actor, board, damage: float) -> void:
 				actor.velocity = -board.global_basis.z * board.speed * .45
 				actor.input_locked = true
 				_fallen.append({"actor": actor, "age": 0.0, "heading": board.rotation.y, "park": row.park})
-		# Board remains physical and collectible; ownership only changes on pickup.
+		# O skate continua físico e coletável; a posse só muda ao pegar.
 
 func _update_fallen(delta: float) -> void:
 	if session.modal: return
@@ -452,7 +452,7 @@ func _update_escaping(delta: float) -> void:
 		if not is_instance_valid(actor) or actor.dead:
 			_escaping.erase(row)
 			continue
-		# Recovery owns the capsule first; running begins when the rider stands.
+		# A recuperação é dona da cápsula primeiro; a corrida começa quando o piloto se levanta.
 		if actor.input_locked: continue
 		row.left -= delta
 		if row.left <= 0 or actor.controlled_automatically:

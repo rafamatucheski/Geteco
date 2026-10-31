@@ -1,5 +1,5 @@
 extends RefCounted
-## Every entrant uses the same physical gate crossings and finish timestamps.
+## Todo participante usa as mesmas passagens físicas de portão e os tempos de chegada.
 static func start(vehicle_id: String, point: Vector3, course) -> Dictionary:
 	return {"vehicle_id":vehicle_id,"previous":point,"start":point,"checkpoint":0,"progress":course.nearest_offset(point),"outside":0.0,"elapsed":0.0,"finish":INF,"failure":""}
 

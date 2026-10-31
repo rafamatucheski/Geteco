@@ -25,7 +25,7 @@ func refresh(site: Node3D) -> void:
 		actor.visible = outdoors
 		actor.process_mode = Node.PROCESS_MODE_PAUSABLE if outdoors else Node.PROCESS_MODE_DISABLED
 	if not outdoors or actors.size() >= ROUTES.size(): return
-	# Admit one rig per scan, after the park's solids have reached the physics server.
+	# Admite um rig por varredura, depois que os sólidos do parque chegaram ao servidor de física.
 	var index := actors.size()
 	var point: Vector3 = site.to_global(ROUTES[index][0])
 	if not session.position_clear(point): return

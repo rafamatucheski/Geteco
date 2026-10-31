@@ -11,7 +11,7 @@ var wheels: Array[Node3D] = []
 static var _grip_material: StandardMaterial3D
 const MAX_CACHED_COLORS := 8
 const PREWARM_COLORS := [Color("d36c3e"), Color("487d9b"), Color("c3a842"), Color("79559b"), Color("44866a")]
-# Resources are immutable after construction. Nodes and wheel pivots are per model.
+# Os recursos são imutáveis depois da construção. Nós e pivôs das rodas são por modelo.
 static var _geometry_cache: Dictionary = {}
 static var _cache_order: Array[Color] = []
 var _wood: SurfaceTool
@@ -57,8 +57,8 @@ func _restore_part(entry: Dictionary, target_parent: Node3D) -> void:
 	for child: Dictionary in entry.children:
 		_restore_part(child, part)
 
-## Run under the existing startup curtain. Only visual models are created;
-## no boards, colliders, riders, inventory changes or physics callbacks.
+## Roda sob a cortina de partida existente. Só modelos visuais são criados;
+## sem skates, colisores, pilotos, mudanças de inventário nem callbacks de física.
 static func prewarm_colors(parent: Node) -> void:
 	if not is_instance_valid(parent) or not parent.is_inside_tree(): return
 	var tree := parent.get_tree()
@@ -88,7 +88,7 @@ func _build_uncached() -> void:
 	tape.mesh = _grip.commit()
 	tape.material_override = _grip_mat()
 	add_child(tape)
-	# Construction helpers are not part of the live model or the resource cache.
+	# Os auxiliares de construção não fazem parte do modelo vivo nem do cache de recursos.
 	_wood = null
 	_steel = null
 	_grip = null
@@ -99,7 +99,7 @@ static func _surface() -> SurfaceTool:
 	return result
 
 static func half_width(z: float) -> float:
-	# Long parallel rails with round nose/tail, rather than an ellipse.
+	# Trilhos paralelos longos com nose/tail redondos, em vez de uma elipse.
 	var cap := maxf(0, (absf(z) - .275) / (LENGTH * .5 - .275))
 	return WIDTH * .5 * sqrt(maxf(.00001, 1 - cap * cap)) * (1 - .025 * (1 - cap))
 

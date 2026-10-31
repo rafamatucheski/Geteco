@@ -85,8 +85,8 @@ func step(delta: float, controls: Dictionary) -> void:
 		if bool(controls.get("action_pressed", false)) or bool(controls.get("up_pressed", false)):
 			waiting = false
 			sound_events.append("launch")
-			# A real right-side launch lane clears the lower guide. The upper
-			# chamfer then rebounds the ball left into the bumper field.
+			# Uma raia de lançamento real do lado direito passa a guia de baixo. O chanfro
+			# de cima então rebate a bola para a esquerda no campo de bumpers.
 			velocity = Vector2(_rng.randf_range(-8.0, 8.0), -620.0)
 			status = String(TranslationServer.translate("BOLA %d / 3")) % (4 - lives)
 		return

@@ -27,7 +27,7 @@ var track := COURSE.new()
 var active := false
 var mounted := false
 var autopilot := false
-## Test/benchmark hook for timed practice; `autopilot` only ever drove races.
+## Gancho de teste/benchmark para o treino cronometrado; `autopilot` só dirigia corridas.
 var practice_autopilot := false
 var racers: Array = []
 var player_bike: CharacterBody3D
@@ -47,7 +47,7 @@ var _marker: Node3D
 var wetness := 0.0
 var surface_effects: Node3D
 var _weather_clock := 0.0
-## Start: engine revs held by the rider while the gate is up, 0..1.
+## Largada: giro do motor segurado pelo piloto enquanto o portão está erguido, 0..1.
 var launch_rev := 0.0
 var launch_result := ""
 var _gate_drop_at := 0.0
@@ -58,7 +58,7 @@ var _announced_place := 0
 var _place_hold := 0.0
 var _info_clock := 0.0
 var _course_ref: WeakRef
-## Practice laps on a rented or owned bike, timed from the start/finish line.
+## Voltas de treino numa moto alugada ou própria, cronometradas a partir da linha de largada/chegada.
 var practice := {}
 var _tags := {}
 var lesson: RefCounted
@@ -130,7 +130,7 @@ func _update_digo_car() -> void:
 func _update_digo_vehicle(current: CharacterBody3D, id: String, key: String, parking: Vector3, vehicle_script) -> CharacterBody3D:
 	# A queued body still owns its tree_exiting snapshot: wait until next tick.
 	if is_instance_valid(current): return current
-	# Player restore may have created an ordinary Vehicle. Adopt by exact identity.
+	# A restauração do jogador pode ter criado um Vehicle comum. Adota pela identidade exata.
 	for car in session.world.production.vehicles:
 		if is_instance_valid(car) and not car.is_queued_for_deletion() and car.vehicle_id == id:
 			_bind_digo_vehicle(car,key,vehicle_script)
@@ -143,7 +143,7 @@ func _update_digo_vehicle(current: CharacterBody3D, id: String, key: String, par
 	var point := parking
 	if saved.has("position"): point = Vector3(saved.position[0],saved.position[1],saved.position[2])
 	if session.world.player.position.distance_to(point) > 100: return null
-	# The paddock build also proves the home terrain has streamed in.
+	# A montagem do paddock também prova que o terreno de casa já chegou pelo streaming.
 	if saved.is_empty() and get_tree().get_first_node_in_group("digo_character") == null: return null
 	var car: CharacterBody3D = vehicle_script.new()
 	car.position = point
@@ -226,7 +226,7 @@ func _extract_pilot(bike: CharacterBody3D, destination: Vector3) -> void:
 	bike.speed = 0
 	bike.velocity = Vector3.ZERO
 	bike.set_physics_process(false)
-	# Reparent the actual NPC presentation; build Dante's rider only after removal.
+	# Troca o pai da apresentação real do NPC; monta o piloto do Dante só depois da remoção.
 	var victim := preload("res://activities/motocross/MotocrossDisplacedPilot.gd").new()
 	world.add_child(victim)
 	victim.global_transform = bike.rider.global_transform
@@ -410,7 +410,7 @@ func start_race(level: int) -> bool:
 	var old_progress := progress.snapshot()
 	if not progress.begin(session.state.economy,level):
 		session.show_message("Saldo insuficiente ou dificuldade bloqueada."); return false
-	# Persist the debit before enabling motion, including when the game is closed.
+	# Persiste o débito antes de liberar o movimento, inclusive quando o jogo é fechado.
 	if not session.save_game(true):
 		session.state.economy.restore_snapshot(old_wallet)
 		progress.restore_snapshot(old_progress)
@@ -418,8 +418,8 @@ func start_race(level: int) -> bool:
 	ambient.clear()
 	difficulty = level
 	countdown = 3
-	# The gate falls at an unpredictable moment of the last 0.6 s: riders must
-	# hold their revs instead of timing a fixed count.
+	# O portão cai num momento imprevisível dos últimos 0.6 s: os pilotos precisam
+	# segurar o giro em vez de cronometrar uma contagem fixa.
 	_launch_rng.seed = hash(int(progress.data.serial)*7919+level)
 	_gate_drop_at = _launch_rng.randf_range(0.0,.6)
 	launch_rev = 0.0
@@ -472,7 +472,7 @@ func _course_gate() -> Node3D:
 	return course.start_gate if course != null and is_instance_valid(course.start_gate) else null
 
 func _tag(bike: CharacterBody3D) -> void:
-	# Rival name and live position above the helmet, readable from the high camera.
+	# Nome do rival e posição ao vivo acima do capacete, legíveis da câmera alta.
 	var label := Label3D.new()
 	label.name = "RiderTag"
 	label.font = HUD.FONT
@@ -510,7 +510,7 @@ func _mount(bike: CharacterBody3D) -> void:
 	bike.race_enabled = true
 	world.gameplay.aiming = false
 	if not bike.landed.is_connected(_on_player_landed): bike.landed.connect(_on_player_landed)
-	# Practice timing starts at the first crossing of the start/finish line.
+	# O tempo do treino começa na primeira passagem pela linha de largada/chegada.
 	practice = {} if active else {"bike":bike,"gate":0,"passed":0,"previous":bike.position,"lap_start":-1.0,"clock":0.0,"best":0.0,"laps":0,"pace":15.0}
 
 func _unmount_at(point: Vector3) -> void:
@@ -589,7 +589,7 @@ func _physics_process(delta: float) -> void:
 		if not session.modal: start_shot.update(delta)
 		_status.text = String(TranslationServer.translate("Preparando largada · %s")) %MODELS.MODELS[player_bike.profile_id].name
 		return
-	# Pause/menu freezes every racer, including recovery, so opening a menu is fair.
+	# Pausa/menu congela todo piloto, incluindo a recuperação, para abrir um menu ser justo.
 	for row in racers:
 		row.bike.race_enabled = not session.modal and countdown <= 0
 		row.bike.set_physics_process(not session.modal)
@@ -617,8 +617,8 @@ func _physics_process(delta: float) -> void:
 			lean = touch.y
 		var controls := GameInput
 		player_bike.drive(throttle,steering,Input.is_action_pressed("handbrake"),not controls.remapping and Input.is_action_pressed("motorcycle_wheelie"))
-		# Strong enough to square a 0.4 s flight to the landing face, and to
-		# over-rotate when W stays held from lip to landing.
+		# Forte o bastante para alinhar um voo de 0.4 s à rampa de pouso e para
+		# girar demais quando o W fica segurado da borda até o pouso.
 		player_bike.air_lean = lean*.8
 	if not active:
 		if is_instance_valid(rental_bike) and (player_bike.position.distance_to(COURSE.ENTRY) > 180 or player_bike.position.y < -4):
@@ -695,8 +695,8 @@ func _cross_gate(row: Dictionary, bike: CharacterBody3D, delta: float, outside: 
 	return true
 
 func _hold_revs(delta: float) -> void:
-	# Keyboard throttle is on/off, so holding the zone means feathering it;
-	# analogue triggers and the touch pedal can simply hold a partial value.
+	# O acelerador do teclado é liga/desliga, então segurar a zona significa modulá-lo;
+	# gatilhos analógicos e o pedal de toque podem simplesmente segurar um valor parcial.
 	var throttle := maxf(Input.get_action_strength("move_up"),Input.get_action_strength("accelerate"))
 	if autopilot: throttle = .7
 	var goal := clampf(throttle,0.0,1.0)
@@ -741,7 +741,7 @@ func _practice_lap(delta: float) -> void:
 	var outside := float(closest.lateral) > track.HALF_WIDTH+2.5
 	if not _cross_gate(practice,player_bike,delta,outside): return
 	if int(practice.gate) != 1: return
-	# Crossing the start/finish line either opens the first timed lap or closes one.
+	# Cruzar a linha de largada/chegada abre a primeira volta cronometrada ou fecha uma.
 	if timing and int(practice.passed) > track.gates.size():
 		var lap := float(practice.clock)
 		var record := progress.record_lap(lap)
@@ -771,7 +771,7 @@ func _announce_place(placement: int, delta: float) -> void:
 	var nearest_gap := INF
 	for i in range(1,racers.size()):
 		var gap := _race_distance(racers[i])-mine
-		# Improved: the rival just behind. Lost ground: the rival just ahead.
+		# Melhorou: o rival logo atrás. Perdeu terreno: o rival logo à frente.
 		if (placement < _announced_place and gap < 0.0 and -gap < nearest_gap) or (placement > _announced_place and gap > 0.0 and gap < nearest_gap):
 			nearest_gap = absf(gap)
 			other = racers[i].bike.rider_name
@@ -800,7 +800,7 @@ func _gap_text() -> String:
 	return ""
 
 func _update_info(delta: float) -> void:
-	# Rival tags and the race-control board refresh at 4 Hz, not every tick.
+	# As etiquetas dos rivais e o painel de controle da corrida atualizam a 4 Hz, não a cada tick.
 	_info_clock += delta
 	if _info_clock < .25: return
 	_info_clock = 0.0
@@ -834,7 +834,7 @@ func _race_distance(row: Dictionary) -> float:
 	if d < 0.0: d = float(track.nearest(row.bike.position).distance)
 	var previous_gate := posmod(int(row.gate)-1,track.gates.size())
 	var spacing := track.length/track.gates.size()
-	# Signed: riders still behind the line on the grid rank by how far back they are.
+	# Com sinal: pilotos ainda atrás da linha no grid são ordenados por quão atrás estão.
 	return float(row.passed)+clampf(wrapf(d-float(previous_gate)*spacing,-track.length*.5,track.length*.5)/spacing,-3.0,.99)
 
 func _update_surface(delta: float) -> void:
@@ -879,7 +879,7 @@ func _reset_racer(row: Dictionary) -> void:
 	# Recovery costs actual race time; rivals keep moving.
 	row.bike.crash(.25)
 
-## reason: "finished" (someone crossed the line), "quit", "time" or "" (external).
+## reason: "finished" (alguém cruzou a linha), "quit", "time" ou "" (externo).
 func finish(won: bool, reason := "") -> void:
 	if not active: return
 	start_shot.stop()
@@ -902,7 +902,7 @@ func finish(won: bool, reason := "") -> void:
 	session.show_message((String(TranslationServer.translate("Vitória! +R$ %d (inscrição + R$ %d de lucro).")) %[prize,PROGRESS.LEVELS[difficulty].bonus]) if won else (String(TranslationServer.translate("%dº lugar · inscrição de R$ %d perdida.")) %[placement,PROGRESS.LEVELS[difficulty].fee] if reason == "finished" else String(TranslationServer.translate("Derrota · inscrição de R$ %d perdida.")) %PROGRESS.LEVELS[difficulty].fee))
 	if not was_owned and progress.data.owned: session.show_message(String(TranslationServer.translate("Vitória! +R$ %d. A motocross é sua: retire-a na entrada.")) %prize)
 
-## Builds the results card from the live timing and returns the player's place.
+## Monta o cartão de resultados a partir da cronometragem ao vivo e devolve a posição do jogador.
 func _classify(won: bool, reason: String) -> int:
 	if racers.is_empty(): return 0
 	var order := racers.duplicate()
@@ -919,7 +919,7 @@ func _classify(won: bool, reason: String) -> int:
 			# Completed laps/lap deficit count whole gate groups.
 			@warning_ignore("integer_division")
 			var laps_down := (int(leader.passed)-count)/track.gates.size()
-			# Gap at the last timing gate both riders crossed, as on a timing loop.
+			# Diferença no último portão de cronometragem que os dois pilotos cruzaram, como num laço de cronometragem.
 			var gap := float(row.times[count-1])-float(leader.times[count-1])
 			detail = String(TranslationServer.translate("+%d volta%s")) %[laps_down,"s" if laps_down > 1 else ""] if laps_down > 0 else "+%s s"%("%.1f"%gap).replace(".",",")
 		else: detail = "—"

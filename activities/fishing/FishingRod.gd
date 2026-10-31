@@ -1,5 +1,5 @@
 extends Node3D
-## One reusable fish crosses the water, the bank and the landing arc continuously.
+## Um peixe reaproveitável atravessa a água, a margem e o arco de pouso sem interrupção.
 const RULES := preload("res://activities/fishing/FishingRules.gd")
 const FISH := preload("res://activities/fishing/FishingFishModel.gd")
 const MOTION := preload("res://activities/fishing/FishingMotion.gd")
@@ -119,7 +119,7 @@ func present(actor, target: Vector3, phase: String, tension: float, progress: fl
 	var grip: Vector3 = actor.visual.to_global(right_grip)
 	if actor.skeleton != null: grip = actor.combat_palm_position("Right")
 	var parked := smoothstep(.60, 1.0, _phase_age / 1.9) if phase == "landing" else (1.0 if phase == "caught" or disposition else 0.0)
-	# Transfer the rod to the side while the freed hand supports the catch.
+	# Passa a vara para o lado enquanto a mão livre segura a captura.
 	grip = grip.lerp(actor.visual.to_global(Vector3(.60, .03, -.12)), parked)
 	var pitch := float(pose.pitch)
 	var previous := grip - direction * .18
@@ -149,7 +149,7 @@ func present(actor, target: Vector3, phase: String, tension: float, progress: fl
 		elif phase in ["bite", "hooking"]:
 			desired += right * sin(_age * 4.0) * .12
 		elif phase == "reeling":
-			# Keep even the longest catfish clear of the rail before the vertical lift.
+			# Mantém até o bagre mais longo longe do parapeito antes da subida vertical.
 			var bank: Vector3 = actor.global_position + direction * 3.10
 			bank.y = target.y - .12
 			desired = desired.lerp(bank, progress)
@@ -157,7 +157,7 @@ func present(actor, target: Vector3, phase: String, tension: float, progress: fl
 			var sway := sin(_age * (5.0 if run else 2.4))
 			desired += right * sway * (.30 + (1.0 - progress) * (.65 if run else .26))
 			var jump := 0.0
-			# Each run has a visible burst. The fish remains the same physical presentation node.
+			# Cada corrida tem uma arrancada visível. O peixe continua sendo o mesmo nó de apresentação física.
 			if run: jump = maxf(0.0, sin(_age * 4.0))
 			desired.y += jump * .78
 			if _last_jump and jump < .12: _splash(_fish.global_position)
@@ -165,7 +165,7 @@ func present(actor, target: Vector3, phase: String, tension: float, progress: fl
 		elif landing or phase == "caught":
 			var finish: Vector3 = actor.visual.to_global(support.center)
 			var amount := smoothstep(0.0, 1.0, _phase_age / 1.9) if landing else 1.0
-			# Lift vertically while still over water, then cross the 1.04 m guard rail.
+			# Sobe na vertical ainda sobre a água e depois cruza o parapeito de 1.04 m.
 			var raised := Vector3(_landing_start.x, maxf(actor.global_position.y + 1.72, _landing_start.y), _landing_start.z)
 			if amount < .42: desired = _landing_start.lerp(raised, smoothstep(0.0, .42, amount))
 			else: desired = raised.lerp(finish, smoothstep(.42, 1.0, amount))
@@ -182,7 +182,7 @@ func present(actor, target: Vector3, phase: String, tension: float, progress: fl
 		if not landing and phase != "caught" and not disposition:
 			var travel := _fish.global_position - old_position if _fish_initialized else -direction
 			var horizontal := Vector2(travel.x, travel.z).length()
-			# Keep heading well-defined while the fish breaches vertically.
+			# Mantém a direção bem definida enquanto o peixe salta na vertical.
 			travel.y = clampf(travel.y, -horizontal * .7, horizontal * .7)
 			if travel.length_squared() > .00001:
 				var heading := Basis.looking_at(travel.normalized(), Vector3.UP)
@@ -193,7 +193,7 @@ func present(actor, target: Vector3, phase: String, tension: float, progress: fl
 		_fish.animate(delta, effort)
 		if phase in ["reeling", "hooking"]: bobber = Vector3(_fish.global_position.x, target.y + .035, _fish.global_position.z)
 	var floating := phase in ["waiting", "bite", "hooking", "reeling", "casting"]
-	# A damped float follows the same rain-driven field that deforms the lake.
+	# Uma boia amortecida segue o mesmo campo guiado pela chuva que deforma o lago.
 	var water_offset := 0.0
 	if is_instance_valid(water_surface):
 		water_offset = water_surface.rain_surface_height_at(bobber) - target.y
@@ -222,11 +222,11 @@ func present(actor, target: Vector3, phase: String, tension: float, progress: fl
 func _capture_support(fish: Dictionary) -> Dictionary:
 	var profile: Dictionary = FISH.PROFILES.get(str(fish.get("id", "piau")), FISH.PROFILES.piau)
 	var body_scale: float = _fish._rig.scale.y
-	# At 68 cm forward the IK saturated the arm reach and left both palms above
-	# the belly. 46 cm keeps the catch clear of the torso and within bent-arm reach.
+	# A 68 cm à frente o IK saturava o alcance do braço e deixava as duas palmas acima
+	# da barriga. 46 cm mantém a captura longe do tronco e ao alcance do braço dobrado.
 	var center := Vector3(0, 1.10 + float(profile.depth) * body_scale + .015, -.46)
-	# Two authored longitudinal stations under the belly, scaled with the actual
-	# specimen. A fixed 40 cm hand spacing would miss a small Piau's belly.
+	# Duas posições longitudinais escritas sob a barriga, escaladas pelo espécime
+	# real. Um espaçamento fixo de 40 cm entre as mãos erraria a barriga de um Piau pequeno.
 	var head_z := -.18
 	var tail_z := .10
 	var head_radius: float = FISH._radii(profile, (head_z + .5) / .9).y * body_scale
@@ -257,8 +257,8 @@ func _update_disposition(actor, target: Vector3, direction: Vector3, right: Vect
 		_disposition_basis = _disposition_start_basis
 	elif _phase_age < 1.15:
 		var arc := smoothstep(.55, 1.15, _phase_age)
-		# Cross the whole rail at height before descending; even the longest tail
-		# stays above the 1.04 m barrier instead of passing through its boards.
+		# Cruza o parapeito inteiro no alto antes de descer; até a cauda mais longa
+		# fica acima da barreira de 1.04 m em vez de passar pelas tábuas.
 		_disposition_position = lift.lerp(above_water, arc) + Vector3.UP * sin(arc * PI) * .15
 		_disposition_basis = _disposition_start_basis.slerp(swim_basis, arc)
 	elif _phase_age < 1.55:

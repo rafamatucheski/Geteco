@@ -1,7 +1,7 @@
 extends RefCounted
-## Local racing decisions, shared by paid opponents and nearby practice riders.
-## Planning runs at 8 Hz; steering/inputs interpolate each physics tick. No
-## position writes, speed writes, global scans, random crashes or race rewards.
+## Decisões locais de corrida, compartilhadas por adversários pagos e pilotos de treino próximos.
+## O planejamento roda a 8 Hz; direção/entradas interpolam a cada tick de física. Sem
+## escrita de posição, escrita de velocidade, varredura global, quedas aleatórias ou prêmios de corrida.
 const PLAN_INTERVAL := 0.125
 const MAX_NEIGHBORS := 6
 
@@ -36,8 +36,8 @@ static func drive(row: Dictionary, track, nearby: Array, base_pace: float, delta
 	state.steering = move_toward(float(state.steering), steer, dt * 5.0)
 	var effective_max := maxf(0.1, bike.max_speed * lerpf(1.0, 0.82, bike.wetness))
 	var target := minf(float(state.target_speed), effective_max)
-	# Heading corrections also shed speed, preventing an overtaking lane change
-	# from carrying a rider straight across the next hairpin.
+	# Correções de direção também tiram velocidade, evitando que uma troca de faixa para ultrapassar
+	# leve o piloto reto através do próximo grampo.
 	target *= lerpf(1.0, 0.62, smoothstep(0.60, 1.15, absf(error)))
 	var overspeed: float = bike.speed - target
 	var braking: bool = bool(state.emergency) or overspeed > (0.25 if bool(state.braking) else 0.9)
@@ -54,14 +54,14 @@ static func drive(row: Dictionary, track, nearby: Array, base_pace: float, delta
 	state.max_target_speed = maxf(float(state.max_target_speed), target)
 	state.lane_min = minf(float(state.lane_min), float(state.lane))
 	state.lane_max = maxf(float(state.lane_max), float(state.lane))
-	# Existing recovery code can use the current planned lane without knowing
-	# anything about the decision state.
+	# O código de recuperação existente pode usar a faixa planejada atual sem saber
+	# nada do estado de decisão.
 	row.lane = float(state.lane)
 
 static func _initial_state(row: Dictionary, bike) -> Dictionary:
 	var seed_value := int(row.get("pilot_seed", 0))
 	if not row.has("pilot_seed"):
-		# Rider identity and authored grid lane are stable across process runs.
+		# A identidade do piloto e a faixa escrita no grid são estáveis entre execuções do processo.
 		seed_value = 5381
 		for character in str(bike.rider_name).to_utf8_buffer(): seed_value = (seed_value * 33 + int(character)) % 65521
 		seed_value += int(round(float(row.get("lane", 0.0)) * 37.0))
@@ -150,8 +150,8 @@ static func _plan(row: Dictionary, bike, track, nearby: Array, base_pace: float)
 				state.pass_hold = 2.8 + aggression
 				state.overtake_attempts = int(state.overtake_attempts) + 1
 				lane_target = candidate
-	# A pass starts with a real sideways approach. Until sufficient lateral
-	# clearance exists, brake for the lead bike instead of driving through it.
+	# Uma ultrapassagem começa com uma aproximação lateral real. Até existir folga
+	# lateral suficiente, freia para a moto da frente em vez de passar através dela.
 	if not lead.is_empty():
 		var closing: float = maxf(0.0, bike.speed - float(lead.speed))
 		if lead_gap < 3.0 + closing * 0.65:

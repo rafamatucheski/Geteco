@@ -117,7 +117,7 @@ func _visit(actor: Node3D, by_player: bool, next: Dictionary) -> void:
 
 func play_note(index: int, by_player: bool) -> void:
 	if index < 0 or index >= 8: return
-	# Bound polyphony to eight voices even if several residents share a key.
+	# Limita a polifonia a oito vozes mesmo se vários moradores dividirem uma tecla.
 	if clock >= flashes[index]: voices[index].play()
 	flashes[index] = clock + .32
 	note_played.emit(index, by_player)

@@ -101,7 +101,7 @@ func store_vehicle() -> bool:
 	if float(bounds[0]) > 2.7 or float(bounds[1]) > 2.65 or float(bounds[2]) > 6.8: return false
 	if not world.driving.leave(): return false
 	_storing = true
-	# Leave() starts the real door/body animation; do not move its vehicle anchor.
+	# Leave() inicia a animação real de porta/corpo; não move a âncora do veículo.
 	while is_instance_valid(car) and world.driving.is_body_transition_active():
 		await world.get_tree().physics_frame
 	_storing = false
@@ -116,11 +116,11 @@ func store_vehicle() -> bool:
 	if slot == "motorcycle": deployed_motorcycle = null
 	else: deployed = null
 	car.set_meta("residence_vehicle",true)
-	# Retire this car's exterior snapshot so loading cannot duplicate a stored car.
+	# Aposenta o snapshot exterior deste carro para o carregamento não duplicar um carro guardado.
 	var saved_vehicles: Array = session.state.world_state.get("vehicles",[])
 	session.state.world_state.vehicles = saved_vehicles.filter(func(saved): return saved.get("vehicle_id","") != car.vehicle_id)
 	session.controller.vehicles.erase(car)
-	# Keep Driving's current reference valid until it selects another car.
+	# Mantém a referência atual do Driving válida até ele escolher outro carro.
 	car.set_physics_process(false)
 	car.collision_layer = 0
 	car.collision_mask = 0

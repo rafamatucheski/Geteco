@@ -1,7 +1,7 @@
 extends Control
-## Contextual race instruments. Native controls only; no extra render viewport.
-## Every card manages its own visibility: the results card outlives the race
-## (the rider is already back on foot) without a modal menu freezing the world.
+## Instrumentos de corrida contextuais. Só controles nativos; sem viewport de render extra.
+## Cada cartão cuida da própria visibilidade: o cartão de resultados sobrevive à corrida
+## (o piloto já está de volta a pé) sem um menu modal congelando o mundo.
 const FONT := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 const REV_ZONE := Vector2(.55,.85)
 const CALLOUT_TIME := 1.9
@@ -67,8 +67,8 @@ func _ready() -> void:
 	speed_card.offset_top = -182; speed_card.offset_bottom = -30
 	speed_label = _label(speed_card,"",Vector2(16,1),49)
 	_label(speed_card,"km/h",Vector2(122,32),18,Color("bdc5cb"))
-	# Let minimum font/theme sizes participate in layout instead of allowing
-	# the integrity bar to grow over the exit action at a fixed Y coordinate.
+	# Deixa os tamanhos mínimos de fonte/tema participarem do layout em vez de deixar
+	# a barra de integridade crescer sobre a ação de sair numa coordenada Y fixa.
 	var details := VBoxContainer.new()
 	details.position = Vector2(16,63)
 	details.size.x = 195
@@ -146,7 +146,7 @@ func _build_start_card() -> void:
 	start_hint = _label(start_card,"SEGURE O GIRO NA FAIXA VERDE",Vector2(18,80),15,Color("a4adb6"))
 
 func _build_results_card() -> void:
-	# Six rows fit between the status toasts above and the minimap below.
+	# Seis linhas cabem entre os avisos de status acima e o minimapa abaixo.
 	results_card = _panel(Vector2(430,370))
 	results_card.set_anchors_preset(Control.PRESET_CENTER_LEFT)
 	results_card.offset_left = 28; results_card.offset_right = 458
@@ -174,13 +174,13 @@ func present(place: int,count: int,lap: int,laps: int,seconds: float,bike,gap :=
 	integrity.value = bike.health
 	state_label.text = "RECUPERANDO" if bike.crash_state!="riding" else (air_cue(bike) if bike._air_time>.12 else ("FREANDO" if bike._brake else ""))
 
-## In flight: which way to lean to meet the ground below (W forward, S back).
+## Em voo: para que lado inclinar para encontrar o chão abaixo (W para frente, S para trás).
 static func air_cue(bike) -> String:
 	var error := float(bike.air_attitude_error)
 	if absf(error) <= float(bike.LANDING_PERFECT): return "NO AR · ● ALINHADO"
 	return "NO AR · ▼ FRENTE (W)" if error > 0.0 else "NO AR · ▲ TRÁS (S)"
 
-## Timed practice on a rented or owned bike: laps, best lap and current lap.
+## Treino cronometrado numa moto alugada ou própria: voltas, melhor volta e volta atual.
 func present_practice(bike, laps: int, lap_clock: float, timing: bool, record: float, session_best: float, exit_hint: String) -> void:
 	message.hide(); start_card.hide(); race_card.show(); speed_card.show()
 	place_caption.text = "VOLTAS"; lap_caption.text = "MELHOR"; time_caption.text = "VOLTA ATUAL"
@@ -201,8 +201,8 @@ func present_start(rev: float, title: String) -> void:
 	var in_zone := value >= REV_ZONE.x and value <= REV_ZONE.y
 	rev_fill.color = Color("8ee29f") if in_zone else (Color("f08a5d") if value > REV_ZONE.y else Color("f0f3f4"))
 
-## Short centered announcement. A lower-priority line never hides a more
-## important one (lap, holeshot, last lap) that is still fresh on screen.
+## Aviso curto centralizado. Uma linha de prioridade menor nunca esconde uma mais
+## importante (volta, holeshot, última volta) que ainda está fresca na tela.
 func callout(title: String, detail := "", color := Color("f0f3f4"), priority := 1) -> void:
 	if _callout_left > CALLOUT_TIME-.9 and priority < _callout_priority: return
 	_callout_priority = priority

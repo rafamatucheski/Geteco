@@ -10,7 +10,7 @@ static func apply(player: Node3D, world: Dictionary) -> void:
 		if child.name == &"ParkCosmetics": child.free()
 	var saved := STATE.data(world)
 	if not STATE.valid(saved): return
-	# Suppress only baked glasses, preserving hats and all other outfit pieces.
+	# Suprime só os óculos embutidos, preservando chapéus e todas as outras peças da roupa.
 	var outfit_head := skeleton.get_node_or_null("MeshyOutfitHead")
 	if is_instance_valid(outfit_head):
 		for space in outfit_head.get_children():
@@ -32,7 +32,7 @@ static func apply(player: Node3D, world: Dictionary) -> void:
 		if id.is_empty(): continue
 		var item := ART.accessory(id)
 		item.set_meta("cosmetic_slot", slot)
-		# Eye sockets sit behind the nose tip; a shared nose-depth plane made
-		# glasses float and the mask cover them. Fit each to its facial region.
+		# As órbitas dos olhos ficam atrás da ponta do nariz; um plano comum de profundidade do nariz fazia
+		# os óculos flutuarem e a máscara cobri-los. Ajusta cada um à sua região do rosto.
 		item.position = Vector3(.004, 1.538, .085) if slot == "glasses" else Vector3(.004, 1.500, .080)
 		space.add_child(item)

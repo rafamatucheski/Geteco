@@ -1,6 +1,6 @@
 extends RefCounted
-## Static, life-sized paper, cord and seal on existing surfaces. No extra light,
-## actor, viewport or per-frame animation; streaming follows the existing host.
+## Papel, cordão e lacre estáticos em tamanho real sobre superfícies existentes. Sem luz,
+## ator, viewport nem animação por quadro extras; o streaming segue o hospedeiro existente.
 const POINTS := {
 	"cargo_identified":Vector3(-.605,.84,2.65),
 	"cargo_manifest":Vector3(.62,.238,-5.25),
@@ -16,8 +16,8 @@ static func attach(host: Node3D, cave: bool) -> Node3D:
 	var ink := _material("3d4140")
 	var red := _material("872e2b")
 	if cave:
-		# Existing map board remains a shallow, walkable prop. The separate note
-		# lies in free floor space, clear of cot, lantern, weapons and expedition.
+		# O quadro de mapa existente continua um objeto raso e andável. O bilhete separado
+		# fica no piso livre, longe do catre, lampião, armas e expedição.
 		var map_note := _document(root,POINTS.cave_shelter,paper,ink)
 		map_note.rotation.y = -.25
 		_cord(root,POINTS.cave_shelter+Vector3(.17,.015,.08),_material("876c42"))
@@ -34,7 +34,7 @@ static func attach(host: Node3D, cave: bool) -> Node3D:
 		ring.position = POINTS.vicente_note+Vector3(.19,.023,.07)
 		root.add_child(ring)
 	else:
-		# Label is flush with the already-solid crate, facing the clear aisle.
+		# O rótulo fica rente à caixa já sólida, de frente para o corredor livre.
 		_box(root,POINTS.cargo_identified,Vector3(.012,.43,.36),red)
 		_snake(root,POINTS.cargo_identified+Vector3(.009,0,0),_material("c4ae75"))
 		_document(root,POINTS.cargo_manifest,paper,ink)
@@ -64,7 +64,7 @@ static func _document(parent: Node3D, point: Vector3, paper: Material, ink: Mate
 	node.position = point
 	parent.add_child(node)
 	_box(node,Vector3.ZERO,Vector3(.3,.012,.38),paper)
-	# Sparse strokes make an actual sheet legible without decorative prose.
+	# Traços esparsos deixam uma folha real legível sem prosa decorativa.
 	for index in 4:
 		_box(node,Vector3(-.01,.007,-.105+index*.055),Vector3(.20-float(index%2)*.04,.003,.009),ink)
 	return node
@@ -75,7 +75,7 @@ static func _cord(parent: Node3D, point: Vector3, material: Material) -> void:
 		segment.rotation.y = -.35 if index%2 == 0 else .3
 
 static func _snake(parent: Node3D, point: Vector3, material: StandardMaterial3D) -> void:
-	# One mesh for the gang's bent snake silhouette on the crate seal.
+	# Uma malha para a silhueta de cobra torta da gangue no lacre da caixa.
 	var path := PackedVector2Array([Vector2(-.07,-.13),Vector2(.045,-.09),Vector2(.06,-.03),Vector2(-.055,.025),Vector2(-.06,.09),Vector2(.035,.14)])
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)

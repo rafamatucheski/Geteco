@@ -1,5 +1,5 @@
 extends RefCounted
-## Integer grams keep rankings and ties exact through a JSON save.
+## Gramas inteiros mantêm rankings e empates exatos num save JSON.
 const SPECIES := [
 	{"id":"tilapia", "name":"Tilápia", "min":400, "max":2600, "strength":0.22, "color":Color("94a99a"), "pattern":"stripes", "tail_shape":"fan", "body_shape":"deep", "weight":20.0, "cast_bonus":0.55},
 	{"id":"piau", "name":"Piau", "min":300, "max":2400, "strength":0.30, "color":Color("9eaaa3"), "pattern":"stripes", "tail_shape":"fan", "body_shape":"slender", "weight":15.0, "cast_bonus":0.65},
@@ -32,8 +32,8 @@ static func valid_catch(fish: Dictionary) -> bool:
 	return is_finite(grams) and grams == floorf(grams) and grams >= spec.min and grams <= spec.max
 
 static func roll(rng: RandomNumberGenerator, cast_quality := 0.5) -> Dictionary:
-	# Good casts tilt the table toward stronger species and larger specimens,
-	# while every species remains possible from the shore.
+	# Bons arremessos inclinam a tabela para espécies mais fortes e espécimes maiores,
+	# enquanto toda espécie continua possível a partir da margem.
 	var quality := clampf(cast_quality, 0.0, 1.0)
 	var total := 0.0
 	for entry in SPECIES:

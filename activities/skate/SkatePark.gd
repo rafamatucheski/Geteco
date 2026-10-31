@@ -58,7 +58,7 @@ func _ready() -> void:
 
 static func _concrete_material() -> StandardMaterial3D:
 	if _concrete != null: return _concrete
-	# Poured skate concrete: fine aggregate and wear, without the port slab grid.
+	# Concreto de skate moldado: agregado fino e desgaste, sem a grade de placas do porto.
 	var image := Image.create_empty(128, 128, false, Image.FORMAT_RGB8)
 	var noise := FastNoiseLite.new()
 	noise.seed = 8173
@@ -123,12 +123,12 @@ func _build_street_section(concrete: Material) -> void:
 		_box(LAYOUT.CENTER + Vector3(5.65, .05, z), Vector3(.35, .05, .12), Color("515957"))
 
 func _build_rest_area() -> void:
-	# Bench on the dry deck, away from the approach and bowl transition.
+	# Banco no deck seco, longe da aproximação e da transição da bowl.
 	for z in [7.3, 7.5, 7.7]:
 		_box(LAYOUT.CENTER + Vector3(-5, .46, z), Vector3(2.3, .07, .16), Color("8b7053"))
 	for x in [-5.85, -4.15]:
 		_box(LAYOUT.CENTER + Vector3(x, .24, 7.5), Vector3(.12, .44, .55), Color("555e5b"))
-	# Reserve the entire bench footprint, rather than allowing passage through the seat.
+	# Reserva a pegada inteira do banco, em vez de permitir passagem pelo assento.
 	var bench_body := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var hull := BoxShape3D.new()

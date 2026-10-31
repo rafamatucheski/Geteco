@@ -216,8 +216,8 @@ func controls_now() -> Dictionary:
 	var left_strength := maxf(Input.get_action_strength("move_left"),Input.get_action_strength("ui_left"))
 	var right_strength := maxf(Input.get_action_strength("move_right"),Input.get_action_strength("ui_right"))
 	input.steering = maxf(right_strength,1.0 if touch.get("right",false) else 0.0)-maxf(left_strength,1.0 if touch.get("left",false) else 0.0)
-	# ui_accept shares Space/gamepad A with handbrake. Keep the two game
-	# buttons disjoint so a hard drop cannot also rotate or a kick also punch.
+	# ui_accept divide Espaço/A do controle com o freio de mão. Mantém os dois botões
+	# do jogo separados para que uma queda rápida não gire também nem um chute também soque.
 	input.action = Input.is_action_pressed("interact") or Input.is_physical_key_pressed(KEY_ENTER) or Input.is_physical_key_pressed(KEY_KP_ENTER) or touch.get("action",false)
 	input.action_alt = Input.is_action_pressed("handbrake") or Input.is_action_pressed("sprint") or Input.is_physical_key_pressed(KEY_X) or touch.get("action_alt",false)
 	return input
@@ -289,7 +289,7 @@ func _draw_board() -> void:
 	var area := Rect2((board.size-Vector2(800,480)*factor)*.5,Vector2(800,480)*factor)
 	game.render(board,area)
 	board.draw_rect(area,Color(accent,.5),false,2.0)
-	# Clip overscan artwork to the cabinet screen, including letterbox bars.
+	# Recorta a arte de overscan à tela do gabinete, incluindo as faixas de letterbox.
 	var black := Color("080c18")
 	if area.position.x > 0:
 		board.draw_rect(Rect2(0,0,area.position.x,board.size.y),black)

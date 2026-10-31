@@ -1,5 +1,5 @@
 extends Node3D
-## Bounded course markers. Ground probes run only near the skier, at 2 Hz.
+## Marcadores de pista limitados. As sondas de chão só rodam perto do esquiador, a 2 Hz.
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Diagnóstico (serra, 17/10): GETECO_SKI_MARKER_RAYS=0 não lança os raios dos marcadores.
 static var _rays_enabled := OS.get_environment("GETECO_SKI_MARKER_RAYS") != "0"

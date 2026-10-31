@@ -72,8 +72,8 @@ func tick(delta: float, hold: bool, next_checkpoint: int) -> void:
 	else: stuck_time += delta
 	var look := clampf(4.0+absf(float(car.speed))*.27,4.0,12.0)
 	var target_at := minf(offset+look,float(course.length)-.5)
-	# A missed checkpoint must be approached from its upstream side. Driving
-	# toward later hairpins never repairs a skipped gate or its classification.
+	# Um checkpoint perdido precisa ser abordado pelo lado de cima. Dirigir
+	# rumo a grampos posteriores nunca conserta um portão pulado nem a classificação dele.
 	if next_checkpoint < course.gate_offsets.size():
 		var required: float = course.gate_offsets[next_checkpoint]
 		if offset > required+3.0: target_at = maxf(0.0,required-6.0)
@@ -119,7 +119,7 @@ func tick(delta: float, hold: bool, next_checkpoint: int) -> void:
 	if absf(alpha)>1.4:
 		car.steer_input = signf(alpha)
 		desired = minf(desired,3.0)
-	# Vehicle.brake_input is the handbrake: use counter-throttle for corners.
+	# Vehicle.brake_input é o freio de mão: usa contra-aceleração nas curvas.
 	car.brake_input = desired<.2 and absf(float(car.speed))<1.0
 	car.throttle_input = clampf((desired-float(car.speed))*.65,-1.0,1.0) if not car.brake_input else 0.0
 	if car.global_position.distance_to(anchor)>2.0:
@@ -165,15 +165,15 @@ func _sense(offset: float, look: float) -> void:
 			lane_rate = 3.2
 			pass_cooldown = 2.0
 			return
-	# The two-wide grid is not permission to remain in opposing traffic. Return
-	# to the right as soon as the physical corridor is free after the start or
-	# a pass, before an approaching car closes that opportunity.
+	# O grid de dois lado a lado não é permissão para ficar na contramão. Volta
+	# para a direita assim que o corredor físico estiver livre depois da largada ou
+	# de uma ultrapassagem, antes que um carro vindo feche essa oportunidade.
 	if desired_lane<0.0 and pass_cooldown<=0.0 and reverse_left<=0.0 and _lane_clear(offset,look,1.8):
 		desired_lane = 1.8
 		pass_cooldown = 2.0
 		return
-	# A guardrail seen across a bend is not a car to overtake. Reserve enough
-	# straight road for the full two-second lane change, not just its end point.
+	# Um guard-rail visto do outro lado de uma curva não é um carro a ultrapassar. Reserva estrada
+	# reta suficiente para a troca de faixa inteira de dois segundos, não só para o ponto final.
 	if leader_is_vehicle and not leader_oncoming and pass_cooldown<=0.0 and reverse_left<=0.0 and leader_speed<cap-2.0 and _passing_straight(offset):
 		var alternative := -1.8 if desired_lane>=0 else 1.8
 		# O carro ultrapassado fica fora do corredor: colado nele (2,4 m) o começo da troca sempre o tocava e
@@ -207,7 +207,7 @@ func _lane_clear(offset: float, look: float, alternative: float, sidestep := fal
 	return clear
 
 func _lane_corridor_clear(offset: float, look: float, alternative: float, sidestep: bool) -> bool:
-	# Sweep the actual transition corridor as well as the destination lane.
+	# Varre o corredor real da transição, além da faixa de destino.
 	var start_forward: Vector3 = course.direction(offset)
 	var displacement: Vector3 = car.global_position-course.point(offset)
 	var actual_lane := displacement.dot(start_forward.cross(Vector3.UP).normalized())
@@ -220,7 +220,7 @@ func _lane_corridor_clear(offset: float, look: float, alternative: float, sidest
 		var center: Vector3 = course.point(at)+forward.cross(Vector3.UP).normalized()*lateral+Vector3.UP*.65
 		lane_query.transform = Transform3D(Basis(Vector3.UP,atan2(-forward.x,-forward.z)),center)
 		if not car.get_world_3d().direct_space_state.intersect_shape(lane_query,1).is_empty(): return false
-	# A car alongside or closing from behind also owns the destination lane.
+	# Um carro ao lado ou chegando por trás também é dono da faixa de destino.
 	# No desvio curto o rival que cedeu a vaga para atrás (ver _yield_speed); basta o lado e logo atrás.
 	for behind in ([3.0] if sidestep else [4.0,8.0,12.0]):
 		var at := maxf(0.0,offset-behind)

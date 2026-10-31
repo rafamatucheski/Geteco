@@ -1,5 +1,5 @@
 extends Node
-## Polled by the park runtime at 0.15 s; pickups have no physics/process callback.
+## Consultado pelo runtime do parque a 0.15 s; os itens não têm callback de física/process.
 const STATE := preload("res://activities/amusement_park/AmusementParkCosmeticState.gd")
 const ART := preload("res://activities/amusement_park/AmusementParkCosmeticArt.gd")
 const COSMETICS := preload("res://activities/amusement_park/AmusementParkCosmetics.gd")
@@ -55,7 +55,7 @@ func collect_nearby() -> int:
 		if location == "park" and not session.state.place_id.is_empty(): continue
 		var player: Node3D = session.world.player
 		if player.global_position.distance_to(item.global_position) > 1.1: continue
-		# Prevent collecting through a wall or shelf from the next corridor.
+		# Impede coletar através de uma parede ou prateleira a partir do corredor vizinho.
 		var from := player.global_position + Vector3.UP*.65
 		var to: Vector3 = item.global_position + Vector3.UP*.35
 		var query := PhysicsRayQueryParameters3D.create(from, to, 1, [player.get_rid()])
@@ -122,7 +122,7 @@ func _wardrobe_alive() -> bool:
 		and not session.is_transition_blocked() and not session.world.driving.occupied
 
 func _save() -> void:
-	# FullSession already queues an automatic checkpoint when saving is blocked.
+	# O FullSession já enfileira um checkpoint automático quando o save está bloqueado.
 	session.save_game()
 
 func _exit_tree() -> void:

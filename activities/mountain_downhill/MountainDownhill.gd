@@ -242,7 +242,7 @@ func _start() -> bool:
 		driver.fit_seat(car,cabin,true)
 		car.set_meta("mountain_downhill_driver",driver)
 		car.ensure_equipment(session.world)
-	# All six rivals and the final player pose must fit before moving/locking Dante.
+	# Os seis rivais e a pose final do jogador precisam caber antes de mover/travar o Dante.
 	if racers.size()!=6 or not production.vehicle_position_clear(player_car,pose.origin,pose.basis.get_euler().y):
 		return _abort_start(original,"Não há espaço livre para os sete carros.")
 	player_car.place(pose.origin,pose.basis.get_euler().y)
@@ -347,8 +347,8 @@ func _pause_for_menu() -> void:
 			if not is_instance_valid(entry.car): continue
 			var car = entry.car
 			_modal_motion.append({"car":car,"speed":car.speed,"horizontal":car.horizontal_velocity,"velocity":car.velocity})
-	# Keep physics and collision enabled so ProductionWorld retains every floor
-	# under the seven cars. Freeze driving motion and the timer together.
+	# Mantém física e colisão ligadas para o ProductionWorld reter todo piso
+	# sob os sete carros. Congela o movimento de direção e o timer juntos.
 	for entry in racers:
 		if not is_instance_valid(entry.car): continue
 		var car = entry.car
@@ -468,8 +468,8 @@ func _clear_rivals() -> void:
 	for entry in racers:
 		if entry.player or not is_instance_valid(entry.car): continue
 		var car = entry.car
-		# If Dante takes a rival car, cancellation releases its ownership instead
-		# of deleting the occupied vehicle underneath the player.
+		# Se o Dante pegar um carro rival, o cancelamento solta a posse dele em vez
+		# de apagar o veículo ocupado debaixo do jogador.
 		if is_instance_valid(session) and is_instance_valid(session.world) and is_instance_valid(session.world.driving) and session.world.driving.occupied and session.world.driving.car==car:
 			car.remove_meta("race_owned")
 			car.remove_meta("mountain_downhill_rival")

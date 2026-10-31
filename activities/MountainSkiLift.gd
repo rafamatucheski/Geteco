@@ -1,5 +1,5 @@
 extends Node
-## Owns one passenger and the session transition lock; never persists mid-air.
+## Cuida de um passageiro e da trava de transição da sessão; nunca persiste no ar.
 const DEFINITIONS := preload("res://activities/ActivityDefinitions.gd")
 const POINTS := [Vector2(7100,-4890),Vector2(7900,-4220),Vector2(8050,-3600),Vector2(6880,-3015)]
 const DURATION := 6.0
@@ -62,7 +62,7 @@ func _physics_process(delta: float) -> void:
 	if not riding: return
 	var session = progression.session
 	var actor = session.world.player
-	# Recovery/mission travel owns its new position and lock. Never teleport it back.
+	# A viagem de recuperação/missão é dona da nova posição e da trava. Nunca a teleporta de volta.
 	if not progression._outside() or session.rescue_pending or session.arrest_pending or actor.position.distance_to(expected) > 2:
 		_release(false)
 		return

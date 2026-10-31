@@ -18,8 +18,8 @@ func begin(owner_controller: Node) -> void:
 	for row in controller.racers:
 		row.bike.race_enabled = false
 		row.bike.set_physics_process(false)
-		# Grid spawn normally settles by gravity; the frozen shot needs that
-		# same physical floor now so tires and the standing rider do not hover.
+		# O spawn do grid normalmente assenta pela gravidade; a tomada congelada precisa
+		# desse mesmo piso físico agora para que pneus e o piloto em pé não flutuem.
 		var origin: Vector3 = row.bike.global_position
 		var ray := PhysicsRayQueryParameters3D.create(origin+Vector3.UP,origin-Vector3.UP*2,1)
 		var hit: Dictionary = row.bike.get_world_3d().direct_space_state.intersect_ray(ray)

@@ -3,9 +3,9 @@ extends Node3D
 const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const GRASS := preload("res://world/urban_detail/HarborGrassTufts.gd")
 const AREA := Rect2(-247,-147,160,125)
-# RentalDeck footprint: its opaque top already owns the surface at y=.13.
+# Pegada do RentalDeck: o topo opaco dele já é dono da superfície em y=.13.
 const RENTAL_DECK := Rect2(-237.15,-38,9.1,6)
-# Paddock furniture, the mechanic's tent and the bleacher's worn footprint.
+# Móveis do paddock, a tenda do mecânico e a pegada gasta da arquibancada.
 const CLEAR := [Rect2(-238,-39,13,9),Rect2(-237,-31,7,6),Rect2(-217,-38,6,13),Rect2(-229,-40,9,18),Rect2(-222.5,-33,6,5.5),Rect2(-211,-68.5,10,6.5)]
 var course: Node3D
 var tuft_count := 0
@@ -31,8 +31,8 @@ static func grass_material() -> StandardMaterial3D:
 	return _grass
 
 func yard_height(p: Vector2) -> float:
-	# A single connected raised earth apron supports the original feet/benches
-	# at 13 cm, tapering into native ground instead of separate box-shaped pads.
+	# Um único pátio de terra elevado e conectado apoia os pés/bancos originais
+	# a 13 cm, afinando até o chão nativo em vez de bases separadas em forma de caixa.
 	var edge := minf(minf(p.x+239,-209-p.x),minf(p.y+40,-24-p.y))
 	return maxf(course.surface_height(p),.128*smoothstep(-2,0,edge))+.002
 
@@ -65,7 +65,7 @@ func _yard_surface(columns: Array[float], lift: float) -> SurfaceTool:
 		for column in columns.size()-1:
 			var x := columns[column]
 			var width := columns[column+1]-x
-			# Cut at the actual deck edges instead of lifting either coplanar layer.
+			# Corta nas bordas reais do deck em vez de erguer qualquer das camadas coplanares.
 			if RENTAL_DECK.has_point(Vector2(x+width*.5,z+.5)): continue
 			for offset in [Vector2.ZERO,Vector2.RIGHT,Vector2.DOWN,Vector2.RIGHT,Vector2.ONE,Vector2.DOWN]:
 				var p: Vector2 = Vector2(x,z)+Vector2(offset.x*width,offset.y)

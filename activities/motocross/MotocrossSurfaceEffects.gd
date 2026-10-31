@@ -1,7 +1,7 @@
 extends Node3D
-## One bounded track-mark batch for the whole event; at most six pairs of small
-## emitters. Contacts are real collision ray hits, sampled at 10 Hz, not decals
-## floating at the route height. No particles or tire marks are emitted in air.
+## Um lote limitado de marcas de pista para o evento inteiro; no máximo seis pares de emissores
+## pequenos. Os contatos são acertos reais de raio de colisão, amostrados a 10 Hz, não decalques
+## flutuando na altura da rota. Nenhuma partícula ou marca de pneu é emitida no ar.
 const RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
 const MAX_MARKS := 2048
 const MAX_RIDERS := 6
@@ -30,8 +30,8 @@ func _ready() -> void:
 	_build_marks()
 	_build_particle_resources()
 
-## Call every gameplay physics frame. The node samples the latest positions
-## itself at 10 Hz. Both bike arrays and controller rows {bike: ...} are valid.
+## Chame a cada quadro de física do jogo. O nó amostra as posições mais recentes
+## sozinho a 10 Hz. Tanto arrays de motos quanto linhas do controlador {bike: ...} são válidos.
 func update_riders(riders: Array, wetness: float) -> void:
 	_riders = riders
 	_wetness = clampf(wetness, 0.0, 1.0) if is_finite(wetness) else 0.0
@@ -43,7 +43,7 @@ func suspend() -> void:
 	for slot in _emitters: _stop_slot(slot)
 
 func _physics_process(delta: float) -> void:
-	# If the controller stops updating after a race, emitters stop automatically.
+	# Se o controlador parar de atualizar depois de uma corrida, os emissores param sozinhos.
 	if Engine.get_physics_frames() - _last_update > 2 or not is_instance_valid(_course):
 		if not _riders.is_empty(): suspend()
 		return
@@ -130,8 +130,8 @@ func _stamp(a: Vector3, b: Vector3, normal: Vector3, wetness: float) -> void:
 	var side := normal.cross(direction).normalized()
 	var local_basis := Basis(side * width, normal, direction * (length + 0.025))
 	var point := (a + b) * 0.5 + normal * 0.027
-	# The small lift avoids depth-fighting, with endpoint normals following
-	# cambers; no ray or allocation per historical mark is needed thereafter.
+	# A pequena elevação evita z-fighting, com normais nas pontas seguindo as
+	# inclinações; nenhum raio ou alocação por marca histórica é necessário depois disso.
 	_marks.multimesh.set_instance_transform(_cursor, global_transform.affine_inverse() * Transform3D(local_basis, point))
 	_marks.multimesh.set_instance_color(_cursor, Color("823f25").lerp(Color("452719"), wetness))
 	_marks.multimesh.set_instance_custom_data(_cursor, Color(length, wetness, 0.0, 1.0))
@@ -192,7 +192,7 @@ func _emit(slot: Dictionary, bike: CharacterBody3D, point: Vector3, normal: Vect
 	mud.global_transform = where
 	var landing := clampf(-float(bike.get("_suspension"))*15.0,0.0,.75)
 	var intensity := clampf(absf(bike.speed) / 16.0+landing, 0.1, 1.0)
-	# Reuse the existing bounded emitters for a denser landing/braking plume.
+	# Reaproveita os emissores limitados existentes para uma nuvem mais densa de pouso/frenagem.
 	if bike.get("_brake")==true: intensity = minf(1.0,intensity+.2)
 	dust.amount_ratio = intensity * (1.0 - _wetness)
 	mud.amount_ratio = intensity * _wetness

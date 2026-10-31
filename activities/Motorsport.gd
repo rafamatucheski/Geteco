@@ -18,8 +18,8 @@ var finished := false
 var cancelled := false
 
 func begin_race(race_id: String, origin: Vector3, checkpoints: PackedVector3Array, current: Vector3, admission_point: Vector3 = Vector3.INF, admission_range: float = 60.0/16.0) -> bool:
-	# A curbside contact can admit the car off the old start marker without
-	# moving the authored finish line. Existing callers retain their start radius.
+	# Um contato no meio-fio pode admitir o carro fora do marcador de largada antigo sem
+	# mover a linha de chegada escrita. Os chamadores existentes mantêm o raio de largada.
 	var entry := admission_point if admission_point.is_finite() else origin
 	if mode != "" or checkpoints.is_empty() or current.distance_to(entry) >= admission_range: return false
 	_reset()
@@ -95,7 +95,7 @@ func update(delta: float, position: Vector3, velocity: Vector3, forward: Vector3
 		var heading := Vector3(forward.x,0,forward.z).normalized()
 		var lateral := absf(speed_vector.dot(heading.cross(Vector3.UP)))
 		var angle := absf(heading.signed_angle_to(speed_vector.normalized(),Vector3.UP)) if speed_vector.length() > .001 else 0.0
-		# Keep original speed/lateral thresholds and point scale; reject reverse spins.
+		# Mantém os limiares originais de velocidade/lateral e a escala de pontos; recusa giros de ré.
 		if inside and lateral > 35.0/16.0 and speed_vector.length() > 60.0/16.0 and angle > deg_to_rad(8) and angle < deg_to_rad(80):
 			no_drift = 0.0
 			combo = minf(5,combo+delta*.18)

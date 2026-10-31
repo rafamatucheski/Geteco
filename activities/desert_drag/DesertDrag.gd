@@ -1,6 +1,6 @@
 extends Node3D
-## The vehicle bodies remain authoritative for crossings and obstruction.
-## The shared powertrain produces acceleration, RPM, shifts, nitro and audio.
+## Os corpos dos veículos continuam oficiais para travessias e obstrução.
+## O trem de força compartilhado produz aceleração, RPM, trocas, nitro e áudio.
 const PROGRESS := preload("res://activities/desert_drag/DesertDragProgress.gd")
 const HUD := preload("res://activities/desert_drag/DesertDragHUD.gd")
 const POWERTRAIN := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
@@ -15,9 +15,9 @@ const OPEN_ROSTER := preload("res://activities/desert_drag/DragOpenRoster.gd")
 const START_CAMERA_SWEEP_SECONDS := 1.8
 const RETURN_COURSE := preload("res://activities/desert_drag/DragReturnCourse.gd")
 const TAKESHI := {"name":"Takeshi","car":"supra_a80","distance":800.0,"reaction":.26,"mistake":0.0}
-# One authored 800 m strip for every round. Each car keeps its real powertrain;
-# rival builds cover progressively faster times along the same course.
-# Difficulty comes from the rival/preparation, never a synthetic speed cap.
+# Uma pista escrita de 800 m para toda rodada. Cada carro mantém o trem de força real;
+# as preparações dos rivais fazem tempos cada vez mais rápidos no mesmo percurso.
+# A dificuldade vem do rival/preparação, nunca de um limite de velocidade sintético.
 const RIVALS := {
 	"digo":{"name":"Digo","car":"digo_gol_1993","distance":800.0,"reaction":.22,"mistake":.06,"parts":{}},
 	"livia":{"name":"Lívia","car":"desert_faisca_rally","distance":800.0,"reaction":.18,"mistake":.045,"parts":{}},
@@ -385,8 +385,8 @@ func _start(identity: String = "") -> bool:
 	_update_camera(0)
 	race_camera.make_current()
 	preload("res://gameplay/lights/LightBudget.gd").refresh(true)
-	# Camera framing widens with the lead, but Dante keeps hearing his own
-	# engine from the cabin. The opponent retains physical distance/panning.
+	# O enquadramento da câmera abre com a vantagem, mas o Dante continua ouvindo o próprio
+	# motor da cabine. O adversário mantém distância/pan físicos.
 	race_listener = AudioListener3D.new()
 	race_listener.name = "DesertDragListener"
 	race_listener.position = Vector3(0,1.0,0)
@@ -407,8 +407,8 @@ func _start(identity: String = "") -> bool:
 		hud.event_title="DESAFIO · "+str(config.name).to_upper()
 	hud.show_start_lights = true
 	hud.racing = false
-	# Fill the instruments before entering the tree: the first rendered staging
-	# frame must already show the real opponent, distance and launch RPM band.
+	# Preenche os instrumentos antes de entrar na árvore: o primeiro quadro renderizado
+	# da preparação já precisa mostrar o adversário real, a distância e a faixa de RPM da largada.
 	hud.update_state(racers[0].drive,distance,0.0,0.0,str(ceili(countdown)),str(config.name))
 	hud.feedback = _feedback
 	layer.add_child(hud)
@@ -438,8 +438,8 @@ func _rival_parts() -> Dictionary:
 	return rival_parts(rival_id)
 
 static func rival_parts(identity: String) -> Dictionary:
-	# Fixed authored builds, all available in the player's tuning catalogue.
-	# Replaying a rival never scales their engine to Dante's car or position.
+	# Preparações escritas fixas, todas disponíveis no catálogo de tuning do jogador.
+	# Repetir um rival nunca escala o motor dele ao carro ou à posição do Dante.
 	match identity:
 		"digo": return {"engine":"street_cam","turbo":"turbo_mid","tires":"drag_tires","exhaust":"race_exhaust"}
 		"livia": return {"ecu":"ecu_1","engine":"race_cam","turbo":"turbo_small","tires":"drag_tires","weight":"lightweight","nitro":"nitro_street"}
@@ -490,8 +490,8 @@ func _physics_process(delta: float) -> void:
 	if session.modal: return
 	var throttle := _throttle()
 	if phase=="preparing":
-		# The preparation screen owns a bounded streaming budget; no race clock,
-		# car motion or green light starts while visible course cells are missing.
+		# A tela de preparação tem um orçamento de streaming limitado; nenhum relógio de corrida,
+		# movimento de carro ou luz verde começa enquanto faltam células visíveis do percurso.
 		var ready: bool=is_instance_valid(_preparation_region) and _preparation_region.drag_view_ready()
 		_preparation_ready_frames=_preparation_ready_frames+1 if ready else 0
 		if is_instance_valid(_preparation_overlay): _preparation_overlay.progress=_preparation_region.drag_view_progress() if is_instance_valid(_preparation_region) else 0.0
@@ -550,8 +550,8 @@ func _physics_process(delta: float) -> void:
 				return
 		if is_finite(float(racers[0].finish)) and is_finite(float(racers[1].finish)):
 			phase = "braking"
-		# Technical proofs judge the player's run, even when a faster rival has
-		# already finished. Keep the absolute timeout and rival-DNF recovery.
+		# As provas técnicas julgam a corrida do jogador, mesmo quando um rival mais rápido já
+		# terminou. Mantém o timeout absoluto e a recuperação de DNF do rival.
 		elif elapsed > (120.0 if _return_attempt else 60.0) or ((not _challenge_attempt or is_finite(float(racers[0].finish))) and elapsed > minf(float(racers[0].finish),float(racers[1].finish))+8.0):
 			if is_finite(float(racers[0].finish)): phase = "braking"
 			# Prova de história: o rival cruzou e Dante ficou muito para trás (o turbo cortado da aposta
@@ -613,14 +613,14 @@ func _step_runoff(entry: Dictionary, delta: float, course_distance: float = -1.0
 	var speed: float = drive.speed_mps
 	var finish_distance := distance if course_distance<0.0 else course_distance
 	var room := maxf(1.0,finish_distance+175.0-_offset(entry.car.global_position))
-	# Reserve distance for the pressure ramp and the gentle final release.
-	# Fast builds need more braking force, not an instantaneous speed cap.
+	# Reserva distância para a rampa de pressão e a soltura final suave.
+	# Preparações rápidas precisam de mais força de frenagem, não de um limite de velocidade instantâneo.
 	var required := speed*speed/(2.0*maxf(1.0,room-speed*.25-8.0))
 	var target := maxf(8.0,required)
 	if speed<4.0: target = minf(target,maxf(1.2,speed*2.5))
 	var deceleration := move_toward(float(entry.get("runoff_deceleration",0.0)),target,delta*60.0)
 	entry.runoff_deceleration = deceleration
-	# Normal progressive service braking is rolling grip, not a locked wheel.
+	# A frenagem de serviço progressiva normal é aderência rolando, não roda travada.
 	var grip: float = 9.81*float(drive.spec.traction)*drive.surface_grip
 	entry.car.set_meta("drag_service_brake_slip",clampf((deceleration-grip)/maxf(1.0,grip),0.0,1.0))
 	drive.step(delta,0.0,false,0.0)
@@ -636,8 +636,8 @@ func _move_car(entry: Dictionary, delta: float) -> void:
 		car.steering=clampf(atan2(turn*2.4,maxf(.001,drive.speed_mps*delta)),-.48,.48)
 		car.global_basis=Basis.looking_at(motion_direction,Vector3.UP)
 	var incoming_velocity: Vector3 = motion_direction*drive.speed_mps
-	# At 200+ km/h, never outrun the next streamed collision cell. The shared
-	# persistent-support pass retains these two admitted cars between updates.
+	# A 200+ km/h, nunca ultrapassa a próxima célula de colisão em streaming. A passada
+	# compartilhada de apoio persistente retém estes dois carros admitidos entre atualizações.
 	var region: Node3D = session.world.production.regions.get("desert")
 	if is_instance_valid(region):
 		var next_point: Vector3 = before+motion_direction*(drive.speed_mps*delta+float(car.half_length)+1.0)
@@ -645,8 +645,8 @@ func _move_car(entry: Dictionary, delta: float) -> void:
 			drive.speed_mps = 0
 			car.velocity = Vector3.ZERO
 			return
-	# Match ordinary Vehicle motion: floor snapping maintains grounded support.
-	# Pushing downward after contact can catch a coplanar floor's exposed edge.
+	# Igual ao movimento comum do Vehicle: o snap de chão mantém o apoio no chão.
+	# Empurrar para baixo depois do contato pode pegar a borda exposta de um piso coplanar.
 	var vertical_speed: float = 0.0 if car.is_on_floor() else car.velocity.y-18*delta
 	car.velocity = motion_direction*drive.speed_mps + Vector3.UP*vertical_speed
 	car.move_and_slide()
@@ -685,8 +685,8 @@ func _update_camera(_delta: float) -> void:
 func camera_frame(a: Vector3, b: Vector3) -> Dictionary:
 	var signed_gap := (b-a).dot(direction)
 	var side := direction.cross(Vector3.UP).normalized()
-	# Midpoint framing while close; bounded look-back keeps Dante readable when a
-	# legitimate lead grows. No car pose, drivetrain, result or rival pace is changed.
+	# Enquadramento no ponto médio quando perto; um olhar para trás limitado mantém o Dante legível quando uma
+	# vantagem legítima cresce. Nenhuma pose de carro, trem de força, resultado ou ritmo de rival muda.
 	var center := a+direction*clampf(signed_gap*.5,-10.0,10.0)+side*((b-a).dot(side)*.5)+Vector3.UP*.75
 	var setback := clampf(16.5+maxf(0,absf(signed_gap)-12.0)*.28,16.5,25.5)
 	return {"target":center,"position":center+side*setback-direction*4.0+Vector3.UP*4.4,"setback":setback}
@@ -694,13 +694,13 @@ func camera_frame(a: Vector3, b: Vector3) -> Dictionary:
 func start_camera_frame(a: Vector3, b: Vector3) -> Dictionary:
 	var side_frame := camera_frame(a,b)
 	if phase not in ["preparing","staging"] and (phase != "racing" or elapsed >= START_CAMERA_SWEEP_SECONDS): return side_frame
-	# The race clock owns the sweep: pause freezes it, and every start resets it.
+	# O relógio da corrida é dono da varredura: a pausa a congela, e toda largada a zera.
 	var progress := 0.0 if phase in ["preparing","staging"] else clampf(elapsed/START_CAMERA_SWEEP_SECONDS,0.0,1.0)
 	var blend := progress*progress*(3.0-2.0*progress)
 	var side := direction.cross(Vector3.UP).normalized()
 	var rear_target := (a+b)*.5+direction*2.0+Vector3.UP*.75
 	var target := rear_target.lerp(side_frame.target,blend)
-	# Orbit at a steady distance instead of cutting across the cars on a chord.
+	# Orbita a uma distância constante em vez de cortar sobre os carros numa corda.
 	var angle := lerpf(atan2(4.5,16.0),atan2(float(side_frame.setback),4.0),blend)
 	var radius := lerpf(Vector2(4.5,16.0).length(),Vector2(float(side_frame.setback),4.0).length(),blend)
 	var offset := (side*sin(angle)-direction*cos(angle))*radius+Vector3.UP*lerpf(10.5,4.4,blend)
@@ -839,7 +839,7 @@ func _cleanup() -> void:
 				car.controlled = bool(_saved.get("controlled",true)) and session.world.driving.occupied and session.world.driving.car==car
 				car.external_input = bool(_saved.get("external",false))
 		else:
-			# A concurrent takeover must not delete the car beneath its occupant.
+			# Uma tomada simultânea não pode apagar o carro debaixo do ocupante.
 			if is_instance_valid(open_meet) and car.get_meta("open_drag_owned",false) and open_meet.reclaim_opponent(car):
 				pass
 			elif is_instance_valid(session) and session.world.driving.occupied and session.world.driving.car==car:
@@ -868,18 +868,18 @@ func _cleanup() -> void:
 	_refresh_session_hud()
 
 func return_to_entry() -> bool:
-	# Keep the result modal/input lock until support and the destination are safe.
+	# Mantém o modal de resultado/trava de entrada até o apoio e o destino estarem seguros.
 	if active or not is_instance_valid(player_car) or not session.world.driving.occupied or session.world.driving.car!=player_car: return false
 	if player_car.health<=0 or session.world.gameplay.health<=0 or session.rescue_pending or session.arrest_pending: return false
 	if session.state.region_id!="desert" or not session.state.place_id.is_empty(): return false
 	var region: Node3D = session.world.production.regions.get("desert")
 	if not is_instance_valid(region): return false
-	# Replay can restart on the next frame, before ordinary streaming revisits
-	# the neighbouring grid cell. Admit both lanes before the physics query.
+	# A repetição pode reiniciar no próximo quadro, antes de o streaming comum revisitar
+	# a célula vizinha da grade. Admite as duas faixas antes da consulta de física.
 	if not region.prepare_collision_at(grid(0).origin) or not region.prepare_collision_at(grid(1).origin): return false
 	var destinations: Array[Transform3D] = []
-	# A cancelled attempt can leave the car on the launch grid. "Entrada" means
-	# the meet parking, even after a chain of cancellations and rematches.
+	# Uma tentativa cancelada pode deixar o carro no grid de largada. "Entrada" significa
+	# o estacionamento do encontro, mesmo depois de uma série de cancelamentos e revanches.
 	if _entry_pose.origin.distance_to(staging_point)<=15.0: destinations.append(_entry_pose)
 	for offset in [-6.0,-10.0,-2.0]:
 		destinations.append(Transform3D(_entry_pose.basis,staging_point+Vector3(0,.1,offset)))
@@ -897,8 +897,8 @@ func return_to_entry() -> bool:
 	return false
 
 func _refresh_session_hud() -> void:
-	# Contextual HUD normally polls at80ms. Ownership changes need one immediate
-	# projection so its minimap/weapon channels never overlap the race instruments.
+	# O HUD contextual normalmente consulta a 80ms. Trocas de posse precisam de uma projeção
+	# imediata para os canais de minimapa/arma nunca se sobreporem aos instrumentos da corrida.
 	if not is_instance_valid(session) or not is_instance_valid(session.world) or not session.world.is_inside_tree(): return
 	var normal_hud = session.world.hud
 	if is_instance_valid(normal_hud) and normal_hud.is_inside_tree() and normal_hud.has_method("refresh_from_state"):

@@ -1,5 +1,5 @@
 extends Control
-## Compact fishing instruments. The catch itself stays visible in the 3D scene.
+## Instrumentos de pesca compactos. A captura em si continua visível na cena 3D.
 signal catch_choice(action: String)
 const RULES := preload("res://activities/fishing/FishingRules.gd")
 const STYLE := preload("res://ui/GameStyle.gd")
@@ -103,7 +103,7 @@ func _choice_button(node_name: String, action: String) -> Button:
 	return button
 
 func _choice_touch(event: InputEvent, action: String) -> void:
-	# Gameplay touch disables mouse emulation, so native ScreenTouch is supported.
+	# O toque no jogo desliga a emulação de mouse, então o ScreenTouch nativo é suportado.
 	if event is InputEventScreenTouch and event.pressed:
 		_emit_choice(action)
 		get_viewport().set_input_as_handled()
@@ -114,8 +114,8 @@ func _emit_choice(action: String) -> void:
 	catch_choice.emit(action)
 
 func activate_focused_choice() -> void:
-	# The controller routes ui_accept here before overlapping gameplay bindings.
-	# Never infer a default choice when focus is elsewhere or has been released.
+	# O controle roteia ui_accept para cá antes das ligações de jogo sobrepostas.
+	# Nunca deduz uma escolha padrão quando o foco está em outro lugar ou foi solto.
 	if str(state.get("phase", "")) != "caught" or not is_inside_tree(): return
 	var focused := get_viewport().gui_get_focus_owner()
 	if focused == _keep_button and _keep_button.is_visible_in_tree() and not _keep_button.disabled:
@@ -130,7 +130,7 @@ func _focus_choice() -> void:
 
 func _catch_geometry() -> Dictionary:
 	var scale_factor := _hud_scale()
-	# Choice targets stay at least 44 physical pixels even at a 640px viewport.
+	# Os alvos de escolha ficam com pelo menos 44 pixels físicos mesmo numa viewport de 640px.
 	var unit := maxf(.8, scale_factor)
 	var margin := maxf(12, 24 * scale_factor)
 	var width := minf(maxf(220, 268 * scale_factor), maxf(1, size.x - margin * 2))
@@ -144,7 +144,7 @@ func _catch_geometry() -> Dictionary:
 	at.y += (1.0 - _result_reveal) * 12 * scale_factor
 	var bottom_limit := size.y - (margin if _touch_active() else maxf(144, 144 * scale_factor))
 	if at.y + height > bottom_limit:
-		# Small screens put the card beside the summary instead of covering touch actions.
+		# Telas pequenas põem o cartão ao lado do resumo em vez de cobrir as ações de toque.
 		at.x = maxf(margin, size.x - 292 * scale_factor - width - margin)
 		at.y = minf(summary_top, maxf(margin, bottom_limit - height))
 	var gap := 10 * unit
@@ -183,7 +183,7 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE * scale_factor)
 	var canvas := size / scale_factor
 	var phase := str(state.get("phase", "ready"))
-	# The game owns health/cash and touch controls. Leave those channels clear.
+	# O jogo é dono de vida/dinheiro e dos controles de toque. Deixa esses canais livres.
 	var summary_at := Vector2(canvas.x - 292, 244 if touch else 108)
 	_draw_summary(summary_at)
 	if phase in ["caught", "storing", "releasing"]:
@@ -218,7 +218,7 @@ func _draw_summary(at: Vector2) -> void:
 			if bool(rows[index].get("player", false)):
 				player_rank = index + 1
 				break
-		# Rank is numerical in both supported languages.
+		# A colocação é numérica nos dois idiomas suportados.
 		_text(at + Vector2(148, 66), "%d / %d" % [player_rank, maxi(1, rows.size())], 24, GOLD, 106, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	else:
 		_text(at + Vector2(14, 64), tr("%d peixes nesta pescaria") % int(state.get("catches", 0)), 17, MUTED, 240)
@@ -298,7 +298,7 @@ func _draw_tension(at: Vector2) -> void:
 	draw_rect(green, SAFE)
 	draw_rect(yellow, GOLD)
 	draw_rect(red, DANGER)
-	# Hatching makes the break zone readable independently of its color.
+	# O hachurado deixa a zona de ruptura legível independente da cor.
 	for index in 5:
 		var y := red.position.y + 2 + index * 6
 		draw_line(Vector2(red.position.x + 2, y + 4), Vector2(red.end.x - 2, y), Color("3b2526"), 2, true)

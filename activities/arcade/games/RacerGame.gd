@@ -1,5 +1,5 @@
 extends RefCounted
-## A short pseudo-3D sprint against six cars. Distances are in race metres.
+## Uma arrancada curta em pseudo-3D contra seis carros. As distâncias são em metros de corrida.
 
 const RACE_LENGTH := 6500.0
 const TIME_LIMIT := 48.0
@@ -156,7 +156,7 @@ func render(canvas: Control, area: Rect2) -> void:
 				var base := Vector2(center1+side*(width1+38*t1),y1)
 				canvas.draw_line(base,base-Vector2(0,65*t1),Color("8792ae"),maxf(1,t1*4))
 				canvas.draw_line(base-Vector2(0,65*t1),base+Vector2(-side*26*t1,-65*t1),Color("ffceab"),maxf(1,t1*4))
-	# Sort only six references, far to near, for correct car overlap.
+	# Ordena só seis referências, do longe para o perto, para a sobreposição correta dos carros.
 	var ordered: Array[Dictionary] = rivals.duplicate()
 	ordered.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a["distance"]) > float(b["distance"]))
 	for rival in ordered:

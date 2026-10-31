@@ -1,5 +1,5 @@
 extends RefCounted
-## The authored wash centreline; no new terrain, road graph or collision.
+## A linha central escrita do leito seco; sem terreno, grafo de rua ou colisão novos.
 const LANDFORMS := preload("res://world/desert/expansion/DesertLandforms.gd")
 const START_T := .08
 const END_T := .92

@@ -65,8 +65,8 @@ func set_style(id: String) -> void:
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# A connected but idle controller must not hide the keyboard controls.
-	# The next real input event selects the displayed device.
+	# Um controle conectado mas parado não pode esconder os controles do teclado.
+	# O próximo evento de entrada real escolhe o dispositivo exibido.
 	input_gamepad = false
 
 func _input(event: InputEvent) -> void:
@@ -103,8 +103,8 @@ func _draw() -> void:
 		_draw_instruments(Vector2(640, 280 if style_id == "bar" else 300))
 		draw_set_transform(Vector2.ZERO)
 		return
-	# A single logical canvas keeps every instrument and control inside 960x540
-	# and 1280x720, including non-16:9 windows. No per-frame Control rebuilding.
+	# Uma tela lógica única mantém todo instrumento e controle dentro de 960x540
+	# e 1280x720, incluindo janelas fora de 16:9. Sem reconstruir Control por quadro.
 	var factor := minf(size.x / 1280.0, size.y / 720.0)
 	if factor <= 0.0:
 		return
@@ -251,16 +251,16 @@ func _draw_meet_timer(canvas: Vector2) -> void:
 	_text(at+Vector2(88,77),"%05.2f s"%seconds,20,PAPER,123,HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _draw_classic(canvas: Vector2) -> void:
-	# Compact half dial from the selected Noite de Acerto concept. All static
-	# geometry is cached; the track and both cars keep the middle of the screen.
+	# Meio mostrador compacto do conceito escolhido Noite de Acerto. Toda geometria
+	# estática fica em cache; a pista e os dois carros mantêm o meio da tela.
 	var center := Vector2(canvas.x*.5-118,canvas.y-72)
 	var staging := show_start_lights or headline.is_valid_int()
 	var ratio := clampf(rpm/maxf(redline,1.0),0.0,1.0)
 	var good := ratio>=_good_from(staging) and ratio<=_good_to(staging)
 	var perfect := ratio>=_perfect_from(staging) and ratio<=_perfect_to(staging)
 	_cache_dial_geometry(center,staging)
-	# Separate silhouettes: 13 px of air after the 98 px dial, no rectangular
-	# backing under the arc. Smaller plate retains legible type and contrast.
+	# Silhuetas separadas: 13 px de ar depois do mostrador de 98 px, sem fundo
+	# retangular sob o arco. Uma placa menor mantém tipo e contraste legíveis.
 	draw_rect(Rect2(center+Vector2(111,-103),Vector2(224,124)),Color(INK,.85))
 	draw_colored_polygon(_dial_face,Color("0a0f14",.87))
 	_static_dial_arc(&"meet_rim",98,PI,TAU,64,Color("697078",.7),1)
@@ -420,7 +420,7 @@ func _draw_circular(canvas: Vector2) -> void:
 		_static_dial_arc(&"pro_inner", 112, 0, TAU, 88, Color("b7bebc"), 1.5)
 	else:
 		_static_dial_arc(&"classic_inner", 113, start, start + sweep, 80, TRACK, 3)
-	# This band shares the exact launch and shift bounds of the powertrain.
+	# Esta faixa divide os limites exatos de largada e troca do trem de força.
 	_static_dial_arc(&"shift_window", 106, start + sweep * ideal_from, start + sweep * ideal_to, 32, AMBER, 6 if ideal else 4)
 	if _race_controls: _static_dial_arc(&"perfect_window",110,start+sweep*_perfect_from(staging),start+sweep*_perfect_to(staging),20,AMBER,3)
 	_static_dial_arc(&"redline", 106, start + sweep * .985, start + sweep, 6, CORAL, 6)
@@ -431,8 +431,8 @@ func _draw_circular(canvas: Vector2) -> void:
 	for label in _dial_label_positions.size():
 		_text(_dial_label_positions[label], _dial_label_text[label], 18 if style_id == "pro" else 16, tick_color, 28, HORIZONTAL_ALIGNMENT_CENTER)
 	_text(center + Vector2(-55, -29), "RPM × 1000", 12, dim_color, 110, HORIZONTAL_ALIGNMENT_CENTER)
-	# A rigid needle follows the authoritative RPM in the same rendered frame.
-	# No tween, lerp, additional timer or delayed gauge state is introduced.
+	# Um ponteiro rígido segue o RPM oficial no mesmo quadro renderizado.
+	# Nenhum tween, lerp, timer adicional ou estado de mostrador atrasado é introduzido.
 	var needle_direction := Vector2.from_angle(start + sweep * ratio)
 	var perpendicular := Vector2(-needle_direction.y, needle_direction.x)
 	draw_colored_polygon(PackedVector2Array([
@@ -444,7 +444,7 @@ func _draw_circular(canvas: Vector2) -> void:
 	draw_circle(center, 4, face_color, true, -1, true)
 	_text(center + Vector2(-44, 43), "%04d" % roundi(rpm), 24, tick_color, 88, HORIZONTAL_ALIGNMENT_CENTER)
 	_text(center + Vector2(-44, 61), "RPM", 11, dim_color, 88, HORIZONTAL_ALIGNMENT_CENTER)
-	# Functional anticipation belongs to every face, including the free one.
+	# A antecipação funcional pertence a todo mostrador, incluindo o gratuito.
 	for lamp in 5:
 		var lit := ratio>=ideal_from-.12+lamp*.03
 		var lamp_tint := (CORAL if limiter else AMBER) if lit else (Color("d0d2cb") if style_id=="pro" else TRACK)
@@ -467,8 +467,8 @@ func _draw_circular(canvas: Vector2) -> void:
 	draw_rect(Rect2(nitro_at + Vector2(0, 10), Vector2(310, 5)), TRACK)
 	draw_rect(Rect2(nitro_at + Vector2(0, 10), Vector2(310 * clampf(nitro, 0, 1), 5)), CYAN)
 	if not preview_mode: _draw_controls(Vector2(at.x, canvas.y - 27))
-	# Keep the cars and countdown unobstructed. Staging instructions belong to
-	# the instrument wing; shift/launch feedback sits below the top race HUD.
+	# Mantém os carros e a contagem desobstruídos. As instruções de preparação pertencem à
+	# asa de instrumentos; o retorno de troca/largada fica abaixo do HUD de corrida de cima.
 	if not staging: _draw_feedback(Vector2(at.x, 177), false)
 
 func _cache_dial_geometry(center: Vector2, staging: bool) -> void:
@@ -505,8 +505,8 @@ func _cache_dial_geometry(center: Vector2, staging: bool) -> void:
 				_dial_label_text.append(str(floori(float(tick)/4.0)))
 			else: _dial_minor=points
 		return
-	# Static positions and strings are rebuilt only on layout/powertrain/style
-	# changes. RPM changes leave this cache intact and still move the needle now.
+	# Posições e strings estáticas só são reconstruídas em mudanças de layout/trem de força/estilo.
+	# Mudanças de RPM deixam este cache intacto e ainda movem o ponteiro agora.
 	for tick in range(int(floor(redline / 250.0)) + 1):
 		var tick_rpm := float(tick) * 250.0
 		var unit := Vector2.from_angle(PI * .75 + PI * 1.5 * tick_rpm / maxf(redline, 1.0))
@@ -591,5 +591,5 @@ func _text(at: Vector2, value: String, font_size: int, color: Color, width := -1
 	_literal(at,tr(value),font_size,color,width,alignment)
 
 func _literal(at: Vector2, value: String, font_size: int, color: Color, width := -1.0, alignment := HORIZONTAL_ALIGNMENT_LEFT) -> void:
-	# Key names are input legends, not translatable action identifiers (SHIFT).
+	# Nomes de tecla são legendas de entrada, não identificadores de ação traduzíveis (SHIFT).
 	draw_string(FACE if font_size>=17 else BODY,at,value,alignment,width,font_size,color)

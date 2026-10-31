@@ -173,7 +173,7 @@ func perform(target: Variant) -> bool:
 	var points := PackedVector3Array()
 	for point in spec.points: points.append(Definitions.at(point,"mountain"))
 	if race.begin_race(course_id,Definitions.at(spec.start,"mountain"),points,_flat(session.world.player.position)):
-		# V1 is a downhill finish, unlike the reused circuit scorer's return lap.
+		# A V1 é uma chegada em descida, ao contrário da volta de retorno do pontuador de circuito reaproveitado.
 		race.points.resize(race.points.size()-1)
 	return true
 
@@ -206,8 +206,8 @@ func _build_ski_pose() -> void:
 	if not is_instance_valid(actor.skeleton) or actor.hips < 0: return
 	_ski_turn_poses.clear()
 	_ski_carve = 0.0
-	# Resolve the rig only when equipping. Curves blend these cached poses, rather
-	# than freezing a weapon-arm solution or running arm IK every rendered frame.
+	# Resolve o rig só ao equipar. As curvas mesclam estas poses em cache, em vez
+	# de congelar uma solução de braço de arma ou rodar IK de braço a cada quadro renderizado.
 	var weapon_pose: Dictionary = actor.combat_weapon_pose
 	var weapon_id: String = actor.combat_weapon_id
 	var pose_delta: float = actor._pose_delta
@@ -240,8 +240,8 @@ func _make_ski_pose(carve: float) -> Array:
 	for side in ["Left","Right"]:
 		var sign_side := -1.0 if side == "Left" else 1.0
 		actor._solve_leg(side,actor.visual.to_global(Vector3(sign_side*.09,.07,0)))
-		# Hands stay ahead of the chest, shoulder-width apart. The inside hand
-		# advances slightly on a turn; lowered/outside elbows keep the arms flexed.
+		# As mãos ficam à frente do peito, na largura dos ombros. A mão de dentro
+		# avança um pouco na curva; cotovelos baixos/de fora mantêm os braços flexionados.
 		var inside := sign_side*carve
 		var hand := Vector3(sign_side*.27+carve*.025,.83-absf(carve)*.02,-.26-inside*.04)
 		var palm := Basis(Vector3.RIGHT,-.30)*Basis(Vector3.UP,sign_side*.12)
@@ -270,8 +270,8 @@ func _update_ski_poles() -> void:
 		var side := "Left" if index == 0 else "Right"
 		var sign_side := -1.0 if index == 0 else 1.0
 		var pole := _ski_poles[index]
-		# Cylinder +Y is its handle. Keep the actual palm eight centimetres below
-		# the top, with the tip trailing behind and outside the skis.
+		# O +Y do cilindro é o cabo. Mantém a palma real oito centímetros abaixo
+		# do topo, com a ponta arrastando atrás e por fora dos esquis.
 		var down := Vector3(sign_side*.055,-1.0,.90+sign_side*_ski_carve*.04).normalized()
 		pole.basis = Basis(Quaternion(Vector3.UP,-down))
 		pole.position = equipment_visual.to_local(actor.combat_palm_position(side))+down*(1.15*.5-.08)

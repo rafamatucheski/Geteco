@@ -1,5 +1,5 @@
 extends Node
-## Owns the cabinet modal; FullSession remains the owner of player controls.
+## Cuida do modal do gabinete; o FullSession continua dono dos controles do jogador.
 const PLACE := "harbor_arcade"
 const TITLES := {"pinball":"Bola de Aço", "blocks":"Blocos", "racer":"Pista Neon", "fighter":"Último Round"}
 var session
@@ -79,7 +79,7 @@ func dismiss() -> void:
 	cabinet = ""
 	if is_instance_valid(ui): ui.dismiss()
 	set_process(false)
-	# Save after FullSession has released the modal; never save the live game.
+	# Salva depois que o FullSession soltou o modal; nunca salva o jogo vivo.
 	_save_records.call_deferred()
 
 func _save_records() -> void:

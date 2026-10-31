@@ -1,5 +1,5 @@
 extends Node3D
-## World-space circuit east of Vértice, inside the area marked by the player.
+## Circuito no espaço do mundo a leste do Vértice, dentro da área marcada pelo jogador.
 const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const EDITOR_TERRAIN := preload("res://world/editing/WorldTerrainEdits.gd")
 const ENTRY := Vector3(-224,.15,-37)
@@ -18,8 +18,8 @@ var _materials := {}
 var wetness := 0.0
 var _soil_materials: Array[ShaderMaterial] = []
 var _terrain_heights := PackedFloat32Array()
-## Shoulder outer-edge heights per side, cached from the mesh build so props can
-## be supported on the exact sloped surface without repeating route searches.
+## Alturas da borda externa do acostamento por lado, em cache desde a montagem da malha para os objetos
+## poderem apoiar na superfície inclinada exata sem repetir buscas de rota.
 var _outer_heights := {}
 var stake_tops: Array[PackedVector3Array] = []
 var start_gate: Node3D
@@ -27,7 +27,7 @@ var trackside: Node3D
 static var _soil_texture: NoiseTexture2D
 
 func _init() -> void:
-	# Its staged descendants use the same session IDs in streamed chunks and previews.
+	# Os descendentes preparados usam os mesmos IDs de sessão em chunks em streaming e prévias.
 	set_meta("world_unit_session_source","motocross")
 	_editor_terrain = EDITOR_TERRAIN.from_engine("harbor","motocross")
 	var knots := PackedVector3Array([Vector3(-218,1,-57),Vector3(-230,4,-87),Vector3(-220,11,-119),Vector3(-190,17,-132),Vector3(-154,12,-128),Vector3(-116,4,-116),Vector3(-104,2,-91),Vector3(-110,1,-60),Vector3(-135,4,-65),Vector3(-152,8,-96),Vector3(-179,5,-92),Vector3(-185,1,-59)])
@@ -220,7 +220,7 @@ var _grass_node: Node
 
 func _lap(since: int) -> float: return snappedf(float(Time.get_ticks_usec()-since)/1000.0,0.1)
 
-## Race-control board text; the controller writes it at a few hertz.
+## Texto do painel de controle da corrida; o controlador o escreve a poucos hertz.
 func set_board(title: String, detail: String) -> void:
 	if is_instance_valid(trackside): trackside.set_board(title,detail)
 
@@ -330,7 +330,7 @@ func _build_terrain() -> void:
 
 func surface_height(point: Vector2) -> float:
 	if not BOUNDS.has_point(point) or _terrain_heights.is_empty(): return 0.0
-	# Match the actual triangle split, not an analytic hill above/below it.
+	# Segue a divisão real dos triângulos, não um morro analítico acima/abaixo dela.
 	var uv := (point-BOUNDS.position)/BOUNDS.size*Vector2(78,56)
 	var x := mini(77,floori(uv.x)); var z := mini(55,floori(uv.y))
 	var fx := uv.x-x; var fz := uv.y-z
@@ -345,7 +345,7 @@ func _build_ribbon() -> void:
 	st.set_material(_material(Color("b18756")))
 	var unique_count := points.size()-1
 	for i in range(points.size()-1):
-		# Shared cross-sections give corners an outside berm; the center stays rideable.
+		# Seções transversais compartilhadas dão às curvas uma berma externa; o centro continua pilotável.
 		for band in 6:
 			var left := float(band)/6.0*2-1
 			var right := float(band+1)/6.0*2-1
@@ -375,8 +375,8 @@ func _triangle_height(point: Vector2, a: Vector3, b: Vector3, c: Vector3) -> flo
 	if u < -.0001 or v < -.0001 or u+v > 1.0001: return NAN
 	return a.y+(b.y-a.y)*u+(c.y-a.y)*v
 
-## Height of the rendered/collision clay at a lateral offset from the route,
-## following the six-band banked cross-section rather than the flat centerline.
+## Altura do barro renderizado/de colisão num offset lateral a partir da rota,
+## seguindo a seção transversal inclinada de seis faixas em vez da linha central plana.
 func ribbon_height(distance: float, lateral: float) -> float:
 	var n := points.size()-1
 	var index := fposmod(distance,length)/length*n
@@ -396,7 +396,7 @@ func ribbon_height(distance: float, lateral: float) -> float:
 	var second := _triangle_height(Vector2(at.x,at.z),c,b,d)
 	return second if is_finite(second) else at.y
 
-## Visible ground at any lateral offset: clay, sculpted shoulder or quarry hill.
+## Chão visível em qualquer offset lateral: barro, acostamento esculpido ou morro da pedreira.
 func ground_height(distance: float, lateral: float) -> float:
 	var reach := absf(lateral)
 	if reach <= HALF_WIDTH: return ribbon_height(distance,lateral)
@@ -420,7 +420,7 @@ func ground_height(distance: float, lateral: float) -> float:
 		heights.append(lerpf(_ribbon_vertex(k,HALF_WIDTH*direction).y,outer_y,(reach-HALF_WIDTH)/3.0))
 	return lerpf(heights[0],heights[1],index-float(i))
 
-## Signed heading change over ±4.5 m; positive turns left (outside is +x of pose).
+## Mudança de direção com sinal em ±4.5 m; positivo vira à esquerda (o lado de fora é +x da pose).
 func turn_at(index: int) -> float:
 	var n := points.size()-1
 	index = posmod(index,n)
@@ -465,9 +465,9 @@ func _build_shoulders() -> void:
 			var c: Vector3 = sections[i][side+1]
 			var d: Vector3 = sections[i+1][side+1]
 			var vertices := [a,c,b,b,c,d] if side==0 else [a,b,c,b,d,c]
-			# The inside offset can reverse locally in the tight hairpin. Keep
-			# both physical and visible faces pointing upward, rather than hiding
-			# a real support surface behind its back face. Skip zero-area slivers.
+			# O offset interno pode se inverter localmente no grampo fechado. Mantém
+			# as faces física e visível apontando para cima, em vez de esconder
+			# uma superfície de apoio real atrás da face de trás. Pula lascas de área zero.
 			for triangle in [0,3]:
 				var p: Vector3 = vertices[triangle]
 				var q: Vector3 = vertices[triangle+1]
@@ -508,17 +508,17 @@ func _stake_point(index: int, direction: float) -> Vector3:
 	var side := (points[(wrapped+1)%n]-points[posmod(wrapped-1,n)]).cross(Vector3.UP).normalized()
 	var at: Vector3 = points[wrapped]+side*(HALF_WIDTH+.45)*direction
 	var distance := float(wrapped)/float(n)*length
-	# Lowest point across the (world-aligned, so up to 11 cm diagonal) footprint
-	# on the sloped shoulder: no stake hangs over a falling hillside or perches
-	# on the berm crest. The post itself is sunk another 5 cm below this.
+	# Ponto mais baixo da pegada (alinhada ao mundo, então até 11 cm na diagonal)
+	# no acostamento inclinado: nenhuma estaca fica pendurada sobre uma encosta nem empoleirada
+	# na crista da berma. O próprio poste é afundado mais 5 cm abaixo disso.
 	at.y = INF
 	for along in [-.12,.12]:
 		for reach in [.33,.57]: at.y = minf(at.y,ground_height(distance+along,(HALF_WIDTH+reach)*direction))
 	return at
 
 func _build_props() -> void:
-	# Stakes carry the course tape. Straight tape between them must not cut the
-	# riding width on corners, so spacing tightens where the edge bends.
+	# As estacas levam a fita da pista. A fita reta entre elas não pode cortar a
+	# largura pilotável nas curvas, então o espaçamento aperta onde a borda curva.
 	var n := points.size()-1
 	var stakes := MultiMesh.new()
 	stakes.transform_format = MultiMesh.TRANSFORM_3D
@@ -587,7 +587,7 @@ func _build_props() -> void:
 	# GroundDetail builds one continuous, gently graded yard and access path.
 
 func _dress_quarry() -> void:
-	# Low-poly rocks outside the riding surface, with matching solid bodies.
+	# Pedras low-poly fora da superfície pilotável, com corpos sólidos correspondentes.
 	var rocks := MultiMesh.new()
 	rocks.transform_format = MultiMesh.TRANSFORM_3D
 	var stone := SphereMesh.new()
@@ -618,8 +618,8 @@ func _dress_quarry() -> void:
 		var placement := Transform3D(Basis(Vector3.UP,rng.randf()*TAU).scaled(Vector3(radius,radius*.65,radius*.8)),p)
 		transforms.append(placement)
 		var collision := CollisionShape3D.new()
-		# A sphere extended beyond the flattened rock, causing impacts in air.
-		# Bake the exact visible mesh into an unscaled convex physical hull.
+		# Uma esfera passava além da pedra achatada, causando impactos no ar.
+		# Bakeia a malha visível exata num casco convexo físico sem escala.
 		var shape := ConvexPolygonShape3D.new()
 		var vertices := PackedVector3Array()
 		for vertex in stone_faces: vertices.append(placement.basis * vertex)

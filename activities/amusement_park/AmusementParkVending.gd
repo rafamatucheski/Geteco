@@ -1,5 +1,5 @@
 extends RefCounted
-## The wallet receipt is also the stock unit: debit, delivery and stock commit together.
+## O recibo da carteira também é a unidade de estoque: débito, entrega e estoque se efetivam juntos.
 const ECONOMY := preload("res://systems/economy/Economy.gd")
 const GRID := preload("res://systems/inventory/GridInventory.gd")
 const MACHINES := {
@@ -78,7 +78,7 @@ func buy(machine: String, item: String, token: String) -> Dictionary:
 	if not valid_token:
 		session.show_message("Produto esgotado." if token.is_empty() else "Compra indisponível.")
 		return {"ok":false,"reason":"out_of_stock" if token.is_empty() else "invalid_transaction"}
-	# An outstanding button may be delivered twice; Economy replays its receipt.
+	# Um botão pendente pode ser entregue duas vezes; a Economy repete o recibo.
 	var result: Dictionary = session.state.economy.purchase("supply",item,token)
 	if result.ok and result.reason == "purchased":
 		session.save_game()

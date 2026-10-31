@@ -1,13 +1,13 @@
 extends RefCounted
-## Use the actual Dante rig and existing articulated civilian legs; never a proxy rider.
+## Usa o rig real do Dante e as pernas civis articuladas existentes; nunca um piloto substituto.
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 const MODEL := preload("res://activities/skate/SkateModel.gd")
 const RECOVERY_DURATION := 1.1
 
 static func feet(board) -> Array[Vector3]:
-	# Staggered stance, with both feet and the torso facing the nose.
-	# Both imported rigs face +Z and Actor rotates their model by PI. The
-	# left hip is therefore on board +X; swapping these crossed both legs.
+	# Postura escalonada, com os dois pés e o tronco virados para o nose.
+	# Os dois rigs importados olham para +Z e o Actor gira o modelo em PI. O
+	# quadril esquerdo fica então no +X do skate; trocar estes cruzava as duas pernas.
 	var front := Vector3(.065, MODEL.DECK_HEIGHT, -.16)
 	var back := Vector3(-.065, MODEL.DECK_HEIGHT, .16)
 	if board.pushing:
@@ -16,7 +16,7 @@ static func feet(board) -> Array[Vector3]:
 		# Tests/previews may pose a board without a live contact probe.
 		if not board.push_support: direction = -1.0 if board._throttle < 0 else 1.0
 		var ground: Vector3 = board.push_foot if board.push_support else Vector3(-.28, 0, lerpf(-.20, .36, clampf((phase - .18) / .47, 0, 1)) * direction)
-		# Approach, sole contact, backward push, then lift back onto the tail.
+		# Aproximação, contato da sola, empurrão para trás e depois subida de volta no tail.
 		if phase < .18: back = back.lerp(ground, smoothstep(0, .18, phase))
 		elif phase < .65: back = ground
 		else:
@@ -41,8 +41,8 @@ static func apply(actor, board) -> void:
 		actor._apply_pose(actor._idle_pose)
 		if actor.hips >= 0:
 			var hip: Vector3 = actor.skeleton.get_bone_pose_position(actor.hips)
-			# Add board height, then flex the supporting knee for the push.
-			# Never raise the pelvis beyond the authored leg reach.
+			# Soma a altura do skate e depois flexiona o joelho de apoio para o empurrão.
+			# Nunca ergue a pélvis além do alcance escrito da perna.
 			hip.y += (MODEL.DECK_HEIGHT - .06 - .15 * push_weight - .12 * tuck - compression) / actor.skeleton.global_basis.get_scale().y
 			actor.skeleton.set_bone_pose_position(actor.hips, hip)
 		var world_targets: Array[Vector3] = []
@@ -66,8 +66,8 @@ static func apply(actor, board) -> void:
 			hip.y -= drop
 			actor.skeleton.set_bone_pose_position(actor.hips, hip)
 		for index in 2: actor._solve_leg("Left" if index == 0 else "Right", world_targets[index])
-		# Idle already has relaxed shoulders and bent elbows; modest balance
-		# motion avoids rotating imported bone-local axes into an overhead pose.
+		# A pose parada já tem ombros relaxados e cotovelos dobrados; um movimento de equilíbrio
+		# modesto evita girar os eixos locais dos ossos importados para uma pose acima da cabeça.
 		var chest: int = actor._combat_bones.get("Spine02", -1)
 		if chest >= 0:
 			var pose: Basis = actor.skeleton.get_bone_global_pose(chest).basis
@@ -91,7 +91,7 @@ static func apply(actor, board) -> void:
 		var height: float = model.scale.y
 		var pelvis_position := Vector3(-.035 * push_weight, model.pelvis_y + (MODEL.DECK_HEIGHT - .08 - .24 * push_weight - .12 * tuck - compression) / height, 0)
 		var basis := Basis.from_euler(Vector3(.03 * push_weight, -.4 * (1 - push_weight), board.lean * .3))
-		# Respect authored leg lengths on uneven support beside the board.
+		# Respeita os comprimentos escritos das pernas em apoio irregular ao lado do skate.
 		var ankles: Array[Vector3] = []
 		var reach: float = (model.thigh_len + model.shin_len) * .995
 		var drop := 0.0
@@ -122,8 +122,8 @@ static func apply(actor, board) -> void:
 			model.forearms[index].rotation.x = -.3 - push_weight * (.12 if index == 0 else .25)
 
 static func fall(actor, age: float, heading: float) -> void:
-	# Brace, absorb the impact, then get up through a crouch. Physics remains
-	# owned by the swept player capsule; no free-running animation tween.
+	# Firma, absorve o impacto e depois levanta passando por um agachamento. A física continua
+	# com a cápsula varrida do jogador; sem tween de animação correndo solto.
 	var impact := smoothstep(0, .45, age)
 	var rise := smoothstep(.5, RECOVERY_DURATION, age)
 	var weight := impact * (1 - rise)

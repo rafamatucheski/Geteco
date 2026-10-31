@@ -33,8 +33,8 @@ func configure(start: Vector3, forward: Vector3, distance: float) -> void:
 		lamp.material_override = material
 		lenses.append(material)
 		tree.add_child(lamp)
-	# The authored 800 m finish already belongs to the streamed desert. Avoid
-	# a second almost-coplanar stripe that would flicker under the side camera.
+	# A chegada escrita de 800 m já pertence ao deserto em streaming. Evita
+	# uma segunda faixa quase coplanar que piscaria sob a câmera lateral.
 	if is_equal_approx(distance,800.0):
 		set_countdown(3)
 		return
@@ -53,7 +53,7 @@ func configure(start: Vector3, forward: Vector3, distance: float) -> void:
 	stripe.multimesh = cells
 	stripe.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var orientation := Basis.looking_at(forward,Vector3.UP)
-	# In the strip frame, local X crosses lanes and local -Z points forward.
+	# No referencial da pista, o X local cruza as faixas e o -Z local aponta para frente.
 	block.size = Vector3(.5,.012,.55)
 	for row in 2:
 		for column in 18:

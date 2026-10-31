@@ -1,5 +1,5 @@
 extends RefCounted
-## Suspension presentation only: collision body and tyre contact stay unchanged.
+## Só apresentação da suspensão: o corpo de colisão e o contato dos pneus não mudam.
 static var enabled := OS.get_environment("GETECO_DRAG_BODY_BASELINE") != "1"
 var car: Node3D
 var rest := Transform3D.IDENTITY
@@ -29,7 +29,7 @@ func step(delta: float, drive) -> void:
 	var target := deg_to_rad(2.4)*clampf(acceleration/8.0,0.0,1.0)*weight if drive.launched else 0.0
 	pitch = lerpf(pitch,target,1.0-exp(-dt*(9.0 if target>pitch else 4.5)))
 	var tilt := Transform3D(Basis(Vector3.RIGHT,pitch),Vector3.ZERO)
-	# Rotate the sprung body near its centre; front rises and rear squats.
+	# Gira o corpo suspenso perto do centro; a frente sobe e a traseira agacha.
 	var pivot := Vector3(0,.6,0)
 	tilt.origin = pivot-tilt.basis*pivot
 	car.visual.transform = tilt*rest

@@ -1,5 +1,5 @@
 extends RefCounted
-## Authored hand targets use the existing Dante IK and keep the feet physical.
+## Alvos de mão escritos usam o IK existente do Dante e mantêm os pés físicos.
 static func pose(phase: String, phase_time: float, charge: float, tension: float, held: bool, age: float) -> Dictionary:
 	var right := Vector3(.17, 1.02, -.33)
 	var left := Vector3(-.02, .98, -.43)

@@ -173,8 +173,8 @@ func _open_home_purchase(home: String) -> void:
 		scroll.custom_minimum_size = previous_minimum
 		scroll.horizontal_scroll_mode = previous_horizontal
 	session.menu_closed = restore_layout
-	# Replacing the modal removes its title before building the next menu.
-	# Restore that menu's scroll constraints even when close_menu is bypassed.
+	# Substituir o modal remove o título dele antes de montar o próximo menu.
+	# Restaura as restrições de rolagem desse menu mesmo quando close_menu é contornado.
 	session.column.get_child(0).tree_exiting.connect(restore_layout,CONNECT_ONE_SHOT)
 	if int(quote.get("refund",0)) > 0:
 		var credit := Label.new()

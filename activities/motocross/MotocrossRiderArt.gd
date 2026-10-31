@@ -1,6 +1,6 @@
 extends Node3D
-## Shared sculpted meshes and four lightweight two-segment limbs. Contact
-## targets are read from the actual moving handlebars and footpegs.
+## Malhas esculpidas compartilhadas e quatro membros leves de dois segmentos. Os alvos
+## de contato são lidos do guidão e das pedaleiras reais em movimento.
 var jersey_color := Color("d5dce1")
 var accent_color := Color("dc702b")
 var arms: Array = []
@@ -16,7 +16,7 @@ func _ready() -> void:
 	var accent := _mat(accent_color)
 	var dark := _mat(Color("26303b"))
 	var ivory := _mat(Color("dce2df"))
-	# Waist, rib cage and shoulders have distinct sections and a rounded neck.
+	# Cintura, caixa torácica e ombros têm seções distintas e um pescoço arredondado.
 	_add(_loft("torso",[Vector4(-.04,.15,.115,0),Vector4(.08,.155,.10,0),Vector4(.25,.20,.12,-.008),Vector4(.40,.235,.12,-.025),Vector4(.48,.16,.10,-.025)]),jersey)
 	_add(_loft("hips",[Vector4(-.10,.135,.115,.01),Vector4(-.04,.175,.14,0),Vector4(.07,.15,.11,0)]),dark)
 	_add(_oval(),accent,Vector3(0,.30,-.135),Vector3(.29,.29,.035))
@@ -48,22 +48,22 @@ func _ready() -> void:
 		_add(_loft("boot_foot",[Vector4(-.11,.079,.16,-.05),Vector4(-.055,.085,.17,-.05),Vector4(.045,.065,.078,0)]),ivory,Vector3.ZERO,Vector3.ONE,boot)
 		_add(_oval(),dark,Vector3(0,-.10,-.05),Vector3(.17,.035,.34),boot)
 		boots.append(boot)
-		# The foot stays on the peg; the protective shaft follows the shin.
+		# O pé fica na pedaleira; o cano protetor segue a canela.
 		var cuff := Node3D.new()
 		cuff.name = "LeftBootCuff" if side<0 else "RightBootCuff"
 		add_child(cuff)
 		_add(_loft("boot_cuff",[Vector4(-.015,.063,.073,0),Vector4(.08,.068,.076,0),Vector4(.22,.077,.080,0)]),ivory,Vector3.ZERO,Vector3.ONE,cuff)
 		for y in [.045,.115,.185]: _add(_oval(),accent,Vector3(0,y,-.076),Vector3(.125,.026,.022),cuff)
 		boot_cuffs.append(cuff)
-	# Merge static clothing/helmet/glove detail by material; only limb pieces
-	# and their end targets need independent transforms while riding.
+	# Funde por material os detalhes estáticos de roupa/capacete/luva; só as peças dos membros
+	# e os alvos das pontas precisam de transformações independentes ao pilotar.
 	var articulated: Array = []
 	for limb in arms+legs: articulated.append_array(limb)
 	_merge_static(self,articulated)
 	for target in hands+boots+boot_cuffs: _merge_static(target,[])
 
 func pose(bike: Node3D, contact: float, stride: float = 0.0) -> void:
-	# Race cleanup can restore the seat after its children leave the scene tree.
+	# A limpeza da corrida pode restaurar o assento depois que os filhos saem da árvore de cena.
 	if arms.size()!=2 or not is_inside_tree() or not bike.visual.is_inside_tree() or not bike._front.is_inside_tree(): return
 	var inverse := global_transform.affine_inverse()
 	var grips: Transform3D = inverse*bike._front.global_transform
@@ -160,7 +160,7 @@ static func _loft(key: String,rings: Array,sides := 12) -> ArrayMesh:
 			if end==0: vertices.reverse()
 			for vertex in vertices: surface.add_vertex(vertex)
 	surface.generate_normals()
-	# Every source needs indices before batching with indexed PrimitiveMeshes.
+	# Toda fonte precisa de índices antes de ser juntada com PrimitiveMeshes indexados.
 	surface.index()
 	_meshes[key] = surface.commit()
 	return _meshes[key]

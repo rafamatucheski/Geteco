@@ -1,18 +1,18 @@
 extends RefCounted
-## Entry debit and settlement share the existing wallet's durable receipts.
+## O débito de inscrição e a liquidação dividem os recibos duráveis da carteira existente.
 const LEVELS := [
 	{"name":"Iniciante","fee":100,"bonus":40,"laps":2,"rivals":3,"speed":10.5,"width":9.0},
 	{"name":"Intermediário","fee":200,"bonus":80,"laps":2,"rivals":4,"speed":12.5,"width":8.0},
 	{"name":"Avançado","fee":350,"bonus":140,"laps":3,"rivals":5,"speed":14.0,"width":7.0},
 	{"name":"Expert","fee":500,"bonus":200,"laps":3,"rivals":5,"speed":15.5,"width":6.5}]
-## A 402 m lap at the fastest model's 18 m/s is ~22 s; anything under this is
-## a timing fault or an edited save, never a real record.
+## Uma volta de 402 m aos 18 m/s do modelo mais rápido dá ~22 s; qualquer coisa abaixo disso é
+## falha de cronometragem ou save editado, nunca um recorde real.
 const MIN_LAP := 15.0
 const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
 const RACES := preload("res://systems/economy/RaceReceipts.gd")
 var data := {"version":1,"serial":0,"active":-1,"unlocked":0,"wins":[0,0,0,0],"owned":false,"rental_serial":0,"bike_model":0,"best_lap":0.0}
 
-## Race and practice laps share one track record. Returns true for a new best.
+## Voltas de corrida e de treino dividem um recorde da pista. Devolve true para uma nova melhor.
 func record_lap(seconds: float) -> bool:
 	if not is_finite(seconds) or seconds < MIN_LAP or seconds > 3600.0: return false
 	var best := float(data.get("best_lap",0.0))
@@ -134,8 +134,8 @@ static func _tally_compact_entries(value: Dictionary, wallet: Dictionary, totals
 			if int(RACES.MOTO_PRIZES[prize-1])!=amount+int(LEVELS[level].bonus): return false
 			totals.wins[level]+=count
 		totals.entries+=count
-	# Mixed saves may hold the entry in a page and its prize in the opaque map.
-	# Noncanonical prize IDs remain ignored exactly as the original lookup did.
+	# Saves mistos podem ter a inscrição numa página e o prêmio no mapa opaco.
+	# IDs de prêmio não canônicos continuam ignorados exatamente como a consulta original fazia.
 	var transactions: Dictionary = wallet.get("transactions",{})
 	for key in transactions:
 		var prefix := "reward:motocross_prize:"

@@ -1,7 +1,7 @@
 extends RefCounted
-## Nearby practice riders only: no entry fee, awards, race gates or save state.
-## The controller calls update(delta), appends rows to surface effects and calls
-## clear() before a paid race, rental or mounted-player sequence is created.
+## Só pilotos de treino próximos: sem taxa de inscrição, prêmios, portões de corrida nem estado de save.
+## O controlador chama update(delta), anexa linhas aos efeitos de superfície e chama
+## clear() antes de criar uma corrida paga, aluguel ou sequência de jogador montado.
 const BIKE := preload("res://activities/motocross/MotocrossBike.gd")
 const MAX_RIDERS := 3
 const ENTER_DISTANCE := 150.0
@@ -78,8 +78,8 @@ func update(delta: float) -> void:
 	_steer_clock += delta
 	if _steer_clock < STEER_INTERVAL: return
 	_steer_clock = fmod(_steer_clock,STEER_INTERVAL)
-	# Physics stays at the engine rate. Background riders only need a fresh
-	# look-ahead steering decision at 12.5 Hz; their last input is held between.
+	# A física fica na taxa do motor. Pilotos de fundo só precisam de uma decisão nova
+	# de direção com antecipação a 12.5 Hz; a última entrada deles é mantida no intervalo.
 	for row in rows:
 		if not is_instance_valid(row.bike): continue
 		row.bike.wetness = controller.wetness
@@ -146,5 +146,5 @@ func _recover_if_needed(controller: Node, row: Dictionary, delta: float) -> void
 	row.stalled = 0.0
 	row.recovering = 0.0
 	row.respawns += 1
-	# Keep the same visible fall/stand/remount lifecycle as racing opponents.
+	# Mantém o mesmo ciclo visível de queda/levantar/remontar dos adversários de corrida.
 	bike.crash(0.2)

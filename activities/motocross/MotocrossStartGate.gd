@@ -1,14 +1,14 @@
 extends Node3D
-## Real motocross start: one row of hinged bars across the final straight. The
-## bars are visual only (bikes are held by the race controller until the drop),
-## so they lie flat on the clay whenever no race is being started and practice
-## riders cross them freely. One MultiMesh, animated only while moving.
+## Largada real de motocross: uma fileira de barras com dobradiça atravessando a reta final. As
+## barras são só visuais (as motos ficam presas pelo controlador da corrida até a queda),
+## então ficam deitadas no barro sempre que nenhuma corrida está largando, e os pilotos
+## de treino passam livremente por cima. Um MultiMesh, animado só enquanto se move.
 const GRID_DISTANCE := -18.0
-## Bars hinge half a metre ahead of the front tires on the grid.
+## As barras giram meio metro à frente dos pneus dianteiros no grid.
 const GATE_DISTANCE := GRID_DISTANCE+1.45
-## Grid order: the player first, then rivals outwards. 1.7 m spacing leaves the
-## mounting rider (0.95 m left of the seat) clear of the neighbour's handlebar;
-## the outer right lane sits on the gentle start of the first corner's berm.
+## Ordem do grid: o jogador primeiro, depois os rivais para fora. O espaçamento de 1.7 m deixa o
+## piloto montando (0.95 m à esquerda do assento) longe do guidão do vizinho;
+## a faixa externa direita fica no começo suave da berma da primeira curva.
 const LANES := [-.85,.85,-2.55,2.55,-4.25,4.25]
 const BAR_SIZE := Vector3(1.5,.52,.05)
 var course: Node3D
@@ -26,7 +26,7 @@ func _ready() -> void:
 		var lateral := float(lane)
 		var left: float = course.ribbon_height(GATE_DISTANCE,lateral-BAR_SIZE.x*.5)
 		var right: float = course.ribbon_height(GATE_DISTANCE,lateral+BAR_SIZE.x*.5)
-		# Each hinge follows the clay's cross slope, including the right berm.
+		# Cada dobradiça segue a inclinação transversal do barro, incluindo a berma direita.
 		var across := (road.basis.x*BAR_SIZE.x+Vector3.UP*(right-left)).normalized()
 		var forward := -road.basis.z
 		var up := across.cross(forward).normalized()
@@ -66,29 +66,29 @@ func drop_gate() -> void:
 	set_process(true)
 
 func _process(delta: float) -> void:
-	# Springs drop the bars quickly; the starter raises them slowly.
+	# Molas derrubam as barras rápido; o largador as ergue devagar.
 	_angle = move_toward(_angle,_target,delta*(7.5 if _target > _angle else 1.6))
 	_apply()
 	if is_equal_approx(_angle,_target): set_process(false)
 
 func _apply() -> void:
-	# The bar top falls back toward the waiting riders, as on a real gate.
+	# O topo da barra cai para trás, em direção aos pilotos esperando, como num portão real.
 	var hinge := Basis(Vector3.RIGHT,_angle*PI*.5)
 	for index in _pivots.size():
 		var local := Transform3D(hinge,Vector3.ZERO)*Transform3D(Basis.IDENTITY,Vector3(0,BAR_SIZE.y*.5,0))
 		_bars.multimesh.set_instance_transform(index,global_transform.affine_inverse()*_pivots[index]*local)
 
 func _build_frame() -> void:
-	# Starter's box and end pylons stand outside the riding width on both sides.
+	# A cabine do largador e os pilares das pontas ficam fora da largura pilotável dos dois lados.
 	var steel := StandardMaterial3D.new()
 	steel.albedo_color = Color("4a5351")
 	steel.metallic = .5
 	steel.roughness = .55
 	var road: Transform3D = course.pose(GATE_DISTANCE)
 	for side in [-1.0,1.0]:
-		# Outside the course tape line at HALF_WIDTH+0.45.
+		# Fora da linha da fita da pista em HALF_WIDTH+0.45.
 		var lateral: float = side*(course.HALF_WIDTH+1.0)
-		# Lowest corner of the footprint on the sloped shoulder, sunk 6 cm.
+		# Canto mais baixo da pegada no acostamento inclinado, afundado 6 cm.
 		var ground := minf(course.ground_height(GATE_DISTANCE,lateral-.16),course.ground_height(GATE_DISTANCE,lateral+.16))
 		var pylon := MeshInstance3D.new()
 		var box := BoxMesh.new()

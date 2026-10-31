@@ -1,6 +1,6 @@
 extends Node3D
-## One physical heat and one waiting pair. Player admission reserves the strip;
-## no background heat can overlap a player attempt. Everything is visit-owned.
+## Uma bateria física e um par esperando. A admissão do jogador reserva a pista;
+## nenhuma bateria de fundo pode se sobrepor a uma tentativa do jogador. Tudo pertence à visita.
 const ROSTER = preload("res://activities/desert_drag/DragOpenRoster.gd")
 const DRIVE = preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
 const AUDIO = preload("res://audio/desert_cars/DesertCarAudio.gd")
@@ -56,13 +56,13 @@ func request(identity: String, _join_queue: bool = false) -> bool:
 	var reason: String = race.start_block_reason()
 	last_admission_reason = reason
 	if not reason.is_empty(): session.show_message(reason); return false
-	# Visitors provide races to watch, never a wait before the player's turn.
+	# Os visitantes oferecem corridas para assistir, nunca uma espera antes da vez do jogador.
 	return race.start_rival(identity)
 
 func clear_for_player() -> void:
-	# Remove the ambient bodies from the physics world before _start checks the
-	# grid in this same frame. Deferred deletion alone still blocks placement.
-	# Do not cancel the night/challenge context or record an NPC finish.
+	# Remove os corpos ambientes do mundo de física antes que _start cheque o
+	# grid neste mesmo quadro. Só a exclusão adiada ainda bloqueia o posicionamento.
+	# Não cancela o contexto de noite/desafio nem registra uma chegada de NPC.
 	for entry in heat+waiting+transit: _release_car(entry.car,true)
 	heat.clear(); waiting.clear(); transit.clear()
 	phase = "idle"; clock = 0.0; blocked_phase = ""; recovery_clock = 0.0
@@ -161,8 +161,8 @@ func _physics_process(delta: float) -> void:
 			_refresh()
 	if phase=="finished":
 		_release_heat()
-	# Keep the physical heat and the player's place while the obstruction is
-	# present. Recovery never teleports a car or awards a fictional finish.
+	# Mantém a bateria física e o lugar do jogador enquanto a obstrução está
+	# presente. A recuperação nunca teleporta um carro nem dá uma chegada fictícia.
 	elif clock>45.0 and phase in ["lining","racing"]:
 		blocked_phase = phase
 		phase = "blocked"
@@ -250,7 +250,7 @@ func _release_heat() -> void:
 	for entry in heat: _return_entry(entry)
 	heat.clear()
 	heats_completed += 1
-	# The running heat at registration is not the extra waiting pair.
+	# A bateria rodando na inscrição não é o par extra esperando.
 	if not pending.is_empty() and heats_ahead>0:
 		if skip_current_heat: skip_current_heat = false
 		else: heats_ahead -= 1
@@ -283,7 +283,7 @@ func _dispatch(delta: float) -> void:
 			_set_admission_reason("Adversário alinhando.")
 			return
 	dispatching = true
-	# Waiting visitors remain behind the grid. The player's heat owns the tree.
+	# Os visitantes esperando ficam atrás do grid. A bateria do jogador é dona da árvore.
 	if is_instance_valid(signals): signals.queue_free(); signals = null
 	var started: bool = race.start_rival(identity)
 	if not started and not pending.is_empty(): _set_admission_reason("Pista ou alinhamento obstruído · sua posição está reservada.")
@@ -384,7 +384,7 @@ func _advance_transit(delta: float) -> void:
 		var yaw := atan2(-forward.x,-forward.z)
 		var turn := absf(angle_difference(car.rotation.y,yaw))
 		var target_speed := 5.0 if turn>.16 or str(entry.routing)=="queue" else (24.0 if str(entry.routing)=="return" else 12.0)
-		# Brake before a bend, not after reaching its first short arc segment.
+		# Freia antes de uma curva, não depois de chegar ao primeiro segmento curto do arco.
 		var ahead_distance := offset.length()
 		var previous_direction := forward
 		for index in range(int(entry.waypoint),mini(path.size()-1,int(entry.waypoint)+4)):
@@ -402,8 +402,8 @@ func _advance_transit(delta: float) -> void:
 		var region = session.world.production.regions.get("desert")
 		if not is_instance_valid(region) or not region.prepare_collision_at(car.global_position+motion*delta): continue
 		var before: Vector3 = car.global_position
-		# Match Vehicle's grounded contract: floor snap keeps support without
-		# pressing a grounded hull into the next coplanar triangle's edge.
+		# Igual ao contrato de chão do Vehicle: o snap de chão mantém o apoio sem
+		# pressionar um casco apoiado na borda do próximo triângulo coplanar.
 		var vertical_speed: float = 0.0 if car.is_on_floor() else car.velocity.y-18.0*delta
 		car.velocity = motion+Vector3.UP*vertical_speed
 		car.move_and_slide()
@@ -433,8 +433,8 @@ func _release_car(car: Node3D, detach := false) -> void:
 		car.queue_free()
 
 func clear_visit() -> void:
-	# Consuming a ticket transfers ownership to the race. Only an outstanding
-	# registration may disarm its context when the ambient visit is released.
+	# Consumir um ticket transfere a posse para a corrida. Só uma inscrição
+	# pendente pode desarmar o contexto quando a visita ambiente é liberada.
 	if not pending.is_empty(): cancel_ticket(false,"Você saiu do encontro.")
 	for entry in heat+waiting+transit: _release_car(entry.car)
 	heat.clear(); waiting.clear(); transit.clear()

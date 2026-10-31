@@ -1,6 +1,6 @@
 extends RefCounted
-## Optional V1 ledger. A series is saved between physical passes; active driving
-## stays transient. Legacy ranked wins and their one-time receipts are untouched.
+## Livro opcional da V1. Uma série é salva entre passadas físicas; a direção ativa
+## continua passageira. Vitórias ranqueadas antigas e os recibos únicos delas ficam intactos.
 const KEY := "drag_night"
 const RANKED := preload("res://activities/desert_drag/DesertDragProgress.gd")
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
@@ -43,7 +43,7 @@ static func mechanical_parts(parts: Dictionary) -> Dictionary:
 
 static func record_key(profile: String, parts: Dictionary, metres: float, category := "livre") -> String:
 	var signature := "rules1|"+profile+"|"+str(int(metres))+"|"+JSON.stringify(mechanical_parts(parts))
-	# Keep the original Livre namespace byte-for-byte for existing saves.
+	# Mantém o namespace original Livre byte a byte para saves existentes.
 	if category!="livre": signature+="|category:"+category
 	return signature.sha256_text()
 
@@ -148,7 +148,7 @@ static func record_finish(world: Dictionary, episode_id: int, step: int, vehicle
 	var previous: float=float(value.records.get(signature,{}).get("seconds",0.0))
 	var improved := previous<=0.0 or seconds<previous
 	if improved:
-		# Bounded history of different setups; existing record updates do not evict.
+		# Histórico limitado de preparações diferentes; atualizações de recorde existentes não despejam.
 		if not value.records.has(signature) and value.records.size()>=MAX_RECORDS: value.records.erase(value.records.keys()[0])
 		value.records[signature]={"profile":profile,"parts":mechanical_parts(parts),"distance":metres,"seconds":seconds}
 		if category!="livre": value.records[signature]["category"]=category
@@ -190,8 +190,8 @@ static func validate_world(world: Dictionary, wallet: Dictionary) -> bool:
 		var limit: int=int(value.finishes if domain=="drag_night_finish" else value.wins)
 		var stream: Dictionary=wallet.get("receipt_ledger",{}).get("streams",{}).get(domain,{})
 		if not stream.is_empty() and (int(stream.first)!=1 or int(stream.through)>limit): return false
-		# These domains are born compact at serial one. Opaque lookalikes imply
-		# a skipped serial, altered amount or forged payment and are never adopted.
+		# Estes domínios nascem compactos no serial um. Imitações opacas implicam
+		# um serial pulado, valor alterado ou pagamento forjado e nunca são adotadas.
 		for key in wallet.get("transactions",{}):
 			if str(key).begins_with("reward:"+domain+":"): return false
 	return true
@@ -205,7 +205,7 @@ static func claim_rewards(world: Dictionary, economy) -> int:
 		var total: int=int(value.finishes if domain=="drag_night_finish" else value.wins)
 		var through := _paid(wallet,domain)
 		var amount := FINISH_PRIZE if domain=="drag_night_finish" else WIN_PRIZE
-		# A loaded backlog is settled in bounded batches when opening the board.
+		# Um acúmulo carregado é resolvido em lotes limitados ao abrir o quadro.
 		for serial in range(through+1,mini(total,through+8)+1):
 			if not economy.grant_reward(domain+":"+str(serial),amount): break
 			paid+=amount

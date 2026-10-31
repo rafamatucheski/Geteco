@@ -1,15 +1,15 @@
 extends Node3D
-## Race-day dressing around the circuit: course tape between the stakes, hay
-## bales on the run-off of the tightest corners, a small bleacher with seated
-## fans on the final straight, sponsor banners and the race-control board.
-## Static geometry is batched per material and every solid shares one body.
-## Placement reads the course's own surface functions, never a flat guess.
+## Decoração de dia de corrida em volta do circuito: fita da pista entre as estacas, fardos
+## de feno na área de escape das curvas mais fechadas, uma pequena arquibancada com torcedores
+## sentados na reta final, faixas de patrocinadores e o painel de controle da corrida.
+## A geometria estática é agrupada por material e todo sólido divide um corpo.
+## O posicionamento lê as funções de superfície da própria pista, nunca um palpite plano.
 const SPECTATOR := preload("res://activities/motocross/MotocrossSpectator.gd")
 const FONT := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
-## Infield side of the final straight, between two shade trees (>= 4 m clear
-## of the stand's ends), facing south: the gameplay camera sees seats, fans
-## and the board instead of the back wall. Keep in sync with the trampled
-## patch in MotocrossLandscape.gdshaderinc and the grass CLEAR rect.
+## Lado de dentro da reta final, entre duas árvores de sombra (>= 4 m livres
+## das pontas da arquibancada), virada para o sul: a câmera do jogo vê assentos, torcedores
+## e o painel em vez da parede de trás. Mantém em sincronia com a área pisoteada
+## em MotocrossLandscape.gdshaderinc e o retângulo CLEAR da grama.
 const BLEACHER_CENTER := Vector2(-206.1,-66.2)
 const BALE_SIZE := Vector3(1.0,.5,.55)
 const TAPE_HEIGHT := .72
@@ -17,7 +17,7 @@ var course: Node3D
 var bleacher: Node3D
 var fans: Array[Node3D] = []
 var bale_transforms: Array[Transform3D] = []
-## Why candidate bale spots were skipped; read by tests and reviews.
+## Por que posições candidatas de fardo foram puladas; lido por testes e revisões.
 var bale_skips := {"bounds":0,"course":0,"reserved":0,"slope":0}
 var apex_count := 0
 var banner_count := 0
@@ -95,7 +95,7 @@ func _box(where: Transform3D, size: Vector3, material: Material, solid := false)
 		_solids.add_child(shape)
 
 func _quad(a: Vector3, b: Vector3, height: float, material: Material) -> void:
-	# Vertical strip, two-sided through the material; tape and banner cloth.
+	# Faixa vertical, dupla face pelo material; fita e tecido de faixa.
 	var surface := _surface(material)
 	var normal := (b-a).cross(Vector3.UP).normalized()
 	var up := Vector3.UP*height
@@ -112,9 +112,9 @@ func _flush() -> void:
 		add_child(visual)
 	_surfaces.clear()
 
-## Reserved spots store their radius in y. `trunk_limit` lets low objects
-## (banners) pass under a canopy: small entries (trees, banners) then only
-## need that much clearance from their center.
+## Posições reservadas guardam o raio em y. `trunk_limit` deixa objetos baixos
+## (faixas) passarem sob uma copa: entradas pequenas (árvores, faixas) então só
+## precisam dessa folga a partir do centro.
 func _clear_of_reserved(point: Vector3, radius: float, trunk_limit := -1.0) -> bool:
 	for other in _reserved:
 		var limit: float = trunk_limit if trunk_limit > 0.0 and other.y <= 2.2 else radius+other.y
@@ -138,8 +138,8 @@ func _tape() -> void:
 				_quad(a.lerp(b,t0)-Vector3.UP*sin(t0*PI)*sag,a.lerp(b,t1)-Vector3.UP*sin(t1*PI)*sag,.07,colors[piece%2])
 
 func _terrain_frame(center: Vector2, along: Vector3, size: Vector2) -> Dictionary:
-	# Four footprint corners on the quarry surface; the plane through them is
-	# the support. Returns {} when the ground under the object is too uneven.
+	# Quatro cantos da pegada na superfície da pedreira; o plano por eles é
+	# o apoio. Devolve {} quando o chão sob o objeto é irregular demais.
 	var across := along.cross(Vector3.UP).normalized()
 	var corners: Array[Vector3] = []
 	for corner in [Vector2(-1,-1),Vector2(1,-1),Vector2(1,1),Vector2(-1,1)]:
@@ -171,8 +171,8 @@ func _hay_bales() -> void:
 	apex_count = apexes.size()
 	for apex in apexes:
 		var outside := signf(course.turn_at(apex))
-		# A continuous-looking wall: one bale per baked point (~1.5 m on the route,
-		# wider on the outside radius) across the corner.
+		# Uma parede de aparência contínua: um fardo por ponto bakeado (~1.5 m na rota,
+		# mais largo no raio externo) ao longo da curva.
 		for k in range(apex-6,apex+7):
 			var distance := float(posmod(k,n))/float(n)*float(course.length)
 			var road: Transform3D = course.pose(distance)
@@ -181,7 +181,7 @@ func _hay_bales() -> void:
 			var spot := Vector2(at.x,at.z)
 			if not course.BOUNDS.grow(-2.5).has_point(spot):
 				bale_skips.bounds += 1; continue
-			# Another section of the circuit may pass close to this run-off.
+			# Outro trecho do circuito pode passar perto desta área de escape.
 			if float(course.nearest(at).lateral) < course.HALF_WIDTH+3.3:
 				bale_skips.course += 1; continue
 			if not _clear_of_reserved(at,.9):
@@ -194,7 +194,7 @@ func _hay_bales() -> void:
 			var local_basis := Basis(x,up,x.cross(up))
 			var mean := Vector3.ZERO
 			for corner in frame.corners: mean += corner/4.0
-			# A 3 cm seat in the soil so no edge of the bale hangs over the slope.
+			# Um assento de 3 cm no solo para nenhuma borda do fardo ficar pendurada na encosta.
 			var where := Transform3D(local_basis,mean+up*(BALE_SIZE.y*.5-.03))
 			bale_transforms.append(where)
 			_box(where,BALE_SIZE,hay,true)
@@ -202,9 +202,9 @@ func _hay_bales() -> void:
 				_box(where*Transform3D(Basis.IDENTITY,Vector3(band,0,0)),Vector3(.035,BALE_SIZE.y+.01,BALE_SIZE.z+.01),twine)
 
 func _bleacher() -> void:
-	# Boxed wooden stand facing the start grid across the final straight. Three
-	# stepped tiers plus a front walkway; each block runs 20 cm into the soil
-	# below the lowest footprint point, so the stand never hangs over the slope.
+	# Arquibancada de madeira fechada de frente para o grid de largada, do outro lado da reta final. Três
+	# degraus mais uma passarela na frente; cada bloco entra 20 cm no solo
+	# abaixo do ponto mais baixo da pegada, para a arquibancada nunca ficar pendurada na encosta.
 	var route: Dictionary = course.nearest(Vector3(BLEACHER_CENTER.x,0,BLEACHER_CENTER.y))
 	var toward: Vector3 = Vector3(route.point.x-BLEACHER_CENTER.x,0,route.point.z-BLEACHER_CENTER.y).normalized()
 	var local_basis := Basis(Vector3.UP,atan2(-toward.x,-toward.z))
@@ -227,13 +227,13 @@ func _bleacher() -> void:
 	var steel := _material(Color("59625f"))
 	var bottom := lowest-bleacher.position.y-.2
 	var at := func(p: Vector3) -> Transform3D: return bleacher.transform*Transform3D(Basis.IDENTITY,p)
-	# Walkway (top 0) then tiers k with tread z in [-1.2+.8k, -.4+.8k], top .45(k+1).
+	# Passarela (topo 0) e depois degraus k com piso z em [-1.2+.8k, -.4+.8k], topo .45(k+1).
 	_box(at.call(Vector3(0,bottom*.5,-1.4)),Vector3(width,-bottom,.4),riser,true)
 	for tier in 3:
 		var front := -1.2+float(tier)*.8
 		var top := float(tier+1)*.45
 		_box(at.call(Vector3(0,(bottom+top)*.5,front+.4)),Vector3(width,top-bottom,.8),riser,true)
-		# Bench plank on the front of each tread; feet rest on the tread below.
+		# Tábua de banco na frente de cada degrau; os pés apoiam no degrau de baixo.
 		_box(at.call(Vector3(0,top+.015,front+.19)),Vector3(width-.1,.05,.36),plank)
 	for x in [-3.95,-1.3,1.3,3.95]: _box(at.call(Vector3(x,1.35+.45,1.16)),Vector3(.07,.9,.07),steel)
 	_box(at.call(Vector3(0,2.24,1.16)),Vector3(width,.06,.06),steel)
@@ -247,24 +247,24 @@ func _bleacher() -> void:
 		fan.name = "BleacherFan%d"%index
 		fan.configure({"identity":20+index,"jersey":shirts[index],"seated":true,"seat_height":.49,"deck":bleacher,"still":true,
 			"bounds":Rect2(-width*.5,-1.6,width,2.8),"flee_radius":2.0})
-		# Floor is the tread (or walkway) in front; the pelvis sits on the plank.
+		# O chão é o degrau (ou a passarela) da frente; a pélvis fica na tábua.
 		fan.position = Vector3(seat.x,float(tier)*.45,-1.2+float(tier)*.8+.2)
 		bleacher.add_child(fan)
 		fans.append(fan)
 
 func _banners() -> void:
-	# Infield side of the final straight, facing the grid, the stand and camera.
+	# Lado de dentro da reta final, de frente para o grid, a arquibancada e a câmera.
 	var cloths := [Color("c8512b"),Color("2f5d7c"),Color("e0b53f")]
 	var inks := [Color("f4efe2"),Color("f4efe2"),Color("2a2419")]
 	var titles := ["VÉRTICE MX","BARRO FINO","VÉRTICE MX"]
 	var index := 0
-	# Walk back from the finish line so the banners line the final straight.
+	# Anda para trás a partir da linha de chegada para as faixas acompanharem a reta final.
 	var distance := float(course.length)-2.0
 	while distance > float(course.length)-70.0 and index < titles.size():
 		distance -= 2.0
 		var road: Transform3D = course.pose(distance)
 		var at: Vector3 = course.sample(distance)+road.basis.x*(course.HALF_WIDTH+4.1)
-		# The 1.5 m cloth passes under canopies; only the trunk line matters.
+		# O tecido de 1.5 m passa sob as copas; só a linha dos troncos importa.
 		if float(course.nearest(at).lateral) < course.HALF_WIDTH+3.4 or not _clear_of_reserved(at,1.9,2.7): continue
 		var along := road.basis.z
 		var poles: Array[Vector3] = []
@@ -292,8 +292,8 @@ func _banners() -> void:
 		distance -= 3.0
 
 func _board() -> void:
-	# Race-control board on two posts behind the stand's top tier, facing the
-	# track like the fans: nothing stands between it and the gameplay camera.
+	# Painel de controle da corrida em dois postes atrás do degrau mais alto, de frente para a
+	# pista como os torcedores: nada fica entre ele e a câmera do jogo.
 	var local_basis := bleacher.global_basis
 	var steel := _material(Color("3a403e"))
 	for side in [-1.9,1.9]:
@@ -311,7 +311,7 @@ func _board() -> void:
 		label.font = FONT
 		label.double_sided = false
 		label.outline_size = 0
-		# Label3D reads from its +Z side; the stand faces its own -Z.
+		# O Label3D é lido pelo lado +Z; a arquibancada fica de frente para o próprio -Z.
 		label.transform = Transform3D(local_basis*Basis(Vector3.UP,PI),center-local_basis.z*.1)
 		add_child(label)
 	board_title.font_size = 88

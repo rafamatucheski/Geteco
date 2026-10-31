@@ -1,5 +1,5 @@
 extends RefCounted
-## One temporary camera, owned by the fishing attempt and restored on every exit.
+## Uma câmera temporária, da tentativa de pesca e restaurada em toda saída.
 var camera: Camera3D
 var _previous: Camera3D
 var _normal: Camera3D
@@ -18,8 +18,8 @@ func begin(world: Node3D) -> void:
 	_normal.set("locked", true)
 	camera = Camera3D.new()
 	camera.name = "FishingCloseCamera"
-	# The held fish must occlude Dante by real depth. The shared camera contract
-	# suppresses the outdoor x-ray silhouette and restores it with the old camera.
+	# O peixe segurado precisa tapar o Dante por profundidade real. O contrato de câmera compartilhado
+	# suprime a silhueta de raio-x externa e a restaura com a câmera antiga.
 	camera.set_meta("uses_interior_depth", true)
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 10.4
@@ -49,8 +49,8 @@ func present(actor: Node3D, water: Vector3, fish: Node3D, phase: String, landing
 	var blend := 1.0 if not _initialized else 1.0 - exp(-delta * 4.0)
 	_focus = _focus.lerp(focus, blend)
 	var fishing_offset := -direction * 6.8 + right * 4.8 + Vector3.UP * 7.4
-	# Move around the open water side as the fish clears the rail. A rear view
-	# hid the small species behind Dante's head when they reached his hands.
+	# Gira pelo lado da água aberta enquanto o peixe passa pelo parapeito. Uma vista de trás
+	# escondia as espécies pequenas atrás da cabeça do Dante quando chegavam às mãos dele.
 	var showcase_offset := direction * 6.4 + right * 3.4 + Vector3.UP * 4.8
 	var showcase := smoothstep(.36, 1.0, landing) if phase == "landing" else (1.0 if phase in ["caught", "storing"] else 0.0)
 	if phase == "releasing": showcase = 1.0 - smoothstep(.55, 2.1, _phase_time)
@@ -62,7 +62,7 @@ func present(actor: Node3D, water: Vector3, fish: Node3D, phase: String, landing
 	_initialized = true
 
 func release() -> void:
-	# A transition may have already installed its own camera. Never steal it back.
+	# Uma transição pode já ter instalado a própria câmera. Nunca a toma de volta.
 	if is_instance_valid(camera):
 		if camera.is_current():
 			if is_instance_valid(_previous) and not _previous.is_queued_for_deletion(): _previous.make_current()

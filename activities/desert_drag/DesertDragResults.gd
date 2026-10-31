@@ -1,5 +1,5 @@
 extends Control
-## A finished attempt remains inspectable until the player chooses where to go.
+## Uma tentativa terminada continua inspecionável até o jogador escolher para onde ir.
 const FONT := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 const REGULAR := preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
 const INK := Color("11161c")

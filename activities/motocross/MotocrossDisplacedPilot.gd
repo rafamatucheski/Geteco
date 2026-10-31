@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## The same helmet, jersey and articulated body removed from the stolen bike.
+## O mesmo capacete, camisa e corpo articulado tirados da moto roubada.
 var visual: Node3D
 var direction := Vector3.ZERO
 var age := 0.0

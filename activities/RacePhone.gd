@@ -23,7 +23,7 @@ func configure(owner_session, point: Vector3, eligibility: Callable) -> void:
 	_box(Vector3(.55,.83,.29),Vector3(0,1.55,0),orange)
 	_box(Vector3(.43,.62,.035),Vector3(0,1.54,.16),metal)
 	_box(Vector3(.24,.13,.025),Vector3(.06,1.73,.19),dark)
-	# Handset, earpieces and hanging cord, facing the street.
+	# Fone, auriculares e fio pendurado, virados para a rua.
 	_box(Vector3(.07,.35,.08),Vector3(-.14,1.56,.23),dark)
 	for y in [1.37,1.75]: _box(Vector3(.12,.10,.12),Vector3(-.14,y,.23),dark)
 	_box(Vector3(.026,.31,.026),Vector3(-.14,1.17,.19),dark)

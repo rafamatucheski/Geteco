@@ -1,10 +1,10 @@
 extends RefCounted
-## Stateless settlement policy for the optional ski races connected in V1.
+## Política de liquidação sem estado para as corridas de esqui opcionais ligadas na V1.
 ##
-## V1 (`world/mountain_pass/SkiRaceController.gd:_finish`) pays the course
-## reward after every finish and adds the record bonus whenever the new time is
-## better.  Receipt serials are derived from Economy transactions so this can
-## be integrated without adding another field to the persisted activity state.
+## A V1 (`world/mountain_pass/SkiRaceController.gd:_finish`) paga a recompensa
+## da pista depois de toda chegada e soma o bônus de recorde sempre que o novo tempo é
+## melhor. Os seriais dos recibos derivam das transações da Economy para que isto possa
+## ser integrado sem adicionar outro campo ao estado persistido da atividade.
 
 const MAX_RECEIPT_SERIAL := 10000000
 const RACES := preload("res://systems/economy/RaceReceipts.gd")

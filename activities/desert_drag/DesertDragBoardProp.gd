@@ -6,7 +6,7 @@ const BATCH := preload("res://world/desert/DesertTownMaterials.gd")
 static var _materials: Dictionary = {}
 
 static func position() -> Vector3:
-	# Outside the driving/staging lane and parked-car bays; reached from the south.
+	# Fora da faixa de direção/preparação e das vagas de carros estacionados; acessado pelo sul.
 	return LAYOUT.drag_staging_point()+Vector3(8,0,5)
 
 const BOARD_NAMES := "Digo\nLívia\nRaul\nJessica\nNadir"
@@ -53,7 +53,7 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	text.modulate=Color("ede8d3")
 	text.position=Vector3(0,1.65,.104)
 	board.add_child(text)
-	# Individually solid props keep their colliders; only decoration is merged.
+	# Objetos sólidos individuais mantêm os colisores; só a decoração é fundida.
 	for child in board.get_children():
 		if not child is MeshInstance3D: continue
 		var source := child.material_override as StandardMaterial3D
@@ -74,8 +74,8 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	BATCH.batch_visuals(board)
 
 static func _reception(board: Node3D) -> void:
-	# A compact open registration canopy faces the southern pedestrian approach.
-	# Its posts stay east of staging and outside the return/launch corridors.
+	# Uma tenda de inscrição compacta e aberta fica de frente para a aproximação de pedestres pelo sul.
+	# Os postes dela ficam a leste da preparação e fora dos corredores de retorno/largada.
 	var steel := Color("9da8a5")
 	var dark := Color("303e43")
 	var canvas := Color("a85436")
@@ -90,20 +90,20 @@ static func _reception(board: Node3D) -> void:
 	for z in [-1.3,3.5]:
 		G.box(board,"CanopyCrossRail",Vector3(0,3.22,z),Vector3(6.2,.10,.09),steel)
 		G.box(board,"CanvasValance",Vector3(0,3.18,z),Vector3(6.5,.29,.025),canvas)
-		# Checkered edging makes this read as the race reception without signage.
+		# A borda quadriculada faz isto parecer a recepção da corrida sem placas.
 		for column in 26:
 			for row in 2:
 				G.box(board,"CheckeredHem",Vector3(-3.125+column*.25,3.10+row*.12,z+(.018 if z>0 else -.018)),Vector3(.248,.118,.012),Color("dfd5bc") if (column+row)%2==0 else dark)
 	for side in [-1.0,1.0]:
 		var roof := G.box(board,"CanvasRoof",Vector3(side*1.625,3.72,1.1),Vector3(3.41,.035,5.12),canvas)
 		roof.rotation.z=-side*.30
-		# Raised stitched seams follow the roof pitch; no extra effects or lights.
+		# Costuras em relevo seguem a inclinação do teto; sem efeitos ou luzes extras.
 		for z in [-1.43,-.16,1.11,2.38,3.63]:
 			var seam := G.box(board,"CanvasSeam",Vector3(side*1.625,3.745,z),Vector3(3.41,.018,.025),Color("c57b52"))
 			seam.rotation.z=-side*.30
 		G.box(board,"CanvasSideHem",Vector3(side*3.25,3.16,1.1),Vector3(.025,.28,5.12),canvas)
 	G.box(board,"RidgeCap",Vector3(0,4.23,1.1),Vector3(.10,.06,5.15),Color("c57b52"))
-	# Reception desk sits beside, never in front of, the interactive board.
+	# O balcão da recepção fica ao lado do quadro interativo, nunca na frente dele.
 	var counter := G.box(board,"ReceptionCounter",Vector3(2.05,.51,1.35),Vector3(1.3,1.02,1.10),dark)
 	G.collision(counter,Vector3(1.42,1.10,1.2))
 	G.box(board,"CounterTop",Vector3(2.05,1.06,1.35),Vector3(1.42,.08,1.2),Color("9a7956"))
@@ -117,7 +117,7 @@ static func _reception(board: Node3D) -> void:
 	G.box(board,"ClipboardClip",Vector3(1.81,1.13,1.25),Vector3(.10,.012,.045),steel)
 	G.box(board,"Radio",Vector3(2.43,1.26,1.35),Vector3(.15,.30,.12),dark)
 	G.cylinder(board,"RadioAntenna",Vector3(2.46,1.50,1.35),.008,.23,dark)
-	# Frame hardware, feet and chalk ledge replace the floating slab appearance.
+	# Ferragens da moldura, pés e aparador de giz substituem a aparência de placa flutuante.
 	for x in [-.85,.85]:
 		G.box(board,"BoardFoot",Vector3(x,.07,0),Vector3(.27,.14,.75),dark,true)
 		for y in [.93,2.37]:

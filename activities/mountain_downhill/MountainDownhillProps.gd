@@ -1,6 +1,6 @@
 extends Node3D
-## Functional reflective race markings. Existing road lamps and real Vehicle
-## headlights illuminate the course; no extra light sources or update loops.
+## Marcações refletivas de corrida funcionais. Os postes da estrada existentes e os faróis reais
+## dos Vehicle iluminam o percurso; sem fontes de luz nem laços de atualização extras.
 var gates: Array[Node3D] = []
 var course
 

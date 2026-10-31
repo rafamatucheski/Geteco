@@ -1,16 +1,16 @@
 extends CharacterBody3D
-## Shared arcade physics for the rider and opponents. Forward is -Z; positive
-## steering turns LEFT. Inputs are supplied by the race/world controller.
-## Optional combat signals; crashes hurt but always allow recovery.
+## Física arcade compartilhada para o piloto e os adversários. A frente é -Z; esterço
+## positivo vira à ESQUERDA. As entradas vêm do controlador de corrida/mundo.
+## Sinais de combate opcionais; as quedas machucam mas sempre permitem recuperação.
 
 signal crashed(damage: float)
 signal recovered
-## quality: "perfect", "clean" or "rough"; only jumps with real flight time.
+## quality: "perfect", "clean" ou "rough"; só saltos com tempo de voo real.
 signal landed(quality: String, air_time: float)
 
-# Calibrated on the real circuit: riders who leave the pitch alone touch down
-# 0.27-0.46 rad off the landing face (whoops included), so they stay "clean";
-# only an actively matched attitude is perfect, only a badly wrong one rough.
+# Calibrado no circuito real: pilotos que deixam o pitch em paz tocam o chão
+# a 0.27-0.46 rad da rampa de pouso (whoops incluídos), então ficam "clean";
+# só uma atitude ajustada ativamente é perfect, e só uma muito errada é rough.
 const LANDING_MIN_AIR := .38
 const LANDING_PERFECT := .14
 const LANDING_ROUGH := .50
@@ -68,10 +68,10 @@ var jump_count := 0
 var perfect_landings := 0
 var rough_landings := 0
 var last_landing_error := 0.0
-## Player only: pitch minus the slope of the ground under the bike while in the
-## air (positive = nose too high). Drives the HUD attitude cue.
+## Só do jogador: pitch menos a inclinação do chão sob a moto enquanto está no
+## ar (positivo = frente alta demais). Guia a dica de atitude no HUD.
 var air_attitude_error := 0.0
-## Start-gate result timers: surge, bogged engine, or front wheel in the air.
+## Timers de resultado do portão de largada: arrancada, motor afogado ou roda da frente no ar.
 var launch_boost := 0.0
 var launch_bog := 0.0
 var wheelie := 0.0
@@ -236,7 +236,7 @@ func _physics_process(delta: float) -> void:
 		if _threat_time>0 and not is_player: target *= .68
 		var rate := acceleration * lerpf(1.0, 0.70, wetness) if absf(_throttle) > 0.01 else lerpf(2.3, 3.8, wetness)
 		if _throttle > 0.0:
-			# A matched landing carries the rider briefly past the normal pace.
+			# Um pouso ajustado leva o piloto por um instante além do ritmo normal.
 			if landing_boost > 0.0:
 				target *= 1.12
 				rate *= 1.5
@@ -262,8 +262,8 @@ func _physics_process(delta: float) -> void:
 		motion = motion.slide(_ground_normal)
 		velocity.y = motion.y - 0.1
 		_air_time = 0.0
-		# Preserve uphill momentum at a convex crest. Projecting onto the new
-		# flat/downhill normal used to erase it and glue the bike to the ramp.
+		# Preserva o embalo de subida numa crista convexa. Projetar na nova normal
+		# plana/de descida o apagava e grudava a moto na rampa.
 		if riding and speed>6 and _ramp_age<.16 and _ramp_up>1.5 and motion.y<_ramp_up*.5:
 			velocity.y = _ramp_up*.95
 			_ramp_up = 0.0
@@ -312,7 +312,7 @@ func _physics_process(delta: float) -> void:
 		speed = minf(absf(speed), actual) * signf(speed)
 	if riding and not grounded and is_on_floor() and _recovery_grace <= 0.0:
 		_suspension = -clampf(-incoming_y*.008,0.0,.055)
-		# Proper ramp landings are forgiving; nose-diving and very hard falls hurt.
+		# Pousos certos na rampa perdoam; cair de frente e quedas muito fortes machucam.
 		if incoming_y < -11.0 or (incoming_y < -6.0 and absf(_pitch) > 0.85):
 			crash(clampf((-incoming_y - 5.0) / 12.0, 0.1, 1.0))
 		elif _air_time >= LANDING_MIN_AIR:
@@ -334,8 +334,8 @@ func launch(quality: String) -> void:
 		"bog": launch_bog = 1.1
 
 func _grade_landing() -> void:
-	# `_pitch` still holds the in-flight attitude; compare it with the face the
-	# tires just met. Leaning (W/S in the air) is what changes this match.
+	# `_pitch` ainda guarda a atitude em voo; compara com a face que os
+	# pneus acabaram de tocar. Inclinar (W/S no ar) é o que muda esse ajuste.
 	var normal := get_floor_normal()
 	var slope := atan2(-normal.dot(-global_basis.z), maxf(.05, normal.y))
 	last_landing_error = absf(_pitch - slope)
@@ -363,8 +363,8 @@ func _receive_contact(normal: Vector3,strength: float) -> void:
 	_contact_velocity = normal*clampf(strength*.32,.25,2.8)
 	_contact_roll = clampf(-normal.dot(global_basis.x)*strength*.04,-.22,.22)
 	if crash_state!="riding": return
-	# Rubbing fairings unsettles a rider. A fall needs relative impact energy,
-	# not just a fast bike touching another equally fast bike from behind.
+	# Carenagens se esfregando desestabilizam o piloto. Uma queda precisa de energia de impacto relativa,
+	# não só de uma moto rápida encostando por trás em outra igualmente rápida.
 	if strength>5.8 and _recovery_grace<=0.0:
 		crash(clampf(strength/16.0,.2,.9))
 	else: speed *= .96
@@ -375,15 +375,15 @@ func _pose_riding(delta: float) -> void:
 	var flight_pitch := atan2(velocity.y,maxf(3.0,absf(speed)))*.8
 	var desired_pitch := slope if is_on_floor() else lerpf(_pitch,flight_pitch,minf(1.0,delta*3.0))
 	_pitch = lerpf(_pitch, clampf(desired_pitch, -1.1, 1.1), minf(1.0, delta * 10.0))
-	# Rider lean acts directly on the attitude. Inside the double lerp above it
-	# was damped to ~0.24 rad/s and could not square a 0.4 s flight to a face.
+	# A inclinação do piloto age direto na atitude. Dentro do lerp duplo acima ela
+	# era amortecida para ~0.24 rad/s e não conseguia alinhar um voo de 0.4 s a uma rampa.
 	if not is_on_floor(): _pitch = clampf(_pitch + clampf(air_lean, -1.0, 1.0) * delta * 2.4, -1.1, 1.1)
 	if not is_on_floor(): manual_wheelie.reset()
 	var wheelie_goal := .40 if wheelie > 0.0 and is_on_floor() else 0.0
 	_wheelie_pitch = lerpf(_wheelie_pitch, wheelie_goal, minf(1.0, delta * (8.0 if wheelie_goal > 0.0 else 4.0)))
 	var lift_pitch: float = maxf(_wheelie_pitch,manual_wheelie.pitch)
 	visual.rotation.x = _pitch + lift_pitch
-	# The wheelie pivots on the rear tire patch instead of sinking it into the ground.
+	# O empinar gira sobre o contato do pneu traseiro em vez de afundá-lo no chão.
 	var pivot := Vector3(0, 0, .83)
 	visual.position = WHEELIE.rear_pivot_offset(lift_pitch,pivot)
 	var slip := clampf(_planar_velocity.dot(global_basis.x)*.035,-.10,.10)
@@ -397,7 +397,7 @@ func _pose_riding(delta: float) -> void:
 	_pose_limbs(0.0, true)
 
 func pose_start_mount(blend: float) -> void:
-	# Staged on the clear grid while bike physics is held by the race controller.
+	# Posicionada no grid livre enquanto a física da moto fica presa pelo controlador da corrida.
 	var t := smoothstep(0.0,1.0,blend)
 	rider.position = Vector3(lerpf(-.95,0.0,t),lerpf(.79,.96,t)+sin(t*PI)*.18,.04)
 	rider.rotation = Vector3.ZERO
@@ -439,7 +439,7 @@ func _update_recovery(delta: float) -> void:
 			if toward.length() < 0.22:
 				_mount_origin = rider.global_position
 				_change_state("mounting")
-			# If a solid blocks the direct approach, try the other side, never teleport.
+			# Se um sólido bloquear a aproximação direta, tenta o outro lado, nunca teleporta.
 			if rider.global_position.distance_to(_last_rider_position) < 0.01:
 				_return_stall += delta
 			else: _return_stall = 0.0

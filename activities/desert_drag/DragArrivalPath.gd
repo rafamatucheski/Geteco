@@ -1,6 +1,6 @@
 extends RefCounted
-## Authored visitors use the access road's right-hand lane. Geometry is built
-## once per admission; the physical transit driver consumes these same points.
+## Visitantes escritos usam a faixa da direita da estrada de acesso. A geometria é montada
+## uma vez por admissão; o motorista físico de trânsito consome estes mesmos pontos.
 const ENTRY_DISTANCE := 100.0
 const MITER_LIMIT := 1.5
 
@@ -21,7 +21,7 @@ static func build(road: Dictionary, start_distance := ENTRY_DISTANCE) -> Array[V
 		remaining=0.0
 	var result: Array[Vector3] = []
 	if center.size()<2: return result
-	# NativeTrafficRoutes uses width/4 for the sole lane in each direction.
+	# O NativeTrafficRoutes usa width/4 para a única faixa em cada sentido.
 	var lane := maxf(0.0,float(road.get("width",8.0)))*.25
 	for index in center.size():
 		var before := center[index]-center[maxi(0,index-1)]
@@ -31,9 +31,9 @@ static func build(road: Dictionary, start_distance := ENTRY_DISTANCE) -> Array[V
 		if after.length_squared()<.000001: after=before
 		var incoming := before.normalized().cross(Vector3.UP)
 		var outgoing := after.normalized().cross(Vector3.UP)
-		# Keep the full-size pickup inside the carriageway at the sampled R12
-		# bends. Its outer corner otherwise exceeds the pavement by about 8 cm.
-		# Straight opposing lanes retain their ordinary four-metre separation.
+		# Mantém a picape de tamanho cheio dentro da pista nas curvas R12
+		# amostradas. Senão o canto externo passa do pavimento em uns 8 cm.
+		# Faixas opostas retas mantêm a separação comum de quatro metros.
 		var bend := 1.0-clampf(before.normalized().dot(after.normalized()),-1.0,1.0)
 		var curve_lane := lane*lerpf(1.0,.9,clampf(bend/.02,0.0,1.0))
 		var miter := incoming+outgoing

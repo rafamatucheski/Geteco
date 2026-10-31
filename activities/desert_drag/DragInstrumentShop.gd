@@ -1,5 +1,5 @@
 extends Control
-## Presentation only. The caller owns unlocks, wallet mutations and persistence.
+## Só apresentação. Quem chama cuida de liberações, mutações da carteira e persistência.
 signal style_requested(id: String)
 signal close_requested
 const STYLES := preload("res://activities/desert_drag/DragInstrumentStyles.gd")
@@ -114,7 +114,7 @@ func _activate() -> void:
 	style_requested.emit(selected)
 
 func _input(event: InputEvent) -> void:
-	# Handle Back before the session's generic modal shortcut closes both screens.
+	# Trata o Voltar antes que o atalho genérico de modal da sessão feche as duas telas.
 	if is_visible_in_tree() and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause_game")):
 		close_requested.emit()
 		get_viewport().set_input_as_handled()

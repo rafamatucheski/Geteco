@@ -225,8 +225,8 @@ func _label(at: Vector2, text: String, point_size: int, color := INK, strong := 
 func _portrait(id: String, destination: Rect2, tint := Color.WHITE) -> void:
 	var photo: Texture2D = photos[id]
 	var extent := Vector2(photo.get_size())
-	# Keep the portrait's authored proportions. The tall atlas is cropped to a
-	# headshot; the fallback render is already square. No face stretching.
+	# Mantém as proporções escritas do retrato. O atlas alto é recortado num
+	# rosto; o render de recurso já é quadrado. Sem esticar rostos.
 	var crop := Vector2(extent.x, extent.x * destination.size.y / destination.size.x)
 	if crop.y > extent.y: crop = Vector2(extent.y * destination.size.x / destination.size.y, extent.y)
 	var origin := Vector2((extent.x - crop.x) * .5, minf(extent.y * .06, extent.y - crop.y))
@@ -242,7 +242,7 @@ func _draw() -> void:
 	_label(Vector2(450, 46), "%02d / %02d" % [wins.size(),PROGRESS.RIVALS.size()], 26, AMBER, true)
 	_label(Vector2(450, 69), "VITÓRIAS", 13, MUTED, true)
 	draw_line(Vector2(30, 95), Vector2(868, 95), Color("34414e"), 1)
-	# The workshop loan entry occupies the former decorative list heading.
+	# A entrada de empréstimo da oficina ocupa o antigo título decorativo da lista.
 	_label(Vector2(400, 120), "STATUS", 14, MUTED, true)
 	for i in PROGRESS.RIVALS.size():
 		var id: String = PROGRESS.RIVALS[i]

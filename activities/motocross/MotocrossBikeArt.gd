@@ -68,7 +68,7 @@ static func _material(slot: String, paint: Color) -> StandardMaterial3D:
 
 static func _body() -> Builder:
 	var b := Builder.new()
-	# Narrow saddle and tapered tank, with curved rather than boxy silhouettes.
+	# Selim estreito e tanque afunilado, com silhuetas curvas em vez de quadradas.
 	b.loft([Vector4(-.46,.85,.075,.085),Vector4(-.30,.87,.155,.16),Vector4(-.02,.84,.17,.14),Vector4(.24,.81,.12,.075)], "paint", 8)
 	b.loft([Vector4(-.25,.983,.105,.035),Vector4(-.04,1.002,.135,.040),Vector4(.38,.98,.15,.045),Vector4(.70,.94,.115,.028)], "seat", 8)
 	b.loft([Vector4(.46,.942,.135,.028),Vector4(.76,.96,.14,.025),Vector4(1.00,.95,.125,.02),Vector4(1.22,.90,.075,.018)], "paint", 6)
@@ -118,7 +118,7 @@ static func _front_parts() -> Builder:
 	b.rod(Vector3(-.17,.76,.225),Vector3(.17,.76,.225),.029,"engine")
 	b.fender(Vector3(0,.035,-.04),.52,-1.04,.84,.14,"paint")
 	b.panel([Vector3(-.13,.82,.10),Vector3(.13,.82,.10),Vector3(.15,.57,.025),Vector3(0,.51,.005),Vector3(-.15,.57,.025)],"plate",Vector3.FORWARD)
-	# Brake line and short levers, routed clear of the exact grip anchors.
+	# Cabo de freio e manetes curtas, passando longe das âncoras exatas das manoplas.
 	b.rod(Vector3(.29,.84,.30),Vector3(.42,.81,.245),.010,"metal",4)
 	b.rod(Vector3(-.29,.84,.30),Vector3(-.42,.81,.245),.010,"metal",4)
 	b.rod(Vector3(-.16,.72,.16),Vector3(-.18,.20,.045),.009,"seat",4)
@@ -161,9 +161,9 @@ class Builder:
 		for entry in [[a,na],[b,nb],[c,nc]]:
 			st.set_normal(entry[1])
 			st.add_vertex(entry[0])
-			# PrimitiveMesh batches already carry indices. Every handcrafted
-			# vertex needs an index too, or the torus/loft disappears in a batch
-			# containing an indexed cylinder/box despite correct face winding.
+			# Os lotes de PrimitiveMesh já trazem índices. Todo vértice feito à mão
+			# também precisa de índice, senão o toro/loft some num lote
+			# que contém um cilindro/caixa indexado, mesmo com a ordem das faces correta.
 			st.add_index(int(vertex_counts[slot]))
 			vertex_counts[slot] = int(vertex_counts[slot])+1
 	func quad(a: Vector3,b: Vector3,c: Vector3,d: Vector3,normal: Vector3,slot: String) -> void:

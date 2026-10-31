@@ -1,5 +1,5 @@
 extends Control
-## A cold course finishes loading before revealing the countdown camera.
+## Um percurso frio termina de carregar antes de revelar a câmera da contagem.
 const FONT=preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 var progress := 0.0:
 	set(value):

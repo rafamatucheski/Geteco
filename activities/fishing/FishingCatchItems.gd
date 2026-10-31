@@ -1,6 +1,6 @@
 extends RefCounted
-## Canonical catch identity survives grid storage, dropped bags and JSON saves.
-## GridInventory loads this catalog; transaction dependencies load only on demand.
+## A identidade canônica da captura sobrevive ao armazenamento em grade, bolsas largadas e saves JSON.
+## O GridInventory carrega este catálogo; as dependências de transação só carregam quando pedidas.
 const RULES := preload("res://activities/fishing/FishingRules.gd")
 const PRICE_PER_KG := {"tilapia":12, "piau":14, "pacu":16, "carpa":15, "traira":18, "matrinxa":20, "tambacu":18, "pintado":24, "tucunare":26, "dourado":30, "pirarara":28}
 
@@ -78,7 +78,7 @@ static func can_store(session, fish: Dictionary) -> bool:
 static func store(session, fish: Dictionary) -> bool:
 	if not _inventory_available(session): return false
 	var id := make_id(fish)
-	# Fishing owns the final save of its decision and this item together.
+	# A pesca é dona do save final da decisão e deste item juntos.
 	return not id.is_empty() and session.field_inventory.store_item(id)
 
 static func carried(session) -> Array[Dictionary]:

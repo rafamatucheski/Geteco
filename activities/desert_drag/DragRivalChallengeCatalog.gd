@@ -1,5 +1,5 @@
 extends RefCounted
-## Workshop proofs reward control, not the price of the player's car.
+## As provas da oficina recompensam o controle, não o preço do carro do jogador.
 const IDS := ["digo","livia","raul","jessica","nadir","rauhz"]
 const RIVALS := {
 	"digo":{"name":"Digo","part":"rival_digo_ecu","theme":"Saída e resposta","goals":[

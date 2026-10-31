@@ -56,8 +56,8 @@ func save_block_reason() -> String:
 func cancel_attempt() -> void:
 	_generation += 1
 	_pending = ""
-	# Completed discoveries remain valid after death, arrest or travel. The
-	# session owns closing its dialogue and restoring input during transitions.
+	# Descobertas concluídas continuam válidas depois de morte, prisão ou viagem. A
+	# sessão cuida de fechar o diálogo e restaurar a entrada durante as transições.
 
 func objective() -> String:
 	if session == null or not _valid or session.state.region_id != "mountain": return ""
@@ -153,8 +153,8 @@ func _can_inspect(event: String, ignore_dialogue := false) -> bool:
 	if not actor.is_on_floor(): return false
 	if absf(actor_point.y-point.y) > 1.8: return false
 	if Vector2(actor_point.x,actor_point.z).distance_to(Vector2(point.x,point.z)) > PROGRESS.INTERACTION_RANGE: return false
-	# The ramp/cave must be physically present, with no wall between Dante and
-	# the document. Its tiny visual sheet has no blocking collision of its own.
+	# A rampa/caverna precisa estar fisicamente presente, sem parede entre o Dante e
+	# o documento. A folha visual minúscula não tem colisão de bloqueio própria.
 	var ray := PhysicsRayQueryParameters3D.create(actor_point+Vector3.UP*.95,point+Vector3.UP*.025,1,[actor.get_rid()])
 	return session.world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
 

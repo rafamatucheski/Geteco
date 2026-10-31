@@ -1,5 +1,5 @@
 extends RefCounted
-## Only completed, physically timed races enter this ledger. Attempts are transient.
+## Só corridas concluídas e cronometradas fisicamente entram neste livro. Tentativas são passageiras.
 const KEY := "desert_drag"
 const RIVALS := ["digo", "livia", "raul", "jessica", "nadir", "rauhz"]
 const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
@@ -62,8 +62,8 @@ static func validate_wallet(value: Variant, wallet: Dictionary) -> bool:
 		if str(key).begins_with("reward:desert_drag:") and str(key).trim_prefix("reward:desert_drag:") not in RIVALS: return false
 	for rival in RIVALS:
 		var receipt: Dictionary = RECEIPTS.lookup(wallet,"reward","desert_drag:"+rival)
-		# A win with no receipt is a durable pending prize. A receipt without its
-		# physical win, or with an altered amount, is corrupt provenance.
+		# Uma vitória sem recibo é um prêmio pendente durável. Um recibo sem a
+		# vitória física, ou com valor alterado, é procedência corrompida.
 		if receipt.is_empty(): continue
 		var amount: Variant = receipt.get("amount",-1)
 		if typeof(amount) not in [TYPE_INT,TYPE_FLOAT]: return false

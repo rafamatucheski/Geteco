@@ -1,5 +1,5 @@
 extends RefCounted
-## Visitors belong to the open meet, never to campaign/ranking progression.
+## Os visitantes pertencem ao encontro aberto, nunca à progressão da campanha/ranking.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const IDS := ["open_bruno", "open_celia", "open_ivo", "open_mara", "open_denis", "open_luna"]
 const CARS := {
@@ -16,7 +16,7 @@ static func attach_number(car: Node3D, number: int) -> void:
 	var holder := Node3D.new()
 	holder.name = "DragEntryNumber"
 	car.add_child(holder)
-	# Follow the rear glass slope, outside the glazing, without billboard text.
+	# Segue a inclinação do vidro traseiro, por fora do vidro, sem texto de billboard.
 	var cabin: Dictionary = preload("res://gameplay/VehicleInterior.gd").spec(car)
 	var bottom := Vector3(0,float(cabin.belt),float(cabin.rear))
 	var top := Vector3(0,float(cabin.roof),float(cabin.rear_top))
@@ -31,8 +31,8 @@ static func attach_number(car: Node3D, number: int) -> void:
 	label.modulate = Color("fff4dc")
 	label.position = bottom.lerp(top,.48)+outward*.025+Vector3.RIGHT*float(cabin.hw)*.36
 	label.basis = Basis(Vector3.RIGHT,along,outward)
-	# Cabin dimensions describe the inside, not the curved exterior glazing.
-	# Mount onto the actual rear glass triangle at this height.
+	# As dimensões da cabine descrevem o interior, não o vidro externo curvo.
+	# Monta no triângulo real do vidro traseiro nesta altura.
 	var hit_z := -INF
 	var ray_origin := Vector3(label.position.x,label.position.y,10)
 	var interior = preload("res://gameplay/VehicleInterior.gd")

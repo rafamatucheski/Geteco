@@ -1,5 +1,5 @@
 extends RefCounted
-## Rival portraits in the world are the same people seen through the glass.
+## Os retratos dos rivais no mundo são as mesmas pessoas vistas pelo vidro.
 const CABIN := preload("res://gameplay/VehicleInterior.gd")
 const PEOPLE := preload("res://runtime/desert/DesertCharacter.gd")
 
