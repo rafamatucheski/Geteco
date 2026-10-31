@@ -1,17 +1,17 @@
 extends RefCounted
 const GRID:=preload("res://systems/inventory/GridInventory.gd")
 const WEAPONS:=preload("res://gameplay/WeaponCatalog.gd")
-## Frozen inventory of the old persistent arsenal cheat. Adding new store
-## weapons must not prevent recognition of a save produced by that version.
+## Inventário congelado do antigo cheat de arsenal persistente. Adicionar novas armas
+## à loja não pode impedir o reconhecimento de um save feito por aquela versão.
 const LEGACY_ARSENAL := ["fists","knuckles","knife","bat","axe","katana","pistol","magnum","smg","shotgun","sawed_off","ak47","m4a1","rpg","flamethrower","grenade","hunting_rifle"]
 
 static func upgrade(wallet: Dictionary) -> Dictionary:
 	var data:=wallet.duplicate(true)
 	var grid: Dictionary=data.get("grid_inventory",{})
 	if not grid.is_empty() and int(grid.version)>=2: return data
-	# The old arsenal wrote 9999 rounds for every gun. Require the whole
-	# arsenal and at least six enormous reserves; an ordinary large purchase
-	# is not evidence of a cheat. Preserve weapon ownership and paid ammo.
+	# O arsenal antigo gravava 9999 tiros para toda arma. Exige o arsenal
+	# inteiro e pelo menos seis reservas enormes; uma compra grande comum
+	# não é prova de cheat. Preserva a posse das armas e a munição paga.
 	var massive:=0
 	var full_arsenal:=true
 	for id in LEGACY_ARSENAL:
@@ -35,7 +35,7 @@ static func upgrade(wallet: Dictionary) -> Dictionary:
 	if grid.is_empty(): return data
 	var old: Array=grid.trunk.duplicate(true)
 	grid.trunk=[]; grid.version=2
-	# Put weapons first so former ammo floods cannot crowd out the arsenal.
+	# Põe as armas primeiro para que enxurradas de munição antiga não tirem espaço do arsenal.
 	for entry in old:
 		if str(entry.id).begins_with("weapon:"): store_remainder(grid,str(entry.id),int(entry.amount))
 	for entry in old:

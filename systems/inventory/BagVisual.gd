@@ -126,7 +126,7 @@ func _build_backpack() -> void:
 	_soft_box(Vector3(.325,.028,.19),Vector3(0,0,-.078),BACKPACK_COLOR.lightened(.07),lid)
 
 func _strap(side: float) -> void:
-	# Short shoulder sections meet the shirt; folded flat when placed on the floor.
+	# Seções curtas do ombro encostam na camisa; dobradas rentes quando postas no chão.
 	var path: Array[Vector3]=[Vector3(side*.10,.33,.09),Vector3(side*.12,.40,.15),Vector3(side*.13,.42,.21),Vector3(side*.13,.36,.26)]
 	var surface:=SurfaceTool.new(); surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var edge:=Vector3(.015,0,0)
@@ -171,7 +171,7 @@ func set_open(open: bool, carried := true) -> void:
 	pose_tween.tween_property(lid,"rotation:x",-1.4 if open else 0.0,.22)
 	if carried:
 		if kind=="backpack" and is_instance_valid(carry_space):
-			# Opening leaves the bone socket; closing returns to its animated space.
+			# Abrir sai do soquete do osso; fechar volta ao espaço animado.
 			reparent(actor_space if open else carry_space,true)
 		var rest_at:=rest_position()
 		var rest_rotation:=Vector3(0,PI,0) if kind=="backpack" else Vector3.ZERO

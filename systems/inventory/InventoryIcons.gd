@@ -11,7 +11,7 @@ static func get_icon(id: String) -> Texture2D:
 		return textures[id]
 	var image := Image.new()
 	if id == "lockpick":
-		# Reference the imported resource so exports include it; tint once in cache.
+		# Referencia o recurso importado para os exports o incluírem; tinge uma vez no cache.
 		image = LOCKPICK_ICON.get_image()
 		if image.is_compressed(): image.decompress()
 		var tint := Color("c8b483")
@@ -41,8 +41,8 @@ static func get_icon(id: String) -> Texture2D:
 			"case":'<path d="M37 25V14H63V25" fill="none" stroke="#b59470" stroke-width="6"/><rect x="10" y="25" width="80" height="55" rx="8" fill="#896f52" stroke="#b59874" stroke-width="2"/><path d="M12 42H88M29 26V79M71 26V79" stroke="#4d4439" stroke-width="5"/>',
 		}
 		image.load_svg_from_string('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="90" viewBox="0 0 100 90">'+str(paths.get(id,paths.quest))+'</svg>', WEAPON_ICONS.SVG_SCALE)
-	# Weapon exports include large transparent margins; crop once so a 4-cell
-	# rifle actually fills the row instead of looking like a tiny pistol icon.
+	# Os exports de armas têm margens transparentes grandes; recorta uma vez para um rifle
+	# de 4 células encher a linha em vez de parecer um ícone minúsculo de pistola.
 	var used:=image.get_used_rect()
 	if used.has_area(): image=image.get_region(used.grow(2).intersection(Rect2i(Vector2i.ZERO,image.get_size())))
 	image.fix_alpha_edges()

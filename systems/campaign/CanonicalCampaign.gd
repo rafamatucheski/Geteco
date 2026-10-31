@@ -1,6 +1,6 @@
 extends RefCounted
-## Canonical nine-beat data ledger, separate from the six-mission Harbor runtime.
-## This does not instantiate cutscenes, pursuits or contracts by itself.
+## Livro canônico de dados com nove etapas, separado do runtime de seis missões do Harbor.
+## Sozinho, não instancia cutscenes, perseguições nem contratos.
 const PATH := "res://data/campaign/campaign_v1.json"
 var catalog: Dictionary = {}
 var _data := {"version": 1, "current_stage": "prologue_call", "completed_beats": [],

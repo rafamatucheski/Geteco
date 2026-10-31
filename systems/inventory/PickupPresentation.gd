@@ -1,6 +1,6 @@
 extends Node3D
-## V1 WeaponPickup: spin 1.6 rad/s, bob 3.2 rad/s, pulsing halo,
-## and a quarter-second absorption. Only art moves; the ground anchor stays put.
+## WeaponPickup da V1: giro de 1.6 rad/s, balanço de 3.2 rad/s, halo pulsante
+## e absorção de um quarto de segundo. Só a arte se move; a âncora no chão fica parada.
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const PROXIMITY_RADIUS := 9.0
@@ -19,8 +19,8 @@ var spin_speed := 1.6
 var bob_height := .045
 var lift := .09
 var halo_scale := 1.0
-## Optional exploration signal. Rewards still play their cash/weapon cue in the
-## granting transaction; reconciling a save never plays a collection sound here.
+## Sinal opcional de exploração. Recompensas ainda tocam o som de dinheiro/arma na
+## transação que concede; reconciliar um save nunca toca som de coleta aqui.
 var proximity_audio_enabled := false
 var proximity_voice: AudioStreamPlayer
 var _proximity_listener: Node3D
@@ -34,8 +34,8 @@ func set_proximity_audio(enabled: bool, listener: Node3D = null) -> void:
 	_stop_proximity_audio()
 
 func _proximity_initial_delay() -> float:
-	# Nearby rewards begin on different beats and allow save reconciliation to
-	# hide collected rewards before their first approach cue.
+	# Recompensas próximas começam em batidas diferentes e permitem à reconciliação do save
+	# esconder as já coletadas antes do primeiro aviso de aproximação.
 	return .65 + phase / TAU * .8
 
 func _stop_proximity_audio() -> void:
@@ -53,9 +53,9 @@ func _update_proximity_audio(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	var listener := _proximity_listener
 	if not is_instance_valid(listener) and camera != null:
-		# The orthographic camera is high above Dante. Use its followed actor/car
-		# for range and loudness instead of attenuating by the camera's altitude.
-		# Retargeting/boarding is observed each poll; only explicit listeners persist.
+		# A câmera ortográfica fica bem acima do Dante. Usa o ator/carro seguido por ela
+		# para alcance e volume em vez de atenuar pela altitude da câmera.
+		# Troca de alvo/embarque é observada a cada consulta; só ouvintes explícitos persistem.
 		listener = camera.get("target") as Node3D
 	if not is_instance_valid(listener) or not listener.is_visible_in_tree():
 		_stop_proximity_audio()

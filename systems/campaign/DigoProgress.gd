@@ -1,6 +1,6 @@
 extends RefCounted
-## Digo's relationship follows the player between maps; lessons are optional.
-## Desert completion must be called by the future race's verified finish event.
+## A relação com o Digo acompanha o jogador entre mapas; as lições são opcionais.
+## A conclusão do deserto deve ser chamada pelo evento de chegada verificado da futura corrida.
 const DEFAULT := {"version":1,"met":false,"lesson_completed":false,"desert_raced":false,"friend":false}
 const DESERT_RACE_ID := "digo_desert_race"
 const WORKSHOP_ID := "digo_workshop"

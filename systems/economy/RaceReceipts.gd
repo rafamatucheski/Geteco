@@ -1,7 +1,7 @@
 extends RefCounted
-## Persisted race_symbols_v1 contracts. These are historical prices, not a
-## current catalog. Different future amounts remain opaque unless migrated by
-## an explicit codec version. Symbols preserve each side independently.
+## Contratos race_symbols_v1 persistidos. São preços históricos, não o
+## catálogo atual. Valores futuros diferentes ficam opacos, a não ser que migrados por
+## uma versão explícita do codec. Os símbolos preservam cada lado de forma independente.
 const CODEC := "race_symbols_v1"
 const PAGE_SIZE := 256
 const MAX_SERIAL := 10000000
@@ -48,7 +48,7 @@ static func _amount(domain: String, side: int, part: int) -> int:
 	if domain=="motocross": return int(MOTO_FEES[part-1] if side==0 else MOTO_PRIZES[part-1])
 	return int(SKI[domain][side])
 
-## Only the queried receipt is reconstructed. Never export synthetic history.
+## Só o recibo consultado é reconstruído. Nunca exporta histórico sintético.
 static func lookup(data: Dictionary, kind: String, receipt_id: String) -> Dictionary:
 	var identity := _identity(kind,receipt_id)
 	if identity.is_empty(): return {}
@@ -80,14 +80,14 @@ static func record(data: Dictionary, kind: String, receipt_id: String, amount: i
 	var page_key := str(int(float(serial-1)/PAGE_SIZE))
 	var offset := (serial-1)%PAGE_SIZE
 	var page: String = pages.get(page_key,"A".repeat(PAGE_SIZE))
-	# Strings are immutable values. Only this bounded page is replaced; copies
-	# of a wallet retain the old string and all other pages unchanged.
+	# Strings são valores imutáveis. Só esta página limitada é trocada; cópias
+	# de uma carteira mantêm a string antiga e todas as outras páginas intactas.
 	pages[page_key]=page.substr(0,offset)+String.chr(65+next)+page.substr(offset+1)
 	return true
 
-## Serial selection combines only actual paid events with the opaque reader.
-## Nonempty validated pages make the largest page authoritative; scan at most
-## that one page backwards, never infer that holes in it were paid.
+## A escolha do serial combina só eventos pagos reais com o leitor opaco.
+## Páginas validadas não vazias tornam a maior página a oficial; varre no máximo
+## essa página de trás para frente, nunca deduz que buracos nela foram pagos.
 static func ski_highest(data: Dictionary, course_id: String) -> int:
 	if not SKI.has(course_id): return 0
 	var pages := _pages(data,course_id)
@@ -99,8 +99,8 @@ static func ski_highest(data: Dictionary, course_id: String) -> int:
 		if page.unicode_at(offset)!=65: return highest_page*PAGE_SIZE+offset+1
 	return 0
 
-## Exact bounded summary for Motocross's cross-contract validator. Counts keep
-## all25 independent payload combinations, not merely wins or highest serial.
+## Resumo exato e limitado para o validador entre contratos do Motocross. As contagens mantêm
+## todas as 25 combinações de conteúdo independentes, não só vitórias ou o maior serial.
 static func motocross_summary(data: Dictionary) -> Dictionary:
 	var counts: Array[int]=[]
 	counts.resize(25); counts.fill(0)
@@ -138,8 +138,8 @@ static func validate(data: Dictionary) -> bool:
 					if index*PAGE_SIZE+offset+1>MAX_SERIAL: return false
 					any=true
 			if not any: return false
-	# Exact ownership: one side may be opaque while the other is compact, but
-	# the same canonical receipt must never be owned by both stores.
+	# Posse exata: um lado pode ser opaco enquanto o outro é compacto, mas
+	# o mesmo recibo canônico nunca pode pertencer aos dois armazenamentos.
 	for key_value in data.get("transactions",{}):
 		var key := str(key_value)
 		var separator := key.find(":")

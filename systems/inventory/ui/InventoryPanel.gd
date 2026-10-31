@@ -30,8 +30,8 @@ func _layout() -> void:
 	if not is_instance_valid(card): return
 	var view:=get_viewport_rect().size
 	if is_instance_valid(screen_scroll) and is_instance_valid(content_column) and is_instance_valid(body):
-		# Reserve the actual header, details, actions and hints before sizing
-		# the grid viewport. Only the grids scroll; actions never leave view.
+		# Reserva o cabeçalho, detalhes, ações e dicas reais antes de dimensionar
+		# a viewport da grade. Só as grades rolam; as ações nunca saem de vista.
 		var body_size:=body.get_combined_minimum_size()
 		var fixed_height:=content_column.get_combined_minimum_size().y-screen_scroll.get_combined_minimum_size().y
 		var body_height:=maxf(72,minf(body_size.y,view.y-96-fixed_height))

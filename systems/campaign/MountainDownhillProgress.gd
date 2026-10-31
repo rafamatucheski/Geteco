@@ -1,5 +1,5 @@
 extends RefCounted
-## Persistent result ledger; attempts are session-only and block saving.
+## Livro persistente de resultados; tentativas são só da sessão e bloqueiam o save.
 const VERSION := 1
 const FIRST_WIN_REWARD := 2400
 const RECEIPT := "mountain_downhill_first_win"

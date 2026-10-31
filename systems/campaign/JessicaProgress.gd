@@ -1,6 +1,6 @@
 extends RefCounted
-## Narrative encounters are recorded individually; there is no affection score.
-## World adapters supply verified robbery, boarding and physical return events.
+## Encontros narrativos são registrados um a um; não há pontuação de afeto.
+## Adaptadores do mundo fornecem eventos verificados de assalto, embarque e retorno físico.
 const CAR_ID := "jessica_jetta_gli"
 const PHASES := ["", "accepted", "escaped", "riding", "returned", "complete"]
 const DEFAULT := {"version":1, "met":false, "bank_phase":"", "bank_cycle":-1,

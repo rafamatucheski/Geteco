@@ -1,2 +1,2 @@
 extends "res://systems/inventory/ui/InventoryPanel.gd"
-## Legacy resource path delegates to the single inventory view.
+## Caminho de recurso antigo que delega para a única vista de inventário.

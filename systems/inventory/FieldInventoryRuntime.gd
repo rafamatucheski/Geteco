@@ -31,8 +31,8 @@ func configure(owner_session) -> void:
 
 func economy(): return session.state.economy
 
-## Commit an already validated transaction as one inventory/wallet update.
-## Fishing defers persistence until its catch decision has also been recorded.
+## Efetiva uma transação já validada como uma única atualização de inventário/carteira.
+## A pesca adia a persistência até a decisão da captura também ter sido registrada.
 func commit_candidate(expected: Dictionary, candidate: Dictionary, persist := true) -> bool:
 	if session.controller.save_invalid or session.world.gameplay.health <= 0: return false
 	if economy().snapshot() != expected or not economy().validate_snapshot(candidate): return false
@@ -94,8 +94,8 @@ func open(at_trunk := false) -> void:
 		var trunk_view: Variant = session.personal_car.get("_trunk_view")
 		if is_instance_valid(trunk_view) and trunk_view.has_method("focus_for"): trunk_view.screen_focus = ui.trunk_view_focus
 
-## Show stored weapons, never the weapons Dante is still carrying. The four
-## physical mounts show the first stored representative of each weapon class.
+## Mostra as armas guardadas, nunca as que o Dante ainda carrega. Os quatro
+## suportes físicos mostram o primeiro representante guardado de cada classe de arma.
 func trunk_display_loadout() -> Dictionary:
 	var slots := {"curta":"", "longa":"", "corpo":"", "granada":""}
 	var snapshot: Dictionary = economy().grid_snapshot()
@@ -230,7 +230,7 @@ func _ground_point(point: Vector3, bag_space := false) -> Vector3:
 	if hit.is_empty() or hit.normal.y<.8 or absf(float(hit.position.y)-player.global_position.y)>1.1: return Vector3.INF
 	var floor_point: Vector3 = hit.position+Vector3.UP*.025
 	if bag_space:
-		# Includes the widest bag's full rotation and the maximum bob height.
+		# Inclui a rotação completa da bolsa mais larga e a altura máxima de balanço.
 		var shape:=BoxShape3D.new(); shape.size=Vector3(.8,.8,.8)
 		var query:=PhysicsShapeQueryParameters3D.new(); query.shape=shape; query.transform.origin=floor_point+Vector3.UP*.41
 		query.collision_mask=7; query.exclude=[player.get_rid()]
@@ -299,7 +299,7 @@ func _refresh_world() -> void:
 			model=BAG.new(); model.kind=row.item
 			var body:=StaticBody3D.new(); body.name="PickupBody"; body.collision_layer=1; body.collision_mask=0
 			var shape:=BoxShape3D.new(); shape.size=BAG.pickup_size(row.item)
-			# A fixed envelope contains the rotating visual at every angle.
+			# Um envelope fixo contém o visual girando em qualquer ângulo.
 			var width := Vector2(shape.size.x,shape.size.z).length()
 			shape.size = Vector3(width,shape.size.y+.14,width)
 			var collision:=CollisionShape3D.new(); collision.name="CollisionShape3D"; collision.shape=shape; collision.position=Vector3(0,shape.size.y*.5,0)
@@ -349,8 +349,8 @@ func perform(key: String) -> bool:
 	else: ok=economy().grant_item(row.item)
 	if ok and not row.has("uid"): economy().grid_claim(key)
 	if ok:
-		# Detach from the active registry immediately; its short visual tail owns
-		# itself until freed. Failed grants never animate or play a reward.
+		# Sai do registro ativo na hora; a curta cauda visual cuida
+		# de si até ser liberada. Concessões falhas nunca animam nem tocam recompensa.
 		pickups.erase(key)
 		row.node.collect()
 		if not is_instance_valid(pickup_voice):

@@ -1,11 +1,11 @@
 extends RefCounted
-## Only these deterministic recurring contracts use compact, contiguous ranges.
-## Existing opaque receipts stay exact; gaps/noncanonical IDs remain opaque.
+## Só estes contratos recorrentes determinísticos usam faixas compactas e contíguas.
+## Recibos opacos existentes ficam exatos; lacunas/IDs não canônicos continuam opacos.
 const VERSION := 2
 const RACES := preload("res://systems/economy/RaceReceipts.gd")
-## These amounts are persisted V2 receipt contracts, not current catalog prices.
-## Never change them when a shop price changes: another price stays opaque or
-## requires an explicit new domain/ledger version with a compatible migration.
+## Estes valores são contratos de recibo V2 persistidos, não preços atuais do catálogo.
+## Nunca os mude quando um preço da loja mudar: outro preço fica opaco ou
+## exige uma nova versão explícita de domínio/livro com migração compatível.
 const DOMAINS := {
 	"motocross_rental":{"kind":"spend","prefix":"motocross_rental:","amount":35,"max":10000000},
 	"ski_rental":{"kind":"spend","prefix":"ski_rental:","amount":250,"max":1000000},
@@ -30,7 +30,7 @@ static func _classify(kind: String, receipt_id: String) -> Dictionary:
 static func _stream(data: Dictionary, domain: String) -> Dictionary:
 	return data.get("receipt_ledger",{}).get("streams",{}).get(domain,{})
 
-## Membership reconstructs at most the one queried record, never the history.
+## A consulta reconstrói no máximo o registro pedido, nunca o histórico.
 static func lookup(data: Dictionary, kind: String, receipt_id: String) -> Dictionary:
 	var key := kind+":"+receipt_id
 	var existing: Dictionary = data.get("transactions",{}).get(key,{})
@@ -41,8 +41,8 @@ static func lookup(data: Dictionary, kind: String, receipt_id: String) -> Dictio
 	if stream.is_empty() or int(identity.serial)<int(stream.first) or int(identity.serial)>int(stream.through): return {}
 	return {"kind":kind,"item":receipt_id,"amount":int(identity.amount)}
 
-## True means the receipt was appended to the compact range. False instructs
-## Economy to preserve the ordinary record, with the original API semantics.
+## True significa que o recibo foi anexado à faixa compacta. False instrui
+## a Economy a preservar o registro comum, com a semântica original da API.
 static func record(data: Dictionary, kind: String, receipt_id: String, amount: int) -> bool:
 	if RACES.record(data,kind,receipt_id,amount): return true
 	var identity := _classify(kind,receipt_id)
@@ -51,13 +51,13 @@ static func record(data: Dictionary, kind: String, receipt_id: String, amount: i
 	var serial := int(identity.serial)
 	var stream := _stream(data,domain)
 	if stream.is_empty():
-		# This scan happens only before a domain first becomes compact. Legacy
-		# records are not removed, and even an existing gap remains a real gap.
+		# Esta varredura só acontece antes de um domínio virar compacto pela primeira vez. Registros
+		# antigos não são removidos, e até uma lacuna existente continua sendo lacuna real.
 		if serial!=highest_serial(data,domain)+1: return false
 		if not data.has("receipt_ledger"):
 			data.receipt_ledger={"version":VERSION,"streams":{}}
-			# The old Economy validator accepts unknown keys. Bump its envelope
-			# too, so an old build cannot silently ignore compact replay history.
+			# O validador antigo da Economy aceita chaves desconhecidas. Sobe o envelope
+			# também, para que um build antigo não ignore em silêncio o histórico compacto.
 			data.version=2
 		data.receipt_ledger.streams[domain]={"first":serial,"through":serial}
 		return true
@@ -78,8 +78,8 @@ static func highest_serial(data: Dictionary, domain: String) -> int:
 	var prefix: String = str(spec.kind)+":"+str(spec.prefix)
 	var result := compact_highest(data,domain)
 	for key in data.get("transactions",{}):
-		# Preserve the old Tonico reconciliation of legacy suffixes, including
-		# noncanonical numeric spellings. They are never compacted by _classify.
+		# Preserva a antiga reconciliação do Tonico com sufixos legados, incluindo
+		# grafias numéricas não canônicas. Elas nunca são compactadas por _classify.
 		if str(key).begins_with(prefix): result=maxi(result,str(key).trim_prefix(prefix).to_int())
 	return result
 
@@ -101,7 +101,7 @@ static func validate(data: Dictionary) -> bool:
 			var value: Variant = stream.get(key)
 			if typeof(value) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(value)) or float(value)!=floorf(float(value)) or float(value)<1 or float(value)>float(DOMAINS[domain].max): return false
 		if int(stream.first)>int(stream.through): return false
-	# Reject duplicate ownership of a receipt by opaque and compact storage.
+	# Recusa posse duplicada de um recibo pelo armazenamento opaco e pelo compacto.
 	for key_value in data.get("transactions",{}):
 		var key := str(key_value)
 		var separator := key.find(":")

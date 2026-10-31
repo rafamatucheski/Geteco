@@ -1,5 +1,5 @@
 extends RefCounted
-## Authored Harbor story. The old canonical ledger remains a save archive only.
+## História escrita do Harbor. O antigo livro canônico fica só como arquivo de save.
 const VERSION := 1
 const PRISON_YEARS := 8
 const DESTINATION := "desert"

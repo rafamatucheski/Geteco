@@ -24,7 +24,7 @@ signal money_gained(amount: int)
 var _data := {"version": 1, "balance": 0, "weapons": {"fists": {"magazine": -1, "reserve": -1}},
 	"equipped_weapon": "fists", "outfits": ["dante_classic"], "outfit": "dante_classic",
 	"inventory": {}, "discoveries": [], "collectibles": [], "achievements": [], "transactions": {}}
-## Session-only wallet override; purchases still obey unlocks, capacity and receipts.
+## Substituição de carteira só da sessão; compras ainda obedecem desbloqueios, capacidade e recibos.
 var cheat_infinite_money := false
 var balance: int:
 	get: return LIMIT if cheat_infinite_money else int(_data.balance)
@@ -44,7 +44,7 @@ var inventory: Dictionary:
 func snapshot() -> Dictionary:
 	return _data.duplicate(true)
 
-## Read receipt membership without exposing or copying the wallet/inventory.
+## Lê a presença de recibo sem expor nem copiar a carteira/inventário.
 func has_reward_receipt(receipt_id: String) -> bool:
 	return not RECEIPTS.lookup(_data,"reward",receipt_id).is_empty()
 
@@ -73,9 +73,9 @@ func grant_weapon(id: String) -> bool:
 	if discovery != "": discover(discovery)
 	return true
 
-## Floor weapons carry only the ammunition in the pickup. Store starter packs
-## are deliberately reserved for purchases and authored rewards.
-## A full bag rejects the whole pickup, including its discovery and ammo.
+## Armas no chão trazem só a munição do item. Os pacotes iniciais da loja
+## ficam de propósito reservados para compras e recompensas escritas.
+## Uma bolsa cheia recusa o item inteiro, incluindo a descoberta e a munição.
 func collect_weapon_drop(id: String, rounds: int) -> bool:
 	if not Weapons.WEAPONS.has(id) or id == "fists" or rounds <= 0 or rounds > MAX_AMMO: return false
 	if _data.weapons.has(id): return add_ammo(id, rounds)
@@ -98,8 +98,8 @@ func spend(amount: int, receipt_id: String) -> bool:
 	var existing: Dictionary = RECEIPTS.lookup(_data,"spend",receipt_id)
 	if not existing.is_empty(): return existing.amount == amount
 	if balance < amount: return false
-	# All payment preconditions are settled. The codec either records atomically
-	# or returns false without mutation; opaque refusal precedes the debit.
+	# Todas as pré-condições de pagamento estão resolvidas. O codec ou grava atomicamente
+	# ou devolve false sem mutação; a recusa opaca vem antes do débito.
 	var compact := RECEIPTS.record(_data,"spend",receipt_id,amount)
 	if not compact and _data.transactions.size()>=MAX_OPAQUE_RECEIPTS: return false
 	if not cheat_infinite_money: _data.balance -= amount
@@ -107,8 +107,8 @@ func spend(amount: int, receipt_id: String) -> bool:
 		_data.transactions[key] = {"kind": "spend", "item": receipt_id, "amount": amount}
 	return true
 
-## One synchronous transaction for a workshop loadout, retaining a receipt per part.
-## A rejected receipt or insufficient funds must leave the entire wallet untouched.
+## Uma transação síncrona para um conjunto da oficina, guardando um recibo por peça.
+## Um recibo recusado ou saldo insuficiente deve deixar a carteira inteira intacta.
 func spend_batch(entries: Array) -> bool:
 	var before := _data.duplicate(true)
 	var seen := {}
@@ -124,8 +124,8 @@ func spend_batch(entries: Array) -> bool:
 	return true
 
 func purchase_body_armor(current_armor: Variant, maximum_armor: Variant, transaction_id: String) -> Dictionary:
-	# The wallet owns the final precondition as well as the debit. UI may disable
-	# the button, but stale menus cannot charge when protection is already full.
+	# A carteira é dona da pré-condição final e também do débito. A UI pode desativar
+	# o botão, mas menus velhos não podem cobrar quando a proteção já está cheia.
 	if typeof(current_armor) not in [TYPE_INT,TYPE_FLOAT] or typeof(maximum_armor) not in [TYPE_INT,TYPE_FLOAT]:
 		return _result(false,"invalid_protection")
 	if not is_finite(float(current_armor)) or not is_finite(float(maximum_armor)) or float(maximum_armor) <= 0.0:
@@ -213,15 +213,15 @@ static func _max_capacity(id: String) -> int:
 	var family := str(Weapons.WEAPONS[id].get("model_base", id))
 	if family == "shotgun": return base + 2
 	if family == "hunting_rifle": return base + 3
-	# The workbench exposes its 75-round drum on every compatible SMG and AK.
+	# A bancada expõe o tambor de 75 tiros em toda SMG e AK compatível.
 	if family in ["smg", "ak47"]: return 75
 	# Magazine capacity counts whole rounds; preserve truncation.
 	@warning_ignore("integer_division")
 	if family in ["pistol", "m4a1"]: return base + int(base / 2)
 	return base
 
-## Ephemeral pickups own their single-use flag; only the wallet survives a save.
-## Avoid one permanent transaction per respawning civilian.
+## Itens efêmeros cuidam da própria flag de uso único; só a carteira sobrevive ao save.
+## Evita uma transação permanente por civil que reaparece.
 func collect_loose_cash(amount: int) -> bool:
 	if amount < 5 or amount > 300 or int(_data.balance) > LIMIT - amount: return false
 	_data.balance += amount
@@ -275,10 +275,10 @@ func grant_reward(receipt_id: String, amount: int) -> bool:
 	return true
 
 func grant_world_reward(definition: Dictionary) -> Dictionary:
-	# World pickups are one transaction even when they contain a weapon plus
-	# ammunition. The zero-value receipt for non-cash pickups is durable proof
-	# that a missing world marker may be reconciled after a load without granting
-	# the payload twice.
+	# Itens do mundo são uma transação só, mesmo quando contêm uma arma e
+	# munição. O recibo de valor zero para itens que não são dinheiro é prova durável
+	# de que um marcador do mundo ausente pode ser reconciliado depois de carregar sem conceder
+	# o conteúdo duas vezes.
 	var id: Variant = definition.get("id")
 	var kind: Variant = definition.get("kind")
 	if not _valid_id(id) or str(id).length() > 110: return _result(false,"invalid_reward")
@@ -408,16 +408,16 @@ func collect(id: String) -> bool:
 	return true
 
 func achievement_stats() -> Dictionary:
-	# Wallet-owned criteria come from the authoritative inventory, not adapters.
+	# Critérios da carteira vêm do inventário oficial, não de adaptadores.
 	var stats := {}
 	stats.money = balance
-	stats.weapons = _data.weapons.size() # V1 also counts fists as an owned weapon.
+	stats.weapons = _data.weapons.size() # A V1 também conta os punhos como arma possuída.
 	stats.collectibles = _data.collectibles.size()
 	var clues := 0
 	for id in ["mountain_expedition_pack", "mountain_expedition_journal", "mountain_expedition_camera"]:
 		if _data.collectibles.has(id): clues += 1
 	stats.mountain_clues = clues
-	# Ordinary tow work is not a completed chop-shop crushing delivery.
+	# Reboque comum não é uma entrega de esmagamento concluída no desmanche.
 	stats.chop_shop_deliveries = 1 if _data.transactions.has("reward:port_boss_porto_rosso") else 0
 	return stats
 
@@ -491,11 +491,11 @@ func claim_monaliza_starter() -> bool:
 	if _data.transactions.has("reward:monaliza_starter_case"): return false
 	if owns_weapon("pistol") and int(_data.weapons.pistol.reserve) > MAX_AMMO - 72: return false
 	if not grant_reward("monaliza_starter_case",0): return false
-	# V1 adds 72 rounds total, then loads the clip. Do not add catalog starter ammo.
+	# A V1 soma 72 tiros no total e depois carrega o pente. Não some munição inicial do catálogo.
 	if not owns_weapon("pistol"): _data.weapons.pistol = {"magazine":0,"reserve":0}
 	_data.weapons.pistol.reserve += 72
 	reload_weapon("pistol",12)
-	# A residence may already have initialized the same slots. Keep its choices.
+	# Uma residência pode já ter inicializado os mesmos espaços. Mantém as escolhas dela.
 	enable_personal_loadout()
 	_assign_personal_slot("pistol")
 	if grid_enabled(): _grid_register_weapon("pistol",true)
@@ -661,7 +661,7 @@ func _grid_register_weapon(id: String, migration := false) -> bool:
 	var reserve_excess := mini(excess,int(ammo.reserve))
 	ammo.reserve-=reserve_excess
 	ammo.magazine-=excess-reserve_excess
-	# Legacy/starter ammo is never destroyed if the initial two pockets are full.
+	# Munição antiga/inicial nunca é destruída se os dois bolsos iniciais estiverem cheios.
 	var carried := can_carry_weapon(id) or GRID.count(grid,"weapon:"+id) > 0
 	var left := GRID.add_carried(grid,"ammo:"+id,excess) if carried else excess
 	if left>0:

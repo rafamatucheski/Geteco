@@ -1,5 +1,5 @@
 extends RefCounted
-## Persistent results and the single supplied jeep; active attempts never enter saves.
+## Resultados persistentes e o único jipe fornecido; tentativas ativas nunca entram no save.
 const COURSE := preload("res://world/mountain_jeep/MountainJeepCourse.gd")
 const FLEET := preload("res://runtime/FleetState.gd")
 const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
@@ -12,8 +12,8 @@ func snapshot() -> Dictionary:
 	return data.duplicate(true)
 
 func vehicle_for_restore(selected: Dictionary) -> Dictionary:
-	# tree_exiting can be newer than the last saved player-car selection.
-	# A live production-restored body is adopted before this method is needed.
+	# tree_exiting pode ser mais novo que a última seleção de carro do jogador salva.
+	# Um corpo vivo restaurado pela produção é adotado antes de este método ser necessário.
 	if not data.vehicle.is_empty(): return data.vehicle.duplicate(true)
 	if selected.get("vehicle_id","")==COURSE.LOAN_ID and selected.get("archetype","")==COURSE.VEHICLE and FLEET.validate(selected):
 		return selected.duplicate(true)

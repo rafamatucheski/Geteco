@@ -1,5 +1,5 @@
 extends RefCounted
-## Pure spatial storage. Callers commit a whole candidate only after success.
+## Armazenamento espacial puro. Quem chama só efetiva o candidato inteiro depois do sucesso.
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const CATCH_ITEMS := preload("res://activities/fishing/FishingCatchItems.gd")
 const LONG := ["shotgun","sawed_off","shotgun_auto","ak47","m4a1","hunting_rifle","rpg","flamethrower","katana","sword_shield"]

@@ -94,7 +94,7 @@ func target_id() -> String:
 	return str(current_step().get("target", ""))
 
 func legacy_flags() -> Dictionary:
-	# Original Harbor flags projected from the checkpoint; no coordinate coupling.
+	# Flags originais do Harbor projetadas a partir do checkpoint; sem acoplamento por coordenada.
 	var result := {}
 	if active_id == "primeiro_giro" or _data.completed.has("primeiro_giro"):
 		result.harbor_delivery_started = true
@@ -215,7 +215,7 @@ func claim_reward(economy: RefCounted, id: String = "") -> bool:
 		if _data.pending_rewards.is_empty(): return false
 		id = str(_data.pending_rewards.keys()[0])
 	if not _data.pending_rewards.has(id): return false
-	# Wallet receipt owns idempotence. Save both modules in the same snapshot.
+	# O recibo da carteira cuida da idempotência. Salve os dois módulos no mesmo snapshot.
 	var receipt := "campaign:" + id
 	var paid := bool(economy.grant_reward(receipt, int(_data.pending_rewards[id])))
 	if not paid:

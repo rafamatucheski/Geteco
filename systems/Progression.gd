@@ -1,6 +1,6 @@
 extends RefCounted
 
-## Data only: no scene references, autoloads or per-frame processing.
+## Só dados: sem referências de cena, autoloads nem processamento por quadro.
 const Sequence := preload("res://data/GarageSequence.gd")
 const VERSION := 1
 const DEFAULT_SAVE := "user://GetecoV2/progress.json"
@@ -48,7 +48,7 @@ func equip_weapon(weapon_id: String) -> bool:
 	return true
 
 func can_attack() -> bool:
-	# Future melee, firearm and explosive consumers must all check this gate.
+	# Futuros consumidores de corpo a corpo, arma de fogo e explosivo devem todos checar esta trava.
 	return weapons_allowed()
 
 func interact(target_id: String) -> Dictionary:
@@ -82,8 +82,8 @@ func interact(target_id: String) -> Dictionary:
 	return _reply(false, "", "", false)
 
 func complete_meeting() -> Dictionary:
-	# New arrival replaces only the obsolete bench tutorial. Legacy interactions
-	# remain readable until an old save reaches this authored garage conversation.
+	# A nova chegada substitui só o tutorial obsoleto da bancada. Interações antigas
+	# continuam legíveis até um save antigo chegar a esta conversa escrita na garagem.
 	if _state.location_id != "harbor_garage" or _state.phase == "complete": return _reply(false,"","",false)
 	_state.inventory.erase(PART)
 	_state.phase = "complete"
@@ -135,11 +135,11 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if not validate_snapshot(data):
 		return false
 	_state = data.duplicate(true)
-	# JSON numbers are floats; normalize to stable runtime/schema integers.
+	# Números JSON são floats; normaliza para inteiros estáveis de runtime/esquema.
 	_state.schema_version = VERSION
 	for item in _state.inventory:
 		_state.inventory[item] = int(_state.inventory[item])
-	# Never trust a saved weapon restriction flag. Derive it from location.
+	# Nunca confie numa flag de restrição de arma salva. Derive do local.
 	set_location(_state.location_id)
 	return true
 
@@ -199,6 +199,6 @@ func save_game(path: String = DEFAULT_SAVE) -> Error:
 			error = DirAccess.remove_absolute(absolute)
 		if error != OK:
 			return error
-	# Same-directory rename publishes the complete file. Interruption after
-	# rotation recovers the valid backup; partial temporary files are ignored.
+	# Renomear no mesmo diretório publica o arquivo completo. Interrupção depois
+	# da rotação recupera o backup válido; arquivos temporários parciais são ignorados.
 	return DirAccess.rename_absolute(ProjectSettings.globalize_path(temporary), absolute)
