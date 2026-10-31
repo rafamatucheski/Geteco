@@ -1,5 +1,5 @@
 extends SceneTree
-## Rendered regression: lit object, solid obstruction, then restored line of sight.
+## Regressão renderizada: objeto iluminado, obstrução sólida e depois linha de visão restaurada.
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 var failures := 0
 var camera: Camera3D

@@ -1,7 +1,7 @@
 extends SceneTree
 
-## Rendered review of the production V2 hatch and player transition.
-## Run with -- --no-save out_dir=<workspace path> tag=<label>.
+## Revisão renderizada da tampa de produção da V2 e da transição do jogador.
+## Rode com -- --no-save out_dir=<caminho no workspace> tag=<rótulo>.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 
 var failures: Array[String] = []

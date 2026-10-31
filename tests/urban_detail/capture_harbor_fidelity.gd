@@ -1,7 +1,7 @@
 extends SceneTree
 
-## Deterministic Harbor evidence at the same authored centres used by the V1
-## companion capture. This is visual evidence, never a performance benchmark.
+## Evidência determinística do Harbor nos mesmos centros autorais usados pela captura
+## companheira da V1. É evidência visual, nunca um benchmark de desempenho.
 
 const REGION := preload("res://world/regions/NativeRegion.gd")
 const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")

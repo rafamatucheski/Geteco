@@ -1,5 +1,5 @@
 extends SceneTree
-## Production scene and actual belt light; never reads or writes player saves.
+## Cena de produção e luz de cinto real; nunca lê nem grava saves do jogador.
 var world
 var failures := 0
 const OUT := "res://artifacts/flashlight-fix-20261017/integration"
@@ -81,7 +81,7 @@ func run() -> void:
 		check(not world.gameplay.belt_flashlight.enabled, "session input switches belt off " + id)
 		world.session._toggle_weapon_flashlight()
 		world.gameplay.state.equip_weapon("fists")
-		# Both owned: the shared command must reach the weapon attachment too.
+		# Ambas possuídas: o comando compartilhado precisa chegar também ao acessório da arma.
 		world.gameplay.state.equip_weapon("pistol")
 		world.gameplay.buy_attachment("pistol", "flashlight")
 		world.gameplay.flashlight_enabled = false
@@ -115,7 +115,7 @@ func run() -> void:
 		check(world.camera.environment == previous_env,"restore exterior environment " + id)
 		check(world.production.sun.light_cull_mask == previous_sun,"restore sunlight " + id)
 		check(world.gameplay.belt_flashlight.lamp.shadow_enabled == previous_shadows,"restore exterior shadow policy " + id)
-	# The shared input must not draw or activate a weapon inside Maciota's garage.
+	# A entrada compartilhada não pode sacar nem ativar uma arma dentro da garagem do Maciota.
 	check(await world.session.enter_place("maciota",false), "enter weapon-free garage")
 	await settle()
 	check(not world.gameplay.state.equip_weapon("pistol"), "garage blocks equipping firearm")
