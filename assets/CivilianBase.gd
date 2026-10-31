@@ -1,5 +1,5 @@
 extends Node3D
-## Presentation-only adapter for the original CivilianDriverModel.
+## Adaptador só de apresentação para o CivilianDriverModel original.
 var coat_color := Color("3f6872")
 var limbs: Array[Node3D] = []
 var clock := 0.0

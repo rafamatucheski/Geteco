@@ -1,9 +1,9 @@
 extends RefCounted
 class_name MountainMaterials
 
-## Centralized shared material palette for mountain architecture, sawmill, and village props.
-## Strictly follows Geteco V2 performance standards: single shared cached StandardMaterial3D instances,
-## zero dynamic shadow thrashing, no per-instance material allocation.
+## Paleta central de materiais compartilhados para a arquitetura da montanha, serraria e objetos da vila.
+## Segue à risca os padrões de desempenho da Geteco V2: instâncias únicas de StandardMaterial3D compartilhadas e em cache,
+## zero troca de sombra dinâmica, nenhuma alocação de material por instância.
 
 static var _cache: Dictionary = {}
 

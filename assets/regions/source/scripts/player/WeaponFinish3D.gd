@@ -34,7 +34,7 @@ static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 		else:
 			for z in [-0.20,-0.176,-0.152,-0.128,-0.104]:
 				GEO._box(root,"ForeEndVent",Vector3(0,0.014,z),Vector3(0.048,0.018,0.008),rubber)
-				# The SMG receiver ends at -.18; the rifle's forward tooth floats over its exposed barrel.
+				# A caixa da culatra da SMG termina em -.18; o dente dianteiro do fuzil flutua sobre o cano exposto.
 				if id not in ["smg", "micro_smg"] or z >= -.18:
 					GEO._box(root,"RailTooth",Vector3(0,0.048,z),Vector3(0.034,0.009,0.009),steel)
 			GEO._box(root,"ButtPad",Vector3(0,0,0.247 if id == "m4a1" else 0.187),Vector3(0.044,0.095,0.008),rubber)
@@ -158,7 +158,7 @@ static func _face(st: SurfaceTool, points: Array[Vector3]) -> void:
 	if normal.dot(center) < 0:
 		points.reverse()
 		normal = -normal
-	# Godot uses clockwise front faces; supply the outward normal explicitly.
+	# O Godot usa faces frontais no sentido horário; fornece a normal para fora explicitamente.
 	for i in range(1,points.size()-1):
 		for k in [0,i+1,i]:
 			st.set_normal(normal)
@@ -188,7 +188,7 @@ static func _batch_static(root: Node3D) -> void:
 			var arrays: Array = MESH_ARRAYS.arrays_of(child.mesh, surface).duplicate(true)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 			var previous_count: int = merged[Mesh.ARRAY_VERTEX].size() if merged[Mesh.ARRAY_VERTEX] != null else 0
-			# Transform shared vertices once, not once for each triangle corner.
+			# Transforma vértices compartilhados uma vez, não uma vez por canto de triângulo.
 			arrays[Mesh.ARRAY_VERTEX] = transform * vertices
 			var normal_basis := transform.basis.inverse().transposed()
 			var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
@@ -204,7 +204,7 @@ static func _batch_static(root: Node3D) -> void:
 					tangents[i+2] = tangent.z
 					tangents[i+3] *= handedness
 				arrays[Mesh.ARRAY_TANGENT] = tangents
-			# Keep optional UV/color data when a material combines primitive types.
+			# Mantém os dados opcionais de UV/cor quando um material combina tipos de primitiva.
 			for channel in Mesh.ARRAY_INDEX:
 				if arrays[channel] == null and merged[channel] == null: continue
 				var stride := 4 if channel in [Mesh.ARRAY_TANGENT, Mesh.ARRAY_BONES, Mesh.ARRAY_WEIGHTS] else 1

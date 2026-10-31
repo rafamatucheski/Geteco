@@ -1,6 +1,6 @@
 extends RefCounted
-## Shared metric finishes. Local projection on vehicles keeps paint attached
-## to the body; world projection on buildings preserves scale across instances.
+## Acabamentos métricos compartilhados. A projeção local nos veículos mantém a pintura presa
+## à carroceria; a projeção de mundo nos prédios preserva a escala entre instâncias.
 static var _textures: Dictionary = {}
 static var _materials: Dictionary = {}
 

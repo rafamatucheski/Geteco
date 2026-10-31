@@ -1,5 +1,5 @@
 extends RefCounted
-## Architectural finishes remain in the workshop's cached 3D render.
+## Os acabamentos arquitetônicos ficam no render 3D em cache da oficina.
 static func build(room: Node3D) -> void:
 	for child in room.get_children():
 		if child is MeshInstance3D and child.material_override != null and child.position.y < .02:
@@ -22,14 +22,14 @@ static func build(room: Node3D) -> void:
 	cool.emission_enabled = true
 	cool.emission = Color("d4ebef")
 	cool.emission_energy_multiplier = 0.7
-	# Continuous surrounding structure and driveway anchor the cutaway room.
+	# Estrutura contínua em volta e a entrada de veículos ancoram a sala em corte.
 	box(room, "BuildingFoundation", Vector3(1, -.24, 0), Vector3(50, .32, 40), concrete)
 	box(room, "RearBuildingMass", Vector3(1.15, 1.9, -9.3), Vector3(50, 3.8, 10), steel)
 	for x in range(-16, 19, 2):
 		box(room, "ApronJoint", Vector3(x, -.073, 9), Vector3(.025, .012, 14), grout)
 	for z in range(5, 18, 2):
 		box(room, "ApronJoint", Vector3(1, -.073, z), Vector3(48, .012, .025), grout)
-	# Service floor has slab seams, an inset drain and a robust gate threshold.
+	# O piso de serviço tem juntas de laje, um ralo embutido e uma soleira robusta no portão.
 	# A oficina vai de X -8.2 a 2.3 desde a ampliação de 21/10/2026 (WorkshopProps.EXTENSION_X).
 	for x in [-7.7, -5.5, -3.3, -1.1, 1.1]:
 		box(room, "SlabJoint", Vector3(x, .005, .25), Vector3(.018, .01, 8.7), grout)
@@ -61,7 +61,7 @@ static func build(room: Node3D) -> void:
 	# -4.14 marca onde ficava a parede esquerda antes da ampliação: vira pilar da nova vão.
 	for x in [-8.14, -4.14, 2.33, 6.45]:
 		box(room, "SteelColumn", Vector3(x, 1.88, -4.02), Vector3(.13, 3.76, .16), steel)
-	# High clerestory windows illuminate the workshop without obscuring the bay.
+	# Janelas altas de clerestório iluminam a oficina sem tapar o box.
 	# A segunda janela fica sobre a estante de peças, à direita da escada da cobertura.
 	for window in [[-1.0, 5.2, [-2.65, -1, .65]], [-5.4, 1.8, [-5.4]]]:
 		box(room, "WindowFrame", Vector3(window[0], 2.75, -4.045), Vector3(window[1], 1.02, .14), silver)
@@ -69,22 +69,22 @@ static func build(room: Node3D) -> void:
 		for x in window[2]:
 			box(room, "WindowMullion", Vector3(x, 2.75, -3.93), Vector3(.035, .88, .04), steel)
 		box(room, "WindowMullion", Vector3(window[0], 2.75, -3.93), Vector3(window[1] - .2, .035, .04), steel)
-	# Shelves on the existing office safe wall: books, trophies and record sleeves.
+	# Prateleiras na parede do cofre do escritório existente: livros, troféus e capas de disco.
 	for y in [1.15, 1.65, 2.15]:
 		box(room, "OfficeShelf", Vector3(5.77, y, -3.73), Vector3(1.22, .065, .46), wood)
 		for i in 7:
 			var book := material(["71483e", "253c45", "b49e68", "4d5c43"][i % 4], .8)
 			box(room, "Book", Vector3(5.29 + i * .135, y + .17, -3.7), Vector3(.10, .26 + (i % 3) * .035, .26), book)
-	# Tool silhouettes on a pegboard above the existing workbench.
+	# Silhuetas de ferramentas num painel perfurado acima da bancada existente.
 	box(room, "Pegboard", Vector3(-1.0, 1.65, -3.99), Vector3(2.1, .85, .08), dark_wood)
 	for i in 8:
 		var x := -1.85 + i * .24
 		box(room, "HangingTool", Vector3(x, 1.64, -3.91), Vector3(.035, .32, .03), silver)
 		box(room, "ToolHead", Vector3(x, 1.8, -3.90), Vector3(.10, .075, .05), silver)
-	# Low foreground returns reveal wall thickness without masking feet or the door.
+	# Retornos baixos em primeiro plano mostram a espessura da parede sem esconder os pés nem a porta.
 	for x in [-5.2, 4.5]:
 		box(room, "CutawayWallCap", Vector3(x, .25, 4.7), Vector3(5.98 if x < 0 else 4.18, .05, .24), silver)
-	# Dedicated task lighting, cached with the rest of the furniture.
+	# Iluminação de trabalho dedicada, em cache junto com o resto da mobília.
 	for point in [Vector3(-1, 3.0, -1), Vector3(4.5, 2.8, -1.4)]:
 		var light := OmniLight3D.new()
 		light.position = point
@@ -125,12 +125,12 @@ static func _used_workshop(room: Node3D, steel: Material, silver: Material, bras
 		stain.position = Vector3(-.65 + sin(i * 2.4) * .6, .018 + float(i) * .0002, -.6 + cos(i * 1.7) * .85)
 		stain.scale.z = .55 + float(i % 3) * .16
 		room.add_child(stain)
-	# Hand tools and oily rag stay within the existing tool chest footprint.
+	# Ferramentas de mão e o pano sujo de óleo ficam dentro da pegada da caixa de ferramentas existente.
 	box(room,"GreasyRag",Vector3(-3.46,1.103,-2.02),Vector3(.31,.018,.23),material("716b54",.98))
 	for i in 4:
 		var x := -3.72 + i * .15
 		box(room,"SocketRail",Vector3(x,1.12,-2.22),Vector3(.07,.065,.07),silver)
-	# A small radio on the rear workbench gives the mechanic a lived-in station.
+	# Um radinho na bancada dos fundos dá ao mecânico um posto com cara de usado.
 	box(room,"WorkshopRadio",Vector3(-1.65,1.08,-3.75),Vector3(.33,.26,.17),steel)
 	box(room,"RadioGrille",Vector3(-1.69,1.08,-3.656),Vector3(.2,.17,.014),wood)
 	box(room,"RadioDial",Vector3(-1.52,1.08,-3.65),Vector3(.035,.06,.022),brass)
@@ -148,7 +148,7 @@ static func _used_workshop(room: Node3D, steel: Material, silver: Material, bras
 	for side in [-1,1]:
 		for index in 10:
 			box(room,"TyreWear",Vector3(side*.8,.012,.7+index*.22),Vector3(.17,.002,.035),material("4c5353",.98))
-	# Stitched leather and brass studs enrich the existing chair back.
+	# Couro costurado e tachas de latão enriquecem o encosto da cadeira existente.
 	for x in [4.31,4.5,4.69]:
 		for y in [.72,.91,1.1]:
 			box(room,"LeatherButton",Vector3(x,y,-2.875),Vector3(.022,.022,.012),brass)

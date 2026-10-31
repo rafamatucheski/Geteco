@@ -19,7 +19,7 @@ static func get_mat(key: String, color: Color = Color.WHITE, roughness: float = 
 
 # --- Structural Steel & Paint ---
 
-## Industrial machinery yellow for structural columns and warning trims (matching V1 #d39c43)
+## Amarelo de maquinário industrial para colunas estruturais e acabamentos de aviso (combinando com a V1 #d39c43)
 static func frame_yellow() -> StandardMaterial3D:
 	return get_mat("frame_yellow", Color("#d39c43"), 0.55, 0.45)
 

@@ -178,7 +178,7 @@ func _finish_mountain_surfaces() -> void:
 		box("WallDado", Vector3(.03, .065, 8.8), Vector3(side * 6.39, 1.0, 0), _wood)
 	box("WallSkirting", Vector3(12.8, .18, .035), Vector3(0, .12, -4.38), _wood)
 	box("WallDado", Vector3(12.8, .065, .03), Vector3(0, 1.0, -4.38), _wood)
-	# Frame the existing mirror and position the seating within its fitting area.
+	# Emoldura o espelho existente e posiciona os assentos dentro da área de prova.
 	for z in [1.47, 2.73]:
 		box("MirrorFrame", Vector3(.065, 2.27, .065), Vector3(-6.29, 1.25, z), _wood)
 	for y in [.13, 2.37]:

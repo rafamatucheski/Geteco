@@ -1,6 +1,6 @@
 extends RefCounted
-## Preserve residents' identity and routine joints; use Dante's native tapered
-## geometry for sleeves, trousers and boots instead of rectangular limbs.
+## Preserva a identidade e as juntas de rotina dos moradores; usa a geometria nativa afunilada
+## do Dante para mangas, calças e botas em vez de membros retangulares.
 const DANTE = preload("res://assets/regions/source/scripts/player/DanteVisualAdapter.gd")
 
 static func refine(model: Node3D) -> void:
@@ -34,7 +34,7 @@ static func refine(model: Node3D) -> void:
 		elbow.add_child(DANTE._make_ellipsoid(Vector3(.105,.12,.13),boots,Vector3(0,-.255,.015)))
 	var head := model.pose_root.get_node("Head") as Node3D
 	head.scale = Vector3.ONE * .87
-	# Same adult head/body ratio as Dante, with the residents' own faces/hair.
+	# Mesma proporção adulta de cabeça/corpo do Dante, com os rostos/cabelos dos próprios moradores.
 	var coat := model.pose_root.get_node("Coat") as MeshInstance3D
 	for child in model.pose_root.get_children():
 		if child == head or child == coat or child == model.breath or child in model.limbs: continue

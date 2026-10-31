@@ -16,7 +16,7 @@ static func build(head: Node3D, radius: float, skin: Color, variant: int) -> voi
 		material.roughness=.85
 		surface.set_material(material)
 		batches.append(surface)
-	# Keep the original cranium and headwear. Shape the visible jaw in front.
+	# Mantém o crânio e o chapéu originais. Modela a mandíbula visível na frente.
 	add(batches[0],Vector3(.21,.15,.15),Vector3(0,-.068,-.056))
 	for side in [-1,1]:
 		var eye_x: float=side*(.057+(variant%3)*.003)

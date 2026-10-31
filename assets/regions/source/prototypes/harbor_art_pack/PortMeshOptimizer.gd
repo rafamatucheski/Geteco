@@ -22,7 +22,7 @@ static func optimize_hierarchy(root_node: Node3D, remove_source_meshes: bool = t
 	var material_groups: Dictionary = {}
 	for item in collected_items:
 		var mat: Material = item["material"]
-		var key: Material = mat # Distinct resources can share a name and different shader parameters.
+		var key: Material = mat # Recursos distintos podem compartilhar um nome e ter parâmetros de shader diferentes.
 		if not material_groups.has(key):
 			material_groups[key] = {
 				"material": mat,
@@ -74,9 +74,9 @@ static func optimize_hierarchy(root_node: Node3D, remove_source_meshes: bool = t
 	}
 
 
-## Finalize normals while the batch is still in CPU arrays. This is the same
-## indexed-neighbour pass used by HarborPortModel3D after its intermediate meshes.
-## Opt-in: ordinary batching consumers preserve their existing normals.
+## Finaliza as normais enquanto o lote ainda está em arrays de CPU. É o mesmo
+## passe de vizinhos indexados usado pelo HarborPortModel3D depois das malhas intermediárias.
+## Opcional: consumidores comuns de agrupamento preservam as normais existentes.
 static func _commit_hard_edges(surface: SurfaceTool) -> ArrayMesh:
 	surface.generate_normals()
 	var arrays := surface.commit_to_arrays()

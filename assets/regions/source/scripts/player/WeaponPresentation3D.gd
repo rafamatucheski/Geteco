@@ -1,6 +1,6 @@
 extends RefCounted
-## Shared, human-scale weapon geometry. Origin is the firing hand, muzzle faces -Z.
-## The same meshes appear equipped and as floor loot, preserving their silhouette.
+## Geometria de arma compartilhada em escala humana. A origem é a mão de tiro; o cano aponta para -Z.
+## As mesmas malhas aparecem equipadas e como saque no chão, preservando a silhueta.
 
 static func build(root: Node3D, id: String) -> void:
 	var steel := _mat(Color("697782"), 0.78, 0.32)
@@ -130,7 +130,7 @@ static func _cylinder(root: Node3D, label: String, p: Vector3, radius: float, le
 	root.add_child(part)
 
 static func _profile(root: Node3D, label: String, outline: PackedVector2Array, width: float, mat: Material) -> void:
-	# Extruded Y/Z silhouette: shaped stocks and blades instead of rectangular bars.
+	# Silhueta Y/Z extrudada: coronhas e lâminas modeladas em vez de barras retangulares.
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var indices := Geometry2D.triangulate_polygon(outline)

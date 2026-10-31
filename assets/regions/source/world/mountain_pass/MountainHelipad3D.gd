@@ -1,5 +1,5 @@
 extends "res://assets/regions/source/world/mountain_pass/SummitSkiLodge3D.gd"
-## Ground-supported mountain pad. Markings are single meshes, not overlapping slabs.
+## Heliponto de montanha apoiado no chão. As marcações são malhas únicas, não placas sobrepostas.
 func _ready() -> void:
 	var concrete := _mat("concrete",Color("59656b"),.95)
 	var asphalt := _mat("asphalt",Color("303e46"),.96)
@@ -16,13 +16,13 @@ func _ready() -> void:
 	_box("HBar",Vector3(0,.027,0),Vector3(1.1,.012,.28),white)
 	_ring("TouchdownRing",2.43,.065,.029,amber)
 	_ring("PerimeterPaint",3.10,.055,.029,white)
-	# Inset visual lights: no extra light sources or raised obstacle across the landing area.
+	# Luzes visuais embutidas: nenhuma fonte de luz extra nem obstáculo elevado na área de pouso.
 	var beacon := _mat("beacon",Color("61b790"),.35,0,.55)
 	for i in 8:
 		var angle := TAU*i/8.0
 		var point := Vector3(sin(angle)*3.30,.018,cos(angle)*3.30)
 		_cylinder("InsetLight",point,.065,.024,beacon)
-	# Equipment stands beyond the landing disc; a clear southern opening meets the path.
+	# Os equipamentos ficam além do disco de pouso; uma abertura livre ao sul encontra o caminho.
 	_cylinder("WindsockMast",Vector3(4.0,1.3,-1.0),.045,2.6,steel).set_meta("interior_solid_id",&"Windsock")
 	_cylinder("MastFoot",Vector3(4.0,.08,-1.0),.15,.16,concrete).set_meta("interior_solid_id",&"Windsock")
 	for i in 5:

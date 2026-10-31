@@ -1,6 +1,6 @@
 extends Node3D
-## Small, deterministic warm effects: five flame tongues and seven wisps.
-## No fullscreen bloom or abrupt flashes; suspended with the owning interior.
+## Efeitos quentes pequenos e determinísticos: cinco línguas de chama e sete fiapos.
+## Sem bloom de tela cheia nem clarões bruscos; suspensos junto com o interior dono.
 @export var show_flames := true
 @export var smoke_height := 0.7
 @export var warmth := 0.7

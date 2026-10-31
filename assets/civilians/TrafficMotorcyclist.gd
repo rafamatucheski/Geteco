@@ -1,5 +1,5 @@
 extends "res://assets/CivilianModel.gd"
-## Imported civilian bodies, posed on the actual saddle, grips and footrests.
+## Corpos civis importados, posados no selim, manoplas e pedaleiras de verdade.
 var bike: Node3D
 var _last_left := Vector3.INF
 var _last_right := Vector3.INF
@@ -10,13 +10,13 @@ func _pose(_dt: float) -> void:
 	if not holds.has("Left") or not holds.has("Right"): return
 	var left := to_local(holds.Left.origin)
 	var right := to_local(holds.Right.origin)
-	# The seated body has no walking cycle. Repose only when steering changes;
-	# the shared rig driver also skips syncing unchanged joints.
+	# O corpo sentado não tem ciclo de caminhada. Só refaz a pose quando a direção muda;
+	# o driver de rig compartilhado também pula a sincronização de juntas inalteradas.
 	if left.is_equal_approx(_last_left) and right.is_equal_approx(_last_right): return
 	_last_left = left
 	_last_right = right
 	var seat := to_local(bike.driver_seat_anchor()) + Vector3(0,.95,0)
-	# Fit the torso to each body's real arm lengths; never stretch the limbs.
+	# Ajusta o tronco ao comprimento real dos braços de cada corpo; nunca estica os membros.
 	var lean := .2
 	var shift := Vector3.ZERO
 	for step in 11:
@@ -53,8 +53,8 @@ static func create(vehicle: Node3D, identity: int) -> Node3D:
 	model.appearance_locked = true
 	model.appearance_variant = identity
 	if str(vehicle.get("archetype")) == "bike_police":
-		# The mounted officer uses the same procedural uniform recipe as the
-		# dismounted motorcycle PoliceModel, never the civilian body catalogue.
+		# O policial montado usa a mesma receita procedural de uniforme que o
+		# PoliceModel desmontado da moto, nunca o catálogo de corpos civis.
 		model.coat_color = Color(.11,.15,.24)
 		model.pants_color = model.coat_color.darkened(.25)
 		model.wardrobe_overrides = {"female":false,"build":1,"top":6,"bottom":0,"shoe":2,"hat":3,"bag":0,"backpack":false,"glasses":false,"accent":Color("dce2df"),"inner":Color("d9d6cc"),"shoe_color":Color("141416")}

@@ -1,7 +1,7 @@
 extends RefCounted
 
-## Static airframe finish. Each material is one mesh per cutaway section;
-## the native place owns collision, rewards and camera presence.
+## Acabamento estático da fuselagem. Cada material é uma malha por seção de corte;
+## o lugar nativo é dono da colisão, das recompensas e da presença da câmera.
 var plane: Node3D
 var _surfaces: Dictionary = {}
 
@@ -84,7 +84,7 @@ func _fuselage() -> void:
 	var exposed: Material = plane._mat("exposed_alloy", Color("a4aba8"), 0.65, 0.50)
 	for side in [-1.0, 1.0]:
 		var shell: Node3D = plane.port_shell if side < 0 else plane.starboard_shell
-		# The lower sill remains visible when the upper skin is cut away.
+		# O peitoril inferior continua visível quando a pele superior é cortada.
 		_skin(plane, belly, [Vector2(1.43, 0.06), Vector2(1.60, 0.23), Vector2(1.66, 0.60)], -9.0, 6.5, side)
 		_skin(shell, paint, [Vector2(1.66, 0.60), Vector2(1.66, 1.53), Vector2(1.62, 2.08), Vector2(1.43, 2.42)], -9.0, 6.5, side)
 		plane._add_box_to(shell, Vector3(side * 1.678, 1.61, -1.25), Vector3(0.012, 0.19, 15.35), _material("tactical_stripe"))
@@ -100,7 +100,7 @@ func _fuselage() -> void:
 		_cobra_insignia(shell, side)
 	_roof_skin(plane.cutaway_roof, paint, [Vector2(-1.43, 2.42), Vector2(-1.02, 2.80), Vector2(-0.48, 3.02), Vector2(0.48, 3.02), Vector2(1.02, 2.80), Vector2(1.43, 2.42)], -9.0, 6.5)
 	_roof_skin(plane.cutaway_roof, snow, [Vector2(-1.02, 2.85), Vector2(-0.47, 3.075), Vector2(0.47, 3.075), Vector2(1.02, 2.85)], -8.70, 6.15)
-	# Rounded wing-root fairing rather than a solid rectangular box on the roof.
+	# Carenagem arredondada na raiz da asa, em vez de uma caixa retangular sólida no teto.
 	_roof_skin(plane.cutaway_roof, paint, [Vector2(-1.69, 2.65), Vector2(-1.19, 3.05), Vector2(-0.68, 3.20), Vector2(0.68, 3.20), Vector2(1.19, 3.05), Vector2(1.69, 2.65)], -4.85, -2.05)
 
 func _cobra_insignia(shell: Node3D, side: float) -> void:
@@ -136,8 +136,8 @@ func _cockpit_and_nose() -> void:
 	for side in [-1.0, 1.0]:
 		_quad(roof, glass, Vector3(side * 0.07, 1.77, -14.04), Vector3(side * 0.86, 1.77, -14.04), Vector3(side * 1.13, 2.42, -13.17), Vector3(side * 0.07, 2.64, -13.17), Vector3(0, 1, -1), true)
 	plane._add_box_to(roof, Vector3(0, 2.21, -13.60), Vector3(0.10, 0.10, 1.27), frame, Vector3(43, 0, 0))
-	# Low belly stays fixed. All upper nose sections share the roof's cutaway,
-	# including the radar cone, so a northern camera can see into the cockpit.
+	# A barriga baixa fica fixa. Todas as seções superiores do nariz compartilham o corte do teto,
+	# incluindo o cone do radar, para que uma câmera ao norte veja dentro da cabine.
 	var sections: Array[Vector4] = [Vector4(-13.35, 1.10, 1.55, 0.92), Vector4(-14.12, 1.09, 1.09, 0.88), Vector4(-15.04, 1.03, 0.88, 0.76), Vector4(-15.92, 0.97, 0.49, 0.47), Vector4(-16.50, 0.95, 0.035, 0.04)]
 	for section in sections.size() - 1:
 		for ring in 16:
@@ -147,7 +147,7 @@ func _cockpit_and_nose() -> void:
 			var parent: Node3D = plane if sin(average) < -0.58 else roof
 			var material: Material = radome if section > 1 else paint
 			_quad(parent, material, _ring(sections[section], a), _ring(sections[section + 1], a), _ring(sections[section + 1], b), _ring(sections[section], b), Vector3(cos(average), sin(average), -0.2), true)
-	# Small gauges and throttles stay inside the instrument-panel collision.
+	# Pequenos mostradores e manetes ficam dentro da colisão do painel de instrumentos.
 	for side in [-1.0, 1.0]:
 		for index in 3:
 			plane._add_cyl_to(plane, Vector3(side * (0.37 + index * 0.18), 1.32, -12.301), 0.060, 0.012, glass, Vector3(90, 0, 0))
@@ -162,7 +162,7 @@ func _wings() -> void:
 	var seam := _material("airframe_seam")
 	_prism(plane, paint, [Vector3(1.65, 2.90, -4.90), Vector3(14.00, 3.64, -4.09), Vector3(14.00, 3.64, -2.62), Vector3(1.65, 2.90, -2.10)], Vector3(0, 0.30, 0))
 	_prism(plane, snow, [Vector3(1.83, 3.23, -4.68), Vector3(13.68, 3.965, -3.96), Vector3(13.58, 3.96, -2.80), Vector3(1.83, 3.23, -2.31)], Vector3(0, 0.045, 0))
-	# The port outer panel has sheared from its spar and lies on the ice.
+	# O painel externo de bombordo se partiu da longarina e está caído no gelo.
 	_prism(plane, paint, [Vector3(-1.65, 2.64, -4.90), Vector3(-9.28, 1.76, -4.44), Vector3(-9.17, 1.76, -2.63), Vector3(-1.65, 2.64, -2.10)], Vector3(0, 0.30, 0))
 	_prism(plane, snow, [Vector3(-1.86, 2.96, -4.70), Vector3(-9.09, 2.095, -4.23), Vector3(-8.91, 2.095, -2.82), Vector3(-1.86, 2.96, -2.31)], Vector3(0, 0.045, 0))
 	_prism(plane, paint, [Vector3(-9.65, 1.95, -4.48), Vector3(-14.10, 0.23, -4.07), Vector3(-14.10, 0.23, -2.75), Vector3(-9.54, 1.95, -2.59)], Vector3(0, 0.25, 0))
@@ -225,7 +225,7 @@ func _tail() -> void:
 	var paint := _material("fuselage")
 	var snow := _material("snow")
 	var seam := _material("airframe_seam")
-	# The hollow tail rises over the open ramp; no solid box fills the doorway.
+	# A cauda oca sobe sobre a rampa aberta; nenhuma caixa sólida enche a porta.
 	for side in [-1.0, 1.0]:
 		_quad(roof, paint, Vector3(side * 1.43, 2.42, 6.5), Vector3(side * 0.40, 3.36, 10.30), Vector3(side * 0.33, 3.89, 10.30), Vector3(side * 0.97, 3.04, 6.5), Vector3(side, 0.6, 0), true)
 	_quad(roof, paint, Vector3(-0.97, 3.04, 6.5), Vector3(-0.33, 3.89, 10.30), Vector3(0.33, 3.89, 10.30), Vector3(0.97, 3.04, 6.5), Vector3.UP, true)
@@ -233,7 +233,7 @@ func _tail() -> void:
 	_prism(roof, seam, [Vector3(-0.147, 3.53, 9.83), Vector3(-0.147, 6.98, 8.95), Vector3(-0.147, 6.98, 9.18), Vector3(-0.147, 3.53, 10.12)], Vector3(0.294, 0, 0))
 	_prism(roof, paint, [Vector3(-4.6, 6.81, 8.73), Vector3(-0.4, 6.81, 7.57), Vector3(0.4, 6.81, 7.57), Vector3(4.6, 6.81, 8.73), Vector3(4.6, 6.81, 9.73), Vector3(-4.6, 6.81, 9.73)], Vector3(0, 0.20, 0))
 	_prism(roof, snow, [Vector3(-4.38, 7.045, 8.83), Vector3(-0.34, 7.045, 7.78), Vector3(0.34, 7.045, 7.78), Vector3(4.38, 7.045, 8.83), Vector3(4.38, 7.045, 9.54), Vector3(-4.38, 7.045, 9.54)], Vector3(0, 0.045, 0))
-	# Rudder hinges and elevator break lines are broad enough for gameplay view.
+	# As dobradiças do leme e as linhas de corte do profundor são largas o bastante para a vista de gameplay.
 	for y in [4.05, 5.19, 6.29]:
 		plane._add_box_to(roof, Vector3(0, y, 10.12 - (y - 3.53) * 0.255), Vector3(0.33, 0.09, 0.12), _material("exposed_alloy"))
 	plane._add_box_to(roof, Vector3(0, 7.098, 9.22), Vector3(8.79, 0.015, 0.04), seam)
@@ -241,7 +241,7 @@ func _tail() -> void:
 func _cargo_details() -> void:
 	var alloy := _material("rollers")
 	var dark := _material("airframe_seam")
-	# Flush rollers and tie-downs sit on the same walkable deck.
+	# Roletes e pontos de amarração rentes ficam sobre o mesmo convés caminhável.
 	for index in 30:
 		var z := -8.62 + index * 0.50
 		for x in [-0.65, 0.65]:
@@ -255,7 +255,7 @@ func _cargo_details() -> void:
 		var z := 6.62 + index * 0.38
 		for side in [-1.0, 1.0]:
 			plane._add_box_to(plane, Vector3(side * 1.14, 0.18 - (z - 6.62) * 0.061, z), Vector3(0.08, 0.012, 0.18), _material("hazard_yellow") if index % 2 == 0 else dark, Vector3(3.5, 0, 0))
-	# Slat caps and side straps remain inside the two authored cargo solids.
+	# As tampas de ripa e as cintas laterais ficam dentro dos dois sólidos de carga autorais.
 	for cargo_z in [-3.2, 2.55]:
 		var top_y := 1.445 if cargo_z < 0 else 0.912
 		for z_offset in [-0.42, 0.0, 0.42]:

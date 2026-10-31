@@ -45,8 +45,8 @@ func _ready() -> void:
 	box("GuardDesk",Vector3(8.6,.43,6.8),Vector3(2.2,.86,.85),"3a474c")
 	box("GuardDesk",Vector3(8.6,1.08,6.8),Vector3(.55,.44,.18),"19242c")
 	for x in [-7.0,0.0,7.0]:
-		# Spread the existing fixtures over the occupied floor. Rear-wall-only
-		# lights left the entrance and guard desk beyond their reach at night.
+		# Espalha as luminárias existentes pelo piso ocupado. Luzes só na parede
+		# dos fundos deixavam a entrada e a mesa do guarda fora do alcance à noite.
 		var lamp_z := 3.2 if x == 0.0 else -1.5
 		box("",Vector3(x,2.9,lamp_z),Vector3(2.0,.08,.16),"e3e8cf")
 		var lamp := OmniLight3D.new()
@@ -56,7 +56,7 @@ func _ready() -> void:
 		lamp.omni_range = 10
 		lamp.shadow_enabled = false
 		add_child(lamp)
-	# Thin concrete joints and irregular aggregate keep the floor in scale.
+	# Juntas finas de concreto e agregado irregular mantêm o piso em escala.
 	for x in range(-10,11,2):
 		box("",Vector3(x,.006,0),Vector3(.014,.009,15.7),"454e52")
 	for z in range(-6,8,2):
@@ -68,8 +68,8 @@ func _ready() -> void:
 	batch_static_geometry()
 
 func batch_static_geometry() -> void:
-	# Keep each solid's identity while sharing one draw call per material.
-	# The resulting rendered mesh is still the source of collision bounds.
+	# Mantém a identidade de cada sólido enquanto compartilha uma draw call por material.
+	# A malha renderizada resultante continua sendo a fonte dos limites de colisão.
 	var groups := {}
 	for child in get_children():
 		if not child is MeshInstance3D: continue

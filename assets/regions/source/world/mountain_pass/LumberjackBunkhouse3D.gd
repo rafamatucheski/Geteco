@@ -1,5 +1,5 @@
 extends Node3D
-## Workers' bunkhouse, deliberately distinct from the hunting chalet.
+## Alojamento dos trabalhadores, distinto de propósito do chalé de caça.
 const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
 ## `kind` põe textura (tábua, chapa, tecido...; 27/10: o alojamento era só cor lisa).
 func mat(color: String, metal := 0.0, kind := "") -> StandardMaterial3D:
@@ -51,15 +51,15 @@ func _ready() -> void:
 		box(self,Vector3(0,y,-4.7),Vector3(10,0.20,0.20),timber)
 		for side in [-1.0,1.0]: box(self,Vector3(side*4.95,y,0),Vector3(0.20,0.20,9.4),timber)
 	for side in [-1.0,1.0]: box(self,Vector3(side*2.9,0.4,4.65),Vector3(4.1,0.8,0.18),timber)
-	# Heavy ceiling beams and two practical lamps give the long room a readable
-	# depth rhythm without adding more shadow maps.
+	# Vigas pesadas no teto e duas luminárias práticas dão à sala comprida um ritmo
+	# de profundidade legível sem acrescentar mais shadow maps.
 	for z in [-3.2, 0.0, 3.2]:
 		box(self, Vector3(0, 3.0, z), Vector3(10.0, 0.18, 0.22), dark)
 	for x in [-2.2, 2.2]:
 		cylinder(self, Vector3(x, 2.72, 0.0), 0.035, 0.55, steel)
 		cylinder(self, Vector3(x, 2.40, 0.0), 0.16, 0.20, warm_glow)
-	# Rear windows break up the uninterrupted log wall and add a cold exterior
-	# counterpoint to the stove lighting.
+	# Janelas nos fundos quebram a parede de toras contínua e acrescentam um contraponto
+	# externo frio à luz do fogão.
 	var glass := mat("8ba7b4")
 	glass.metallic = 0.15
 	glass.roughness = 0.18
@@ -131,7 +131,7 @@ func _ready() -> void:
 		for column in 4:
 			var log := cylinder(self,Vector3(3.25+column*0.22,0.25+row*0.20,3.2),0.11,1.15,timber)
 			log.rotation.x = PI/2
-	# Work coats and heavy boots drying near the entrance.
+	# Casacos de trabalho e botas pesadas secando perto da entrada.
 	box(self,Vector3(2.5,1.9,4.45),Vector3(2.8,0.12,0.12),pale)
 	for i in 3:
 		var coat := mat(["bc813e","4c6b70","8f433e"][i])

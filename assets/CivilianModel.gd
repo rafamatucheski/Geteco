@@ -219,14 +219,14 @@ func _ready() -> void:
 func _choose_wardrobe(identity: int) -> void:
 	wardrobe = _appearance_wardrobe(identity,coat_color,pants_color,motorcycle_helmet_color,wardrobe_overrides)
 
-## Same local seeded wardrobe selection for ready and immutable prewarming.
-## It never consumes the gameplay global RNG or creates a scene node.
+## Mesma seleção local e semeada de figurino para o ready e o pré-aquecimento imutável.
+## Nunca consome o RNG global do gameplay nem cria nó de cena.
 static func _appearance_wardrobe(identity: int, coat: Color, pants: Color, helmet: Color, overrides: Dictionary) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = identity * 7919 + 104729
 	var female := rng.randf() < 0.5
-	# Consume the same identity roll, then honor the authored gender before hair,
-	# beard and clothing are chosen. The final override alone was too late.
+	# Consome o mesmo sorteio de identidade e depois respeita o gênero autoral antes de cabelo,
+	# barba e roupa serem escolhidos. Só a sobreposição final chegava tarde demais.
 	if overrides.has("female"): female = bool(overrides.female)
 	var w := {}
 	w.female = female
@@ -269,7 +269,7 @@ static func prewarm_actor_identity(identity: int) -> void:
 	var w := _appearance_wardrobe(identity,coat,pants,Color.TRANSPARENT,{})
 	var profile := KIT.build_profile(w.female,w.build)
 	profile.merge(w.get("body_profile",{}),true)
-	# Same functions/arguments as _build_rig; only their immutable cache is filled.
+	# Mesmas funções/argumentos de _build_rig; só o cache imutável delas é preenchido.
 	KIT.pelvis_mesh(profile,w.top,w.bottom,w.bag)
 	KIT.chest_mesh(profile,w.top,w.backpack,-w.bag)
 	KIT.head_mesh(w.female,w.hair,w.beard,w.hat,w.glasses)
@@ -290,8 +290,8 @@ static func _pick(rng: RandomNumberGenerator, values: Array, weights: Array) -> 
 func _build_rig() -> void:
 	var w := wardrobe
 	var profile := KIT.build_profile(w.female, w.build)
-	# Service uniforms can retain authored proportions instead of rounding them
-	# to the three generic civilian builds. Generated meshes remain cached.
+	# Uniformes de serviço podem manter proporções autorais em vez de arredondá-las
+	# para os três biotipos civis genéricos. As malhas geradas continuam em cache.
 	profile.merge(w.get("body_profile", {}), true)
 	scale = Vector3.ONE * float(w.height)
 	pelvis = _joint(self, "Pelvis", Vector3(0, pelvis_y, 0), KIT.pelvis_mesh(profile, w.top, w.bottom, w.bag))

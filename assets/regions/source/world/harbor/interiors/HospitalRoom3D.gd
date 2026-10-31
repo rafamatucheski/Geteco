@@ -1,5 +1,5 @@
 extends Node3D
-## Cached architectural model. Dimensions are metres; collision uses its floor projection.
+## Modelo arquitetônico em cache. Dimensões em metros; a colisão usa a projeção do piso.
 const B = preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
 const WHITE = Color("e5ece8")
 const TEAL = Color("438c91")
@@ -28,7 +28,7 @@ func _ready() -> void:
 	_surface_box(Vector3(20,.18,14),Vector3(0,-.12,0),Color("c7d5d4"),"epoxy")
 	for x in range(-10,11): box(Vector3(.016,.008,14),Vector3(x,0,0),Color("9aafaf"))
 	for z in range(-7,8): box(Vector3(20,.008,.016),Vector3(0,0,z),Color("9aafaf"))
-	# Cutaway walls keep all treatment and waiting areas legible.
+	# Paredes em corte mantêm legíveis todas as áreas de atendimento e espera.
 	for x in [-10,10]:
 		_surface_box(Vector3(.18,2.8,14),Vector3(x,1.4,0),WHITE,"plaster")
 		_surface_box(Vector3(.035,.65,14),Vector3(x-sign(x)*.11,.7,0),TEAL,"painted")
@@ -37,8 +37,8 @@ func _ready() -> void:
 		_surface_box(Vector3(8.4,2.8,.18),Vector3(x,1.4,-7),WHITE,"plaster")
 		_surface_box(Vector3(8.4,.65,.06),Vector3(x,.7,-6.88),TEAL,"painted")
 		solid(Vector2(x,-7),Vector2(8.4,.3))
-	# Street frontage is south in both scenes. Close the former north opening,
-	# and keep the southern cutaway split around the actual entrance.
+	# A frente da rua fica ao sul nas duas cenas. Fecha a antiga abertura norte
+	# e mantém o corte sul dividido em volta da entrada real.
 	_surface_box(Vector3(3.2,2.8,.18),Vector3(0,1.4,-7),WHITE,"plaster")
 	_surface_box(Vector3(3.2,.65,.06),Vector3(0,.7,-6.88),TEAL,"painted")
 	solid(Vector2(0,-7),Vector2(3.2,.3))
@@ -75,7 +75,7 @@ func _ready() -> void:
 				box(Vector3(.07,.55,.07),Vector3(x+side*.43,.28,z),STEEL)
 				box(Vector3(.07,.06,.7),Vector3(x+side*.5,.82,z),STEEL)
 			solid(Vector2(x,z),Vector2(1.12,1))
-	# Treatment bays with real mattresses, pillows, raised rails and caster wheels.
+	# Leitos de atendimento com colchões, travesseiros, grades erguidas e rodízios de verdade.
 	for z in [-3.5,2.4]:
 		for x in [4.3,7.7]: bed(x,z)
 		box(Vector3(.08,2.15,3.8),Vector3(6,1.07,z),Color("82b8b6"))
@@ -101,7 +101,7 @@ func _ready() -> void:
 	for x in [.5,1.3]: box(Vector3(.045,.9,.045),Vector3(x,.5,2.7),STEEL)
 	for x in [.65,1.0,1.25]: box(Vector3(.15,.24,.15),Vector3(x,1,2.7),WHITE)
 	solid(Vector2(.9,2.7),Vector2(1,.8))
-	# Wall cabinets, wash station, water dispenser and a plant in the waiting area.
+	# Armários de parede, pia, bebedouro e uma planta na área de espera.
 	for x in [6.8,8.6]:
 		box(Vector3(1.65,.8,.44),Vector3(x,1.9,6.7),WHITE)
 		box(Vector3(.03,.8,.02),Vector3(x,1.9,6.46),STEEL)

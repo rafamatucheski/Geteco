@@ -1,8 +1,8 @@
 extends RefCounted
 
-## Production Dante: proportions, dark flannel, burgundy henley and swept
-## black hair follow prototypes/menu_concept/dante_sunset_preview.png.
-## Articulated nodes retain the combat, wardrobe and vehicle contracts.
+## Dante de produção: proporções, flanela escura, henley bordô e cabelo preto
+## penteado para trás seguem prototypes/menu_concept/dante_sunset_preview.png.
+## Os nós articulados mantêm os contratos de combate, guarda-roupa e veículo.
 
 static var _cached_plaid_texture: ImageTexture = null
 
@@ -37,7 +37,7 @@ static func get_plaid_texture() -> ImageTexture:
 	_cached_plaid_texture = ImageTexture.create_from_image(plaid_img)
 	return _cached_plaid_texture
 
-# Original 2D player builder excluded; native tailoring uses geometry helpers only.
+# O construtor 2D original do jogador fica de fora; a alfaiataria nativa usa só os auxiliares de geometria.
 static func _build_menu_face(head: Node3D, skin: Material, hair: Material, beard: Material) -> void:
 	# Narrow temples, cheekbones and a tapered square jaw; no spherical head.
 	head.scale = Vector3(0.94, 0.88, 0.94)
@@ -79,8 +79,8 @@ static func _build_menu_face(head: Node3D, skin: Material, hair: Material, beard
 	_build_menu_hair(head, hair)
 
 static func _build_menu_hair(head: Node3D, hair: Material) -> void:
-	# One continuous scalp with a shaped hairline, covered by curved clumps.
-	# The locks follow the skull instead of radiating out like triangular spikes.
+	# Um couro cabeludo contínuo com linha do cabelo modelada, coberto por mechas curvas.
+	# As mechas seguem o crânio em vez de irradiar para fora como espinhos triangulares.
 	var matte := hair.duplicate() as StandardMaterial3D
 	matte.albedo_color = Color("101013")
 	matte.roughness = 1.0
@@ -112,7 +112,7 @@ static func _build_menu_hair(head: Node3D, hair: Material) -> void:
 	crown.mesh = surface.commit()
 	crown.material_override = matte
 	head.add_child(crown)
-	# Broad overlapping waves: an off-centre part and a few uneven fringe ends.
+	# Ondas largas sobrepostas: uma risca fora do centro e algumas pontas de franja irregulares.
 	var fringe := [
 		[Vector3(-0.066, 0.133, 0.016), Vector3(-0.100, 0.149, -0.073), Vector3(-0.092, 0.034, -0.065), 0.020],
 		[Vector3(-0.030, 0.160, 0.020), Vector3(-0.070, 0.166, -0.070), Vector3(-0.060, 0.035, -0.083), 0.024],
@@ -122,7 +122,7 @@ static func _build_menu_hair(head: Node3D, hair: Material) -> void:
 		[Vector3(0.087, 0.120, 0.024), Vector3(0.109, 0.110, -0.051), Vector3(0.084, 0.026, -0.064), 0.020]]
 	for lock in fringe:
 		_add_hair_lock(head, lock[0], lock[1], lock[2], lock[3], matte)
-	# Close-fitting temple and nape layers; nothing fans outward at ear level.
+	# Camadas justas na têmpora e na nuca; nada se abre para fora na altura da orelha.
 	for side in [-1, 1]:
 		for i in 4:
 			var z := -0.032 + i * 0.030
@@ -136,8 +136,8 @@ static func _build_menu_hair(head: Node3D, hair: Material) -> void:
 			Vector3(x + 0.007, -0.060 + float(i % 2) * 0.012, 0.085), 0.022, matte)
 
 static func _add_hair_lock(parent: Node3D, start: Vector3, control: Vector3, tip: Vector3, width: float, mat: Material) -> void:
-	# A solid curved ribbon, softly rounded across its width and tapered at
-	# the end. Shared vertices give continuous normals along each lock.
+	# Uma fita curva sólida, levemente arredondada na largura e afinada na
+	# ponta. Vértices compartilhados dão normais contínuas ao longo de cada mecha.
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	const STEPS := 8

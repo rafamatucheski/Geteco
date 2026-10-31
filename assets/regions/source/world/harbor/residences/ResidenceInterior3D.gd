@@ -38,7 +38,7 @@ func _ready() -> void:
 	_wall("RightCutaway",Rect2(6.9,-5,.2,10),.6,wall)
 	_wall("SouthLeft",Rect2(-7,4.9,5.9,.2),.45,wall)
 	_wall("SouthRight",Rect2(1.1,4.9,5.9,.2),.45,wall)
-	# A doorway in the cutaway is still solid at the far edge: E performs exit.
+	# Uma porta no corte ainda é sólida na borda de lá: E faz a saída.
 	solid_rects["DoorBoundary"] = Rect2(-1.1,5.05,2.2,.2)
 	box("Skirting",Vector3(13.85,.16,.09),Vector3(0,.08,-4.87),"ebe4d3")
 	for x in [-4.4,.3,4.8]:
@@ -49,13 +49,13 @@ func _ready() -> void:
 	furniture = Node3D.new()
 	furniture.name = "Furnishings"
 	add_child(furniture)
-	# Variants use different room arrangements, not just recoloured walls.
+	# As variantes usam arranjos de sala diferentes, não só paredes recoloridas.
 	var kitchen: Vector2 = [Vector2(4.65,-3.8),Vector2(4.3,2.5),Vector2(-4.3,-3.8)][variant_index]
 	var bedroom: Vector2 = [Vector2(4.55,2),Vector2(-4.4,-2.6),Vector2(4.5,2.2)][variant_index]
 	var wardrobe: Vector2 = [Vector2(-5.95,-3.25),Vector2(5.9,-3),Vector2(5.95,-3.25)][variant_index]
 	var armory: Vector2 = [Vector2(-2.7,-4.2),Vector2(.2,-4.2),Vector2(1.1,-4.2)][variant_index]
 	var lounge: Vector2 = [Vector2(-3.5,1.2),Vector2(-3.8,1.7),Vector2(-3.7,.4)][variant_index]
-	# A wall-backed roof ladder occupies the gap between the authored furniture.
+	# Uma escada para o telhado encostada na parede ocupa o vão entre os móveis autorais.
 	roof_access_point = Vector3([1.95,2.9,3.0][variant_index],0,-4.05)
 	station_points["roof"] = Vector2(roof_access_point.x,roof_access_point.z)
 	_kitchen(kitchen,fabric)
@@ -115,8 +115,8 @@ func _finish_soft_furniture() -> void:
 		part.material_override = preload("res://assets/urban_detail/FloraSurfaces.gd").material("fabric",tone,1.4,1.3,.97)
 
 func _lived_in_details(kitchen: Vector2, bedroom: Vector2, lounge: Vector2, fabric: String) -> void:
-	# All additions sit on existing furniture or on the rear wall. Their solids
-	# already cover the complete footprint, so station approaches stay clear.
+	# Todos os acréscimos ficam sobre móveis existentes ou na parede dos fundos. Os sólidos deles
+	# já cobrem a pegada completa, então as aproximações das estações ficam livres.
 	var board := kitchen + Vector2(.05,-.31)
 	box("ChoppingBoard",Vector3(.43,.025,.29),Vector3(board.x,1,board.y),"9c7953")
 	for i in 3:
@@ -159,7 +159,7 @@ func _kitchen(p: Vector2,color: String) -> void:
 	cylinder("Plate",.22,.025,Vector3(p.x-.05,1,p.y+.2),"f0e6cf")
 	cylinder("Meal",.13,.06,Vector3(p.x-.05,1.04,p.y+.2),"be824b")
 	var fridge_x := p.x+signf(p.x)*1.75
-	# A hollow cabinet exposes the food when the real hinged door opens.
+	# Um armário oco mostra a comida quando a porta articulada de verdade abre.
 	box("RefrigeratorBack",Vector3(.8,1.9,.08),Vector3(fridge_x,.95,p.y-.4),"c7cfc8")
 	for side in [-1,1]: box("RefrigeratorSide",Vector3(.055,1.9,.88),Vector3(fridge_x+side*.3725,.95,p.y),"dce0d7")
 	for shelf_y in [.055,.49,.91,1.3,1.86]:
@@ -249,20 +249,20 @@ func _armory(p: Vector2,color: String) -> void:
 		box("DrawerPull",Vector3(.26,.035,.055),Vector3(p.x+x,.61,p.y+.443),"3f4641")
 	for x in [-1.24,1.24]:
 		box("BenchCornerSteel",Vector3(.075,.72,.06),Vector3(p.x+x,.36,p.y+.397),"444c47")
-	# The window curtains end at z=-4.54; keep the entire rack in front of them.
+	# As cortinas da janela terminam em z=-4.54; mantenha o suporte inteiro na frente delas.
 	box("Pegboard",Vector3(2.7,1.4,.12),Vector3(p.x,1.72,p.y-.26),"374948")
 	for row in 4:
 		for col in 9: cylinder("PegboardHole",.014,.001,Vector3(p.x-1.15+col*.28,1.15+row*.3,p.y-.198),"1b2928").rotation.x=PI*.5
-	# Keep the mounted weapons above the lamp housing and inside the close view.
+	# Mantém as armas montadas acima da carcaça da luminária e dentro da vista próxima.
 	for spec in [["shotgun",-.48,2.12],["ak47",.55,2.12]]:
 		var weapon := Node3D.new()
 		weapon.name = "Rack_"+str(spec[0])
-		# Side profile parallel to the wall, with 4 mm behind the deepest mesh.
+		# Perfil lateral paralelo à parede, com 4 mm atrás da malha mais funda.
 		weapon.position = Vector3(p.x+float(spec[1]),float(spec[2]),p.y-.169)
 		weapon.rotation.y = -PI*.5
 		add_child(weapon)
 		WEAPON_MODEL.build_cached(weapon,str(spec[0]))
-		# Each cradle meets the underside of the stock and the wooden fore-end.
+		# Cada apoio encontra a parte de baixo da coronha e a telha de madeira.
 		var supports := [Vector2(-.18,-.0825),Vector2(.16,-.036)] if spec[0] == "shotgun" else [Vector2(-.25,-.0575),Vector2(.16,-.02)]
 		for support in supports:
 			var mount := Node3D.new()
@@ -285,8 +285,8 @@ func _bench_tools(p: Vector2) -> void:
 	tools.name = "WorkbenchTools"
 	tools.position = Vector3(p.x,.86,p.y)
 	add_child(tools)
-	# The smaller tools sit on the mat edges inside the close camera's view.
-	# The centre remains clear for the same weapon meshes used in gameplay.
+	# As ferramentas menores ficam nas bordas do tapete, dentro da vista da câmera próxima.
+	# O centro fica livre para as mesmas malhas de arma usadas no gameplay.
 	for side in [-1,1]:
 		beam("PliersHandle",Vector3(-.78+side*.055,.031,.25),Vector3(-.78+side*.018,.031,.08),.03,"aa6547",tools)
 		beam("PliersJaw",Vector3(-.78+side*.018,.031,.08),Vector3(-.78+side*.026,.031,-.015),.018,"9da9a5",tools)
@@ -364,8 +364,8 @@ func _backpack() -> void:
 	presentation_points["backpack"] = Vector3(6.35,.3,4.4)
 
 func _lounge(p: Vector2,color: String,wood: String) -> void:
-	# The previous 60 cm gap exactly matched Dante's capsule diameter and
-	# wedged it between sofa and table. Keep one metre of walkable floor.
+	# O vão anterior de 60 cm batia exatamente com o diâmetro da cápsula do Dante e
+	# o entalava entre sofá e mesa. Mantém um metro de piso caminhável.
 	var table := p+Vector2(0,2.05)
 	box("LoungeRug",Vector3(4.5,.02,4.8),Vector3(p.x,.035,p.y+.6),"b1a789")
 	box("SofaBase",Vector3(3.0,.4,1.05),Vector3(p.x,.37,p.y),color)

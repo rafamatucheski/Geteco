@@ -83,13 +83,13 @@ func _build_lodge() -> void:
 
 	_box("Foundation", Vector3(0, 0.12, 0), Vector3(14.4, 0.24, 9.0), stone)
 	_box("MainHall", Vector3(0, 1.75, 0), Vector3(13.6, 3.25, 8.1), wood)
-	# The lower face clears the wall tops; both waters meet exactly at X=0.
+	# A face de baixo passa acima do topo das paredes; as duas águas se encontram exatamente em X=0.
 	var angle := deg_to_rad(ROOF_ANGLE)
 	var center_y := ROOF_RIDGE - ROOF_RUN * .5 * tan(angle)
 	for side in [-1.0, 1.0]:
 		var roof_center := Vector3(side * ROOF_RUN * .5, center_y, 0)
 		_box("Roof", roof_center, Vector3(ROOF_RUN / cos(angle), .22, 9.2), roof, Vector3(0, 0, side * -ROOF_ANGLE))
-		# Offset along the roof normal so the snow rests on, rather than crosses, it.
+		# Deslocado ao longo da normal do telhado para a neve repousar sobre ele em vez de atravessá-lo.
 		var normal := Vector3(side * sin(angle), cos(angle), 0)
 		_box("RoofSnow", roof_center + normal * .175, Vector3(ROOF_RUN / cos(angle), .13, 9.25), snow, Vector3(0, 0, side * -ROOF_ANGLE))
 	_box("RoofRidge", Vector3(0, ROOF_RIDGE + .06, 0), Vector3(.25, .22, 9.25), roof)

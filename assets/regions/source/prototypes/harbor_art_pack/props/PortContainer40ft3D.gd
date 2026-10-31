@@ -108,8 +108,8 @@ func _build_model() -> void:
 	# 6. Nervuras do teto
 	for ti in range(16):
 		var tz := -half_l + 0.70 + float(ti) * (LENGTH - 1.40) / 15.0
-		# Embed into the shell (top HEIGHT-.04); a 5 mm air gap under the
-		# old strips let subpixel slits of light crawl across the roof.
+		# Embutido na casca (topo HEIGHT-.04); uma folga de ar de 5 mm sob as
+		# faixas antigas deixava frestas subpixel de luz andarem pelo teto.
 		var rib := _box(Vector3(0.0, HEIGHT - 0.02, tz), Vector3(WIDTH - 0.30, 0.06, 0.40), _main_material)
 		rib.set_meta("container_roof_rib",true)
 

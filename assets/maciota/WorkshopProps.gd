@@ -469,8 +469,8 @@ func _build_workshop() -> void:
 	_add_cyl(safe_pos + Vector3(0.12, 0.05, 0.39), 0.09, 0.03, mat_aluminum, Vector3(90, 0, 0))
 	_add_cyl(safe_pos + Vector3(0.12, 0.22, 0.38), 0.04, 0.02, mat_brass, Vector3(90, 0, 0))
 
-	# A framed picture of the recovered customer car makes Maciota's debt visible
-	# without a decorative explanation. It occupies only the high rear wall.
+	# Um quadro com a foto do carro recuperado do cliente torna visível a dívida da Maciota
+	# sem explicação decorativa. Ocupa só a parede alta dos fundos.
 	var record_pos := Vector3(4.50, 2.20, -3.98)
 	_add_box(record_pos, Vector3(1.25,.78,.03), mat_wood_mahogany)
 	_add_box(record_pos+Vector3(0,0,.025),Vector3(1.12,.65,.012),mat_banner_bg)

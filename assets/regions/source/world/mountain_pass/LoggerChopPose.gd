@@ -1,5 +1,5 @@
 extends Node3D
-## Two handed, target-driven chop. The blade edge never travels below the log top.
+## Golpe de machado com as duas mãos, guiado por alvo. O fio nunca desce abaixo do topo da tora.
 const DURATION := 3.2
 const CONTACT_TIME := 1.65
 var elapsed := 0.0
@@ -18,7 +18,7 @@ func configure(model: Node3D) -> void:
 			arms.append(parts.piece(self,size,Vector3.ZERO,model.coat_color if size.y > .2 else Color("2c3036")))
 	tool = Node3D.new()
 	add_child(tool)
-	# Local +Z points toward the head; the cutting edge is the origin.
+	# O +Z local aponta para a cabeça; o fio é a origem.
 	parts.piece(tool,Vector3(.045,.045,.79),Vector3(0,.06,-.37),Color("856040"))
 	parts.piece(tool,Vector3(.20,.12,.075),Vector3(0,.06,-.04),Color("919fa6"))
 	parts.piece(tool,Vector3(.20,.018,.028),Vector3(0,.009,-.014),Color("d9e1e3"))
@@ -38,11 +38,11 @@ func sample(time: float) -> void:
 		edge = target
 	else:
 		edge = target.lerp(rest,smoothstep(1.86,2.7,phase))
-	# Withdraw upwards along the same cut, with a deliberate pause after impact.
+	# Recua para cima pelo mesmo corte, com uma pausa deliberada depois do impacto.
 	var lift := clampf((edge.y-target.y)/(raised.y-target.y),0.0,1.0)
 	var direction := Vector3(0,-.28,1).normalized().lerp(Vector3(0,1,.18).normalized(),lift).normalized()
 	tool.position = edge
-	# Keep the blade width horizontal, its lower edge at the requested contact height.
+	# Mantém a largura da lâmina na horizontal, com a borda inferior na altura de contato pedida.
 	var across := Vector3.RIGHT
 	var up := direction.cross(across).normalized()
 	tool.basis = Basis(across,up,direction)

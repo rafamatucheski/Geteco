@@ -1,5 +1,5 @@
 extends Node2D
-## Bounded ground-local impressions; persist after the vehicle has left.
+## Marcas limitadas e locais ao chão; persistem depois que o veículo saiu.
 const LIMIT := 1600
 const LIFETIME := 15.0
 var clock := 0.0

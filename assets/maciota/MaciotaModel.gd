@@ -228,8 +228,8 @@ func _build_jager_model() -> void:
 	cyl_s.height = 0.78
 	stick.mesh = cyl_s
 	stick.material_override = mat_gold
-	# Dark lacquer shaft, gold collars and a rubber ferrule make the cane read
-	# as a crafted walking stick at the normal gameplay distance.
+	# Haste de laca escura, anéis dourados e ponteira de borracha fazem a bengala parecer
+	# uma bengala artesanal na distância normal de gameplay.
 	stick.material_override = _make_mat(Color("241c2b"), .28)
 	stick.position = Vector3(0.0, -0.38, 0.0)
 	cane_mesh.add_child(stick)
@@ -257,8 +257,8 @@ func _build_jager_model() -> void:
 	orb.position = Vector3(0.0, 0.02, 0.0)
 	cane_mesh.add_child(orb)
 
-	# Grounded cane follows the grip, not the elbow's rotation; its ferrule
-	# never sweeps through the floor while Maciota addresses the visitor.
+	# A bengala apoiada segue a empunhadura, não a rotação do cotovelo; a ponteira
+	# nunca varre o chão enquanto a Maciota fala com o visitante.
 	model_root.add_child(cane_mesh)
 
 	# 4. Pernas & Sapatos Bico Fino
@@ -282,8 +282,8 @@ func _build_jager_model() -> void:
 	right_upper_leg.add_child(right_lower_leg)
 	right_lower_leg.add_child(_create_limb(0.046, 0.20, mat_purple_suit, Vector3(0, -0.10, 0)))
 	_add_tailored_details(mat_purple_suit, mat_skin, mat_gold, mat_black_lapel, mat_shoes)
-	# Merge ornamental meshes by material under each joint. Details are authored
-	# separately but do not each become an extra draw call at runtime.
+	# Mescla as malhas ornamentais por material sob cada junta. Os detalhes são autorados
+	# separadamente, mas não viram cada um uma draw call extra em runtime.
 	for joint in [torso_node, head_node, left_upper_arm, left_lower_arm, right_upper_arm, right_lower_arm, left_upper_leg, left_lower_leg, right_upper_leg, right_lower_leg, left_hand]:
 		_batch_joint_meshes(joint)
 

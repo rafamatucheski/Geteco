@@ -1,6 +1,6 @@
 extends RefCounted
-## Build-time shaping: garments, seams and accessories share the same torso
-## deformation, so a fuller abdomen doesn't poke through a flat shirt.
+## Modelagem na construção: roupas, costuras e acessórios compartilham a mesma deformação
+## do tronco, para que um abdômen mais cheio não atravesse uma camisa reta.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static func profile(y: float, body: int) -> Vector3:
 	var belly := exp(-pow((y+.075)/.16,2))

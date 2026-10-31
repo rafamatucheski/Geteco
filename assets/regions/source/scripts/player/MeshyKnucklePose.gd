@@ -21,13 +21,13 @@ static func sample(variant: int, age: float, engaged: bool, swing: float, sprint
 				right = right.lerp(Vector3(0.035,1.06,-0.41),reach)
 				right_basis = Basis(Vector3.BACK,turn)
 			2:
-				# The hook arcs outward before crossing in front of the chest.
+				# O gancho faz um arco para fora antes de cruzar na frente do peito.
 				var opening := sin(clampf(age/0.15,0,1)*PI)*0.10 if age < 0.15 else 0.0
 				left = left.lerp(Vector3(0.03,1.055,-0.35),reach)
 				left.x -= opening
 				left_basis = Basis(Vector3.UP,-0.55*reach)*Basis(Vector3.BACK,-turn)
 			3:
-				# A short rising arc, with the fist kept ahead of the jacket.
+				# Um arco curto subindo, com o punho mantido à frente da jaqueta.
 				var load_offset := sin(clampf(age/0.12,0,1)*PI)*0.09 if age < 0.12 else 0.0
 				right = right.lerp(Vector3(0.045,1.16,-0.34),reach)
 				right.y -= load_offset

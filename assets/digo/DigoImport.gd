@@ -1,6 +1,6 @@
 @tool
 extends EditorScenePostImport
-## Bake garment membership in vertex alpha before skinning. No runtime image reads.
+## Grava a pertença à peça de roupa no alfa do vértice antes do skinning. Sem leitura de imagem em runtime.
 func _post_import(scene: Node) -> Object:
 	var image := Image.load_from_file("res://assets/digo/digo_Image_0.jpg")
 	for visual: MeshInstance3D in scene.find_children("*","MeshInstance3D",true,false):

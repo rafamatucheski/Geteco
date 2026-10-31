@@ -1,5 +1,5 @@
 extends RefCounted
-## Extra low-poly pieces inherit the existing articulated rig and viewport LOD.
+## Peças low-poly extras herdam o rig articulado existente e o LOD de viewport.
 static func piece(parent: Node3D, size: Vector3, point: Vector3, color: Color, round_shape := false) -> MeshInstance3D:
 	var part := MeshInstance3D.new()
 	if round_shape:

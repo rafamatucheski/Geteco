@@ -1,5 +1,5 @@
 extends RefCounted
-## Opaque, merged details on the three previously blank sides of both shells.
+## Detalhes opacos e mesclados nos três lados antes vazios das duas cascas.
 const KIT := preload("res://world/city_look/CityPropKit.gd")
 
 static func build(parent: Node3D) -> void:
@@ -14,7 +14,7 @@ static func build(parent: Node3D) -> void:
 		[Vector3(-5.9,0,4.6875), -PI/2, 6.25, true],
 		[Vector3(1.9,0,4.1875), PI/2, 5.25, true]]:
 		_wall(t,spec[0],spec[1],spec[2],spec[3])
-	# Roof ventilators and raised seams belong to the workshop's industrial roof.
+	# Ventiladores de telhado e emendas elevadas pertencem ao telhado industrial da oficina.
 	for x in [-4.6,-3.3,-2.0,-.7,.6]:
 		KIT.box(t,Vector3(x,4.56,4.7),Vector3(.045,.045,5.8),Color("53656a"))
 	for x in [-3.8,-.2]:
@@ -28,7 +28,7 @@ static func build(parent: Node3D) -> void:
 	visual.mesh = t.commit()
 	visual.material_override = KIT.material()
 	parent.add_child(visual)
-	# Match the textured roof finishes already used by neighbouring city buildings.
+	# Combina com os acabamentos texturizados de telhado já usados pelos prédios vizinhos da cidade.
 	var roofs := preload("res://world/city_look/RoofSurfaces.gd")
 	for spec in [[Vector3(-2,4.548,4.6875),Vector3(7.7,.016,6.1),roofs.METAL],
 		[Vector3(6.1,4.168,4.6875),Vector3(5.3,.016,5.8),roofs.METAL]]:

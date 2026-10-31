@@ -50,7 +50,7 @@ func _build_cave() -> void:
 		[Vector3(0.0, 1.7, -5.6), Vector3(3.4, 3.6, 1.2)],
 	]:
 		_sphere(entry[0], entry[1], stone)
-	# Explorer camp, climbing hardware and the route that disappears deeper in.
+	# Acampamento de explorador, equipamento de escalada e a rota que some mais para dentro.
 	_box("CampBedroll", Vector3(-3.5, 0.13, -0.7), Vector3(2.4, 0.14, 1.0), canvas, Vector3(0, 0.24, 0))
 	_box("SupplyCase", Vector3(-4.8, 0.42, 0.8), Vector3(1.1, 0.75, 0.8), dark)
 	for i in 4:
@@ -82,7 +82,7 @@ func _build_hideout_details() -> void:
 	var foam := _mat(Color("172222"), 0.98)
 	var rope_mat := _mat(Color("a58e63"), 0.95)
 	var mineral := _mat(Color("738c7b"), 0.7)
-	# Broad wet patches break up the bare floor; the central route stays dry.
+	# Manchas molhadas largas quebram o chão nu; a rota central fica seca.
 	for patch in [[Vector2(-5.0,-2.4),Vector2(1.6,0.65)],[Vector2(5.4,2.0),Vector2(1.4,0.55)],[Vector2(-1.8,-4.2),Vector2(1.8,0.65)]]:
 		DETAIL.floor_patch(self,"WetRockPool",DETAIL.ellipse(patch[0],patch[1]),0.018,damp)
 	for i in 12:
@@ -93,7 +93,7 @@ func _build_hideout_details() -> void:
 		stalagmite.set_meta("interior_solid_id",StringName("Stalagmite%d" % i))
 		if i < 6:
 			DETAIL.cylinder(self,"Stalactite",Vector3(p.x,2.5,p.z),0.02,0.28,1.1,stone)
-	# Layered mineral seams and fallen slabs around the rear wall.
+	# Veios minerais em camadas e placas caídas em volta da parede dos fundos.
 	for i in 8:
 		var p := Vector3(-5.8+i*1.6,1.1+sin(i)*0.4,-4.9)
 		_box("MineralSeam",p,Vector3(0.9,0.10,0.15),mineral,Vector3(0,0,0.22*sin(i)))
@@ -122,7 +122,7 @@ func _build_hideout_details() -> void:
 	_box("MapSheet",Vector3(-3.1,0.108,2.05),Vector3(1.05,0.012,0.60),_mat(Color("b6a57b"),0.95),Vector3(0,-0.25,0))
 	_box("PickaxeHandle",Vector3(-5.6,0.48,0.6),Vector3(0.07,1.0,0.07),wood,Vector3(0,0,-0.45))
 	_box("PickaxeHead",Vector3(-5.4,0.93,0.6),Vector3(0.55,0.09,0.09),steel)
-	# The secret reward is deliberately readable from the entrance.
+	# A recompensa secreta é legível da entrada de propósito.
 	_box("SecretWeaponCase",Vector3(3.1,0.22,-0.6),Vector3(2.35,0.44,1.15),olive)
 	_box("WeaponCaseFoam",Vector3(3.1,0.455,-0.6),Vector3(2.18,0.055,0.95),_mat(Color("b29b65"),0.98))
 	_box("OpenWeaponCaseLid",Vector3(3.1,0.92,-1.24),Vector3(2.38,1.02,0.12),olive,Vector3(-0.24,0,0))
@@ -131,7 +131,7 @@ func _build_hideout_details() -> void:
 		_box("CaseLatch",Vector3(x,0.40,0.0),Vector3(0.14,0.18,0.08),steel)
 	for i in 3:
 		DETAIL.cylinder(self,"SpareRocket",Vector3(4.70+i*0.20,0.10,-0.15),0.07,0.035,0.72,olive,Vector3(PI*0.5,0,0))
-	# Warm lighting around the cache, cool damp stone at the back.
+	# Luz quente em volta do esconderijo, pedra fria e úmida no fundo.
 	var amber := _mat(Color("ffb95d"),0.45,0.0,1.2)
 	_cylinder("CacheLantern",Vector3(1.6,0.28,-1.1),0.13,0.36,amber)
 	for y in [0.08,0.50]: _cylinder("CacheLanternCap",Vector3(1.6,y,-1.1),0.17,0.08,steel)
@@ -143,7 +143,7 @@ func _build_hideout_details() -> void:
 	cache_light.omni_range = 4.8
 	cache_light.shadow_enabled = false
 	add_child(cache_light)
-	# Footprints guide the eye from the entrance to the open case.
+	# Pegadas guiam o olhar da entrada até a caixa aberta.
 	for i in 9:
 		var t := float(i)/8.0
 		var p := Vector3(0,0.023,3.6).lerp(Vector3(3.1,0.023,0.65),t)

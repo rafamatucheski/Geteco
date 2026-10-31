@@ -1,6 +1,6 @@
 extends RefCounted
-## Static, collision-free dressing for Maciota's authored street facade.
-## The existing shell and piers remain the only ground-level solids.
+## Decoração estática e sem colisão para a fachada de rua autoral da Maciota.
+## A casca e os pilares existentes continuam sendo os únicos sólidos no nível do chão.
 
 const KIT := preload("res://world/city_look/CityPropKit.gd")
 const CITY_MATERIALS := preload("res://world/city_look/CityLookMaterials.gd")
@@ -95,8 +95,8 @@ static func _build_static_geometry(t: SurfaceTool) -> void:
 		KIT.box(t, Vector3(x, 1.68, face + .06), Vector3(.14, 3.28, .2), IRON)
 		KIT.box(t, Vector3(x, 1.68, face + .17), Vector3(.045, 3.15, .045), BRASS)
 		KIT.box(t, Vector3(x, 4.60, face - .33), Vector3(.19, .24, .68), IRON)
-	# The original shell remains the physical back of the bay. A parked project
-	# car and lift are seen in shadow; the roller is gathered above the opening.
+	# A casca original continua sendo o fundo físico do box. Um carro-projeto
+	# estacionado e o elevador aparecem na sombra; a porta de enrolar fica recolhida acima da abertura.
 	KIT.box(t, Vector3(-2.0, 1.59, 6.833), Vector3(5.68, 3.0, .045), Color("263539"))
 	for x in [-4.36, .36]:
 		KIT.box(t, Vector3(x, 1.39, 6.94), Vector3(.19, 2.55, .11), Color("6f8587"))
@@ -113,8 +113,8 @@ static func _build_static_geometry(t: SurfaceTool) -> void:
 	KIT.box(t, Vector3(-2.0, 3.13, 7.35), Vector3(5.85, .29, .45), STEEL)
 	for x in [-4.55, .55]:
 		KIT.box(t, Vector3(x, 3.13, 7.63), Vector3(.18, .38, .15), IRON)
-	# Shallow steel awning and exposed braces frame the approach without
-	# entering the car or pedestrian clearance at ground level.
+	# Marquise rasa de aço e mãos-francesas aparentes emolduram a chegada sem
+	# invadir o espaço livre de carros ou pedestres no nível do chão.
 	KIT.box(t, Vector3(-2.0, 3.43, 8.06), Vector3(6.55, .10, .65), IRON)
 	KIT.box(t, Vector3(-2.0, 3.48, 8.38), Vector3(6.55, .055, .055), BRASS)
 	for x in [-5.12, 1.12]:
@@ -131,12 +131,12 @@ static func _build_static_geometry(t: SurfaceTool) -> void:
 	KIT.box(t, Vector3(-4.61, 5.32, 3.18), Vector3(.79, .065, .88), IRON)
 	KIT.cylinder(t, Vector3(-4.61, 5.32, 3.18), .18, .53, Color("617579"), 8)
 	KIT.cylinder(t, Vector3(-4.61, 5.85, 3.18), .26, .055, IRON, 8)
-	# Overhead utilities and a weathered masonry band on the front piers.
+	# Fiação aérea e uma faixa de alvenaria desgastada nos pilares da frente.
 	for x in [-5.49, 1.49]:
 		for y in [.64, 1.38, 2.12, 2.86]:
 			KIT.box(t, Vector3(x, y, face + .015), Vector3(.79, .025, .022), Color("819196"))
 		KIT.box(t, Vector3(x, 4.06, 7.96), Vector3(.12, .13, .45), IRON)
-	# Paint and old oil live flush with the apron; neither changes collision.
+	# Tinta e óleo velho ficam rentes ao pátio; nenhum dos dois muda a colisão.
 	for x in [-3.64, -.36]:
 		KIT.box(t, Vector3(x, .013, 8.48), Vector3(.11, .018, 1.03), BRASS)
 	for index in 5:

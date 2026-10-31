@@ -11,7 +11,7 @@ func _ready() -> void:
 			_remove(["AmmoCrates"])
 			_move_lamp(Vector3(-3.2, 0.9, 0.8), Vector3(9.6, 0, 0))
 			_move_lamp(Vector3(5, 1.15, 0.8), Vector3(-9.6, 0, 0))
-		2: # Forest station: operational map table and archive in place of bedroom.
+		2: # Posto florestal: mesa de mapas operacional e arquivo no lugar do quarto.
 			_remove(["Bed", "BedsideTable", "Chest", "Sofa"])
 			_table("ForestMapTable", Vector3(-4.7, 0, 1.7), Vector2(2.7, 1.5))
 			_solid_id = &"ForestMapTable"
@@ -51,7 +51,7 @@ func _ready() -> void:
 				if i % 7 not in [2, 6]: _box(Vector3(3.88 + i * .088, .87, -.49), Vector3(.042, .03, .16), ebony)
 			_solid_id = &"PianoStool"
 			_box(Vector3(4.9, .3, .55), Vector3(1.1, .6, .55), _mat("piano_velvet", Color("633c42")))
-		6: # Photographer: tripod, print table and a darkroom in the old bedroom.
+		6: # Fotógrafo: tripé, mesa de cópias e uma câmara escura no antigo quarto.
 			_remove(["Bed", "BedsideTable", "Chest", "Armchair"])
 			_table("PrintTable", Vector3(-4.8, 0, 1.8), Vector2(2.4, 1.3))
 			_solid_id = &"PrintTable"

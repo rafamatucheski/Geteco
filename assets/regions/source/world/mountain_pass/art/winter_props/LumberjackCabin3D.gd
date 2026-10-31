@@ -135,8 +135,8 @@ func _build_cabin() -> void:
 		for y_step in [0.65, 1.25, 1.85]:
 			_add_box(Vector3(sx + (0.07 if sx > 0 else -0.07), y_step, 0.0), Vector3(0.04, 0.06, 3.62), wood_trim)
 
-	# Glass is outside the cladding, not buried inside the opaque wall.
-	# The left opening stays forward of the tools and stored logs.
+	# O vidro fica do lado de fora do revestimento, não enterrado na parede opaca.
+	# A abertura esquerda fica à frente das ferramentas e das toras guardadas.
 	FINISH.window(self, Vector3(1.75, 1.52, .35), PI/2, .90, 1.0, wood_trim, glass_mat)
 	FINISH.window(self, Vector3(-1.75, 1.55, 1.0), -PI/2, .85, .95, wood_trim, glass_mat)
 	FINISH.window(self, Vector3(0, 1.55, -2.01), PI, 1.15, .95, wood_trim, glass_mat)

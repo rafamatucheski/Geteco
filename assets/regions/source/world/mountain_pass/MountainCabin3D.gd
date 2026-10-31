@@ -14,7 +14,7 @@ extends Node3D
 
 const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
 var materials: Dictionary = {}
-# Set while building each physical object; collision is derived from its meshes.
+# Definido ao montar cada objeto físico; a colisão é derivada das malhas dele.
 var _solid_id: StringName = &""
 
 func _ready() -> void:
@@ -126,8 +126,8 @@ func _setup_environment_and_lights() -> void:
 	sun.rotation_degrees = Vector3(-45.0, 35.0, 0.0)
 	sun.light_color = Color(0.85, 0.92, 1.0)
 	sun.light_energy = 0.48
-	# The shell is static and already receives the main warm shadow below.
-	# A second full-room shadow map doubled geometry submission every update.
+	# A casca é estática e já recebe a sombra quente principal abaixo.
+	# Um segundo shadow map da sala inteira dobrava o envio de geometria a cada atualização.
 	sun.shadow_enabled = false
 	add_child(sun)
 
@@ -146,8 +146,8 @@ func _setup_environment_and_lights() -> void:
 	fire_omni.light_color = Color(1.0, 0.58, 0.18)
 	fire_omni.light_energy = 1.2
 	fire_omni.omni_range = 9.0
-	# Flicker remains visible through light energy and emissive flames; moving a
-	# full shadow map with it is disproportionately expensive in this dense room.
+	# A cintilação continua visível pela energia da luz e pelas chamas emissivas; mover um
+	# shadow map inteiro junto é caro demais nesta sala densa.
 	fire_omni.shadow_enabled = false
 	add_child(fire_omni)
 

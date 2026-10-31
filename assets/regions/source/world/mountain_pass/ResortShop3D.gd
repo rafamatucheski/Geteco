@@ -5,8 +5,8 @@ const MANNEQUIN := preload("res://world/places/ShopMannequin.gd")
 const FACADE_FINISH := preload("res://world/places/FacadeFinish.gd")
 
 func _ready() -> void:
-	# Position is assigned before admission by the region factory. Resolve the
-	# edited catalog position too, without adding work to the shared streamer.
+	# A posição é atribuída antes da admissão pela fábrica da região. Resolve também a
+	# posição editada do catálogo, sem acrescentar trabalho ao streamer compartilhado.
 	var shop_variant := 2
 	for definition in preload("res://world/places/PlaceCatalog.gd").definitions():
 		if definition.id in ["mountain_outfitters", "mountain_boutique", "mountain_village_outfitters"] and position.distance_to(definition.exterior_position) < .1:
@@ -35,8 +35,8 @@ func _ready() -> void:
 		var dummy := MANNEQUIN.create("WindowDisplay%d"%side,colors[0 if side<0 else 1],2 if shop_variant == 2 and side > 0 else 0)
 		dummy.position = Vector3(side*1.88,.79,1.48)
 		add_child(dummy)
-		# The solid display plinth encloses the whole mannequin footprint; avoid
-		# generating one trimesh physics body per piece of the static clothing rig.
+		# O pedestal sólido da vitrine envolve a pegada inteira do manequim; evita
+		# gerar um corpo físico trimesh por peça do rig estático de roupas.
 		for mesh in dummy.find_children("*","MeshInstance3D",true,false): mesh.remove_meta("interior_solid_id")
 		_box("DisplayPlinth%d"%side,Vector3(side*1.88,.76,1.48),Vector3(1.0,.06,.62),stone).set_meta("interior_solid_id",StringName("ShopDisplay%d"%side))
 		_box("WindowSill",Vector3(side*1.88,.74,1.85),Vector3(2.55,.09,.40),timber)

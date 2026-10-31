@@ -1,5 +1,5 @@
 extends Node3D
-## Shared floor-space measurements drive the model and projected 2D collision.
+## Medidas de espaço de piso compartilhadas guiam o modelo e a colisão 2D projetada.
 const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
 ## Superfície com textura de cada material autorado (27/10: o interior era só cor lisa e lia
 ## como maquete). Os que brilham (tela, lâmpada, grelha) e os pequenos de cor pura ficam lisos.
@@ -105,12 +105,12 @@ func _build_shell() -> void:
 	for z in range(-5, 6, 2):
 		box("FloorJoint", Vector3(0, 0.005, z), Vector3(18, 0.01, 0.015), dark)
 	box("NorthWall", Vector3(0, 1.6, -6.15), Vector3(18.6, 3.2, 0.3), concrete, true)
-	# Cutaway walls keep the floor and player visible from the south.
+	# Paredes em corte mantêm o piso e o jogador visíveis do sul.
 	box("WestWall", Vector3(-9.15, 0.65, 0), Vector3(0.3, 1.3, 12), concrete, true)
 	box("EastWall", Vector3(9.15, 0.65, 0), Vector3(0.3, 1.3, 12), concrete, true)
 	box("SouthWestWall", Vector3(-5.1, 0.28, 6.15), Vector3(8.4, 0.56, 0.3), concrete, true)
 	box("SouthEastWall", Vector3(5.1, 0.28, 6.15), Vector3(8.4, 0.56, 0.3), concrete, true)
-	# Physics threshold is solid; the pedestrian door transfers before it.
+	# A soleira física é sólida; a porta de pedestre faz a transferência antes dela.
 	footprints.append({"id": "ExitThreshold", "rect": Rect2(-0.9, 6, 1.8, 0.3)})
 	for x in [-8.7, -4.3, 4.3, 8.7]:
 		box("ConcreteRib", Vector3(x, 1.6, -5.87), Vector3(0.3, 3.2, 0.3), edge)
@@ -118,7 +118,7 @@ func _build_shell() -> void:
 		box("PartitionNorth", Vector3(x, 0.75, -3.1), Vector3(0.22, 1.5, 5.8), dark, true)
 		box("PartitionSouth", Vector3(x, 0.55, 4.3), Vector3(0.22, 1.1, 3.4), dark, true)
 		box("DoorThreshold", Vector3(x, 0.015, 1.2), Vector3(0.6, 0.02, 2.5), yellow)
-	# Clearly marked, continuous approach to the command hall.
+	# Aproximação contínua e bem sinalizada até o salão de comando.
 	for side in [-1.0, 1.0]:
 		box("AisleEdge", Vector3(side * 1.15, 0.012, 3.9), Vector3(0.035, 0.02, 3.8), yellow)
 	label("ESTAÇÃO ZERO", Vector3(0, 2.25, -5.94), 55, Color("d8e5e7"))
@@ -222,8 +222,8 @@ func _build_lived_in_details() -> void:
 	var steel: Material = materials["steel"]
 	var edge: Material = materials["edge"]
 	var cloth: Material = materials["blanket"]
-	# Wall conduits, worn blankets and desk objects give each functional zone
-	# its own scale cues without adding obstacles to the circulation lanes.
+	# Conduítes na parede, cobertores gastos e objetos de mesa dão a cada zona funcional
+	# as próprias referências de escala sem pôr obstáculos nas faixas de circulação.
 	for y in [2.65,2.83]:
 		box("WallConduit",Vector3(0,y,-5.92),Vector3(17.5,.045,.055),steel)
 	for x in [-8.6,-4.1,4.1,8.6]:

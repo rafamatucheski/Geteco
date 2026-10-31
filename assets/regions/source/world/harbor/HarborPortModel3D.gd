@@ -1,5 +1,5 @@
 extends Node3D
-## Real geometry for the port's cached orthographic model views.
+## Geometria real para as vistas ortográficas em cache do modelo do porto.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const CONTAINER := preload("res://assets/regions/source/prototypes/harbor_art_pack/props/PortContainer40ft3D.gd")
 const PORT_SHIP_PAINT := preload("res://world/regions/PortShipMaterials3D.gd")
@@ -38,10 +38,10 @@ func build(kind: String, width: float, depth: float, variant: int) -> void:
 		"ship_cargo": _ship_cargo(width,depth)
 		"crane": _crane(width,depth)
 	solid_floor_bounds = preload("res://assets/regions/source/systems/interiors/InteriorSolidProjection.gd").mesh_bounds(self)
-	# These authored box families finalize their normals before the first upload.
+	# Estas famílias de caixas autorais finalizam as normais antes do primeiro upload.
 	var cpu_normals := kind in ["office", "loose_cargo", "floodlight"]
 	mesh_stats = preload("res://assets/regions/source/prototypes/harbor_art_pack/PortMeshOptimizer.gd").optimize_hierarchy(self, true, cpu_normals)
-	# Recompute face normals after the container's nonuniform scale and rotation.
+	# Recalcula as normais de face depois da escala não uniforme e da rotação do contêiner.
 	for batch in ([] if cpu_normals else get_node("BatchedStaticGeometry").get_children()):
 		var surface := SurfaceTool.new()
 		surface.create_from(batch.mesh,0)
@@ -71,7 +71,7 @@ func _restore_batches(data: Dictionary) -> void:
 		container.add_child(batch)
 
 func _preserve_hard_edges(batch: MeshInstance3D) -> void:
-	# Average only indexed neighbours, never unrelated faces at the same position.
+	# Faz a média só de vizinhos indexados, nunca de faces sem relação na mesma posição.
 	var arrays: Array = MESH_ARRAYS.arrays_of(batch.mesh, 0).duplicate()
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
@@ -171,7 +171,7 @@ func _containers(w: float,d: float,variant: int) -> void:
 	var levels := 2 if variant%3 == 0 else 1
 	height = 2.91*w/12.19*levels
 	_container(Vector3.ZERO,w,d,variant%5,levels)
-	# Shipping line plate, distinct from the corrugated steel.
+	# Placa da companhia de navegação, distinta do aço corrugado.
 	box(Vector3(-w*.20,height*.42,d*.5+.025),Vector3(w*.20,height*.18,.035),"e0d8b6")
 	for i in 3: box(Vector3(-w*.26+i*w*.05,height*.42,d*.5+.05),Vector3(w*.025,height*.055,.02),"465e63")
 
@@ -253,7 +253,7 @@ func _crane(w: float,d: float) -> void:
 	for x in [-1.0,1.0]:
 		for z in [-1.0,1.0]:
 			beam(base+Vector3(x,1,z),base+Vector3(x*.65,7,z*.65),.22,"c5a153")
-	# The rear jib reaches a landing pad behind the pedestal, clear of its legs.
+	# A lança traseira alcança uma base de pouso atrás do pedestal, longe das pernas dele.
 	var start := base+Vector3(0,7,4)
 	var tip := Vector3(w*.48,8,-d*.42)
 	hoist_start = start

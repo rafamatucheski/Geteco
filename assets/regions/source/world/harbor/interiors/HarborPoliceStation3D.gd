@@ -1,7 +1,7 @@
 extends Node3D
 
 const SURFACE_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
-# Finite authored palette: prewarm and shell share the exact cached instances.
+# Paleta autoral finita: o pré-aquecimento e a casca compartilham exatamente as mesmas instâncias em cache.
 const ARCHITECTURE_SURFACES := {
 	"floor_lobby": ["epoxy","2b3542",.4,.1],
 	"floor_office": ["epoxy","1f2732",.6,.05],

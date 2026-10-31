@@ -4,8 +4,8 @@ const CITY_PROPS := preload("res://world/city_look/CityPropKit.gd")
 
 var variant_index := 0
 func _ready() -> void:
-	# Install after facade finalization so the purchase cue receives no building
-	# collider or signage rewriting. Chunk ownership handles streaming cleanup.
+	# Instala depois da finalização da fachada para que a indicação de compra não receba colisor
+	# de prédio nem reescrita de placas. A posse pelo chunk cuida da limpeza do streaming.
 	_install_sale_marker.call_deferred()
 	var parking := preload("res://world/places/ResidenceParking.gd").new()
 	parking.name = "ResidentialGarage"

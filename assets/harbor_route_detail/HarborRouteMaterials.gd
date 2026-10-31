@@ -30,11 +30,11 @@ static func get_mat(key: String, color: Color = Color.WHITE, roughness: float = 
 
 # --- Pavements & Curbs ---
 
-## Light textured concrete slab for sidewalks and promenades (matching Harbor urban tone #989c92)
+## Placa clara de concreto texturizado para calçadas e passeios (combinando com o tom urbano do Harbor #989c92)
 static func sidewalk_concrete() -> StandardMaterial3D:
 	return SURFACES.material("route_sidewalk_concrete", "paving", Color("#989c92"), 0.88, 0.0, 2.0, 1.0)
 
-## Darker washed concrete paving for promenade borders and pedestrian crossings
+## Piso de concreto lavado mais escuro para bordas do passeio e faixas de pedestre
 static func sidewalk_accent() -> StandardMaterial3D:
 	return SURFACES.material("route_sidewalk_accent", "paving", Color("#7f8379"), 0.86, 0.0, 2.0, 1.2)
 
@@ -42,7 +42,7 @@ static func sidewalk_accent() -> StandardMaterial3D:
 static func curb_granite() -> StandardMaterial3D:
 	return SURFACES.material("route_curb_granite", "granite", Color("#aaad98"), 0.80, 0.0, 2.0, 1.0)
 
-## Safety yellow curb paint for official loading zones and bay boundaries
+## Tinta amarela de segurança no meio-fio para zonas oficiais de carga e limites de vagas
 static func curb_yellow_marking() -> StandardMaterial3D:
 	return get_mat("curb_yellow_marking", Color("#dfa838"), 0.65, 0.15)
 
@@ -52,11 +52,11 @@ static func pavement_white() -> StandardMaterial3D:
 
 # --- Metals & Street Furniture ---
 
-## Cast iron for antique bollards, heavy lamppost bases, and tree grates (#2e3436)
+## Ferro fundido para balizadores antigos, bases pesadas de poste e grades de árvore (#2e3436)
 static func cast_iron_dark() -> StandardMaterial3D:
 	return SURFACES.material("route_cast_iron", "metal", Color("#2a3032"), 0.72, 0.65, 1.0, 1.0)
 
-## Galvanized steel for modern streetlights, bike racks, and sign posts (#6e7c80)
+## Aço galvanizado para postes modernos, bicicletários e postes de placa (#6e7c80)
 static func steel_galvanized() -> StandardMaterial3D:
 	return SURFACES.material("route_galvanized", "metal", Color("#6e7c80"), 0.45, 0.75, 1.0, 1.0)
 
@@ -73,7 +73,7 @@ static func trash_bin_metal() -> StandardMaterial3D:
 
 # --- Specialized Accents (Police, Workshop, Utilities) ---
 
-## Institutional Harbor Police blue for bollard accent bands and precinct lamp posts (#234c58)
+## Azul institucional da Polícia do Harbor para faixas de destaque dos balizadores e postes da delegacia (#234c58)
 static func police_navy() -> StandardMaterial3D:
 	return SURFACES.material("route_police_navy", "metal", Color("#234c58"), 0.55, 0.35, 1.0, 1.0)
 

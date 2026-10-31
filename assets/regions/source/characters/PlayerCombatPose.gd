@@ -1,8 +1,8 @@
 extends RefCounted
 
-## Presentation only: damage, ammo and fire cadence remain owned by Player.
-## Arms use the existing rig lengths. Gun orientation is independent of the
-## forearm so raising the elbow never points the barrel into the sky.
+## Só apresentação: dano, munição e cadência de tiro continuam sendo do Player.
+## Os braços usam os comprimentos do rig existente. A orientação da arma é independente do
+## antebraço, para que erguer o cotovelo nunca aponte o cano para o céu.
 const PROFILES := {
 	"pistol": [Vector3(0.19, 0.96, -0.27), Vector3.ZERO, 0.11, 15.0],
 	"magnum": [Vector3(0.17, 0.99, -0.26), Vector3(-0.10, -0.04, 0.01), 0.22, 9.0],
@@ -22,7 +22,7 @@ const PROFILES := {
 	"fists": [Vector3(0.24, 0.68, -0.02), Vector3.ZERO, 0.0, 12.0],
 }
 
-# Mesh-space centres of the actual handles, not the receiver or barrel.
+# Centros em espaço de malha das empunhaduras reais, não da caixa da culatra nem do cano.
 const GRIPS := {
 	"pistol": Vector3(0, -0.03, 0.02), "magnum": Vector3(0, -0.05, 0.03),
 	"smg": Vector3(0, -0.05, 0.03), "shotgun": Vector3(0, -0.04, 0.07),
@@ -44,7 +44,7 @@ const SUPPORT_GRIPS := {
 	"rpg": Vector3(-0.012, 0.0, -0.22), "flamethrower": Vector3(-0.012, -0.055, -0.14),
 	"bat": Vector3(0, 0, 0.035),
 }
-# Rear faces of the stocks, including the compact SMG wire stock.
+# Faces traseiras das coronhas, incluindo a coronha de arame compacta da SMG.
 const STOCK_ENDS := {"smg": Vector3(0, 0.03, 0.19), "shotgun": Vector3(0, -0.04, 0.27), "ak47": Vector3(0, -0.02, 0.29), "m4a1": Vector3(0, 0, 0.25), "hunting_rifle": Vector3(0, -0.02, 0.19)}
 const BAT_HIT_TIME := 0.24
 const BAT_SWING_DURATION := 0.58
@@ -61,8 +61,8 @@ var _stance_yaw := 0.0
 var weapon_id := ""
 var recoil := 0.0
 var action_age := 10.0
-# Exposed for MeshyDanteRig: idle pistols hang one-handed, the off-hand only
-# comes up to support the grip while aiming/firing.
+# Exposto para o MeshyDanteRig: pistolas em repouso ficam numa mão só; a outra mão só
+# sobe para apoiar a empunhadura ao mirar/atirar.
 var is_engaged := false
 var melee_support_active := false
 var melee_support_weight := 0.0
@@ -105,8 +105,8 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	recoil *= exp(-float(p[3]) * delta)
 	var engaged := aiming or action_age < 0.45
 	is_engaged = engaged
-	# A bladed shoulder stance gives the support arm room to reach the
-	# fore-end while the stock actually meets the firing shoulder.
+	# Uma base de ombro de lado dá espaço para o braço de apoio alcançar a
+	# telha enquanto a coronha encosta de fato no ombro de tiro.
 	var melee_pose: Dictionary = {}
 	if id in ["axe", "bat"]:
 		melee_pose = preload("res://assets/regions/source/scripts/player/MeshyMeleePose.gd").shoulder_swing(id, action_age, player.walk_clock, player._move_weight, player._sprint_weight, player.torso_node.position - Vector3(0, 0.85, 0))
@@ -124,11 +124,11 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	var hand: Vector3 = p[0]
 	var support: Vector3 = SUPPORT_GRIPS.get(id, Vector3.ZERO) - GRIPS.get(id, Vector3.ZERO) if SUPPORT_GRIPS.has(id) else Vector3.ZERO
 	if skinned and id == "axe": support = Vector3(0,0,-0.12)
-	# A holstered pistol/magnum hangs from one hand; the off-hand only comes
-	# up to brace the grip once the player is actually aiming or firing.
+	# Uma pistola/magnum no coldre pende de uma mão; a outra mão só sobe
+	# para firmar a empunhadura quando o jogador está de fato mirando ou atirando.
 	if id in ["pistol", "magnum"] and not engaged: support = Vector3.ZERO
 	var pitch := 0.0
-	# Low ready, aimed fire and sprint carry have separate silhouettes.
+	# Pronto baixo, tiro mirado e transporte em corrida têm silhuetas separadas.
 	if not engaged:
 		hand.y -= 0.12 if not sprinting else 0.20
 		hand.z += 0.07
@@ -137,15 +137,15 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	var long_gun := id in ["smg", "shotgun", "ak47", "m4a1", "rpg", "flamethrower", "hunting_rifle"]
 	var carry_yaw := 0.0
 	if long_gun:
-		# Across-chest carriage sends the stock outside the ribs and keeps
-		# magazines and barrels above the recovering knee.
+		# O transporte atravessado no peito manda a coronha para fora das costelas e mantém
+		# carregadores e canos acima do joelho que se recupera.
 		if not engaged:
 			hand = Vector3(0.19 if id == "flamethrower" else 0.16, 0.97, -0.20)
 			pitch = 0.45 if sprinting else 0.25
 			carry_yaw = 0.65
 			if skinned and id in SKIN_LONG_GUNS:
-				# Keep the receiver aligned with the grip and lower the muzzle
-				# slightly instead of twisting the rifle across both wrists.
+				# Mantém a caixa da culatra alinhada com a empunhadura e abaixa um pouco o cano
+				# em vez de torcer o fuzil por cima dos dois pulsos.
 				carry_yaw = 0.18
 				pitch = -0.50 if sprinting else -0.40
 		else:
@@ -162,8 +162,8 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	if id in ["pistol", "magnum"] and engaged:
 		hand = Vector3(0.035, 1.09, -0.32)
 	elif id in ["pistol", "magnum"]:
-		# Keep a one-handed low carry while running. Raising the muzzle during a
-		# sprint made the pistol read like a loose vertical prop below the glove.
+		# Mantém um transporte baixo numa mão só durante a corrida. Erguer o cano durante um
+		# sprint fazia a pistola parecer um objeto vertical solto abaixo da luva.
 		var run_weight: float = clampf(float(player.get("_sprint_weight")), 0.0, 1.0) if "_sprint_weight" in player else (1.0 if sprinting else 0.0)
 		pitch = lerpf(-0.75, -0.88, run_weight)
 		carry_yaw = lerpf(0.0, 0.08, run_weight)
@@ -184,7 +184,7 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	var left_target := Vector3(-0.215, 0.655 if not sprinting else 0.82, -0.055 + arm_swing * (0.30 if sprinting else 0.25))
 	if support != Vector3.ZERO:
 		left_target = hand + gun_basis * support
-		# Pump stroke follows the shot, rather than looping during walking.
+		# O movimento da bomba segue o tiro, em vez de ficar em loop durante a caminhada.
 		if id == "shotgun" and action_age > 0.10 and action_age < 0.48:
 			left_target.z += sin((action_age - 0.10) / 0.38 * PI) * 0.08
 	if id == "fists":
@@ -192,8 +192,8 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 			hand = Vector3(0.215, 0.65, -0.025)
 			left_target = Vector3(-0.215, 0.65, -0.025)
 		else:
-			# Blend the arm carriage with the legs; holding Shift while stopped
-			# must not snap the elbows into a running/boxing pose.
+			# Mistura o porte dos braços com as pernas; segurar Shift parado
+			# não pode estalar os cotovelos numa pose de corrida/boxe.
 			var run: float = float(player.get("_sprint_weight")) if "_sprint_weight" in player else 0.0
 			var hand_height := 0.65
 			var hand_forward := -0.025
@@ -203,9 +203,9 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 			hand = Vector3(0.215, hand_height, hand_forward - arm_swing * swing_scale) + body_offset
 			left_target = Vector3(-0.215, hand_height, hand_forward + arm_swing * swing_scale) + body_offset
 			if torso != null and run > 0.0:
-				# Real running is not a fixed bent-elbow pose: the rear hand passes
-				# behind the shoulder near the hip with a more open elbow, while the
-				# forward hand rises with a shorter lever. Sweep that complete arc.
+				# Corrida de verdade não é uma pose fixa de cotovelo dobrado: a mão de trás passa
+				# atrás do ombro perto do quadril com o cotovelo mais aberto, enquanto a
+				# mão da frente sobe com uma alavanca mais curta. Varre esse arco completo.
 				var swing_limit := lerpf(0.32, 0.55, run)
 				var right_cycle := clampf(arm_swing / swing_limit * 0.5 + 0.5, 0.0, 1.0)
 				var left_cycle := 1.0 - right_cycle
@@ -252,11 +252,11 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 			hand = Vector3(0.21, 0.86, -0.16)
 			left_target = Vector3(-0.215, 0.65, -0.025 + arm_swing * 0.22) + player.torso_node.position - Vector3(0, 0.85, 0)
 		else:
-			# A carried knife hangs beside the thigh instead of resting at the
-			# waist. Keep a small fore/aft gait response without lifting the hand.
+			# Uma faca carregada pende ao lado da coxa em vez de descansar na
+			# cintura. Mantém uma pequena resposta para frente/trás da passada sem erguer a mão.
 			hand = Vector3(0.21, 0.66 if sprinting else 0.68, -0.11 - arm_swing * 0.12)
-			# The empty hand follows the relaxed gait, including torso bob.
-			# Do not lift it into the generic armed sprint pose.
+			# A mão vazia segue a passada relaxada, incluindo o balanço do tronco.
+			# Não a erga para a pose genérica de sprint armado.
 			left_target = Vector3(-0.215, 0.65, -0.025 + arm_swing * 0.22) + player.torso_node.position - Vector3(0, 0.85, 0)
 		if action_age < 0.32:
 			var thrust := sin(action_age / 0.32 * PI)
@@ -272,8 +272,8 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 		var relaxed := Vector3(-0.215, 0.65, -0.025 + arm_swing * 0.22) + torso.position - Vector3(0, 0.85, 0)
 		var run: float = player._sprint_weight
 		if run > 0.0:
-			# Open the elbow behind the hip, then shorten the lever as the hand
-			# swings forward. The free arm follows the opposing leg, not the gun.
+			# Abre o cotovelo atrás do quadril e depois encurta a alavanca conforme a mão
+			# balança para a frente. O braço livre segue a perna oposta, não a arma.
 			var cycle := 1.0 - clampf(arm_swing / lerpf(0.32, 0.55, run) * 0.5 + 0.5, 0.0, 1.0)
 			var angle := lerpf(-0.46, 1.15, cycle)
 			var radius := lerpf(0.27, 0.22, cycle)
@@ -299,28 +299,28 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 		left_target = left_target.lerp(pose.left, weight)
 		gun_basis = gun_basis.slerp(pose.basis, weight)
 		reload_pump = pose.pump
-		# The support hand leaves the foregrip to fetch and insert ammunition.
-		# Do not snap it back to the firing grip in the two-handed IK pass below.
+		# A mão de apoio sai da empunhadura dianteira para buscar e inserir munição.
+		# Não a estale de volta para a empunhadura de tiro no passe de IK de duas mãos abaixo.
 		support = Vector3.ZERO
 	var blend := 1.0 - exp(-22.0 * delta)
 	if skinned and id in SKIN_FIREARMS:
-		# The imported shoulders are narrower and the sleeves are thicker.
-		# Reach forward instead of lifting the elbow to keep the jacket clear.
+		# Os ombros importados são mais estreitos e as mangas mais grossas.
+		# Estica para a frente em vez de erguer o cotovelo, para não encostar na jaqueta.
 		if id in SKIN_HANDGUNS and not reloading:
 			if engaged:
 				hand = Vector3(0.035, 1.08, -0.375)
 			else:
-				# A sprint is a compact one-handed carry, not the idle hand frozen
-				# beside the thigh. Follow the torso and a short opposing gait arc so
-				# the elbow stays bent while the actual grip remains locked to the palm.
+				# Um sprint é um transporte compacto numa mão só, não a mão de repouso congelada
+				# ao lado da coxa. Segue o tronco e um arco curto de passada oposta para
+				# o cotovelo ficar dobrado enquanto a empunhadura real continua presa à palma.
 				var run_weight: float = clampf(float(player.get("_sprint_weight")), 0.0, 1.0) if "_sprint_weight" in player else (1.0 if sprinting else 0.0)
 				var body_offset: Vector3 = player.torso_node.position - Vector3(0, 0.85, 0)
 				var relaxed_carry: Vector3 = Vector3(0.23, 0.80, -0.15) + body_offset
 				var sprint_carry: Vector3 = Vector3(0.19, 0.70, -0.11 - arm_swing * 0.07) + body_offset
 				hand = relaxed_carry.lerp(sprint_carry, run_weight)
 			hand.z += recoil * 0.22
-			# Idle carry stays one-handed; the off-hand only joins the grip
-			# once the player actually aims or fires (support is zero until then).
+			# O transporte em repouso continua numa mão só; a outra mão só entra na empunhadura
+			# quando o jogador de fato mira ou atira (o apoio fica zero até lá).
 			if engaged:
 				left_target = hand + gun_basis * support
 		else:
@@ -344,8 +344,8 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 				var reload_hand := Vector3(0.06, 0.96, -0.34) if id in SKIN_HANDGUNS else Vector3(0.0, 0.98, -0.36)
 				if left_target.z < -0.16: left_target += reload_hand - hand
 				hand = reload_hand
-	# The gait is already blended by Player. A second low-pass filter on free
-	# hands delayed the arms relative to the opposing foot on every step.
+	# A passada já vem misturada pelo Player. Um segundo filtro passa-baixa nas mãos
+	# livres atrasava os braços em relação ao pé oposto a cada passo.
 	if id in ["fists", "knuckles"] and not engaged and not reloading and equip_blend >= 1.0:
 		blend = 1.0
 	_right_hand = _right_hand.lerp(hand, blend)
@@ -354,8 +354,8 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 		_left_hand = left_target
 	if skinned:
 		if id in SKIN_HANDGUNS and (engaged or reloading or equip_blend < 1.0):
-			# A blend from a rifle reload must not drag the pistol through the
-			# chest on the first equip frame.
+			# Uma mistura vinda de uma recarga de fuzil não pode arrastar a pistola pelo
+			# peito no primeiro quadro de equipar.
 			_right_hand.x = clampf(_right_hand.x, -0.03, 0.08)
 			_right_hand.y = maxf(_right_hand.y, 0.94)
 			_right_hand.z = minf(_right_hand.z, -0.33)
@@ -366,7 +366,7 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	if id == "shotgun" and action_age > 0.10 and action_age < 0.48:
 		pump_stroke = sin((action_age - 0.10) / 0.38 * PI) * 0.08
 	if support != Vector3.ZERO:
-		# Keep both grips within reach, including low carry and torso lean.
+		# Mantém as duas empunhaduras ao alcance, incluindo transporte baixo e inclinação do tronco.
 		var offset := gun_basis * (support + Vector3(0, 0, pump_stroke))
 		for iteration in 8:
 			if skinned:
@@ -376,11 +376,11 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 				_right_hand = player.left_upper_arm.position - offset + (_right_hand + offset - player.left_upper_arm.position).limit_length(0.418)
 				_right_hand = player.right_upper_arm.position + (_right_hand - player.right_upper_arm.position).limit_length(0.418)
 	_solve_arm(player.right_upper_arm, player.right_lower_arm, _right_hand, 1.0)
-	# Anchor stays on the glove; compensate the parent forearm's orientation.
+	# A âncora fica na luva; compensa a orientação do antebraço pai.
 	player.weapon_mount_node.position = Vector3(0.0, -HAND_REACH, 0.0)
 	var forearm_basis: Basis = player.right_upper_arm.basis * player.right_lower_arm.basis
 	player.weapon_mount_node.basis = forearm_basis.inverse() * gun_basis
-	# Solve support from the realised firing hand (after smoothing and reach limits).
+	# Resolve o apoio a partir da mão de tiro já realizada (depois da suavização e dos limites de alcance).
 	if support != Vector3.ZERO:
 		_left_hand = player.model_root.to_local(player.weapon_mount_node.to_global(support + Vector3(0, 0, pump_stroke)))
 	_solve_arm(player.left_upper_arm, player.left_lower_arm, _left_hand, -1.0)
@@ -424,7 +424,7 @@ func axe_targets(age: float, engaged: bool, sprinting: bool) -> Dictionary:
 	var tilt := 0.85
 	var yaw := 0.0
 	if age < AXE_SWING_DURATION:
-		# Continuous key poses: load the weight, cut, absorb, return to guard.
+		# Poses-chave contínuas: carrega o peso, corta, absorve, volta à guarda.
 		var lifted := Vector3(0.11, 1.10, -0.18)
 		var contact := Vector3(0.07, 0.88, -0.27)
 		var follow := Vector3(0.015, 0.84, -0.21)
@@ -451,19 +451,19 @@ func axe_targets(age: float, engaged: bool, sprinting: bool) -> Dictionary:
 	elif not engaged:
 		hand = Vector3(0.12, 0.86 if sprinting else 0.83, -0.13)
 		tilt = 0.40 if sprinting else 0.10
-	# Roll the cutting edge into the chopping plane, instead of striking flat.
+	# Gira o fio para o plano do golpe, em vez de bater chapado.
 	return {"hand": hand, "basis": Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, tilt) * Basis(Vector3.BACK, -PI * 0.5)}
 
 func axe_lateral_targets(age: float) -> Dictionary:
 	var ready := Vector3(0.09, 0.94, -0.20)
 	var loaded := Vector3(0.02, 1.0, -0.12)
 	var contact := Vector3(0.055, 0.94, -0.24)
-	# Finish ahead of the torso, with the shaft still pointing outward.
+	# Termina à frente do tronco, com o cabo ainda apontando para fora.
 	var follow := Vector3(0.14, 0.95, -0.22)
 	var hand: Vector3
 	var yaw: float
 	var pitch: float
-	# The lateral sweep moves toward local -X: turn the edge into that motion.
+	# O golpe lateral vai na direção do -X local: vira o fio para esse movimento.
 	var roll: float
 	if age < 0.18:
 		var t := smoothstep(0.0, 0.18, age)
@@ -492,8 +492,8 @@ func axe_lateral_targets(age: float) -> Dictionary:
 	return {"hand":hand,"basis":Basis(Vector3.UP,yaw) * Basis(Vector3.RIGHT,pitch) * Basis(Vector3.BACK,roll)}
 
 func reload_targets(id: String, progress: float) -> Dictionary:
-	# One normalized audio timeline: raise, manipulate, return to ready before
-	# the recording finishes. The existing rig keeps the firing grip attached.
+	# Uma linha do tempo de áudio normalizada: ergue, manipula, volta ao pronto antes
+	# de a gravação terminar. O rig existente mantém a empunhadura de tiro presa.
 	var t := clampf(progress, 0.0, 1.0)
 	var weight := smoothstep(0.0, 0.10, t) * (1.0 - smoothstep(0.88, 1.0, t))
 	var hand := Vector3(0.14, 0.91, -0.18)
@@ -504,8 +504,8 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 	var pump := 0.0
 	match id:
 		"pistol":
-			# Keep the magazine hand purposeful at the waist and under the grip;
-			# the old hip target left the arm hanging straight down mid-reload.
+			# Mantém a mão do carregador com propósito na cintura e sob a empunhadura;
+			# o alvo antigo no quadril deixava o braço caído reto no meio da recarga.
 			var magazine_well := Vector3(-0.01, 0.89, -0.22)
 			var waist_magazine := Vector3(-0.16, 0.78, -0.02)
 			var fetch := smoothstep(0.09, 0.22, t) * (1.0 - smoothstep(0.30, 0.47, t))
@@ -540,8 +540,8 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 		"rpg":
 			hand = Vector3(0.17, 0.91, -0.07)
 			tilt = Vector3(0.58, 0.0, -0.28)
-			# Seat the rocket at the muzzle, then bring the support hand back to
-			# a normal grip on the tube instead of leaving it pinned at the tip.
+			# Encaixa o foguete na boca do tubo e depois traz a mão de apoio de volta a
+			# uma empunhadura normal no tubo, em vez de deixá-la presa na ponta.
 			var seat := smoothstep(0.16, 0.42, t) * (1.0 - smoothstep(0.58, 0.78, t))
 			var regrip := smoothstep(0.58, 0.78, t)
 			left = belt.lerp(Vector3(-0.03, 0.96, -0.26), seat).lerp(Vector3(-0.02, 0.90, -0.14), regrip)
@@ -551,8 +551,8 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 		"grenade":
 			hand = belt.lerp(Vector3(0.18, 0.92, -0.13), smoothstep(0.2, 0.82, t))
 			left = Vector3(-0.17, 0.76, -0.05)
-	# Manipulate the weapon ahead of the jacket; preserve the belt reach of
-	# the free hand while moving insertion/racking targets with the receiver.
+	# Manipula a arma à frente da jaqueta; preserva o alcance do cinto da
+	# mão livre enquanto move os alvos de inserção/engatilhamento junto com a caixa da culatra.
 	tilt.y = 0.55
 	var clearance_offset := Vector3(0.10, 0, -0.14)
 	hand += clearance_offset

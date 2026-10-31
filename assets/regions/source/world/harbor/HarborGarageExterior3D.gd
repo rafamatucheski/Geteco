@@ -1,8 +1,8 @@
 extends Node3D
-## Westgate shell. Footprints are projected from these same structural meshes.
+## Casca do Westgate. As pegadas são projetadas destas mesmas malhas estruturais.
 func _ready() -> void:
- # 60% shorter in both plan dimensions. Keep the existing six-metre bay
- # and its street anchor: cars, entrance transitions and saves retain clearance.
+ # 60% menor nas duas dimensões da planta. Mantém o box de seis metros existente
+ # e a âncora na rua: carros, transições de entrada e saves mantêm o espaço livre.
  var w := 7.8
  var d := 6.25
  var front := 7.8125
@@ -15,8 +15,8 @@ func _ready() -> void:
  box("",Vector3(-2,2.8,front-.85),Vector3(5.9,.08,.08),"dfb550")
  for x in [-5.45, 1.45]:
   box("",Vector3(x,3.0,front+.06),Vector3(.32,.5,.12),"e6c881")
- # Neighbor shares the existing static viewport; all ground-level volume
- # participates in the same mesh-derived collision projection.
+ # O vizinho compartilha o viewport estático existente; todo volume no nível do chão
+ # participa da mesma projeção de colisão derivada das malhas.
  box("NeighborShell",Vector3(6.1,3.0,center_z),Vector3(5.6,6.0,d),"976b54")
  box("",Vector3(6.1,6.12,center_z),Vector3(5.9,.24,d+.2),"d0b69a")
  box("",Vector3(6.1,6.35,center_z),Vector3(5.35,.24,d-.4),"394649")

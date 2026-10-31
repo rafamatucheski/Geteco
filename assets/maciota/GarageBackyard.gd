@@ -1,5 +1,5 @@
 extends Node3D
-## Static workshop salvage yard. Solids are local to each object; paths stay open.
+## Ferro-velho estático da oficina. Os sólidos são locais a cada objeto; os caminhos ficam livres.
 const KIT := preload("res://world/city_look/CityPropKit.gd")
 const RUST := Color("80513a")
 const STEEL := Color("4b5150")
@@ -45,7 +45,7 @@ func _finish(t: SurfaceTool, label: String, at: Vector3, yaw: float, bounds: AAB
 
 func _car() -> void:
 	var t := _tool()
-	# Wheels, bonnet and one door have been removed. The cabin remains recognisable.
+	# Rodas, capô e uma porta foram removidos. A cabine continua reconhecível.
 	KIT.box(t,Vector3(0,.47,0),Vector3(1.68,.16,4.05),STEEL)
 	KIT.box(t,Vector3(0,.63,.18),Vector3(1.58,.16,2.5),Color("343b39"))
 	for x in [-.79,.79]:
@@ -73,7 +73,7 @@ func _car() -> void:
 		KIT.box(t,Vector3(0,.59,z),Vector3(1.77,.10,.09),Color("89938e"))
 	for x in [-.59,.59]:
 		KIT.box(t,Vector3(x,.87,2.055),Vector3(.28,.13,.035),Color("7e3027"))
-	# Four visible stands keep the stripped shell off the ground.
+	# Quatro cavaletes visíveis mantêm a carcaça depenada fora do chão.
 	for x in [-.57,.57]:
 		for z in [-1.18,1.20]:
 			KIT.box(t,Vector3(x,.12,z),Vector3(.48,.17,.45),Color("b0aaa0"))
@@ -82,7 +82,7 @@ func _car() -> void:
 
 func _parts() -> void:
 	var t := _tool()
-	# Slatted pallet with used engine, brake discs and detached sheet metal.
+	# Palete ripado com motor usado, discos de freio e chapa solta.
 	for z in [-.45,.45]: KIT.box(t,Vector3(0,.12,z),Vector3(1.5,.16,.14),Color("63503c"))
 	for i in 6: KIT.box(t,Vector3(-.65+i*.26,.24,0),Vector3(.21,.10,1.2),Color("897054"))
 	KIT.box(t,Vector3(-.20,.55,0),Vector3(.66,.52,.72),STEEL)

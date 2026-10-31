@@ -1,12 +1,12 @@
 extends RefCounted
-## Shared visual kit: shop displays and product viewer use the same geometry.
+## Kit visual compartilhado: as vitrines da loja e o visualizador de produto usam a mesma geometria.
 const P = preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
 const RED = Color("a3322d")
 const INK = Color("222b2d")
 const CREAM = Color("eee1bf")
 const OLIVE = Color("626b46")
-# Shared immutable kit resources; callers request a unique material to mutate it.
+# Recursos imutáveis compartilhados do kit; quem chama pede um material único para alterá-lo.
 static var _box_meshes: Dictionary = {}
 static var _box_materials: Dictionary = {}
 static var _bevel_meshes: Dictionary = {}
@@ -30,8 +30,8 @@ static func box(root: Node3D, size: Vector3, pos: Vector3, color: Color, unique_
 		mesh = BoxMesh.new()
 		mesh.size = size
 		if _box_meshes.size() < GEOMETRY_CACHE_LIMIT: _box_meshes[size] = mesh
-	# Color is the only variable material input: metallic=0, roughness=.85,
-	# opaque and no textures. Customization duplicates before recoloring.
+	# A cor é a única entrada variável do material: metallic=0, roughness=.85,
+	# opaco e sem texturas. A personalização duplica antes de recolorir.
 	var material: StandardMaterial3D = null if unique_material else _box_materials.get(color)
 	if material == null:
 		material = StandardMaterial3D.new()
@@ -135,7 +135,7 @@ static func _build_item(root: Node3D, id: String) -> void:
 		box(root,Vector3(.26,.06,.025),Vector3(0,.17,.10),CREAM)
 		text(root,"A / N",Vector3(0,.17,.12),.0009,INK)
 		return
-	# Use the equipped model unchanged: accessories and reload pieces must agree.
+	# Usa o modelo equipado sem mudança: acessórios e peças de recarga precisam bater.
 	root.set_meta("weapon_muzzle", ARSENAL.build_cached(root,id))
 
 static func bevel_box(size: Vector3) -> ArrayMesh:
@@ -162,8 +162,8 @@ static func bevel_box(size: Vector3) -> ArrayMesh:
 	return mesh
 
 static func gunsmith(root: Node3D, modern := false) -> Node3D:
-	# The Harbor refurbishment opts into the shared human rig. The independent
-	# mountain shop retains its existing presentation outside this change.
+	# A reforma do Harbor adere ao rig humano compartilhado. A loja independente
+	# da montanha mantém a apresentação existente, fora desta mudança.
 	if modern:
 		var resident := preload("res://world/places/VanceGunsmithModel.gd").new()
 		resident.name = "VanceMilitaryGunsmith"
@@ -171,8 +171,8 @@ static func gunsmith(root: Node3D, modern := false) -> Node3D:
 		return resident
 	var npc := Node3D.new()
 	npc.name = "VanceMilitaryGunsmith"
-	# Match the shared 1.8 m actor presentation; the original .94 m arm span
-	# made the clerk read as a giant even behind the counter.
+	# Combina com a apresentação compartilhada de ator de 1.8 m; a envergadura original de .94 m
+	# fazia o balconista parecer um gigante mesmo atrás do balcão.
 	npc.scale = Vector3(.70, 1.8 / 1.91, .85)
 	root.add_child(npc)
 	var skin := Color("b78360")
@@ -181,7 +181,7 @@ static func gunsmith(root: Node3D, modern := false) -> Node3D:
 		box(npc,Vector3(.20,.76,.24),Vector3(side*.14,.51,0),OLIVE)
 		box(npc,Vector3(.23,.20,.36),Vector3(side*.14,.10,.07),INK)
 		box(npc,Vector3(.23,.22,.035),Vector3(side*.14,.54,.14),Color("48543c"))
-		# Keep the original meshes/rest pose; local joints let Vance shield his head.
+		# Mantém as malhas/pose de repouso originais; juntas locais deixam o Vance proteger a cabeça.
 		var shoulder := Node3D.new()
 		shoulder.position = Vector3(side*.36,1.48,0)
 		npc.add_child(shoulder)
@@ -241,7 +241,7 @@ static func room(root: Node3D, mountain := false) -> void:
 			weapon.rotation.y = PI*.5
 			weapon.scale = Vector3.ONE*2.25
 		box(root,Vector3(3.4,.035,.08),Vector3(side*4.8,2.09,-4.68),CREAM)
-	# Counter has transparent upper glazing and visible pistols on a felt shelf.
+	# O balcão tem vidro superior transparente e pistolas visíveis numa prateleira de feltro.
 	var counter_start := root.get_child_count()
 	box(root,Vector3(5,.64,1.1),Vector3(0,.32,-2.2),RED)
 	box(root,Vector3(5.12,.10,1.18),Vector3(0,.67,-2.2),INK)
@@ -272,7 +272,7 @@ static func room(root: Node3D, mountain := false) -> void:
 	if mountain:
 		for index in range(counter_start, root.get_child_count()):
 			root.get_child(index).position.x += 1.7
-	# Ammunition shelves and service drawers frame the merchant's station.
+	# Prateleiras de munição e gavetas de serviço emolduram o posto do comerciante.
 	for side in [-1,1]:
 		box(root,Vector3(1.25,1.45,.45),Vector3(side*2.25,.73,-4.5),Color("121c1c"))
 		for row in 3:
@@ -296,7 +296,7 @@ static func room(root: Node3D, mountain := false) -> void:
 		if mountain and side < 0:
 			for index in range(island_start, root.get_child_count()):
 				root.get_child(index).position.x += 2.6
-	# Entrance is a cutaway: a threshold, posts and floor markings keep it readable.
+	# A entrada é um corte: soleira, postes e marcas no piso a mantêm legível.
 	for side in [-1,1]:
 		box(root,Vector3(5.8,.42,.22),Vector3(side*4.1,.21,4.9),INK)
 		box(root,Vector3(.18,1.4,.26),Vector3(side*1.15,.7,4.82),RED)

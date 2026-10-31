@@ -419,8 +419,8 @@ static func forearm_mesh(p: Dictionary, top: int, side: float) -> ArrayMesh:
 			[-.25, .028 * k, .025 * k, SLOT_SKIN],
 		]
 		if duty_hand:
-			# Continue the wrist inside the palm. The old slim palm started below
-			# the cuff, leaving daylight between arm and weapon-holding hand.
+			# Continua o pulso dentro da palma. A palma fina antiga começava abaixo
+			# do punho, deixando luz entre o braço e a mão que segura a arma.
 			rings.append([-.285, .025 * k, .025 * k, SLOT_SKIN])
 		b.loft(rings, slot, Transform3D.IDENTITY, 10)
 		# Mão levemente fechada: palma, dedos curvados e polegar à frente.

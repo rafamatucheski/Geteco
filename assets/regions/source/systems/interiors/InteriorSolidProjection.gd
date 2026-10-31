@@ -1,7 +1,7 @@
 extends RefCounted
-## Generate ground blockers from the rendered meshes, grouped by solid object.
-## Thin legs do not make a table walkable. Each object reserves its full ground
-## envelope; overhead beams and floor decoration must not be registered as solids.
+## Gera bloqueios de chão a partir das malhas renderizadas, agrupados por objeto sólido.
+## Pernas finas não tornam uma mesa caminhável. Cada objeto reserva o envelope inteiro
+## no chão; vigas no alto e decoração de piso não podem ser registradas como sólidos.
 
 static func mesh_bounds(model: Node3D) -> Dictionary:
 	var bounds := {}

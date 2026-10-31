@@ -1,6 +1,6 @@
 extends RefCounted
-## Compatibility entry point for authored props. All weapons share the equipped
-## geometry, moving pieces, material resources and attachment origin.
+## Ponto de entrada de compatibilidade para objetos autorais. Todas as armas compartilham a geometria
+## equipada, as peças móveis, os recursos de material e a origem de encaixe.
 const MODELS = preload("res://gameplay/ArsenalWeapon3D.gd")
 
 static func build(root: Node3D, id: String) -> Vector3:

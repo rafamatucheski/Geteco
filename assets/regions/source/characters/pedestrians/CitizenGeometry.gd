@@ -1,5 +1,5 @@
 extends RefCounted
-## Build-time geometry only. Vertex colours batch all opaque detail on a joint.
+## Geometria só de construção. Cores de vértice agrupam todo detalhe opaco numa junta.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var _prewarm_mesh: ArrayMesh
 static var _prewarm_material: StandardMaterial3D
@@ -48,7 +48,7 @@ func oval(size: Vector3, position: Vector3, color: Color, rotation := Vector3.ZE
 func box(size: Vector3, position: Vector3, color: Color) -> void:
 	var mesh := BoxMesh.new()
 	mesh.size = size
-	# Vertical detail strips must follow the same curved abdomen as the shirt.
+	# Faixas verticais de detalhe precisam seguir o mesmo abdômen curvo da camisa.
 	mesh.subdivide_height=maxi(0,ceili(size.y/.025)-1)
 	add(mesh, color, Transform3D(Basis.IDENTITY, position))
 

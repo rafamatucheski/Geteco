@@ -65,7 +65,7 @@ static func apply(model: Node3D, identity: int) -> bool:
 			best = [entry]
 		elif distance == best_distance:
 			best.append(entry)
-	if best.is_empty(): return false # Keep the matching procedural body, never an opposite-gender mesh.
+	if best.is_empty(): return false # Mantém o corpo procedural correspondente, nunca uma malha do gênero oposto.
 	# Gerador local: não consome o RNG global do jogo e mantém a identidade estável entre sessões.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = identity * 2654435761 + 40503

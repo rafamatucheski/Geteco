@@ -123,10 +123,10 @@ func _ready() -> void:
 	var teal := Color("337f80")
 	var charcoal := Color("35444a")
 	var glazing := Color("639da6")
-	# The east recess leaves a real, level corridor through the building footprint.
+	# O recuo leste deixa um corredor real e plano através da pegada do prédio.
 	if public_walkup_enabled:
-		# Preserve the ward footprint, with a standing vestibule behind the
-		# public sliding leaves. Ambulance geometry is independent to the east.
+		# Preserva a pegada da enfermaria, com um vestíbulo em pé atrás das
+		# folhas deslizantes públicas. A geometria da ambulância é independente, a leste.
 		_collision_only(box(Vector2(-50, -9.5), Vector2(160, 211), 0, 5.0, ivory), painted)
 		var west_jamb := _collision_only(box(Vector2(-81, 105.5), Vector2(98, 19), 0, 5.0, ivory), painted)
 		west_jamb.set_meta("interior_solid_id", "hospital_public_west_jamb")
@@ -138,8 +138,8 @@ func _ready() -> void:
 	box(Vector2(67.5, -7), Vector2(75, 26), 0, 4.0, ivory)
 	box(Vector2(67.5, 94.5), Vector2(75, 41), 0, 3.1, ivory)
 	_apron(Vector2(80, 40), Vector2(100, 68), .09)
-	# Partition the lower apron around the 9 cm forecourt above. Preserve the
-	# perimeter/access levels without leaving one opaque slab under another.
+	# Divide o pátio inferior em volta do adro de 9 cm acima. Preserva os
+	# níveis de perímetro/acesso sem deixar uma placa opaca debaixo de outra.
 	_apron(Vector2(121, -6.5), Vector2(34, 25), .07)
 	_apron(Vector2(121, 95.5), Vector2(34, 43), .07)
 	_apron(Vector2(134, 40), Vector2(8, 68), .07)
@@ -158,7 +158,7 @@ func _ready() -> void:
 		box(Vector2(80, -54.5), Vector2(93, 114), 4.2, 0.03, Color("718387"))
 	var service_roof := overhead(box(Vector2(67.5, 94.5), Vector2(78, 42), 3.1, 0.17, Color("eeeade")))
 	service_roof.name = "AdmissionWingRoof"
-	# Repeated, recessed windows with raised fins on the street frontage.
+	# Janelas recuadas repetidas com aletas salientes na frente da rua.
 	# Janelas da frente da ala oeste: a frente pintada já as traz.
 	for x in ([] if painted else [-110.0, -76.0, -42.0, -8.0, 26.0]):
 		for level in [1.4, 3.3]:
@@ -180,8 +180,8 @@ func _ready() -> void:
 	# Public reception: native glazing around the existing playable south door.
 	if not public_walkup_enabled:
 		box(Vector2(0, 116), Vector2(68, 3), 0, 1.9, charcoal)
-	# The dark recess is revealed when the leaves slide. A second full-width
-	# fixed glass panel here made the entrance appear closed while opening.
+	# O recuo escuro aparece quando as folhas deslizam. Um segundo painel de vidro
+	# fixo de largura total aqui fazia a entrada parecer fechada enquanto abria.
 	for side in [-1.0, 1.0]:
 		var leaf := Node3D.new()
 		add_child(leaf)
@@ -193,7 +193,7 @@ func _ready() -> void:
 		if public_walkup_enabled: _add_public_leaf_collision(leaf)
 	box(Vector2(0, 126), Vector2(81, 23), 2.05, 0.15, teal)
 	for x in [-37.0, 37.0]: box(Vector2(x, 134), Vector2(2, 2), 0, 2.05, Color("d7dfdb"))
-	# Ambulance canopy: cantilevered, so no column can trap the crew or stretcher.
+	# Marquise da ambulância: em balanço, para nenhuma coluna prender a equipe ou a maca.
 	var canopy := overhead(box(Vector2(126, 40), Vector2(108, 64), 2.8, 0.06, Color(0.58,0.78,0.77,0.48), self, true))
 	canopy.name = "EmergencyGlassCanopy"
 	for x in [73.0, 109.0, 145.0, 179.0]:
@@ -203,7 +203,7 @@ func _ready() -> void:
 	overhead(box(Vector2(126, 73), Vector2(109, 2), 2.76, 0.29, teal))
 	for y in [18.0, 62.0]:
 		overhead(box(Vector2(115, y), Vector2(72, 1.3), 2.72, 0.03, Color("fff0c9")))
-	# Sliding leaves are recessed 28 px from the facade, under the canopy.
+	# As folhas deslizantes ficam recuadas 28 px da fachada, sob a marquise.
 	for y in [15.0, 65.0]: box(Vector2(102, y), Vector2(3, 3), 0, 2.65, charcoal)
 	box(Vector2(102, 40), Vector2(3, 53), 2.55, 0.1, charcoal)
 	for side in [-1.0, 1.0]:
@@ -214,7 +214,7 @@ func _ready() -> void:
 		box(Vector2(0.9, 0), Vector2(0.7, 20), 0.18, 2.24, Color("5b8a90"), leaf, true)
 		box(Vector2(1.5, 0), Vector2(0.8, 20), 1.1, 0.13, Color("c9ded8"), leaf)
 		door_leaves.append(leaf)
-	# A lit vestibule and interior passage remain visible between the doors.
+	# Um vestíbulo iluminado e uma passagem interna continuam visíveis entre as portas.
 	box(Vector2(36, 40), Vector2(2, 68), 0, 2.75, Color("acc2bf"))
 	box(Vector2(62, 7), Vector2(52, 2), 0, 2.7, Color("e0e4d9"))
 	box(Vector2(62, 73), Vector2(52, 2), 0, 2.7, Color("e0e4d9"))
@@ -274,8 +274,8 @@ func _build_painted_east() -> void:
 func _apron(point: Vector2, size: Vector2, height: float) -> void:
 	var floor_mesh := box(point,size,0,height,Color("b4babc"))
 	floor_mesh.name = "HospitalApron"
-	# Thin floors are excluded by the general facade collider heuristic.
-	# Their own collision keeps feet/tyres on the visible 7/9 cm access level.
+	# Pisos finos ficam de fora pela heurística geral de colisor de fachada.
+	# A colisão própria deles mantém pés/pneus no nível de acesso visível de 7/9 cm.
 	floor_mesh.create_trimesh_collision()
 	for body in floor_mesh.get_children():
 		if body is StaticBody3D:

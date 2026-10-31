@@ -1,5 +1,5 @@
 extends Node3D
-## Cutaway alpine lodge. Mesh groups are the source of physical footprints.
+## Chalé alpino em corte. Os grupos de malha são a fonte das pegadas físicas.
 const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
 var materials: Dictionary = {}
 var _solid_id: StringName = &""
@@ -91,7 +91,7 @@ func _build_room() -> void:
 		_box("IronPostShoe",Vector3(x,.22,-5.10),Vector3(.27,.4,.31),dark)
 	_solid_id = &""
 	_box("RearHeader",Vector3(0,3.55,-5.1),Vector3(15.6,.28,.32),endgrain)
-	# The entrance openings are actually open; no glass plane across the actor.
+	# As aberturas de entrada estão abertas de fato; nenhum plano de vidro atravessa o ator.
 	for z in [-5.4,5.4]:
 		_solid_id = StringName("ExitThreshold%s" % z)
 		_box("Threshold",Vector3(0,.04,z),Vector3(3.6,.08,.12),dark)
@@ -99,7 +99,7 @@ func _build_room() -> void:
 	_box("EntryRunner",Vector3(0,.032,3.65),Vector3(2.0,.028,2.4),red)
 	for x in [-.88,.88]:
 		_box("RunnerBorder",Vector3(x,.05,3.65),Vector3(.065,.012,2.4),cream)
-	# Solid paneled rental counter with slate surface, brass trim and till.
+	# Balcão de aluguel sólido e apainelado, com tampo de ardósia, frisos de latão e caixa registradora.
 	_solid_id = &"RentalCounter"
 	_box("CounterCarcass",Vector3(-4.7,.55,-2.5),Vector3(4.4,1.1,1.05),wood)
 	_box("SlateCountertop",Vector3(-4.7,1.14,-2.5),Vector3(4.6,.13,1.2),dark)
@@ -110,7 +110,7 @@ func _build_room() -> void:
 	_box("Till",Vector3(-6,1.30,-2.5),Vector3(.42,.2,.35),dark)
 	_box("TillScreen",Vector3(-6,1.52,-2.63),Vector3(.36,.27,.05),dark,Vector3(-12,0,0))
 	_cylinder("CounterBell",Vector3(-3.1,1.25,-2.3),.10,.09,brass)
-	# Folded rental textiles on a wall shelf, not giant rectangular jackets.
+	# Tecidos de aluguel dobrados numa prateleira de parede, não jaquetas retangulares gigantes.
 	_solid_id = &"RentalShelf"
 	_box("RentalShelf",Vector3(-4.7,1.7,-4.9),Vector3(4.6,.12,.58),wood)
 	for i in 6:
@@ -127,7 +127,7 @@ func _build_room() -> void:
 		for fold in 7:
 			_cylinder("CurtainFold",Vector3(side*(.15+fold*.12),1.12,1.65),.075,2.02,red)
 		_box("CurtainHem",Vector3(side*.51,.16,1.68),Vector3(.87,.075,.08),brass)
-	# Individually bound skis with bent tips, bindings and metal edges.
+	# Esquis amarrados um a um, com pontas curvadas, fixações e bordas de metal.
 	_solid_id = &"SkiRack"
 	for y in [.45,1.95]:
 		_box("SkiRackRail",Vector3(5.25,y,-4.95),Vector3(4.2,.12,.22),wood)
@@ -168,7 +168,7 @@ func _build_room() -> void:
 	fire.scale = Vector3(1.8,1.35,1.2)
 	fire.smoke_height = .35
 	add_child(fire)
-	# Upholstered lounge with cushions, piping, wooden feet and blanket.
+	# Sala de estar estofada com almofadas, vivos, pés de madeira e manta.
 	_solid_id = &"LoungeBench"
 	for x in [2.9,6.5]:
 		for z in [2.88,3.62]:
@@ -183,7 +183,7 @@ func _build_room() -> void:
 	_box("FoldedBlanket",Vector3(5.8,.8,3.16),Vector3(.63,.055,.84),red)
 	for x in [5.56,5.75,5.94]:
 		_box("BlanketWeave",Vector3(x,.831,3.16),Vector3(.035,.008,.83),cream)
-	# Suspended iron wheel lights share the room depth, never block the floor.
+	# Lustres de roda de ferro suspensos dividem a profundidade da sala, nunca bloqueiam o piso.
 	_solid_id = &""
 	for x in [-4.4,4.4]:
 		var ring := TorusMesh.new()

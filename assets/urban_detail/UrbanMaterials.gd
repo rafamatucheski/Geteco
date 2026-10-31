@@ -1,8 +1,8 @@
 extends RefCounted
 class_name UrbanMaterials
 
-## Centralized shared material palette for urban buildings and architectural props.
-## Prioritizes batching, shared VRAM resources, and optimal shadow/transparency settings.
+## Paleta central de materiais compartilhados para prédios urbanos e objetos arquitetônicos.
+## Prioriza agrupamento, recursos de VRAM compartilhados e ajustes ótimos de sombra/transparência.
 
 const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
 

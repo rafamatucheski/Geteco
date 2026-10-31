@@ -4,7 +4,7 @@ extends RefCounted
 static var _tiles: Dictionary = {}
 static var _normals: Dictionary = {}
 static var _rough: Dictionary = {}
-# Re-bake with tools/bake_loading_surfaces.gd when changing the v1 recipe.
+# Refaça o bake com tools/bake_loading_surfaces.gd ao mudar a receita v1.
 const BAKED := {
 	"concrete":preload("res://assets/materials/urban_ground_cache/concrete.res"),
 	"stone":preload("res://assets/materials/urban_ground_cache/stone.res"),
@@ -43,7 +43,7 @@ static func _generate(kind: String) -> Texture2D:
 	rng.seed=91327
 	for y in 256:
 		for x in 256:
-			# Periodic coordinates avoid visible joins at the edge of the tile.
+			# Coordenadas periódicas evitam emendas visíveis na borda do ladrilho.
 			var a := TAU*x/256.0
 			var b := TAU*y/256.0
 			var grain := noise.get_noise_3d(cos(a)*40,sin(a)*40,cos(b)*40+sin(b)*20)
@@ -104,13 +104,13 @@ static func _generate(kind: String) -> Texture2D:
 static func paint(canvas: CanvasItem, rect: Rect2, tint: Color, kind := "concrete") -> void:
 	canvas.texture_repeat=CanvasItem.TEXTURE_REPEAT_ENABLED
 	canvas.texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	# Rect source uses the same coordinate space as the district's footprints.
+	# A fonte Rect usa o mesmo espaço de coordenadas das pegadas do distrito.
 	canvas.draw_texture_rect_region(texture(kind),rect,rect,tint,false,false)
 
 static func yard(canvas: CanvasItem, rect: Rect2, seed_value: int, working := false) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed=seed_value
-	# Flush drains and stains are traversable; they add no solid obstacles.
+	# Ralos e manchas rentes são transitáveis; não acrescentam obstáculos sólidos.
 	for corner in [rect.position+Vector2(13,14),rect.end-Vector2(37,20)]:
 		canvas.draw_rect(Rect2(corner,Vector2(24,9)),Color("4b504d"))
 		for i in 6:
@@ -145,7 +145,7 @@ static func garden_edge(canvas: CanvasItem, rect: Rect2, seed_value: int) -> voi
 static func foundations(canvas: CanvasItem, sites: Array[Dictionary]) -> void:
 	for site in sites:
 		var rect: Rect2=site.bounds
-		# Damp/dusty contact at the wall, drawn with the ground below the facade.
+		# Contato úmido/empoeirado junto à parede, desenhado com o chão abaixo da fachada.
 		canvas.draw_line(Vector2(rect.position.x,rect.end.y+2),rect.end+Vector2(0,2),Color(.19,.18,.14,.15),4)
 		for i in 4:
 			var p := Vector2(rect.position.x+5+i*9,rect.end.y+5)

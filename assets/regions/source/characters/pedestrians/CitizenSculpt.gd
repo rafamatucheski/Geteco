@@ -43,7 +43,7 @@ static func create_face_shell(actor: Node, context: Dictionary) -> MeshInstance3
 	var female: bool = context["female"]
 	var skin: Color = context["skin"]
 	var head: Node3D = actor.head_node
-	# Replace the spherical base and block beard; retain authored hats and props.
+	# Substitui a base esférica e a barba em bloco; mantém chapéus e objetos autorais.
 	for part in head.get_children():
 		if part is MeshInstance3D and (part.name == "BaseHair" or part.position.is_zero_approx() or part.position.is_equal_approx(Vector3(0,-.09,-.08))):
 			part.free()
@@ -74,7 +74,7 @@ static func build_nose(actor: Node, context: Dictionary) -> void:
 	var head: Node3D = actor.head_node
 	var face := GEO.new()
 	var nose_width := .017+(identity%3)*.003
-	# Actual nose bridge, restrained eyelids and inset eyes rather than stickers.
+	# Ponte do nariz de verdade, pálpebras contidas e olhos embutidos em vez de adesivos.
 	face.loft([Vector4(-.047,nose_width,.017,-.121),Vector4(-.03,nose_width,.026+(identity%3)*.003,-.126),Vector4(.04,.012,.009,-.102)],skin,8)
 	face.finish(head,"NoseBridge",.86)
 
@@ -134,7 +134,7 @@ static func build_tailored_torso(actor: Node, context: Dictionary) -> void:
 	var identity: int = context["identity"]
 	var female: bool = context["female"]
 	var cloth: Color = context["cloth"]
-	# Tailored silhouette with a continuous shoulder into the sleeve.
+	# Silhueta alfaiatada com o ombro contínuo até a manga.
 	var shell: MeshInstance3D = actor.torso_node.get_node("BodyShell")
 	for part in actor.torso_node.get_children():
 		if part is MeshInstance3D and part.mesh is BoxMesh:
@@ -158,7 +158,7 @@ static func build_tailored_torso(actor: Node, context: Dictionary) -> void:
 		for side in [-1,1]: torso.box(Vector3(.010,.15,.010),Vector3(side*.035,.126,-.151),Color("b9b2a3"))
 		torso.loft([Vector4(-.245,.145,.12,0),Vector4(-.19,.17,.14,0)],cloth.darkened(.18),14)
 	elif garment_style == 1 and not actor.has_tie:
-		# Layered casual jacket with a contrasting shirt and lapels.
+		# Jaqueta casual em camadas com camisa e lapelas contrastantes.
 		torso.panel([Vector3(-.105,.205,-.105),Vector3(.105,.205,-.105),Vector3(.085,-.17,-.146),Vector3(-.085,-.17,-.146)],cloth.lightened(.24))
 		for side in [-1,1]: torso.panel([Vector3(side*.105,.205,-.106),Vector3(side*.178,.105,-.118),Vector3(side*.08,-.04,-.151),Vector3(side*.025,.135,-.153)],cloth.darkened(.18))
 	elif garment_style == 2 and not actor.has_tie:
@@ -187,7 +187,7 @@ static func build_tailored_torso(actor: Node, context: Dictionary) -> void:
 		torso.panel([Vector3(-.19,.20,-.10),Vector3(.19,.20,-.10),Vector3(.14,.02,-.145),Vector3(-.14,.02,-.145)],cloth.lightened(.22))
 		torso.box(Vector3(.28,.028,.014),Vector3(0,-.035,-.144),cloth.darkened(.28))
 	elif garment_style == 7 and not actor.has_tie:
-		# Long overshirt hem extends the silhouette below the waist.
+		# A barra longa da sobrecamisa estende a silhueta abaixo da cintura.
 		for side in [-1,1]: torso.panel([Vector3(side*.02,.18,-.145),Vector3(side*.17,.15,-.115),Vector3(side*.15,-.30,-.105),Vector3(side*.018,-.27,-.147)],cloth.darkened(.12 if side<0 else .22))
 	for i in 4: torso.oval(Vector3(.010,.010,.008),Vector3(0,.10-i*.072,-.145),Color("aea99c"))
 	if identity%3 != 1:
@@ -213,7 +213,7 @@ static func build_side(actor: Node, context: Dictionary, side: int) -> void:
 	var cloth: Color = context["cloth"]
 	var upper: Node3D = actor.left_upper_arm if side == 0 else actor.right_upper_arm
 	var lower: Node3D = actor.left_lower_arm if side == 0 else actor.right_lower_arm
-	# Bring the shoulder socket into the body surface, including slim builds.
+	# Traz o encaixe do ombro para a superfície do corpo, incluindo biotipos magros.
 	upper.position.x = (-1 if side == 0 else 1)*(.174*actor.torso_node.scale.x+.022*upper.scale.x)
 	var sleeve := GEO.new()
 	sleeve.loft([Vector4(-.224,.046,.047,0),Vector4(-.19,.052,.052,0),Vector4(-.07,.059,.060,0),Vector4(.009,.057,.059,0),Vector4(.025,.029,.035,0)],cloth,12)
@@ -221,7 +221,7 @@ static func build_side(actor: Node, context: Dictionary, side: int) -> void:
 	for child in upper.get_children():
 		if child is MeshInstance3D: child.free()
 	sleeve.finish(upper,"Sleeve")
-	# Preserve carried objects, only replacing the original limb/hand/cap.
+	# Preserva objetos carregados, substituindo só o membro/mão/boné originais.
 	var arm_color: Color = lower.get_child(0).material_override.albedo_color
 	for i in 3: lower.get_child(0).free()
 	for prop in lower.get_children():
@@ -278,7 +278,7 @@ static func _build_beard(actor: Node, jaw: float, chin: float) -> void:
 	if style in [1,2,3]:
 		var length := .005 if style==1 else .015 if style==2 else .070
 		beard.loft([Vector4(-.155-length,chin*.9,.056,-.026),Vector4(-.14-length*.45,jaw*.82,.077,-.022),Vector4(-.092,jaw*1.05,.098,-.008),Vector4(-.055,jaw*1.08,.098,-.002)],color,12,PI*.5,PI)
-		# Sideburns close the jaw contour without painting the back of the neck.
+		# As costeletas fecham o contorno da mandíbula sem pintar a nuca.
 		for side in [-1,1]:
 			beard.oval(Vector3(.024,.09,.041),Vector3(side*jaw,.0,-.001),color,Vector3(0,0,side*-.20))
 	elif style==4:
@@ -310,7 +310,7 @@ static func _build_hair_crown(actor: Node) -> void:
 	var color: Color = actor.hair_color
 	var style := int(actor.get_meta("hair_style",0))
 	var covered: bool = actor.has_cap or actor.has_beanie or actor.has_fur_hood or actor.has_ranger_hat or actor.has_cowboy_hat
-	# Scalp sections leave the forehead open; side/back locks close the hairline.
+	# As seções do couro cabeludo deixam a testa livre; mechas laterais/de trás fecham a linha do cabelo.
 	if not covered:
 		hair.scalp(color)
 		for i in 7:

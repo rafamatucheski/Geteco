@@ -2,7 +2,7 @@ extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.g
 
 var light: OmniLight3D
 var ledger: Node3D
-# Service ladder against the east wall, beyond the sacks and clear of the door.
+# Escada de serviço na parede leste, depois dos sacos e longe da porta.
 var roof_access_point := Vector3(3.60,0,2.94)
 var roof_access_yaw := PI*.5
 
@@ -14,7 +14,7 @@ func _ready() -> void:
 			box("WornFloorboard", Vector3(1.79, .08, .39), Vector3(x, -.02, -3.4 + row * .4), ["71614a", "776850", "6a5b45"][(col + row) % 3])
 	box("BackPlaster", Vector3(9.2, 2.8, .22), Vector3(0, 1.35, -3.6), "a39b7d")
 	box("LeftPlaster", Vector3(.22, 2.8, 7.2), Vector3(-4.6, 1.35, 0), "8d9176")
-	# Low right/south walls keep the playable floor and sleeping alcove readable.
+	# Paredes baixas à direita/sul mantêm legíveis o piso jogável e o nicho de dormir.
 	box("RightCutaway", Vector3(.22, .65, 7.2), Vector3(4.6, .28, 0), "8b9076")
 	for x in [-2.6, 2.6]: box("SouthCutaway", Vector3(3.9, .45, .22), Vector3(x, .18, 3.6), "8b9076")
 	for x in [-4.45, 0, 4.45]: box("RoofPost", Vector3(.15, 2.9, .20), Vector3(x, 1.4, -3.45), "4a4a37")
@@ -64,7 +64,7 @@ func _ready() -> void:
 	box("Stove", Vector3(.72, .76, .76), Vector3(-3.75, .38, -.55), "39443b")
 	cylinder("StovePipe", .10, 2.1, Vector3(-3.9, 1.78, -.74), "3e473d")
 	cylinder("CoffeePot", .15, .22, Vector3(-3.70, .9, -.5), "8a7560")
-	# Barrow and earth sacks beside the door; a central clear route remains.
+	# Carrinho de mão e sacos de terra ao lado da porta; uma rota central continua livre.
 	var barrow := Node3D.new()
 	barrow.name = "Wheelbarrow"
 	barrow.position = Vector3(-3, 0, 1.65)

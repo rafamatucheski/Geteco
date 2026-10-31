@@ -1,5 +1,5 @@
 extends RefCounted
-## Key poses for the imported skeleton: hands stay in front of the jacket.
+## Poses-chave para o esqueleto importado: as mãos ficam na frente da jaqueta.
 const GRENADE_RELEASE := 0.20
 
 static func sample(id: String, age: float, _aiming: bool) -> Dictionary:
@@ -18,8 +18,8 @@ static func sample(id: String, age: float, _aiming: bool) -> Dictionary:
 		return {"hand":hand,"basis":Basis(Vector3.RIGHT,-0.20),"left":Vector3(-0.215,0.65,-0.025)}
 	return shoulder_swing(id, age)
 
-# Carry behind the shoulder, join the free hand, then sweep through contact.
-# Contact lies inside one continuous interpolation, never at a zero-speed key.
+# Leva atrás do ombro, junta a mão livre e então varre pelo contato.
+# O contato fica dentro de uma interpolação contínua, nunca numa chave de velocidade zero.
 static func shoulder_swing(id: String, age: float, gait_phase: float = 0.0, movement: float = 0.0, running: float = 0.0, body_offset: Vector3 = Vector3.ZERO) -> Dictionary:
 	var axe := id == "axe"
 	var load_end := 0.18 if axe else 0.14
@@ -59,8 +59,8 @@ static func shoulder_swing(id: String, age: float, gait_phase: float = 0.0, move
 		basis = clear_basis.slerp(carry_basis, t)
 		torso = lerpf(0.12, 0.0, t)
 	var support_weight := smoothstep(0.0, load_end * 0.75, age) * (1.0 - smoothstep(follow_end, return_start, age))
-	# Rock around the shoulder contact, not around the hand: the shaft keeps
-	# its support while the head has a small, weighty response to each step.
+	# Balança em torno do contato no ombro, não em torno da mão: o cabo mantém
+	# o apoio enquanto a cabeça tem uma resposta pequena e pesada a cada passo.
 	var carry_weight := (1.0 - smoothstep(0.0, load_end, age)) + smoothstep(return_start, end, age)
 	var motion := movement * carry_weight
 	if motion > 0.0:

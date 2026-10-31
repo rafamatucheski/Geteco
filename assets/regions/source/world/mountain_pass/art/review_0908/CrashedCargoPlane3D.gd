@@ -201,9 +201,9 @@ func _build_model() -> void:
 			_add_cyl_to(shell, Vector3(side * 1.50, 0.61, sz), 0.03, 0.82, roller_mat, Vector3(90, 0, 0))
 
 	# Carga amarrada no meio da baía (Caixas militares e paletes com suprimentos)
-	# MountainCargoPlane used to mutate these boxes after construction to keep
-	# the walkable aisle open. MultiMesh instances are immutable individually,
-	# so store the same final gameplay transform directly in the batched model.
+	# O MountainCargoPlane alterava estas caixas depois da construção para manter
+	# o corredor caminhável aberto. Instâncias de MultiMesh são imutáveis individualmente,
+	# então grava a mesma transformação final de gameplay direto no modelo em lote.
 	_add_box_to(self, Vector3(-0.95, 0.65, -3.2), Vector3(0.55, 0.90, 1.40), crate_wood)
 	_add_box_to(self, Vector3(-0.95, 0.58, -3.2), Vector3(0.55, 0.75, 1.20), crate_metal)
 	_add_box_to(self, Vector3(-0.95, 1.22, -3.2), Vector3(0.55, 0.40, 0.90), crate_wood)
