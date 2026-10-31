@@ -1,8 +1,8 @@
 extends SceneTree
-## Read-only admission diagnostic in rendered Main. Production keeps its normal
-## population jobs; this probe only selects and validates, never spawns an actor.
-## Its copied validator deliberately measures the original, unclipped-route policy.
-## Run with the compiled .NET engine and -- --no-save --skip-arrival.
+## Diagnóstico de admissão só leitura no Main renderizado. A produção mantém seus
+## jobs normais de população; esta sonda só seleciona e valida, nunca cria um ator.
+## O validador copiado mede de propósito a política original, de rota sem recorte.
+## Rode com o motor .NET compilado e -- --no-save --skip-arrival.
 const MARKET_POINT := Vector3(109.375, .12, 32.8875)
 const PORT_POLICY := preload("res://gameplay/urban_v1/HarborPortPolicy.gd")
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
@@ -157,8 +157,8 @@ func _evaluate() -> Dictionary:
 	start = grounded[1]
 	finish = grounded[2]
 	row["grounded"] = [str(point), str(start), str(finish)]
-	# Preserve production's ordering: carriageway and tunnel checks are
-	# interleaved per endpoint, rather than grouping all checks by category.
+	# Preserva a ordem da produção: as checagens de pista e de túnel são
+	# intercaladas por ponta, em vez de agrupar todas as checagens por categoria.
 	for end in [point, start, finish]:
 		began = Time.get_ticks_usec()
 		var roadway: bool = production._on_carriageway(end)

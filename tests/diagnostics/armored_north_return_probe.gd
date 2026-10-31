@@ -1,20 +1,20 @@
 extends "res://tests/test_armored_route_session.gd"
-## Directed Main coverage: ordinary driving checkpoint offset400 -> all four
-## real bodies past both north-return junctions and onto bridge offset>=690.
-## No vehicle placement after production admission, forced signals, traffic
-## removal, altered driver speed or geometry. Observer-only streaming follow.
-## PASS14/14 on2026-10-07,153.9s; health100%,zero missing support.
-## Evidence: evidence/armored-north-return-final.log and
-## evidence/armored-north-return-50788-5924479/. Bank service not covered here.
-## --desert-highway covers proven bridge-seam setup690 -> all four>=1320;
-## its setup matches capture_armored_night_temporal.gd --bridge-seam. Independent
-## segment evidence, not a claim of another uninterrupted whole-bank journey.
-## Highway PASS15/15 in124.9s,629..649m perbody,health100%,support intact:
-## evidence/armored-desert-highway-proven-bridge.log and
+## Cobertura dirigida no Main: checkpoint de direção comum offset400 -> os quatro
+## corpos reais passam os dois entroncamentos do retorno norte e entram na ponte offset>=690.
+## Sem posicionar veículo depois da admissão de produção, sem sinais forçados, sem remover
+## trânsito, sem alterar velocidade do motorista nem geometria. Streaming segue só o observador.
+## PASS14/14 em2026-10-07,153.9s; vida100%,nenhum apoio faltando.
+## Evidência: evidence/armored-north-return-final.log e
+## evidence/armored-north-return-50788-5924479/. O serviço do banco não é coberto aqui.
+## --desert-highway cobre a preparação comprovada na emenda da ponte setup690 -> os quatro>=1320;
+## a preparação bate com capture_armored_night_temporal.gd --bridge-seam. Evidência
+## independente por trecho, não a afirmação de outra viagem inteira do banco sem interrupção.
+## Rodovia PASS15/15 em124.9s,629..649m porcorpo,vida100%,apoio intacto:
+## evidence/armored-desert-highway-proven-bridge.log e
 ## evidence/armored-desert-highway-9880-5452509/.
-## Earlier offset800 setup exposed a real virtual-admission height bug on the
-## descending ramp (linear route Y vs smooth physical ground). Logs preserved;
-## the proven bridge start below only isolates driving, not proof of that fix.
+## A preparação anterior em offset800 expôs um bug real de altura na admissão virtual na
+## rampa descendente (Y linear da rota vs chão físico suave). Logs preservados;
+## o início comprovado na ponte abaixo só isola a direção, não prova essa correção.
 const JUNCTIONS = preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 var _highway := false
 var _target_offset := 690.0
@@ -44,8 +44,8 @@ func run() -> void:
 	var point:=Vector3(372,.12,-160)
 	var region:="harbor"
 	if _highway:
-		# Exact snapshot point/offset from the passing --bridge-seam capture.
-		# z=-285 is the widened deck, unlike the narrower failed z=-305 setup.
+		# Ponto/offset exato do snapshot da captura aprovada --bridge-seam.
+		# z=-285 é o deck alargado, ao contrário da preparação mais estreita que falhou em z=-305.
 		point=Vector3(335,2.52,-285)
 	var snapshot:=FIXTURE.full_snapshot(point,true)
 	snapshot.campaign.aftermath={"call_complete":true}
@@ -159,8 +159,8 @@ func run() -> void:
 
 func _observe_physics(convoy) -> void:
 	super._observe_physics(convoy)
-	# Observed non-floor contacts at the inherited 500 ms sampling cadence.
-	# This is collision diagnostics, not an assertion of every physics-frame hit.
+	# Contatos fora do piso observados na cadência herdada de amostragem de 500 ms.
+	# Isto é diagnóstico de colisão, não asserção de cada batida por quadro de física.
 	for index in convoy.fleet.size():
 		var car: CharacterBody3D=convoy.fleet[index]
 		for hit_index in car.get_slide_collision_count():

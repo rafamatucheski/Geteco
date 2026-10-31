@@ -13,7 +13,7 @@ func run() -> void:
 	roads.append_array(preload("res://world/urban_detail/CanalTunnel3D.gd").traffic_roads(harbor.roads))
 	if "--with-private-bridge" in OS.get_cmdline_user_args():
 		var bridge := preload("res://world/north_gateway/NorthGatewayLayout.gd").centerline()
-		# The authored access starts at the arterial's west pavement edge.
+		# O acesso autoral começa na borda oeste do calçamento da arterial.
 		for road in roads:
 			if road.id != "map2_highway_inbound": continue
 			for index in range(1,road.points.size()):
