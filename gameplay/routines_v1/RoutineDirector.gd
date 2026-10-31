@@ -159,7 +159,7 @@ func _port_worker_died(actor: CharacterBody3D, id: String) -> void:
 	port_respawn[id] = 180.0
 	suspended_states.erase(id)
 	actors.erase(id)
-	# Emergency services may remove the corpse earlier; otherwise release it after a minute.
+	# Os serviços de emergência podem remover o cadáver antes; senão ele é liberado depois de um minuto.
 	get_tree().create_timer(60.0,false).timeout.connect(func():
 		if is_instance_valid(actor): actor.queue_free())
 

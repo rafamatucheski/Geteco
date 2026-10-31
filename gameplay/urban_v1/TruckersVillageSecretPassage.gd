@@ -1,11 +1,11 @@
 extends Node3D
 ## Optional Casa 1 annex and cellar controller.
 ##
-## The house remains owned by TruckersVillageHomes. This node only attaches a
-## narrow rear annex, the cellar below it and the movable access mechanisms.
-## NativeRegion and the house shell consume physical_cut_spec() so the player
-## walks continuously through the authored stairs. The transfer actions remain
-## as a safe fallback for isolated scene previews that do not install the cuts.
+## A casa continua pertencendo a TruckersVillageHomes. Este nó só anexa um
+## anexo traseiro estreito, o porão abaixo dele e os mecanismos móveis de acesso.
+## NativeRegion e a casca da casa consomem physical_cut_spec() para que o jogador
+## ande sem interrupção pela escada definida. As ações de transferência continuam
+## como fallback seguro para prévias de cena isoladas que não instalam os cortes.
 
 signal state_changed
 signal physical_cut_requested(spec: Dictionary)
@@ -34,8 +34,8 @@ const ACTION_PREFIX := "truckers_village_secret_"
 const INTERACTION_REACH := 1.65
 const UNDERGROUND_LAYER := 1 << 18
 
-# Casa 1 local coordinates. The annex occupies the existing central opening in
-# the rear fence and does not add or clone any furniture in the main room.
+# Coordenadas locais da Casa 1. O anexo ocupa a abertura central existente na
+# cerca dos fundos e não acrescenta nem clona mobília na sala principal.
 const SURFACE_DOOR_LOCAL := Vector3(0.65,1.14,-4.28)
 const SURFACE_ACTION_LOCAL := Vector3(0.65,.04,-3.15)
 const SURFACE_RETURN_LOCAL := Vector3(0.65,.04,-2.75)
@@ -111,9 +111,9 @@ func configure(owner_session, village_visuals: Node3D, network_progression, tunn
 		tunnel = tunnel_stage
 	else:
 		tunnel = TUNNEL.new()
-		# UrbanOperations is a Node, so the passage normally has an identity world
-		# transform. Top-level also protects the remote underground stage if the
-		# manager is later mounted below a transformed visual owner.
+		# UrbanOperations é um Node, então a passagem normalmente tem transform de mundo
+		# identidade. Top-level também protege o cenário subterrâneo remoto se o
+		# gerenciador for montado depois sob um dono visual transformado.
 		tunnel.top_level = true
 		add_child(tunnel)
 		tunnel.configure(session)
@@ -167,8 +167,8 @@ func set_region_active(value: bool) -> void:
 		body.collision_layer = 1 if value else 0
 	if not value:
 		_set_cellar_occupied(false)
-		# Keep the destination floor alive while visiting a connected sewer so
-		# FullSession can validate the underground return point on exit.
+		# Mantém vivo o piso de destino enquanto visita um esgoto conectado para que
+		# FullSession possa validar o ponto de volta subterrâneo na saída.
 		if is_instance_valid(tunnel): tunnel.set_enabled((_route_active("route_harbor_sewer") and session.state.place_id == "harbor_sewer") or (_vault_unlocked() and session.state.place_id == "mountain_fort"))
 	set_process(value)
 
@@ -359,9 +359,9 @@ func _process(delta: float) -> void:
 	var in_tunnel: bool = is_instance_valid(tunnel) and bool(tunnel.contains(player.global_position))
 	if _keypad_unlocked() and in_tunnel and not tunnel.visible:
 		tunnel.set_enabled(true)
-	# The tunnel is our child and processes after this controller. Preserve the
-	# cellar camera for this one handoff frame so SecretTunnel3D records it as
-	# its return camera instead of accidentally recording the exterior camera.
+	# O túnel é nosso filho e processa depois deste controlador. Preserva a
+	# câmera do porão neste único quadro de passagem para que SecretTunnel3D a registre como
+	# câmera de volta em vez de registrar por acidente a câmera externa.
 	_set_cellar_occupied(_in_cellar(player.global_position) and not in_tunnel,not in_tunnel)
 	if _cellar_occupied:
 		_update_cellar_camera(player.global_position)
@@ -405,8 +405,8 @@ func _maciota_story_action() -> Dictionary:
 
 
 func _action(suffix: String,label: String) -> Dictionary:
-	# FullSession dispatches this through the remappable `interact` action. The
-	# keypad itself uses normal focused UI buttons and ui_cancel/ui_accept.
+	# FullSession despacha isto pela ação remapeável `interact`. O
+	# próprio teclado numérico usa botões de UI com foco normais e ui_cancel/ui_accept.
 	return {"id":"urban_v1","target":ACTION_PREFIX+suffix,"label":label}
 
 
@@ -545,8 +545,8 @@ func _transfer_to_tunnel() -> void:
 	_lock_player(true)
 	tunnel.set_enabled(true)
 	_set_player_position(tunnel.entry_global())
-	# SecretTunnel3D claims the current cellar camera as its return camera on
-	# the following process tick. Keeping this deferred avoids two camera owners.
+	# SecretTunnel3D reivindica a câmera atual do porão como câmera de volta no
+	# tick de process seguinte. Manter isto adiado evita dois donos de câmera.
 	_finish_tunnel_transfer.call_deferred()
 
 
@@ -833,8 +833,8 @@ func _sealed_sector_discovered() -> bool:
 
 func _emit_state_changed() -> void:
 	state_changed.emit()
-	# The owner can connect state_changed and publish its aggregate snapshot.
-	# Saving here is deliberately optional so the file also works in fixtures.
+	# O dono pode conectar state_changed e publicar o snapshot agregado dele.
+	# Salvar aqui é opcional de propósito para que o arquivo também funcione em fixtures.
 	if session != null and session.has_method("save_game"): session.save_game()
 
 
@@ -850,16 +850,16 @@ func _build_annex() -> void:
 	var annex := Node3D.new()
 	annex.name = "Casa1CellarAnnex"
 	home.add_child(annex)
-	# The extension reads as a plain pantry from outside. It has no sign, slogan
-	# or exterior interaction; the only usable access is from inside Casa 1.
-	# The centre is the actual stairwell; only two narrow edge ledges remain.
+	# A extensão parece uma despensa comum vista de fora. Não tem placa, slogan
+	# nem interação externa; o único acesso utilizável é de dentro da Casa 1.
+	# O centro é o vão real da escada; só ficam duas saliências estreitas nas bordas.
 	for side in [-1.0,1.0]:
 		_box(annex,ANNEX_CENTER_LOCAL+Vector3(side*1.46,.03,0),Vector3(.23,.06,ANNEX_SIZE.z),"75694e")
 	for side in [-1.0,1.0]:
 		_solid_box(annex,"AnnexSide",ANNEX_CENTER_LOCAL+Vector3(side*ANNEX_SIZE.x*.5,1.35,0),Vector3(.18,2.7,ANNEX_SIZE.z),"7c735f")
 	_solid_box(annex,"AnnexRear",ANNEX_CENTER_LOCAL+Vector3(0,1.35,-ANNEX_SIZE.z*.5),Vector3(ANNEX_SIZE.x,2.7,.18),"746b59")
-	# Plain timber framing makes the small addition read as an old pantry while
-	# remaining visually quieter than the house facade.
+	# O madeiramento simples faz o pequeno acréscimo parecer uma despensa antiga e ao
+	# mesmo tempo visualmente mais discreto que a fachada da casa.
 	for side in [-1.0,1.0]:
 		_batch_box(annex,ANNEX_CENTER_LOCAL+Vector3(side*1.47,1.35,-2.54),Vector3(.14,2.55,.12),"544a3d")
 		_batch_box(annex,ANNEX_CENTER_LOCAL+Vector3(side*1.47,1.35,2.54),Vector3(.14,2.55,.12),"544a3d")
@@ -881,9 +881,9 @@ func _build_annex() -> void:
 func _build_stair(parent: Node3D) -> void:
 	var run := STAIR_BOTTOM_LOCAL.z-STAIR_TOP_LOCAL.z
 	var drop := STAIR_TOP_LOCAL.y-STAIR_BOTTOM_LOCAL.y
-	# The terrain cut ends just behind the door while the inclined ramp begins
-	# farther back. This level sill bridges both surfaces so the player's capsule
-	# reaches the ramp top instead of falling against its steep front cap.
+	# O corte do terreno termina logo atrás da porta enquanto a rampa inclinada começa
+	# mais para trás. Esta soleira nivelada liga as duas superfícies para que a cápsula do jogador
+	# chegue ao topo da rampa em vez de cair contra a tampa frontal íngreme dela.
 	# O patamar começa onde a rampa termina (z=-4,75). Começando antes (-4,825), a quina
 	# ficava ~5 cm acima da rampa de 41° e prendia a cápsula na subida de volta à casa.
 	_solid_box(parent,"EntryLanding",Vector3(.65,-.08,-4.325),Vector3(1.40,.14,.85),"4a5049")
@@ -906,8 +906,8 @@ func _build_cellar() -> void:
 	cellar_root.position = CELLAR_ORIGIN_LOCAL
 	home.add_child(cellar_root)
 	_solid_box(cellar_root,"CellarFloor",Vector3(0,-.12,0),Vector3(8.9,.22,8.5),"4b5049")
-	# Thin triangulated damp patches follow the slab without changing the walk
-	# height. Uneven outlines avoid the appearance of rectangular rugs.
+	# Manchas finas de umidade trianguladas seguem a laje sem mudar a altura
+	# de caminhada. Contornos irregulares evitam a aparência de tapetes retangulares.
 	_batch_floor_puddle(cellar_root,Vector3(-2.75,.002,-2.55),PackedVector2Array([
 		Vector2(-.74,-.10),Vector2(-.48,-.27),Vector2(.03,-.23),Vector2(.61,-.13),
 		Vector2(.70,.08),Vector2(.28,.24),Vector2(-.22,.20),Vector2(-.66,.10),
@@ -929,13 +929,13 @@ func _build_cellar() -> void:
 		[Vector3(0,1.45,-4.25),Vector3(8.9,3.0,.30)],
 	]:
 		_solid_box(cellar_root,"CellarWall",wall[0],wall[1],"",Vector3.ZERO,false)
-		# Recess the mortar behind the individual stones while retaining the
-		# full physical envelope. Flush mortar previously hid their front faces.
+		# Rebaixa a argamassa atrás das pedras individuais mantendo o
+		# envelope físico completo. A argamassa rente antes escondia as faces frontais delas.
 		var backing: Vector3 = wall[1]
 		if backing.x < .5: backing.x = .20
 		elif backing.z < .5: backing.z = .20
 		_box(cellar_root,wall[0],backing,"555a51")
-	# Full front collision, cut away only in the presentation layer.
+	# Colisão frontal completa, recortada só na camada de apresentação.
 	_solid_box(cellar_root,"CellarFrontWall",Vector3(0,1.45,4.25),Vector3(8.9,3.0,.30),"",Vector3.ZERO,false)
 	_build_cellar_masonry()
 	cellar_ceiling = Node3D.new()
@@ -944,16 +944,16 @@ func _build_cellar() -> void:
 	_box(cellar_ceiling,Vector3(0,3.06,0),Vector3(9.0,.24,8.6),"393f3b")
 	for x in [-3.55,-1.78,0.0,1.78,3.55]:
 		_batch_box(cellar_ceiling,Vector3(x,2.88,0),Vector3(.20,.22,8.35),"443e34")
-	# Sparse, ordinary storage makes the room worth reading before the unusual
-	# shelf is noticed. Every full-volume object receives matching collision.
+	# Armazenamento esparso e comum faz a sala valer a leitura antes que a estante
+	# incomum seja notada. Todo objeto de volume cheio recebe colisão correspondente.
 	_solid_box(cellar_root,"StorageRack",Vector3(3.45,.85,-1.7),Vector3(1.35,1.7,3.0),"",Vector3.ZERO,false)
 	_build_storage_rack()
 	_solid_box(cellar_root,"CellarCrates",Vector3(2.7,.48,2.75),Vector3(2.1,.96,1.45),"",Vector3.ZERO,false)
 	_build_crate_stack()
 	_solid_box(cellar_root,"CellarWorkbench",Vector3(-1.2,.55,3.45),Vector3(2.7,1.1,.9),"",Vector3.ZERO,false)
 	_build_radio_workbench()
-	# One short-range, shadowless utility lamp keeps the stair and shelf readable
-	# without adding overlapping light sources to the streamed exterior.
+	# Uma lâmpada utilitária de curto alcance e sem sombra mantém a escada e a estante legíveis
+	# sem acrescentar fontes de luz sobrepostas ao exterior em streaming.
 	_box(cellar_root,Vector3(.35,2.88,.25),Vector3(.70,.12,.24),"8a7757")
 	var utility_light := OmniLight3D.new()
 	utility_light.name = "CellarUtilityLight"
@@ -967,8 +967,8 @@ func _build_cellar() -> void:
 
 
 func _build_cellar_masonry() -> void:
-	# The load-bearing colliders remain flat; shallow blocks sit entirely inside
-	# their volume, so the old, uneven stone reads without changing circulation.
+	# Os colisores de apoio continuam planos; blocos rasos ficam inteiramente dentro
+	# do volume deles, então a pedra velha e irregular aparece sem mudar a circulação.
 	var stone_colors := ["5d6259","4b514b","66675d","535a52"]
 	for row in 5:
 		var y := .27+float(row)*.55
@@ -1038,11 +1038,11 @@ func _build_radio_workbench() -> void:
 
 
 func _build_cellar_shelf() -> void:
-	# Shelf is on the cellar's west wall, away from the stair landing. Its
-	# contents are geometry only; there are no explanatory labels.
+	# A estante fica na parede oeste do porão, longe do patamar da escada. O
+	# conteúdo dela é só geometria; não há rótulos explicativos.
 	shelf_pivot = Node3D.new()
 	shelf_pivot.name = "SecretShelfPivot"
-	# Opposite hinges leave the walking route clear when both panels are open.
+	# Dobradiças opostas deixam o caminho livre quando os dois painéis estão abertos.
 	shelf_pivot.position = Vector3(-4.12,0,1.12)
 	cellar_root.add_child(shelf_pivot)
 	_batch_box(shelf_pivot,Vector3(.11,1.18,-.97),Vector3(.28,2.36,1.94),"514536")
@@ -1072,7 +1072,7 @@ func _build_cellar_shelf() -> void:
 	for y in [.30,2.05]:
 		for z in [.18,1.76]: _batch_cylinder(tunnel_door,Vector3(.205,y,z),.035,.025,"9b8254",Vector3(0,0,PI*.5))
 	tunnel_door_body = _solid_box(tunnel_door,"TunnelDoor",Vector3(.06,1.18,.97),Vector3(.18,2.36,1.94),"",Vector3.ZERO,false)
-	# Functional keypad: ten small keys and two controls, with no decorative text.
+	# Teclado numérico funcional: dez teclas pequenas e dois controles, sem texto decorativo.
 	_box(cellar_root,KEYPAD_CENTER,Vector3(.18,.78,.56),"303937")
 	_batch_box(cellar_root,KEYPAD_CENTER+Vector3(.105,.31,0),Vector3(.025,.11,.40),"607d66")
 	for row in 4:

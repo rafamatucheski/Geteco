@@ -106,8 +106,8 @@ func _static_point_clear(point: Vector3) -> bool:
 	capsule.radius = .30
 	capsule.height = 1.7
 	query.shape = capsule
-	# Match FullSession.position_clear(point + Vector3.UP * .04): the shared
-	# admission query adds another .90 m to the authored floor point.
+	# Corresponde a FullSession.position_clear(point + Vector3.UP * .04): a consulta
+	# compartilhada de admissão soma mais .90 m ao ponto definido do piso.
 	query.transform = Transform3D(Basis.IDENTITY, point + Vector3.UP * .94)
 	query.collision_mask = 1
 	if not world.get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty(): return false

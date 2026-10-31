@@ -1,5 +1,5 @@
 extends RefCounted
-## Social memory is separate from crime evidence; calming never erases a report.
+## A memória social é separada da prova de crime; acalmar nunca apaga uma denúncia.
 const PERSONALITIES := ["friendly", "reserved", "nervous"]
 const MOODS := {"calm":"Tranquilo", "happy":"Contente", "talking":"Conversando", "annoyed":"Irritado",
 	"scared":"Assustado", "calling_police":"Chamando a polícia", "recovering":"Se acalmando"}

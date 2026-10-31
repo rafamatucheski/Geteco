@@ -216,8 +216,8 @@ static func query(point: Vector3, radius: float) -> Array:
 				if not is_instance_valid(chunk) or chunk.is_queued_for_deletion():
 					list.remove_at(index)
 					continue
-				# The chunk can outlive an editor-deleted prop or remain in the
-				# tree while retirement hides it. Neither is a visible obstacle.
+				# O chunk pode sobreviver a um prop apagado no editor ou continuar na
+				# árvore enquanto a aposentadoria o esconde. Nenhum dos dois é obstáculo visível.
 				if item.has("root"):
 					var source = item.root.get_ref()
 					if not is_instance_valid(source) or source.is_queued_for_deletion():
@@ -273,7 +273,7 @@ static func _hit(item: Dictionary, speed: float, direction: Vector3, director: N
 	flat = flat.normalized() if flat.length_squared() > 0.0001 else Vector3.FORWARD
 	var profile := spec(item)
 	var family: String = profile.family
-	# Repeated bumper contacts must not leave wobble tweens fighting the fall.
+	# Contatos repetidos de para-choque não podem deixar tweens de balanço brigando com a queda.
 	var wobble: Tween = item.get("wobble")
 	if wobble != null and wobble.is_valid():
 		wobble.kill()
@@ -623,8 +623,8 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 			bag.angular_velocity = _random_spin(clampf(speed * 0.5, 2.0, 7.0))
 		return
 	if mesh != null and mesh.has_meta("street_fracture_meshes"):
-		# Same spatial fracture as the beige boulders, with shared source shards.
-		# Scale, vertex colours and instance tint survive the MultiMesh hand-off.
+		# A mesma fratura espacial das pedras bege, com cacos de origem compartilhados.
+		# Escala, cores de vértice e tinta da instância sobrevivem à passagem para o MultiMesh.
 		var shards: Array = mesh.get_meta("street_fracture_meshes")
 		var material := _instance_material(item)
 		for index in shards.size():
@@ -1032,7 +1032,7 @@ static func _fade_post(item: Dictionary) -> void:
 	# O tombo simulado para aqui: some (ou é escondido para a recuperação) na pose em que está,
 	# inclusive apoiado num carro; continuar escreveria a instância já escondida.
 	item.fall_cancel = true
-	# Preserve the original lamp and its registration for delayed recovery.
+	# Preserva a luminária original e o registro dela para a recuperação atrasada.
 	if item.get("kind", "") == "lamp":
 		if item.has("multimesh"):
 			var hidden := Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO), Vector3.ZERO)
@@ -1048,7 +1048,7 @@ static func _fade_post(item: Dictionary) -> void:
 		return
 	var chunk = item.chunk.get_ref()
 	if not is_instance_valid(chunk): return
-	# Isolate just this fallen instance; fading a MultiMesh would hide intact posts.
+	# Isola só esta instância caída; fazer fade num MultiMesh esconderia postes intactos.
 	var remains := Node3D.new()
 	chunk.add_child(remains)
 	var parts: Array = [{"multimesh": item.multimesh, "index": item.index}]

@@ -1,9 +1,9 @@
 extends Node
-## Drivable yard forklifts for Vértice. They are ordinary `port_forklift`
-## vehicles (enter/drive like any car), parked in bays that keep the truck loop,
-## the dock row and the guard patrol clear. The fence already blocks the sides;
-## the open gate is closed to forklifts by a positional stop, not an invisible
-## collider: unmasked ray queries (shots, probes) would hit such a body.
+## Empilhadeiras dirigíveis do pátio da Vértice. São veículos `port_forklift` comuns
+## (entra/dirige como qualquer carro), estacionados em baias que deixam livres o circuito dos caminhões,
+## a fileira de docas e a patrulha dos guardas. A cerca já bloqueia as laterais;
+## o portão aberto é fechado às empilhadeiras por uma parada por posição, não por um colisor
+## invisível: consultas de raio sem máscara (tiros, sondas) acertariam um corpo assim.
 const GATE_STOP_Z := 74.5
 const BAYS := [
 	{"point":Vector3(-30,.12,40),"yaw":0.0},
@@ -51,14 +51,14 @@ func _driven(vehicle) -> bool:
 func _confine(vehicle) -> void:
 	var local: Vector3 = vehicle.global_position-company.global_position
 	if local.z > GATE_STOP_Z and local.z < GATE_STOP_Z+6 and absf(local.x) < 9:
-		# Gate line: stop at the threshold, whichever way the forklift faces.
+		# Linha do portão: para no limiar, para qualquer lado que a empilhadeira esteja virada.
 		var facing_out: bool = (-vehicle.global_basis.z).z*signf(vehicle.speed) > 0
 		if facing_out or local.z > GATE_STOP_Z+.4:
 			vehicle.speed = 0.0
 			vehicle.velocity = Vector3.ZERO
 			vehicle.global_position.z = company.global_position.z+GATE_STOP_Z
 		return
-	# Anything that still puts one outside (explosion, spawn fallback) returns it.
+	# Qualquer coisa que ainda ponha uma do lado de fora (explosão, fallback de spawn) a traz de volta.
 	if YARD.has_point(Vector2(local.x,local.z)) or local.y > 6: return
 	if _driven(vehicle): vehicle.speed = 0.0
 	var inside := Vector2(clampf(local.x,YARD.position.x+2,YARD.end.x-2),clampf(local.z,YARD.position.y+2,YARD.end.y-3))
@@ -68,7 +68,7 @@ func _confine(vehicle) -> void:
 func _spawn(slot: int) -> void:
 	var session = company.session
 	var id := "vertice_forklift_%02d"%slot
-	# Persistent work vehicles are restored by the generic fleet save; adopt it.
+	# Veículos de trabalho persistentes são restaurados pelo save genérico da frota; adota isso.
 	for existing in session.controller.vehicles:
 		if is_instance_valid(existing) and existing.vehicle_id == id:
 			vehicles[slot] = existing

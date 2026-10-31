@@ -1,6 +1,6 @@
 extends Node
-## Three authored shipments share the existing quay trucks and crane cargo.
-## Acceptance, handback and the economy receipt are separate explicit actions.
+## Três remessas definidas compartilham os caminhões de cais e a carga de guindaste existentes.
+## Aceite, devolução e o recibo da economia são ações explícitas separadas.
 const FLEET := preload("res://runtime/FleetState.gd")
 const PAYMENT := 300
 const AVAILABLE := 0
@@ -37,8 +37,8 @@ func _driver_action() -> Dictionary:
 	return {}
 
 func _claim_driver_load(index: int) -> bool:
-	# Boarding may already have selected the port truck. Never save it as the
-	# previous personal vehicle, nor clear the crime caused by its theft.
+	# O embarque pode já ter selecionado o caminhão do porto. Nunca o salva como o
+	# veículo pessoal anterior, nem limpa o crime causado pelo roubo dele.
 	previous_vehicle = session.controller.starting_vehicle().duplicate(true)
 	if previous_vehicle.get("vehicle_id","").begins_with("south_port_cargo_truck_"): previous_vehicle.clear()
 	_previous_ref = null
@@ -77,8 +77,8 @@ func _reachable(vehicle: CharacterBody3D) -> bool:
 	if not is_instance_valid(vehicle) or vehicle.health <= 0 or vehicle.is_queued_for_deletion(): return false
 	if not vehicle.is_visible_in_tree() or vehicle.has_meta("awaiting_ground") or absf(vehicle.speed) > .25: return false
 	if vehicle.global_position.distance_squared_to(session.world.player.global_position) > 36.0: return false
-	# Use the same door and obstruction check as boarding, so an offer cannot
-	# appear across a wall, on the other side of a truck or without floor.
+	# Usa a mesma checagem de porta e obstrução do embarque, para que uma oferta não possa
+	# aparecer do outro lado de uma parede, do outro lado de um caminhão ou sem piso.
 	var option: Dictionary = session.world.driving._entry_option(true)
 	return option.get("car") == vehicle and vehicle.is_on_floor()
 
@@ -121,7 +121,7 @@ func perform(target: String) -> bool:
 	vehicle.traffic = false
 	vehicle.brake_input = true
 	vehicle.set_meta("port_freight_claim", active_bay)
-	# This is an authorized handover of a stopped, intact work vehicle.
+	# Esta é uma entrega autorizada de um veículo de trabalho parado e intacto.
 	vehicle.remove_meta("crash_was_traffic")
 	session.save_game()
 	session.show_message("Frete aceito. Leve a carga ao depósito e devolva o caminhão.")
@@ -146,9 +146,9 @@ func freight_status() -> Dictionary:
 
 func _can_deliver(vehicle) -> bool:
 	if cargo.has_method("start_journey") and not cargo.depot.business_open(): return false
-	# An accepted shipment remains authorized after leaving the port perimeter.
-	# The new destination is outside that perimeter; its visit flag is revoked
-	# normally by security when the player drives out of the checkpoint.
+	# Uma remessa aceita continua autorizada depois de sair do perímetro do porto.
+	# O novo destino fica fora desse perímetro; a flag de visita é revogada
+	# normalmente pela segurança quando o jogador sai dirigindo pelo posto.
 	if not _reachable(vehicle) or vehicle.controlled or active_bay < 0: return false
 	if vehicle.vehicle_id != _vehicle_id(active_bay) or not cargo.work_trucks[active_bay].loaded: return false
 	var visual = cargo.cranes[active_bay].visual
@@ -179,8 +179,8 @@ func _deliver() -> bool:
 		vehicle.traffic = false
 		vehicle.brake_input = true
 		cargo.start_journey(index,true)
-	# Handback also releases the player's saved selection. Otherwise the generic
-	# fleet restore and the port NPC spawner would create the same truck twice.
+	# A devolução também libera a seleção salva do jogador. Senão a restauração
+	# genérica da frota e o spawner de NPCs do porto criariam o mesmo caminhão duas vezes.
 	if session.world.driving.car == vehicle: session.world.driving.car = null
 	var saved: Array = session.state.world_state.get("vehicles", [])
 	session.state.world_state.vehicles = saved.filter(func(record): return record.get("vehicle_id", "") != _vehicle_id(index))
@@ -213,8 +213,8 @@ func _truck_removed(index: int) -> void:
 	pending_truck.clear()
 	_return_pending = false
 	if not is_inside_tree() or session.world.is_queued_for_deletion() or not session.ready_for_play: return
-	# Driving retires its selected FleetState during the same tree_exiting
-	# signal. Save after those listeners, never an alive copy of a queued body.
+	# Driving aposenta o FleetState selecionado durante o mesmo sinal tree_exiting.
+	# Salva depois desses ouvintes, nunca uma cópia viva de um corpo na fila.
 	_save_after_removal.call_deferred(index)
 	session.show_message("Frete perdido. Caminhão destruído ou removido.")
 
@@ -232,7 +232,7 @@ func _release_retired_selection(index: int) -> void:
 	session.state.world_state.vehicles = saved.filter(func(record): return record.get("vehicle_id", "") != _vehicle_id(index))
 
 func _refresh_previous() -> void:
-	if _previous_ref == null: return # A previous parked car need not be materialized after loading.
+	if _previous_ref == null: return # Um carro estacionado anterior não precisa ser materializado depois do carregamento.
 	var vehicle = _previous_ref.get_ref()
 	if is_instance_valid(vehicle) and vehicle.is_queued_for_deletion() and vehicle.get_meta("distance_despawn", false):
 		_previous_exiting(vehicle)
@@ -248,8 +248,8 @@ func _capture_supported_previous(vehicle: CharacterBody3D) -> void:
 	var point := vehicle.global_position
 	var ground := PhysicsRayQueryParameters3D.create(point + Vector3.UP*.12, point - Vector3.UP*.3, 1)
 	var support: Dictionary = vehicle.get_world_3d().direct_space_state.intersect_ray(ground) if vehicle.is_inside_tree() else {}
-	# Residency can drop the old floor a few frames before distance cleanup.
-	# Keep the last supported transform, while preserving current damage/equipment.
+	# A residência pode largar o piso antigo alguns quadros antes da limpeza por distância.
+	# Mantém a última transform apoiada, preservando o dano/equipamento atual.
 	if not previous_vehicle.is_empty() and (support.is_empty() or absf(float(support.position.y) - point.y) > .15):
 		current.position = previous_vehicle.position.duplicate()
 		current.yaw = previous_vehicle.yaw
@@ -264,8 +264,8 @@ func _watch_previous(vehicle) -> void:
 func _previous_exiting(vehicle: CharacterBody3D) -> void:
 	if _previous_ref == null or _previous_ref.get_ref() != vehicle: return
 	if vehicle.get_meta("distance_despawn", false):
-		# Streaming a parked car is not destroying it. Retain its last state,
-		# without leaving physics running on a distant, unloaded floor.
+		# Tirar do streaming um carro estacionado não é destruí-lo. Mantém o último estado dele,
+		# sem deixar a física rodando num piso distante e descarregado.
 		_capture_supported_previous(vehicle)
 		_previous_ref = null
 	elif vehicle.is_queued_for_deletion() and not session.world.is_queued_for_deletion():
@@ -278,8 +278,8 @@ func _restore_previous_selection() -> void:
 	if previous_vehicle.is_empty(): return
 	var selected = session.world.driving.car
 	var saved: Array = session.state.world_state.get("vehicles", [])
-	# A different car chosen during the delivery belongs to the player too.
-	# Returning a loan must never roll that new selection back.
+	# Um carro diferente escolhido durante a entrega também pertence ao jogador.
+	# Devolver um empréstimo nunca pode desfazer essa nova seleção.
 	var different_selection: bool = is_instance_valid(selected) and selected.vehicle_id != previous_vehicle.get("vehicle_id", "")
 	var different_save: bool = saved.any(func(record): return record.get("vehicle_id", "") != previous_vehicle.get("vehicle_id", ""))
 	if not different_selection and not different_save:
@@ -315,8 +315,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	for index in jobs.size():
 		if _paid(index): jobs[index] = DELIVERED
 	if active_bay >= 0:
-		# A receipt is authoritative if an old world marker is replayed after
-		# payment. Reconciliation must never pay again or respawn that cargo.
+		# Um recibo é a autoridade se um marcador antigo do mundo for reproduzido depois
+		# do pagamento. A reconciliação nunca pode pagar de novo nem recriar essa carga.
 		if _paid(active_bay):
 			jobs[active_bay] = DELIVERED
 			active_bay = -1

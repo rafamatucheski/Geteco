@@ -1,6 +1,6 @@
 extends CharacterBody3D
-## Lightweight tunnel wildlife. It follows authored points and only simulates
-## while the secret tunnel is occupied; no navigation map or per-frame raycasts.
+## Fauna leve do túnel. Segue pontos definidos e só simula
+## enquanto o túnel secreto está ocupado; sem mapa de navegação nem raycasts por quadro.
 
 var route: Array[Vector3] = []
 var player: Node3D

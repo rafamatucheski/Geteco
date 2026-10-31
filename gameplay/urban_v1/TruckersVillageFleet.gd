@@ -1,5 +1,5 @@
 extends Node
-## Authored parked vehicles, restored by stable id and suspended away from play.
+## Veículos estacionados definidos, restaurados por id estável e suspensos longe do jogo.
 const ORIGIN := Vector3(-330,0,108)
 const SPOTS := [
 	["ranch_single",Vector3(-55,.12,-29),.28,"867b56"],
@@ -85,7 +85,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	for id in cars:
 		var car = cars[id]
 		if not is_instance_valid(car) or not saved.has(id): continue
-		# ProductionWorld restores the selected vehicle; never duplicate it.
+		# ProductionWorld restaura o veículo selecionado; nunca o duplica.
 		if car==session.world.driving.car: continue
 		car.queue_free()
 	cars.clear()

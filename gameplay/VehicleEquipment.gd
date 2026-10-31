@@ -31,7 +31,7 @@ static var lowrider_lights_follow := OS.get_environment("GETECO_LOWRIDER_LIGHT_F
 static var _shadow_quality_frame := -1
 static var _shadow_quality := 1
 var _lamp_shadow_state := -1
-## Nearby traffic uses real projectors under the shared light budget.
+## O trânsito próximo usa projetores reais dentro do orçamento compartilhado de luz.
 static var npc_beam_budget := 2
 ## Chave global do acendimento noturno automático (medição A/B e futura opção).
 static var night_auto_enabled := true
@@ -87,8 +87,8 @@ func configure(vehicle: CharacterBody3D, scene: Node) -> void:
 	car = vehicle
 	world = scene
 
-## Workshop inspection exposes the lens finish while the physical service brake
-## keeps holding the car. This changes neither brake input nor other lighting.
+## A inspeção na oficina mostra o acabamento da lente enquanto o freio de serviço físico
+## continua segurando o carro. Isso não muda a entrada de freio nem outra iluminação.
 func set_tail_lens_preview(enabled: bool) -> void:
 	if _tail_lens_preview == enabled: return
 	_tail_lens_preview = enabled
@@ -110,11 +110,11 @@ func _ready() -> void:
 		mounts.clear()
 		for mount: Vector3 in car.visual.get_meta("headlight_mounts"):
 			mounts.append(car.to_local(car.visual.to_global(mount)))
-	# Some original procedural meshes have no material tags: derive mount from hull.
+	# Algumas malhas procedurais originais não têm tags de material: deriva a montagem do casco.
 	if mounts.is_empty():
 		mounts.assign([Vector3(-car.half_width * .7, .8, -car.half_length), Vector3(car.half_width * .7, .8, -car.half_length)])
 	profile = PROFILES.for_archetype(car.archetype)
-	# One projector per side even when the original lens consists of several meshes.
+	# Um projetor por lado mesmo quando a lente original é feita de várias malhas.
 	# Moto: um projetor só, no centro.
 	for side in ([0] if profile.single else [-1, 1]):
 		var center := Vector3.ZERO
@@ -279,7 +279,7 @@ func _bind_lens(part: MeshInstance3D, surface: int, materials: Dictionary, mount
 	if key in ["bar_left", "bar_right"] and car.archetype not in ["police_cruiser", "police_suv", "police_transport", "bike_police", "medic_box", "rescue_pumper"]: return
 	if key not in ["bar_left","bar_right"] and not SURFACES.is_headlight_lens(key) and not SURFACES.is_tail_lens(key):
 		if key != "" or not original.emission_enabled: return
-	# Flattened ArrayMeshes keep vertices away from their node origin.
+	# ArrayMeshes achatadas mantêm os vértices longe da origem do nó.
 	var local: Vector3 = car.to_local(part.to_global(SURFACES.center(part, surface)))
 	if key not in ["bar_left", "bar_right"]: key = _lens_role(key, original, local)
 	if key == "": return
@@ -314,8 +314,8 @@ func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	var placement := Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-7)), mount + Vector3(0, 0, -.06))
 	light.transform = car.visual.transform.affine_inverse() * placement if on_visual else placement
 	light.light_color = profile.color
-	# Let the actual beam reveal road texture and vertical surfaces. The old
-	# emissive pool flattened the road while the physical source was barely visible.
+	# Deixa o facho real revelar a textura da via e as superfícies verticais. O antigo
+	# poço emissivo achatava a via enquanto a fonte física mal aparecia.
 	light.light_energy = energy * 2.2
 	if LIGHT_BUDGET.enabled: light.set_meta("budget_energy", light.light_energy)
 	light.spot_range = float(profile.range)
@@ -323,8 +323,8 @@ func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	light.spot_attenuation = .7
 	light.spot_angle_attenuation = 1.5
 	light.light_specular = .35
-	# Every enabled projector must stop at opaque bodywork, including race
-	# opponents and parked theft alarms. Hidden projectors do not render shadows.
+	# Todo projetor ligado precisa parar na lataria opaca, incluindo adversários
+	# de corrida e alarmes de furto estacionados. Projetores escondidos não renderizam sombras.
 	light.shadow_enabled = true
 	light.distance_fade_enabled = true
 	light.distance_fade_begin = 35.0
@@ -419,7 +419,7 @@ func set_input_enabled(value: bool) -> void:
 func handle_input(event: InputEvent, allowed: bool = true) -> bool:
 	if not allowed or not can_operate(): return false
 	if event.is_action_pressed("headlights", false): return toggle_headlights()
-	# Shared R3 binds siren on emergency vehicles and horn on ordinary vehicles.
+	# O R3 compartilhado liga a sirene em veículos de emergência e a buzina nos comuns.
 	if not beacons.is_empty() and event.is_action_pressed("siren_toggle", false): return toggle_siren()
 	# Dentro do carro a tecla da lanterna da arma (G) não serve para nada: buzina também.
 	if event.is_action_pressed("horn", false) or event.is_action_pressed("weapon_flashlight", false): return honk()
@@ -488,8 +488,8 @@ func _refresh(force_budget: bool = true) -> void:
 	if auto_lit and not LIGHT_BUDGET.enabled: _npc_beams[get_instance_id()] = true
 	# Quem toma um carro aceso à noite continua com o farol ligado.
 	if was_auto and not auto_lit and occupied and not car.external_input: headlights_on = true
-	# Drag owns two physical cars without assigning the rival to player controls.
-	# Its scoped marker is removed by race cleanup; normal traffic keeps its budget.
+	# O drag é dono de dois carros físicos sem atribuir o rival aos controles do jogador.
+	# O marcador com escopo é removido pela limpeza da corrida; o trânsito normal mantém o orçamento.
 	var race_lit: bool = car.has_meta("desert_drag_physics") and car.health>0
 	var driver_lit: bool = (headlights_on and (occupied or race_lit) and (not npc_driven() or race_lit)) or alarm_blink
 	var lit: bool = driver_lit or auto_lit
@@ -503,8 +503,8 @@ func _refresh(force_budget: bool = true) -> void:
 			var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
 			item.lamp.visible = driver_lit and not broken
 		if is_instance_valid(npc_beam): npc_beam.visible = auto_lit and not driver_lit and _npc_beam_allowed() and not (broken_left and broken_right)
-	# Lenses change only with power/damage. Avoid resending the same material
-	# parameters for every parked/traffic car on every rendered frame.
+	# As lentes só mudam com energia/dano. Evita reenviar os mesmos parâmetros de material
+	# para cada carro estacionado/do trânsito em cada quadro renderizado.
 	var lens_state := int(lit) | (int(broken_left) << 1) | (int(broken_right) << 2)
 	if lens_state != _lens_state:
 		_lens_state = lens_state
@@ -605,9 +605,9 @@ func _budget_request() -> Dictionary:
 	@warning_ignore("integer_division")
 	var alarm_blink: bool = alarm_remaining > 0 and int(Time.get_ticks_msec() / 167) % 2 == 0
 	var race: bool = car.has_meta("desert_drag_physics")
-	# The side camera still shows both racers beyond the ordinary 25 m traffic
-	# radius. Keep only their existing headlights eligible while the beam is framed;
-	# race cleanup removes the marker and changing camera restores normal traffic.
+	# A câmera lateral ainda mostra os dois corredores além do raio comum de 25 m do
+	# trânsito. Mantém elegíveis só os faróis já existentes deles enquanto o facho está enquadrado;
+	# a limpeza da corrida remove o marcador e trocar de câmera restaura o trânsito normal.
 	result.race_headlights = race and is_instance_valid(camera) and camera.name == &"DesertDragSideCamera" and _beam_framed(camera)
 	var driver: bool = ((headlights_on or (auto_lit and player_driven)) and (occupied or race) and (not npc_driven() or race)) or alarm_blink
 	if driver:

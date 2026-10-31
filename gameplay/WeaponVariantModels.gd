@@ -1,5 +1,5 @@
 extends RefCounted
-## Authored silhouettes share grip coordinates with their family, not scaled copies.
+## Silhuetas feitas à mão compartilham as coordenadas de empunhadura com a família, não cópias escaladas.
 const GEO = preload("res://gameplay/WeaponPresentation3D.gd")
 const FINISH = preload("res://gameplay/WeaponFinish3D.gd")
 const IDS := ["pistol_suppressed", "smg_compact", "smg_tactical", "shotgun_auto"]
@@ -39,7 +39,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 		GEO._section_box(root,"ForeEnd",Vector3(0,-.011,-.15),Vector3(.054,.052,.10 if compact else .15),rubber if compact else olive,.008)
 		GEO._cylinder(root,"Barrel",Vector3(0,.015,(front-.17)*.5),.015,absf(front+.17),steel,Vector3(90,0,0))
 		GEO._cylinder(root,"Bore",Vector3(0,.015,front-.002),.007,.002,rubber,Vector3(90,0,0))
-		# Detachable magazine remains a separate node for the real reload animation.
+		# O carregador destacável continua num nó separado para a animação real de recarga.
 		var mag := Node3D.new()
 		mag.name = "CurvedMagazine"
 		root.add_child(mag)
@@ -51,7 +51,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 		root.add_child(bolt)
 		GEO._box(bolt,"ChargingHandle",Vector3(.038,.026,-.04),Vector3(.025,.012,.017),steel)
 		if compact:
-			# Short folding stock: the shoulder endpoint stays compatible with the SMG rig.
+			# Coronha dobrável curta: a ponta do ombro continua compatível com o rig da SMG.
 			for x in [-.019,.019]: GEO._cylinder(root,"FoldingStock",Vector3(x,.03,.12),.004,.13,steel,Vector3(90,0,0))
 			GEO._box(root,"StockPlate",Vector3(0,.005,.19),Vector3(.044,.075,.01),dark)
 			GEO._box(root,"TopChargingBlock",Vector3(0,.064,-.025),Vector3(.032,.026,.03),steel)

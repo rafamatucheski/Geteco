@@ -68,8 +68,8 @@ func _stream(relative: String) -> AudioStream:
 	_streams[relative] = stream
 	return stream
 
-## Every successful threaded request owns a loader handle, even when no line is spoken.
-## Harvest completed work while idle; never block an active gameplay frame on decoding.
+## Todo pedido com thread bem-sucedido é dono de um handle do loader, mesmo quando nenhuma fala é dita.
+## Colhe o trabalho concluído quando ocioso; nunca bloqueia um quadro de jogo ativo na decodificação.
 func _collect_loaded() -> void:
 	var collected := 0
 	for relative in _requested.keys():
@@ -139,9 +139,9 @@ func stop() -> void:
 
 func _exit_tree() -> void:
 	stop()
-	# A map can unload immediately after _ready, before the next collection tick.
-	# Complete only this owner's finite requested audio bank; get releases its loader
-	# handle. This may wait for outstanding decoding at teardown, never during playback.
+	# Um mapa pode descarregar logo depois de _ready, antes do próximo tick de coleta.
+	# Conclui só o banco de áudio finito pedido por este dono; get libera o handle do
+	# loader. Isso pode esperar decodificação pendente na desmontagem, nunca durante a reprodução.
 	for path: String in _requested.values():
 		var status := ResourceLoader.load_threaded_get_status(path)
 		if status != ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:

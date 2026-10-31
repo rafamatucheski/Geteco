@@ -1,5 +1,5 @@
 extends RefCounted
-## Reuses the native van chassis, adding the tactical transport's fixed fittings.
+## Reaproveita o chassi nativo da van, acrescentando os acessórios fixos do transporte tático.
 ##
 ## Playtest 29/10: letreiro e faixa "voando" ~18 cm fora da lataria. Eles estavam em x = ±1,166/1,18,
 ## medidos na van antiga; a frota redesenhada (tools/fleet_fixups/build_service_batch.gd, tactical())
@@ -23,7 +23,7 @@ static func decorate(root: Node3D) -> void:
 		label.position = Vector3(side*MARK_X,1.52,.55)
 		label.rotation.y = side*PI*.5
 		root.add_child(label)
-	# Front window protection, above the driver's sightline and clear of wheels.
+	# Proteção da janela dianteira, acima da linha de visão do motorista e longe das rodas.
 	for x in [-.62,0,.62]:
 		_box(root,"WindshieldGuard",Vector3(x,1.72,-1.66),Vector3(.025,.55,.035),Color("333b43"))
 

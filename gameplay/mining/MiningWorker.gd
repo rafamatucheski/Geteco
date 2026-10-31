@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## Civilian mine crew. The site owns one physics/pose clock for the six workers.
+## Equipe civil da mina. O local é dono de um relógio de física/pose para os seis trabalhadores.
 signal died(actor: CharacterBody3D)
 const FALL := preload("res://gameplay/CharacterFallPresentation3D.gd")
 const AUDIO := preload("res://gameplay/CombatAudio.gd")
@@ -40,8 +40,8 @@ func notice(origin: Vector3, radius := 30.0) -> void:
 
 func tick(delta: float) -> void:
 	if dead or not is_instance_valid(visual): return
-	# Region admission precedes streamed collision installation on first visit.
-	# Keep the authored floor station until that support actually exists.
+	# Na primeira visita, a admissão da região vem antes da instalação da colisão em streaming.
+	# Mantém a estação definida no piso até esse apoio existir de fato.
 	if not _ground_ready:
 		var support := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP * .3, global_position - Vector3.UP * .4, 1)
 		if get_world_3d().direct_space_state.intersect_ray(support).is_empty(): return
@@ -56,7 +56,7 @@ func tick(delta: float) -> void:
 		if away.length_squared() < .01: away = Vector3.RIGHT
 		destination = home + away.normalized() * 3.5
 	elif fposmod(phase, 18.0) > 11.0:
-		# Leave the tool for a short inspection of the clear side of the station.
+		# Larga a ferramenta para uma inspeção curta do lado livre da estação.
 		destination += Vector3(-1.1, 0, -.55).rotated(Vector3.UP, home_yaw)
 	var offset := destination - global_position
 	offset.y = 0

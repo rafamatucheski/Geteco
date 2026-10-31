@@ -1,6 +1,6 @@
 extends Node3D
-## Reuses authored coupe door leaves, or splits legacy bodies at their seams.
-## Only the vehicle being entered is prepared; traffic keeps shared meshes.
+## Reaproveita as folhas de porta feitas para o cupê ou corta carrocerias legadas nas emendas.
+## Só o veículo em que se está entrando é preparado; o trânsito mantém as malhas compartilhadas.
 
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 var hinges: Dictionary = {}
@@ -33,7 +33,7 @@ func configure(vehicle: CharacterBody3D) -> bool:
 		var c: Vector3 = vertices[indices[i + 2]]
 		var center := (a + b + c) / 3.0
 		var side := -1 if center.x < 0.0 else 1
-		# Lower sidewall strips between the original A-pillar and rear shut line.
+		# Faixas inferiores da lateral entre a coluna A original e a linha de fechamento traseira.
 		var normal := (b - a).cross(c - a).normalized()
 		var door_face := absf(center.x) > .76 and absf(normal.x) > .60 \
 			and center.y >= .24 and center.y <= .92 and center.z >= -.70 and center.z <= .81
@@ -76,7 +76,7 @@ func configure(vehicle: CharacterBody3D) -> bool:
 	if removed[-1] != 2 or removed[1] != 2: return false
 	for side in [-1, 1]:
 		var s := float(side)
-		# Keep the rear quarter pane fixed. The front glass belongs to the door.
+		# Mantém fixo o vidro do quarto traseiro. O vidro da frente pertence à porta.
 		_add_quad(glass_tool, Vector3(s*.60, 1.25, .24), Vector3(s*.60, 1.25, .64),
 			Vector3(s*.78, .82, 1.17), Vector3(s*.765, .815, .32))
 	glass.mesh = glass_tool.commit()
@@ -90,7 +90,7 @@ func configure(vehicle: CharacterBody3D) -> bool:
 	if glass_material == null and glass.mesh.get_surface_count() > 0:
 		glass_material = glass.get_active_material(0) as StandardMaterial3D
 	var moving_glass: StandardMaterial3D = glass_material.duplicate() as StandardMaterial3D if glass_material != null else StandardMaterial3D.new()
-	# The opened pane needs enough sky reflection to read against dark asphalt.
+	# O vidro aberto precisa de reflexo de céu suficiente para se destacar no asfalto escuro.
 	moving_glass.albedo_color = Color("35566a")
 	moving_glass.metallic = .3
 	moving_glass.roughness = .18
@@ -130,8 +130,8 @@ func configure(vehicle: CharacterBody3D) -> bool:
 		hinge.add_child(handle)
 	return true
 
-## Prepared leaves keep the exact shared mesh, UVs and per-vehicle paint materials.
-## Their source transforms are in model space; reparenting preserves the closed pose.
+## Folhas preparadas mantêm exatamente a malha compartilhada, os UVs e os materiais de pintura por veículo.
+## As transformações de origem estão no espaço do modelo; trocar o pai preserva a pose fechada.
 func _configure_authored(vehicle: CharacterBody3D) -> bool:
 	var leaves: Dictionary = {}
 	for child in vehicle.visual.get_children():
@@ -151,7 +151,7 @@ func _configure_authored(vehicle: CharacterBody3D) -> bool:
 		var roles: Array[String] = []
 		for surface in leaf.mesh.get_surface_count():
 			roles.append(preload("res://runtime/VehicleSurfaceRoles.gd").key(leaf, surface))
-		# Break-in presentation queries door-specific keys for the glass contact.
+		# A apresentação de arrombamento consulta chaves específicas da porta para o contato com o vidro.
 		leaf.set_meta("door_surface_material_keys", roles)
 		leaf.reparent(hinge, true)
 		leaf.name = "Skin"

@@ -59,8 +59,8 @@ func configure(owner_vehicle: CharacterBody3D, deferred := false) -> void:
 	_job = BUILDER.begin(vehicle.visual, spec, float(spec.get("x", -1.0)))  # x da tabela evita a varredura de medição
 	if not deferred: finish_now()
 
-## The new civilian models ship complete two-sided leaves. Reuse the shared
-## geometry and instance-local paint instead of cutting the body at boarding.
+## Os modelos civis novos já vêm com folhas completas de duas faces. Reaproveita a geometria
+## compartilhada e a pintura local da instância em vez de cortar a carroceria no embarque.
 func _configure_authored_civilian() -> bool:
 	if vehicle.archetype not in preload("res://runtime/NewCivilianFleet.gd").IDS and vehicle.archetype not in preload("res://runtime/SportFleet.gd").IDS and vehicle.archetype not in preload("res://runtime/MuscleFleet.gd").IDS: return false
 	var leaves := {}

@@ -13,8 +13,8 @@ const MODELS := {
 	"desert_bison": {"label":"Bison D", "body":"pickup", "color":"a39273", "size":[2.04,1.83,5.20], "mass":1.98, "torque_nm":440.0, "redline":4400.0, "gears":[3.50,2.12,1.36,1.0,.76,.62], "final_drive":3.45, "wheel_radius":.39, "traction":.89, "drag_area":1.02, "drivetrain":"4x4", "engine_family":"diesel", "price":37000, "turn_speed":2.15, "factory_turbo":true},
 	"desert_mirage": {"label":"Mirage R", "body":"coupe", "color":"42705b", "size":[1.91,1.23,4.43], "mass":1.30, "torque_nm":350.0, "redline":7800.0, "gears":[3.15,2.08,1.54,1.20,.98,.81], "final_drive":3.70, "wheel_radius":.33, "traction":.96, "drag_area":.57, "drivetrain":"rwd", "engine_family":"vq35", "price":68000, "turn_speed":3.20}
 }
-## Race editions share their donor's mechanics, save format and collision bounds.
-## Their authored identity is the body kit, wheels, paint, livery and night lighting.
+## As edições de corrida compartilham a mecânica, o formato de save e os limites de colisão do doador.
+## A identidade definida delas é o kit de carroceria, as rodas, a pintura, a pintura decorativa e a iluminação noturna.
 const EDITIONS := {
 	"desert_faisca_rally":{"base_id":"desert_faisca","label":"Faísca RX","color":"183853","style":"rally","livery":"rally","livery_color":"3be0df","livery_secondary":"cde765","race_number":27,"neon_color":"3be0df","neon_strength":1.0},
 	"desert_coyote_drag":{"base_id":"desert_coyote","label":"Coyote 440 Drag","color":"492838","style":"drag","livery":"drag","livery_color":"ff783c","livery_secondary":"f3e3c0","race_number":44,"neon_color":"ff783c","neon_strength":1.0},

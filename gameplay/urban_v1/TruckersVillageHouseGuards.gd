@@ -1,6 +1,6 @@
 extends Node
-## Two residents per home, created on first approach. Only one home's pair is
-## active at a time; all other rigs and bodies sleep behind their closed roofs.
+## Dois moradores por casa, criados na primeira aproximação. Só o par de uma casa fica
+## ativo por vez; todos os outros rigs e corpos dormem atrás dos telhados fechados.
 const RESIDENT := preload("res://gameplay/urban_v1/TruckersVillageResident.gd")
 var manager
 var homes
@@ -96,7 +96,7 @@ func snapshot() -> Dictionary:
 func restore_snapshot(data: Dictionary) -> bool:
 	if not validate_snapshot(data): return false
 	saved_health=data.health.duplicate(true)
-	# Rebuild on next approach instead of reviving a fallen rig in-place.
+	# Reconstrói na próxima aproximação em vez de reviver um rig caído no lugar.
 	for actors in pairs.values():
 		for actor in actors: actor.free()
 	pairs.clear()

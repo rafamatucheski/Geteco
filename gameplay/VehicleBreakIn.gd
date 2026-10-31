@@ -17,7 +17,7 @@ static func required(car: CharacterBody3D) -> bool:
 	if not is_instance_valid(car) or not car.get_meta("vehicle_locked", false): return false
 	if not car.get_meta("ambient_parked", false) or car.traffic or car.controlled or car.external_input: return false
 	if car.get_meta("dispatch_unit", false) or car.get_meta("police_locked", false): return false
-	if car.archetype in ["beach_cabriolet", "porto_rosso"]: return false # Open cabins have no closed side pane to break.
+	if car.archetype in ["beach_cabriolet", "porto_rosso"]: return false # Cabines abertas não têm vidro lateral fechado para quebrar.
 	if car.get_meta("lockpick_handler", Callable()).is_valid(): return false
 	return car.boarding_class() in ["car", "tall"] and car.health > 0.0
 
@@ -53,16 +53,16 @@ static func closed_layout(car: CharacterBody3D, side: int) -> Dictionary:
 					pane_center += car.to_local(part.to_global(vertex))
 					pane_vertices += 1
 	if pane_vertices > 0: grip = pane_center / float(pane_vertices)
-	# The ordinary boarding stand is behind the OPEN door's sweep. A locked door
-	# needs its own contact point and a stance beside the CLOSED front window.
-	# Dante's capsule radius is .27 m: keep a centimetre outside the hull while
-	# close enough to reach an inward-sloping pane without stretching the rig.
+	# A posição normal de embarque fica atrás do arco da porta ABERTA. Uma porta trancada
+	# precisa do próprio ponto de contato e de uma postura ao lado do vidro dianteiro FECHADO.
+	# O raio da cápsula do Dante é .27 m: fica um centímetro fora do casco e ao mesmo tempo
+	# perto o bastante para alcançar um vidro inclinado para dentro sem esticar o rig.
 	var stand := Vector3(float(side) * maxf(car.half_width + .28, absf(grip.x) + .34), .04, grip.z - .18)
 	return {"grip": grip, "stand": stand}
 
 func pose(actor: CharacterBody3D, car: CharacterBody3D, side: int, layout: Dictionary, t: float) -> void:
 	var target: Vector3 = car.to_global(layout.grip)
-	# The presentation is deliberately abstract: reach, gesture, entry. No minigame.
+	# A apresentação é abstrata de propósito: alcançar, gesto, entrada. Sem minigame.
 	var heading := target - actor.global_position
 	actor.visual.rotation.y = atan2(-heading.x, -heading.z)
 	if not actor._idle_pose.is_empty(): actor._apply_pose(actor._idle_pose)
@@ -99,8 +99,8 @@ func pose(actor: CharacterBody3D, car: CharacterBody3D, side: int, layout: Dicti
 		tool.global_rotation = Vector3(.12 * sin(t * TAU * 3.0), car.global_rotation.y, -.12 * sign_side)
 
 func _reach_with_torso(actor: CharacterBody3D, working_side: String, hand: Vector3, sign_side: float, weight: float) -> void:
-	# A sloped coupe pane is inside the body skin, below the shoulder. Keep the
-	# feet and authored limb lengths fixed; bend the lumbar/chest only as needed.
+	# O vidro inclinado de um cupê fica dentro da pele da carroceria, abaixo do ombro. Mantém
+	# os pés e os comprimentos de membro definidos fixos; dobra lombar/peito só o necessário.
 	var lean := 0.0
 	var maximum := .78 * weight
 	var skeleton: Skeleton3D = actor.skeleton
@@ -143,7 +143,7 @@ static func start_alarm(car: CharacterBody3D) -> void:
 	if car.has_node("EntryAlarm"): return
 	var sound := _play(car, AUDIO.alarm_stream(), "EntryAlarm", -15.0)
 	car.set_meta("entry_alarm_triggered", true)
-	# Scene pause pauses this timer and the sound together; deleting the car owns cleanup.
+	# A pausa da cena pausa este timer e o som juntos; apagar o carro é dono da limpeza.
 	var timer := Timer.new()
 	timer.one_shot = true
 	timer.wait_time = ALARM_SECONDS
@@ -178,7 +178,7 @@ static func _break_window(car: CharacterBody3D, side: int) -> void:
 		for surface in keys.size():
 			if "glass" in str(keys[surface]) or "window" in str(keys[surface]):
 				part.set_surface_override_material(surface, _missing_glass)
-		# The original coupe's hand-authored pane is a separate, double-sided sheet.
+		# O vidro feito à mão do cupê original é uma lâmina separada, de duas faces.
 		if keys.is_empty() and part.material_override is BaseMaterial3D:
 			var material := part.material_override as BaseMaterial3D
 			if material.cull_mode == BaseMaterial3D.CULL_DISABLED: part.hide()

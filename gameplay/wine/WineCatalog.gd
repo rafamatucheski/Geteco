@@ -1,6 +1,6 @@
 extends RefCounted
-## Product names/origins: Curitiba Cellar public catalogue, checked 2026-10-07.
-## Prices, healing, servings and intoxication are fictional game rules.
+## Nomes/origens dos produtos: catálogo público da Curitiba Cellar, conferido em 2026-10-07.
+## Preços, cura, doses e embriaguez são regras fictícias do jogo.
 const SERVINGS := 3
 const ORDER := ["zacharias_nemea", "zacharias_malagousia", "ag_chardonnay", "ag_festividad", "medeiros_private", "medeiros_rose", "ancla_cabernet", "ancla_merlot"]
 const COUNTRIES := ["Grécia", "Brasil", "Portugal", "Chile"]

@@ -98,7 +98,7 @@ const RECYCLE_STUCK_SECONDS := 24.0
 # --- Limites próprios da V2 (nenhum tem equivalente na V1) ---------------------
 ## Teto absoluto de veículos de despacho vivos, somando todos os serviços.
 const MAX_UNITS := 11
-## Absolute cap; FOOT_LIMIT scales the actual response with wanted level.
+## Limite absoluto; FOOT_LIMIT escala a resposta real com o nível de procurado.
 const MAX_FOOT_OFFICERS := 16
 ## ProductionWorld remove veículos ambiente além de 145 m; suspendemos um pouco antes.
 const SUSPEND_DISTANCE := 130.0
@@ -174,8 +174,8 @@ static func speed_cap(variant: String) -> float:
 	if variant == "motorcycle": return SPEED_MOTORCYCLE
 	return SPEED_FAST if variant == "interceptor" else SPEED_PATROL
 
-## New special vehicles share the existing live-unit budget. The first response
-## remains a full patrol/tactical crew; motorcycles and armor support that crew.
+## Os veículos especiais novos compartilham o orçamento existente de unidades vivas. A primeira resposta
+## continua sendo uma equipe completa de patrulha/tática; motos e blindados apoiam essa equipe.
 static func response_variant(level: int, active: Array) -> String:
 	var tactical := 0
 	var vans := tactical_van_count(active)
@@ -187,9 +187,9 @@ static func response_variant(level: int, active: Array) -> String:
 		elif unit.variant == "tank": tanks += 1
 	if level in [2,3] and not active.is_empty() and motorcycles < MAX_MOTORCYCLES: return "motorcycle"
 	if level >= 6 and vans >= 1 and tanks < MAX_TANKS: return "tank"
-	# Four-star tactical cruisers must not occupy the transport-van quota
-	# after escalation. A real van carries six officers; its variant alone is
-	# shared with those earlier two-officer cruisers.
+	# Viaturas táticas de quatro estrelas não podem ocupar a cota de vans de transporte
+	# depois da escalada. Uma van de verdade leva seis policiais; só a variante dela é
+	# compartilhada com aquelas viaturas anteriores de dois policiais.
 	var elite := vans < tactical_van_limit(level) if level >= 5 else tactical < 1
 	return variant_for(level,elite)
 

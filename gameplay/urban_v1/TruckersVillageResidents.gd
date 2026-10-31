@@ -1,6 +1,6 @@
 extends Node3D
-## Exactly three roaming neighbours; all animation and physics suspend outside
-## the settlement. Tonico can be registered without adding a fourth wanderer.
+## Exatamente três vizinhos andando; toda animação e física é suspensa fora
+## do povoado. O Tonico pode ser registrado sem acrescentar um quarto andarilho.
 signal attacked(actor,source)
 const ORIGIN := Vector3(-330,0,108)
 const ROUTES := [

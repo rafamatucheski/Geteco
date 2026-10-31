@@ -45,9 +45,9 @@ static func inside_point(car: CharacterBody3D, exit_point: Vector3, side: float)
 
 func begin_return(p_vehicle: CharacterBody3D) -> void:
 	if dead: return
-	# Finish crossing the open doorway before changing the pedestrian's goal.
-	# Otherwise a player entering a car mid-disembark redirected the officer
-	# from inside the vehicle, skipping the physical exit and door closure.
+	# Termina de atravessar o vão aberto da porta antes de mudar o objetivo do pedestre.
+	# Senão um jogador entrando num carro no meio do desembarque redirecionava o policial
+	# de dentro do veículo, pulando a saída física e o fechamento da porta.
 	if mode == "disembark":
 		_return_after_disembark = true
 		return
@@ -69,8 +69,8 @@ static func door_point(car: CharacterBody3D, side: float = 1.0) -> Vector3:
 
 func _physics_process(delta: float) -> void:
 	if dead: return
-	# PoliceAgent owns context boundaries: exterior crews approach an observed
-	# entrance, admitted visitors use native interior navigation and LOS.
+	# PoliceAgent é dono das fronteiras de contexto: equipes externas se aproximam de uma entrada
+	# observada, visitantes admitidos usam a navegação de interior nativa e a LOS.
 	if mode == "disembark":
 		_disembark(delta)
 		return

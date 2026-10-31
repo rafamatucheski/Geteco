@@ -1,5 +1,5 @@
 extends Node
-## Event-only, instance-local glazing damage. Body/paint surfaces are never hidden or edited.
+## Dano nos vidros só por evento e local da instância. Superfícies de carroceria/pintura nunca são escondidas nem editadas.
 ## Tiros racham o vidro (marca projetada) e só o BREAK_HITS-ésimo no mesmo painel o derruba.
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 const REMNANTS := preload("res://gameplay/vehicle_effects/VehicleGlassRemnants.gd")
@@ -83,7 +83,7 @@ static func _indices(arrays: Array) -> PackedInt32Array:
 	for i in indices.size(): indices[i] = i
 	return indices
 
-## Return nearest rendered surface, including paint, wheels and lamps which block the shot.
+## Devolve a superfície renderizada mais próxima, incluindo pintura, rodas e lâmpadas que bloqueiam o tiro.
 func contact(from: Vector3, to: Vector3) -> Dictionary:
 	var nearest := INF
 	var result: Dictionary = {}
@@ -153,7 +153,7 @@ func _rebuild(part: MeshInstance3D) -> void:
 	if batch_reapply: _reapply_part(part)
 	else: _reapply_part_per_record(part)
 
-## Connected triangles, welded by position, identify one pane even on combined surfaces.
+## Triângulos conectados, soldados por posição, identificam um vidro mesmo em superfícies combinadas.
 func _remove_panel(part: MeshInstance3D, surface: int, triangle: int) -> void:
 	var original := part.mesh
 	var arrays := INTERIOR.contact_arrays(original,surface)

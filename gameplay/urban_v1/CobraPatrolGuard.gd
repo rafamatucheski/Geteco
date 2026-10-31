@@ -1,5 +1,5 @@
 extends "res://gameplay/urban_v1/CobraLocalGuard.gd"
-## The seated occupant keeps its body and walks through its own open door.
+## O ocupante sentado mantém o corpo e sai pela própria porta aberta.
 var exiting := false
 var _car: CharacterBody3D
 var _landing := Vector3.ZERO
@@ -38,7 +38,7 @@ func _physics_process(delta: float) -> void:
 		_finish_exit()
 		return
 	_elapsed += delta
-	# Wait for the panel to open before moving through the doorway.
+	# Espera o painel abrir antes de passar pelo vão da porta.
 	if _elapsed < .28: return
 	var offset := _landing - global_position
 	offset.y = 0.0

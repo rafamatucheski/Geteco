@@ -1,5 +1,5 @@
 extends Node3D
-## Carried money is secured only after surviving the exterior ambush or escaping it.
+## O dinheiro carregado só fica garantido depois de sobreviver à emboscada externa ou escapar dela.
 const STATE := preload("res://gameplay/mining/MiningRaidState.gd")
 const GUARD := preload("res://runtime/desert/DesertBanditEncounter.gd").Bandit
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
@@ -115,7 +115,7 @@ func _admit(index: int,point: Vector3) -> bool:
 	guard.set_meta("character_name",["Nilo","Rato","Brasa","Tito"][index % 4])
 	guard.set_meta("mining_bandit",true)
 	guard.set_meta("place_id", "" if ambush else PLACE_ID)
-	# The shared line-of-sight query keys interior ownership by this field.
+	# A consulta compartilhada de linha de visão indexa a posse do interior por este campo.
 	guard.set_meta("police_place_id", "" if ambush else PLACE_ID)
 	guard.engaged = engaged
 	guard.cooldown = 2.0 if ambush else guard.cooldown
@@ -139,13 +139,13 @@ func _guard_died(_index: int) -> void:
 	var actor = actors.get(_index)
 	if is_instance_valid(actor):
 		session.world.gameplay._play_stream(AUDIO.wav("hurt_%d.wav" % (_index % 3)), actor.global_position + Vector3.UP, -8.0)
-	# Exterior drops remain with Gameplay's normal pickup lifetime. Adopting all
-	# nearby drops would also erase money from unrelated injured mine workers.
+	# Drops externos ficam com o tempo de vida normal de pickup de Gameplay. Adotar todos
+	# os drops próximos também apagaria o dinheiro de trabalhadores feridos da mina sem relação.
 	if ambush: return
-	# Keep the dead slot owned until departure; no replacement during this attempt.
-	# Production death drops happen immediately before this signal. Remember
-	# only this visit's new pickups so they cannot leak into another interior
-	# that uses the same world-space room origin.
+	# Mantém o slot morto ocupado até a partida; sem substituição nesta tentativa.
+	# Os drops de morte de produção acontecem logo antes deste sinal. Lembra
+	# só os pickups novos desta visita para que não vazem para outro interior
+	# que use a mesma origem de sala no espaço do mundo.
 	for pickup in session.world.gameplay._loot:
 		if not is_instance_valid(pickup) or _known_loot.has(pickup.get_instance_id()): continue
 		_known_loot[pickup.get_instance_id()]=true
@@ -184,12 +184,12 @@ func save_block_reason() -> String:
 	return ""
 
 func departed() -> void:
-	# Called before the standard room transition relocates Dante to the quarry.
+	# Chamado antes que a transição padrão de sala leve o Dante para a pedreira.
 	if session.state.place_id != PLACE_ID or session.world.gameplay.health <= 0:
 		cancel()
 		return
-	# A returning gang can call reinforcements again, independently of the
-	# campaign's unique bag/receipt. Ordinary enemy drops still work normally.
+	# Uma gangue que volta pode chamar reforços de novo, independentemente da
+	# bolsa/recibo único da campanha. Drops de inimigos comuns continuam funcionando normalmente.
 	var repeat_ambush := _repeat_visit and engaged
 	if not repeat_ambush and (not pending_cash or completed()):
 		cancel()
@@ -205,7 +205,7 @@ func _update_ambush() -> void:
 	if session.world.gameplay.health <= 0 or session.state.region_id != "desert":
 		cancel()
 		return
-	# FullSession calls departed while the leaving-room token is still held.
+	# FullSession chama departed enquanto o token de saída da sala ainda está retido.
 	if session.is_transition_blocked(): return
 	if not session.state.place_id.is_empty():
 		cancel()
@@ -222,7 +222,7 @@ func _update_ambush() -> void:
 		if actors.has(index) or _retry > 0: continue
 		var point: Vector3 = LAYOUT.world(AMBUSH_POSTS[index])
 		if session.controller.region.prepare_collision_at(point):
-			# An abandoned vehicle must not make a reinforcement spawn inside it.
+			# Um veículo abandonado não pode fazer um reforço nascer dentro dele.
 			for offset in [Vector3.ZERO, Vector3(1.4,0,0), Vector3(-1.4,0,0), Vector3(0,0,1.4)]:
 				if _admit(index, point + offset): break
 		_retry = .35

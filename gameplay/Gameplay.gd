@@ -8,7 +8,7 @@ signal player_died
 signal player_wounded(lethal: bool)
 signal player_arrested
 signal police_warning_issued
-## Preserve the no-argument signal used by conversation cancellation.
+## Preserva o sinal sem argumentos usado pelo cancelamento de conversa.
 var last_warning_actor: WeakRef
 signal crime_reported(points: int)
 signal weapon_fired(weapon_id: String, origin: Vector3)
@@ -462,7 +462,7 @@ func _ready() -> void:
 	laser.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(laser)
 	laser.hide()
-	# Impacts and voices keep SFX; firearms/reloads use their independent Weapons bus.
+	# Impactos e vozes ficam no SFX; armas de fogo/recargas usam o próprio barramento Weapons.
 	var sfx_bus := AUDIO.SFX_BUS_NAME
 	# O ouvinte do Godot é a câmera ortogonal, ~36 m acima/atrás do jogador
 	# (`CameraRig.EXTERIOR_OFFSET`). Com atenuação 3D por distância, até o tiro do
@@ -604,8 +604,8 @@ func _physics_process(delta: float) -> void:
 func _stall_physics_tick(delta: float) -> void:
 	_advance_chain_explosions()
 	if state == null or not enabled: return
-	# NPC rounds, police and world effects keep scaled time. Only Dante's own
-	# attack/animation clocks use his normal time while RAGE owns slow motion.
+	# Tiros de NPC, polícia e efeitos do mundo mantêm o tempo escalado. Só os relógios
+	# de ataque/animação do Dante usam o tempo normal dele enquanto o RAGE é dono da câmera lenta.
 	var player_delta := delta / RAGE.WORLD_SCALE if is_instance_valid(rage) and rage.active else delta
 	_combat_clock += player_delta
 	if god_mode or not _god_marked.is_empty(): _sync_god_mode()
@@ -1009,8 +1009,8 @@ func _play_katana_clip(id := "katana") -> void:
 	if _shield_kicking: attacks = [SHIELD_KICK]
 	else: _katana_combo = (_katana_combo + 1) % 3
 	_katana_attack_clock = _combat_clock
-	# Cycle even with deliberate clicks: returning cuts have their own authored
-	# hand/blade paths, rather than reversing or speeding up the same clip.
+	# Cicla mesmo com cliques deliberados: os cortes de volta têm trajetórias próprias
+	# de mão/lâmina, em vez de inverter ou acelerar o mesmo clipe.
 	_cancel_combat_clip()
 	_clip_name = ""
 	_clip_start = 0.05
@@ -1028,7 +1028,7 @@ func _play_katana_clip(id := "katana") -> void:
 	if not _pending_swing.is_empty(): _pending_swing.time = _katana_contact_time() - 0.05
 
 func request_rage() -> bool:
-	# Keyboard, controller and HUD share context checks and feedback.
+	# Teclado, controle e HUD compartilham as checagens de contexto e o retorno.
 	if not is_instance_valid(rage) or not rage.unlocked() or not _free_play_ok() or get_tree().paused: return false
 	if rage.activate(): return true
 	if rage.active: return true
@@ -1112,8 +1112,8 @@ func toggle_flashlight() -> bool:
 	return true
 
 func toggle_personal_lights() -> bool:
-	# One remappable command for all usable equipment. If either is on, switch
-	# both off; otherwise switch both on. An unavailable weapon keeps its state.
+	# Um comando remapeável para todo equipamento utilizável. Se algum estiver ligado, desliga
+	# os dois; senão liga os dois. Uma arma indisponível mantém o estado.
 	var belt_available: bool = is_instance_valid(belt_flashlight) and belt_flashlight.owned
 	var weapon_available: bool = attack_allowed() and CUSTOM.installed(customization, equipped())
 	if not belt_available and not weapon_available: return false
@@ -1130,15 +1130,15 @@ func aim_from_screen(screen: Vector2) -> Vector3:
 		return aim_point
 	var origin := camera.project_ray_origin(screen)
 	var direction := camera.project_ray_normal(screen)
-	# Fully manual aiming: characters and obstacles never redirect the cursor.
-	# Collision is resolved by the actual shot and its obstruction feedback.
+	# Mira totalmente manual: personagens e obstáculos nunca redirecionam o cursor.
+	# A colisão é resolvida pelo tiro real e pelo retorno de obstrução dele.
 	var plane := Plane(Vector3.UP, player.global_position.y + 1.0)
 	var hit: Variant = plane.intersects_ray(origin, direction)
 	if hit is Vector3:
 		aim_point = hit
 	else:
-		# A level/upward tunnel view may never meet the horizontal firing plane.
-		# Keep the cursor's direction, not the previous frame's stale target.
+		# Uma vista de túnel nivelada/para cima pode nunca encontrar o plano horizontal de tiro.
+		# Mantém a direção do cursor, não o alvo velho do quadro anterior.
 		var flat := Vector3(direction.x, 0.0, direction.z)
 		if flat.length_squared() > 0.0001:
 			var reach := maxf(10.0, float(weapon_data(equipped()).get("max_range", 420.0)) / 16.0)
@@ -1186,7 +1186,7 @@ func _clear_melee_action() -> void:
 	if is_instance_valid(player): player.set_meta("melee_movement_scale", 1.0)
 
 func _notification(what: int) -> void:
-	# A click queued before opening pause must never execute on returning.
+	# Um clique enfileirado antes de abrir a pausa nunca pode executar na volta.
 	if what == NOTIFICATION_PAUSED: _melee_buffer.clear()
 
 func _update_melee_buffer() -> void:
@@ -1200,7 +1200,7 @@ func _update_melee_buffer() -> void:
 	_melee_buffer.clear()
 	_stall_fire_at(aim_point)
 
-## Same muzzle, horizontal trajectory, mask and range as the shot, without spread.
+## Mesma boca do cano, trajetória horizontal, máscara e alcance do tiro, sem dispersão.
 func aim_feedback() -> Dictionary:
 	var origin := _muzzle_world_position()
 	var data := weapon_data(equipped())
@@ -1212,7 +1212,7 @@ func aim_feedback() -> Dictionary:
 	direction.y = 0.0
 	if direction.length_squared() < 0.001: direction = Vector3.FORWARD
 	var distance := minf(direction.length(), float(data.get("max_range", 420.0)) / 16.0)
-	# Keep the controller marker inside the useful field of view. Shots retain full range.
+	# Mantém o marcador do controle dentro do campo de visão útil. Os tiros mantêm o alcance total.
 	var controls := get_node_or_null("/root/GameInput")
 	if controls != null and (controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx()): distance = minf(distance, 10.0)
 	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction.normalized() * distance, 7, [player.get_rid()])
@@ -1220,9 +1220,9 @@ func aim_feedback() -> Dictionary:
 	var blocked: bool = not hit.is_empty() and hit.collider is CollisionObject3D and (hit.collider.collision_layer & 1) != 0
 	return {"point": hit.get("position", query.to), "blocked": blocked}
 
-## A long barrel can cross a wall before the player's collision capsule reaches
-## it. Check the physical path from the shooter's chest to the muzzle as well as
-## the outgoing ray, matching NPC gunfire's obstruction contract.
+## Um cano longo pode atravessar uma parede antes que a cápsula de colisão do jogador
+## chegue nela. Checa o caminho físico do peito do atirador até a boca do cano além do
+## raio de saída, igual ao contrato de obstrução dos tiros de NPC.
 func _muzzle_obstruction(origin: Vector3) -> Dictionary:
 	var center := player.global_position + Vector3.UP * 1.1
 	var bridge := PhysicsRayQueryParameters3D.create(center, origin, 7, [player.get_rid()])
@@ -1513,8 +1513,8 @@ func _ignite_actor(actor: Node3D, source: Node) -> void:
 	else:
 		effect.ignite(source)
 
-## Shared by preview and damage. Broad phase is bounded; narrow phase respects
-## the weapon arc, height, reach and solid occlusion. Never redirects the cursor.
+## Compartilhado pela prévia e pelo dano. A fase larga é limitada; a fase estreita respeita
+## o arco da arma, a altura, o alcance e a oclusão sólida. Nunca redireciona o cursor.
 func _melee_pick(origin: Vector3, direction: Vector3, data: Dictionary, id: String) -> Dictionary:
 	var reach := float(data.get("melee_range", 46.0)) / 16.0
 	var profile: Dictionary = MELEE_CONTROL.profile(id)
@@ -1585,7 +1585,7 @@ func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = 
 		katana_wounds.register_defeated(actor)
 		# Lâminas longas cortam já no golpe que derruba (o 2º), não só no pesado do fim do combo.
 		var heavy_cut: bool = bool(_melee_action.get("heavy", _rig_pose.heavy_attack())) or id in NATIVE_SWORDS or (id == "katana" and is_instance_valid(rage) and rage.active)
-		# Project the stroke onto the victim rather than choosing a fixed combo limb.
+		# Projeta o golpe sobre a vítima em vez de escolher um membro fixo do combo.
 		var closest := origin + direction * maxf(0.0, direction.dot(target - origin)) if was_living else target
 		severed = katana_wounds.try_sever(actor, id, float(data.damage), heavy_cut, closest, direction)
 	if not was_living and not severed: return false
@@ -1692,8 +1692,8 @@ func _report_civilian_killed(victim: Node3D, crime_point: Vector3 = Vector3.INF)
 	var id := victim.get_instance_id()
 	if _police_kill_reported.has(id): return
 	_police_kill_reported[id] = true
-	# Seeing a distant body is not seeing its shooter. Vehicle impacts report the
-	# collision site; weapon damage must identify the player's firing position.
+	# Ver um corpo distante não é ver quem atirou. Impactos de veículo informam o
+	# local da colisão; dano de arma precisa identificar a posição de tiro do jogador.
 	var observed := player.global_position if crime_point == Vector3.INF else crime_point
 	report_observed_crime(30, observed, "civilian_killed", victim)
 
@@ -2028,7 +2028,7 @@ func _shield_blocked(amount: float, from: Vector3) -> float:
 	return amount * SHIELD_BLOCK_SHARE
 
 func damage_environment(amount: float) -> void:
-	# Cold and other environmental damage do not consume ballistic armor or crime.
+	# Frio e outros danos ambientais não consomem colete balístico nem geram crime.
 	_apply_player_damage(amount, false)
 
 func arrest_player() -> bool:
@@ -2054,7 +2054,7 @@ func _apply_player_damage(amount: float, use_armor: bool, from := Vector3.INF) -
 	var prior_health := health
 	health = maxf(0, health - (amount - absorbed))
 	if use_armor and is_instance_valid(rage): rage.add_damage(prior_health - health + absorbed)
-	# Environmental damage is not an open wound, even when it is lethal.
+	# Dano ambiental não é ferida aberta, mesmo quando é letal.
 	if use_armor: player_wounded.emit(health <= 0.0)
 	if health > 0.0:
 		_pain_voice(player, amount)
@@ -2368,8 +2368,8 @@ func on_region_changed() -> void:
 	set_meta("police_navigation_epoch", int(get_meta("police_navigation_epoch", 0)) + 1)
 
 func clear_wanted(keep_investigation: bool = false) -> void:
-	# Escape leaves aircraft free to finish lowering the squad and fly away.
-	# Custody, respawn and save restoration explicitly end the old response.
+	# A fuga deixa as aeronaves livres para terminar de descer o esquadrão e ir embora.
+	# Custódia, respawn e restauração de save encerram explicitamente a resposta antiga.
 	if not keep_investigation and is_instance_valid(police_air): police_air.clear_response()
 	if police_case != null and not keep_investigation: police_case.reset()
 	elif police_case != null: police_case.escalation = police_case.ESCALATION.new()
@@ -2421,8 +2421,8 @@ func _find_path(start: Vector3, finish: Vector3) -> PackedVector3Array:
 	return _find_grid_path(start,finish)
 
 func _find_grid_path(start: Vector3, finish: Vector3) -> PackedVector3Array:
-	# Keep the public synchronous contract for non-police callers. The shared
-	# search preserves neighbor order, the 256-node bound and physical probes.
+	# Mantém o contrato público síncrono para chamadores que não são a polícia. A busca
+	# compartilhada preserva a ordem dos vizinhos, o limite de 256 nós e as sondas físicas.
 	var search := LOCAL_GRID_SEARCH.new()
 	search.configure(start, finish, _occupancy, _walkable_at, _clear_at)
 	search.advance()

@@ -1,5 +1,5 @@
 extends "res://world/places/NativePlace.gd"
-## Uses the existing place transition, physical admission and reward/save flow.
+## Usa a transição de lugar, a admissão física e o fluxo de recompensa/save existentes.
 const HATCH := Vector3(-364,0,-95.7)
 const RETURN := Vector3(-364,0,-94.2)
 var pickup_phase := 0.0

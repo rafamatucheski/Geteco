@@ -1,5 +1,5 @@
 extends RefCounted
-## Visible to normal world cameras; omitted only by the house interior camera.
+## Visível para as câmeras normais do mundo; omitido só pela câmera de interior da casa.
 const INTERIOR_OCCLUDING_CANOPY_LAYER := 1 << 19
 ## Static garden vegetation: shared meshes, spatial batches, no wind/frame loop.
 const TREES := [Vector3(-83,0,-38),Vector3(-66,0,-35),Vector3(-58,0,-18),
@@ -98,7 +98,7 @@ static func _batch(v: Node3D,label: String,mesh: Mesh,paint: Material,transforms
 	display.material_override=paint
 	if label=="GardenCanopies": display.layers=INTERIOR_OCCLUDING_CANOPY_LAYER
 	display.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# Fine grass is not serialized into the map's static overview catalog.
+	# A grama fina não é serializada no catálogo estático de visão geral do mapa.
 	if shadows:
 		display.set_meta("editor_transforms",transforms)
 		display.set_meta("editor_colors",Array(transforms.map(func(_t): return paint.albedo_color)))

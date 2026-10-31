@@ -1,6 +1,6 @@
 extends RefCounted
-## Emergency detour for frightened/stalled traffic. Keep solid/vehicle collision;
-## pedestrians are handled by the normal impact system rather than the planner.
+## Desvio de emergência para trânsito assustado/travado. Mantém a colisão sólida/com veículos;
+## pedestres são tratados pelo sistema normal de impacto, não pelo planejador.
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const PORT := preload("res://gameplay/urban_v1/HarborPortPolicy.gd")
 static var _frame := -1
@@ -17,8 +17,8 @@ static func plan(car: CharacterBody3D, source: Curve3D) -> Curve3D:
 	_plans+=1
 	var origin := source.get_closest_offset(car.global_position)
 	if source.get_baked_length()<15 or (source.get_meta("traffic_open",false) and source.get_baked_length()-origin<25):
-		# Yield/turnaround curves can be only a few metres long. Escape is not
-		# constrained by that temporary trip; first recover a usable road route.
+		# Curvas de cessão/retorno podem ter só alguns metros. A fuga não fica
+		# presa a essa viagem temporária; primeiro recupera uma rota de via utilizável.
 		var world:=car.get_parent()
 		var production: Variant=world.get("production") if is_instance_valid(world) else null
 		var replacement: Curve3D
@@ -62,7 +62,7 @@ static func plan(car: CharacterBody3D, source: Curve3D) -> Curve3D:
 		if forward.normalized().dot(-car.global_basis.z)<.65: continue
 		if not PORT.route_is_ambient_safe(curve) or not _clear_and_ground(car,curve): continue
 		curve.set_meta("traffic_escape_until",curve.get_baked_length()-2.0)
-		# Carry the rest of the original trip; no forced merge into an occupied lane.
+		# Leva o resto da viagem original; sem entrada forçada numa faixa ocupada.
 		var cursor := origin+distance+1
 		var end := source.get_baked_length() if open else origin+distance+50
 		while cursor<end:
@@ -95,7 +95,7 @@ static func _clear_and_ground(car: CharacterBody3D, curve: Curve3D) -> bool:
 			return false
 		point.y=ground.position.y+.04
 		curve.set_point_position(i,point)
-	# Continuous hull sweeps bridge the samples; retain trees, walls and cars.
+	# Varreduras contínuas do casco ligam as amostras; mantém árvores, muros e carros.
 	for i in range(curve.point_count-1):
 		var point := curve.get_point_position(i)
 		var next := curve.get_point_position(i+1)

@@ -1,6 +1,6 @@
 extends CanvasLayer
-## The panel emits intent only; session commits money + parts atomically, then
-## calls show_vehicle with the authoritative state. No second wallet lives here.
+## O painel só emite intenção; a sessão confirma dinheiro + peças de forma atômica e então
+## chama show_vehicle com o estado oficial. Nenhuma segunda carteira mora aqui.
 ## Passar o mouse (ou o foco) numa peça mostra nas barras como o carro ficaria.
 signal purchase_requested(part_id: String)
 signal remove_requested(slot: String)
@@ -737,7 +737,7 @@ func _preview(change: Dictionary) -> void:
 		else: candidate[change.slot] = change.id
 		shown = PERF.measure(_car_id,candidate)
 	var changed := candidate != _parts
-	# Cosmetic slots keep the vehicle visible without irrelevant mechanical bars.
+	# Slots cosméticos mantêm o veículo visível sem barras mecânicas irrelevantes.
 	_stats_panel.visible = _menu_level == 2 and _group == "Desempenho"
 	shown = PERF.measure(_car_id,candidate)
 	if is_instance_valid(_live_car): preview_requested.emit(candidate.duplicate(true))
@@ -766,7 +766,7 @@ func _seconds(value: Variant) -> String:
 ## Os cartões são refeitos a cada mudança; o foco só vale se o botão ainda estiver na tela.
 func _focus_later(button: Button) -> void:
 	if button == null: return
-	# A weak reference survives replacing cards before the deferred callback.
+	# Uma referência fraca sobrevive à troca dos cards antes do callback adiado.
 	var reference: WeakRef = weakref(button)
 	var grab := func():
 		var target: Button = reference.get_ref()

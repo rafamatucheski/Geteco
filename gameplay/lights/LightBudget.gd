@@ -38,7 +38,7 @@ static func refresh(force: bool = false) -> void:
 		for source: Dictionary in request.wanted:
 			var distance: float = source.light.global_position.distance_to(request.camera)
 			var race_headlight: bool = bool(request.get("race_headlights",false)) and source.headlight
-			# Fade by distance to the player, independent of camera elevation/zoom.
+			# Fade pela distância até o jogador, independente da elevação/zoom da câmera.
 			var energy := float(source.light.get_meta("budget_energy", source.light.light_energy))
 			var weight := 1.0 if request.player or race_headlight else 1.0 - smoothstep(22.0, LIGHT_RADIUS, distance)
 			var target := energy * weight
@@ -46,8 +46,8 @@ static func refresh(force: bool = false) -> void:
 			if request.player or race_headlight or distance <= LIGHT_RADIUS:
 				lights.append({"node": source.light, "player": request.player, "headlight": source.headlight, "distance": distance, "race_headlight": race_headlight, "transient": bool(source.get("transient", false))})
 	lights.sort_custom(_nearer)
-	# Real shadowed traffic beams replace the emissive pavement decals. Bound
-	# their cost independently so the player's projectors always keep priority.
+	# Fachos reais de trânsito com sombra substituem os decalques emissivos no calçamento. Limita
+	# o custo deles à parte para que os projetores do jogador sempre mantenham a prioridade.
 	var selected_lights: Array[Dictionary] = []
 	var desired_npc: Dictionary = {}
 	var eligible_npc: Dictionary = {}
@@ -61,8 +61,8 @@ static func refresh(force: bool = false) -> void:
 				npc_headlights += 1
 		else: selected_lights.append(entry)
 	_npc_incumbents = desired_npc
-	# Nearby cars used to swap fully powered beams at every distance tie.
-	# Keep a small positional margin and cross-fade a handoff, within MAX_LIGHTS.
+	# Carros próximos trocavam fachos com potência total a cada empate de distância.
+	# Mantém uma pequena margem de posição e faz cross-fade na passagem, dentro de MAX_LIGHTS.
 	var now := Time.get_ticks_usec()
 	var delta := minf(.05,float(now-_last_tick)/1000000.0) if _last_tick > 0 else 1.0/60.0
 	_last_tick = now
@@ -70,8 +70,8 @@ static func refresh(force: bool = false) -> void:
 		if not _npc_fades.has(id): _npc_fades[id] = 0.0
 	var transitional: Array[Dictionary] = []
 	for id in _npc_fades.keys():
-		# Power-off, damage, despawn and out-of-range are immediate. Only a
-		# priority handoff fades; a dead or hidden owner cannot keep emitting.
+		# Desligar, dano, despawn e sair do alcance são imediatos. Só uma
+		# passagem de prioridade faz fade; um dono morto ou escondido não pode continuar emitindo.
 		if not eligible_npc.has(id):
 			_npc_fades.erase(id)
 			continue
@@ -85,8 +85,8 @@ static func refresh(force: bool = false) -> void:
 		if not is_equal_approx(entry.node.light_energy,faded_energy): entry.node.light_energy = faded_energy
 		if gain > .0001: transitional.append(entry)
 	transitional.sort_custom(_nearer)
-	# Two steady traffic sources; up to two retiring sources only for the
-	# brief handoff. Player projectors and the total eight-light cap remain.
+	# Duas fontes de trânsito estáveis; até duas fontes saindo só durante a
+	# passagem breve. Os projetores do jogador e o limite total de oito luzes continuam.
 	selected_lights.append_array(transitional.slice(0,MAX_NPC_HEADLIGHTS*2))
 	selected_lights.sort_custom(_nearer)
 	_apply(all_lights, selected_lights, MAX_LIGHTS)
@@ -111,8 +111,8 @@ static func _nearer(a: Dictionary, b: Dictionary) -> bool:
 	if a.player != b.player: return a.player
 	# Protege o par de faróis do jogador antes do halo da sua sirene.
 	if a.player and a.headlight != b.headlight: return a.headlight
-	# A framed physical opponent uses the same two NPC slots, ahead of ambient
-	# traffic. Neither the total cap nor the number of steady NPC sources grows.
+	# Um adversário físico enquadrado usa os mesmos dois slots de NPC, à frente do trânsito
+	# ambiente. Nem o limite total nem o número de fontes estáveis de NPC aumenta.
 	var a_race: bool = bool(a.get("race_headlight",false))
 	var b_race: bool = bool(b.get("race_headlight",false))
 	if a_race != b_race: return a_race

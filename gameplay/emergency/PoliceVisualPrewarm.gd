@@ -1,6 +1,6 @@
 extends RefCounted
-## Render representative police presentation under the existing loading cover.
-## No PoliceAgent, dispatch, collision body, audio or gameplay group is created.
+## Renderiza a apresentação representativa da polícia sob a cobertura de carregamento existente.
+## Nenhum PoliceAgent, despacho, corpo de colisão, áudio ou grupo de jogo é criado.
 const MODEL = preload("res://gameplay/PoliceModel.gd")
 const SILHOUETTE = preload("res://gameplay/PoliceOcclusionSilhouette.gd")
 const GUARDS = preload("res://gameplay/emergency/EffectsPrewarm.gd")
@@ -8,8 +8,8 @@ const WEAPONS := ["pistol", "smg", "m4a1", "m4a1", "m4a1"]
 const DRAW_FRAMES := 3
 const MAX_WAIT_FRAMES := 24
 static var _drawn := false
-# Body/equipment and weapon resources already have bounded shared caches. Keep
-# one identical flash material alive so its StandardMaterial shader survives.
+# Os recursos de corpo/equipamento e de arma já têm caches compartilhados limitados. Mantém
+# um material de clarão idêntico vivo para que o shader StandardMaterial dele sobreviva.
 static var _flash_material: Material
 
 class ExteriorContext extends RefCounted:
@@ -37,7 +37,7 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 		visual.add_child(owner)
 		var model = MODEL.new()
 		model.tier = tier
-		# Do not consume PoliceAppearance.next_model or create every appearance.
+		# Não consome PoliceAppearance.next_model nem cria todas as aparências.
 		model.appearance_index = tier
 		owner.add_child(model)
 		models.append(model)
@@ -78,7 +78,7 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 			break
 	if RenderingServer.frame_post_draw.is_connected(count_draw):
 		RenderingServer.frame_post_draw.disconnect(count_draw)
-	# Remove before ProductionWorld can reveal the scene; no queued visible frame.
+	# Remove antes que ProductionWorld possa revelar a cena; nenhum quadro visível na fila.
 	if is_instance_valid(visual): visual.free()
 
 static func _position(visual: Node3D, camera: Camera3D) -> void:

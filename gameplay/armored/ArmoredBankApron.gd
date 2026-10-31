@@ -1,13 +1,13 @@
 extends RefCounted
-## Four service bays on North Pier's existing west apron. The frontage remains
-## a pedestrian corridor; only the driveway crosses it during departure.
+## Quatro baias de serviço no pátio oeste existente do North Pier. A fachada continua
+## um corredor de pedestres; só a entrada de carros o cruza durante a partida.
 const SLOTS := [Vector3(30,.08,11.5), Vector3(30,.08,2), Vector3(22.5,.08,11.5), Vector3(22.5,.08,2)]
 const DEPARTURE_ORDER := [0,2,1,3]
 const MERGE := Vector3(23.25,0,38)
 
 static func arrival_slot(index: int) -> Vector3:
-	# The lead escort/truck takes the back bay first; followers never have to
-	# drive through a parked colleague to reach their unloading space.
+	# A escolta/caminhão da frente pega primeiro a baia do fundo; os seguintes nunca precisam
+	# atravessar um colega estacionado para chegar ao espaço de descarga.
 	return SLOTS[index ^ 1]
 
 static func arrival(index: int) -> Array[Vector3]:
@@ -16,8 +16,8 @@ static func arrival(index: int) -> Array[Vector3]:
 		Vector3(point.x+1,0,20),Vector3(point.x,0,17),point]
 
 static func migrate_loading(data: Dictionary) -> void:
-	# Only unpublished, neutral loading checkpoints move to the corrected bays.
-	# Live bodies, combat, cargo, casualties and trips already underway are kept.
+	# Só checkpoints de carga neutros e não publicados vão para as baias corrigidas.
+	# Corpos vivos, combate, carga, baixas e viagens já em andamento são mantidos.
 	var returning: bool = data.get("destination","") == "harbor_bank" and data.get("phase","") == "unloading"
 	var loading: bool = data.get("origin","") == "harbor_bank" and data.get("phase","") in ["loading","boarding"]
 	if data.get("hostile",false) or not (loading or returning): return
@@ -36,8 +36,8 @@ static func contains(point: Vector3) -> bool:
 
 static func departure(index: int) -> Array[Vector3]:
 	var point: Vector3 = SLOTS[index]
-	# Leave southbound along Westgate. Crossing Foundry into its eastbound
-	# lanes creates a head-on conflict with westbound cars and articulated buses.
+	# Sai para o sul pela Westgate. Cruzar a Foundry até as faixas
+	# para leste cria um conflito de frente com carros para oeste e ônibus articulados.
 	var path: Array[Vector3] = [point]
 	if index < 2:
 		path.append_array([Vector3(30,0,15),Vector3(28.5,0,17),Vector3(25.5,0,18)])

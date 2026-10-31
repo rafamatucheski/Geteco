@@ -1,6 +1,6 @@
 extends "res://assets/CivilianModel.gd"
-## Country clothes on the native human rig; locomotion remains distance-driven
-## foot planting and two-bone IK, rather than spinning rigid arms and legs.
+## Roupas do interior no rig humano nativo; a locomoção continua com passos guiados
+## pela distância e IK de dois ossos, em vez de braços e pernas rígidos girando.
 const POSE := preload("res://gameplay/WeaponPoseData.gd")
 var resident_variant := 0
 var weapon_id := "pistol"

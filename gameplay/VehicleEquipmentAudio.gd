@@ -1,5 +1,5 @@
 extends RefCounted
-## Exact V1 ProceduralAudio fallback oscillators; the source has no horn/siren asset.
+## Osciladores de fallback exatos do ProceduralAudio da V1; a fonte não tem asset de buzina/sirene.
 static var horn: AudioStreamWAV
 static var siren: AudioStreamWAV
 static var alarm: AudioStreamWAV

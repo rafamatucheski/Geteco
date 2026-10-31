@@ -1,5 +1,5 @@
 extends RefCounted
-## Small worn yards, footpaths and soft verges; road access belongs to road data.
+## Quintais pequenos gastos, trilhas e beiradas macias; o acesso de via pertence aos dados de via.
 const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const EARTH_TOP := .022
@@ -26,7 +26,7 @@ static func build(village: Node3D, homes: Array) -> void:
 		for i in plots.size(): _patch(village,"VillageEarth%d"%i,plots[i],shader,EARTH_TOP)
 	village.set_meta("earth_plots",plots)
 	if cut_enabled: _track_site(village)
-	# Broken apron edge instead of a raised slab. It meets the truck yard at grade.
+	# Borda de pátio quebrada em vez de uma laje elevada. Encontra o pátio dos caminhões no mesmo nível.
 	var concrete := preload("res://world/editing/WorldGroundFactory.gd").material("concrete")
 	var apron := PackedVector2Array()
 	for p in [Vector2(-49,-27),Vector2(-8,-27),Vector2(-8,-4),Vector2(-12,2),Vector2(-39,2),Vector2(-49,-3)]:
@@ -67,8 +67,8 @@ static func earth_plots(homes: Array) -> Array[PackedVector2Array]:
 		for corner in [Vector2(-half.x,-half.y),Vector2(half.x,-half.y),Vector2(half.x,half.y),Vector2(-half.x,half.y)]:
 			parking.append(Vector2(at.x,at.z)+corner.rotated(-float(spot[2])))
 		plots.append(parking)
-	# Join plots before fading their edges; internal borders must never paint
-	# strips of grass across other dirt paths. Road core remains above the rim.
+	# Junta os terrenos antes de fazer fade nas bordas; bordas internas nunca podem pintar
+	# faixas de grama através de outras trilhas de terra. O núcleo da via fica acima da borda.
 	var merged := true
 	while merged:
 		merged=false

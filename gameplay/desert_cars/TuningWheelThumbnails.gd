@@ -1,5 +1,5 @@
 extends Node
-## One serial, one-shot render of the actual wheel kit. No persistent viewports.
+## Um render serial, de uso único, do kit de roda real. Sem viewports persistentes.
 signal texture_ready(design: String)
 const KIT := preload("res://gameplay/desert_cars/TuningWheelKit.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")

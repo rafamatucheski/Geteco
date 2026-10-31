@@ -1,6 +1,6 @@
 extends Node
-## Event-only mesh deformation. Pristine meshes stay shared until the first dent.
-## Records use vehicle-local metres; rebuilding from rest makes save/load exact.
+## Deformação de malha só por evento. As malhas intactas ficam compartilhadas até o primeiro amassado.
+## Os registros usam metros locais do veículo; reconstruir a partir do repouso deixa save/load exato.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
@@ -365,15 +365,15 @@ static func _compute(job: Dictionary) -> void:
 						if distance>=1: continue
 						var weight:=pow(1.0-distance*distance,2)*belt
 						displacement+=dent_offsets[dent]*weight
-						# The engine cover buckles upward while the front edge compresses inward.
-						# Its rear stays attached through the same spatial falloff; roof/cabin do not lift.
+						# A tampa do motor empena para cima enquanto a borda dianteira se comprime para dentro.
+						# A traseira dela continua presa pelo mesmo decaimento espacial; teto/cabine não levantam.
 						if hood: displacement.y+=maxf(0.0,dent_offsets[dent].z)*weight*.55
 					if displacement.length()>MAX_DEPTH: displacement=displacement.normalized()*MAX_DEPTH
 					vertices[index]=inverse*(rest+displacement)
 				arrays[Mesh.ARRAY_VERTEX]=vertices
 				applied_list[surface]=vertices
-				# Keep the authored topology, UVs and split seams. SurfaceTool reindexes
-				# exported meshes, which can merge vertices at hard panel boundaries.
+				# Mantém a topologia, os UVs e as emendas divididas definidos. SurfaceTool reindexa
+				# malhas exportadas, o que pode fundir vértices em fronteiras duras de painel.
 				_update_normals(arrays)
 			surfaces.append(arrays)
 		item["surfaces"]=surfaces
@@ -435,9 +435,9 @@ func clear() -> void:
 	parts.clear()
 	prepared=false
 
-## Door/roof builders read pristine geometry through REST_MESH_META. After their
-## atomic swap, adopt that new topology and reapply the same damage records.
-## This prevents repair or another impact from resurrecting a closed door panel.
+## Os builders de porta/teto leem a geometria intacta via REST_MESH_META. Depois da
+## troca atômica deles, adota essa nova topologia e reaplica os mesmos registros de dano.
+## Isso impede que um reparo ou outro impacto ressuscite um painel de porta fechado.
 func geometry_changed() -> void:
 	# Topologia nova: o resto de uma aplicação fatiada é de peças antigas.
 	_apply_items.clear()

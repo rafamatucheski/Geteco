@@ -24,7 +24,7 @@ func configure(owner_actor: CharacterBody3D, owner_gameplay: Node, owner_reactio
 	_health = float(actor.health)
 	_sense_clock = float(absi(int(specification.get("identity", 0))) % 4) * .0625
 	if is_instance_valid(reaction):
-		# This adapter checks real weapons, floor and line of sight itself.
+		# Este adaptador checa por conta própria armas reais, piso e linha de visão.
 		reaction.react_to_aim = false
 		reaction.threat_started.connect(_threat_started)
 		if reaction.has_signal("call_requested"): reaction.call_requested.connect(_call_requested)
@@ -66,7 +66,7 @@ func _process(delta: float) -> void:
 	if threat_active or social.calling: partner = null
 	if is_instance_valid(partner) and not _within_reach(partner): end_social()
 	actor.set_meta("social_state", social.state)
-	# The actor process sleeps during retreat; this child still shows the phone.
+	# O process do ator dorme durante o recuo; este filho continua mostrando o celular.
 	actor.present_social_threat(social.calling)
 
 func _eligible() -> bool:
@@ -102,8 +102,8 @@ func _player_aiming_at_us() -> bool:
 func _report_threat() -> void:
 	if illicit or social.threat_cooldown > 0.0 or not _has_gameplay(): return
 	social.threat_cooldown = 22.0
-	# Several residents can see the same sustained aim. They are witnesses to
-	# one threat, not separate offenses to accumulate through the shared merger.
+	# Vários moradores podem ver a mesma mira sustentada. São testemunhas de
+	# uma ameaça, não infrações separadas a acumular pela fusão compartilhada.
 	var director: Node = gameplay.get("police_case")
 	if is_instance_valid(director):
 		for report in director.pending:

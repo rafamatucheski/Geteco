@@ -1,6 +1,6 @@
 extends RefCounted
-## The stopping point includes a swept approach and a usable exit. Failed plans
-## keep driving/braking on the existing route instead of parking in a junction.
+## O ponto de parada inclui uma aproximação varrida e uma saída utilizável. Planos que falham
+## continuam dirigindo/freando na rota existente em vez de estacionar num cruzamento.
 const MODEL := preload("res://gameplay/traffic_yield/YieldRoadModel.gd")
 const JOURNEY := preload("res://gameplay/AmbientJourney.gd")
 var curve: Curve3D

@@ -1,6 +1,6 @@
 extends RefCounted
-## Drives the real Vehicle with throttle and steering on a verified road curve.
-## Progress comes from displacement; obstacles never cause a teleport.
+## Dirige o Vehicle real com acelerador e direção numa curva de via verificada.
+## O progresso vem do deslocamento; obstáculos nunca causam teleporte.
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 var car
 var curve: Curve3D
@@ -122,8 +122,8 @@ func tick(delta: float, hold: bool) -> void:
 	_recovery_cooldown = maxf(0,_recovery_cooldown-delta)
 	if _reverse_remaining > 0:
 		if _yielding: _tick_yield_gate(delta)
-		# Prepare the steering target while making room. This only blends the
-		# pursuit target; the vehicle still reverses straight with real physics.
+		# Prepara o alvo de direção enquanto abre espaço. Isso só mistura o
+		# alvo de perseguição; o veículo ainda dá ré reto com física real.
 		lane = move_toward(lane,desired_lane,delta*3.0)
 		var reversed: float = Vector2(car.global_position.x-_reverse_anchor.x,car.global_position.z-_reverse_anchor.z).length()
 		if reversed >= _reverse_distance:
@@ -155,8 +155,8 @@ func tick(delta: float, hold: bool) -> void:
 			_yielding = false
 			_yield_completed += 1
 			_recovery_cooldown = 3.0
-			# The actual obstructing occupant has cleared the crossing. This ends
-			# its episode; the reverse itself never renewed the waiting clock.
+			# O ocupante que obstruía de fato liberou o cruzamento. Isso encerra
+			# o episódio; a ré em si nunca renovou o relógio de espera.
 			_reset_traffic_wait()
 		else: _maintain_owner_sensor_lease()
 		return
@@ -183,9 +183,9 @@ func tick(delta: float, hold: bool) -> void:
 	var alpha := forward.signed_angle_to(toward.normalized(),Vector3.UP)
 	var bend := absf(toward.normalized().signed_angle_to(direction,Vector3.UP))
 	var desired := lerpf(11.5,3.5,clampf(bend/.8,0,1))
-	# Reuse the production crossing controller and reservations. A legitimate
-	# red light/queue is waiting, not a failed escape or an overtaking target.
-	# External driving does not call Vehicle._drive_traffic's sensing cadence.
+	# Reaproveita o controlador de cruzamento e as reservas de produção. Um sinal
+	# vermelho/fila legítimo é espera, não uma fuga que falhou nem um alvo de ultrapassagem.
+	# A direção externa não chama a cadência de sensoriamento de Vehicle._drive_traffic.
 	car._sense_tick = sensor-delta <= 0
 	car.junction_wait = bool(car._junction_gate(length,true))
 	waiting_for_traffic = car.junction_wait or _queue_wait_expected(blocker)
@@ -256,8 +256,8 @@ func tick(delta: float, hold: bool) -> void:
 	bend = absf(toward.normalized().signed_angle_to(direction,Vector3.UP))
 	desired = minf(desired,lerpf(11.5,3.5,clampf(bend/.8,0,1)))
 	if absf(lane) > .1 or absf(desired_lane) > .1: desired = minf(desired,3.0)
-	# Access/end targets can be clipped or curved. Steering follows the actual
-	# chord to that target rather than the longer requested route lookahead.
+	# Alvos de acesso/fim podem ser recortados ou curvos. A direção segue a corda
+	# real até esse alvo em vez do lookahead mais longo pedido para a rota.
 	var steer_distance: float = maxf(.5,toward.length()) if in_access else look
 	var steer_goal := clampf(atan2(5.0*sin(alpha),steer_distance)/.48,-1,1)
 	if is_finite(gap):
@@ -268,8 +268,8 @@ func tick(delta: float, hold: bool) -> void:
 			_arc_ready = _forward_arc_clear(steer_goal)
 		if not passing_person: _arc_ready = false
 		if passing_person and _arc_ready:
-			# A straight beam may still see the person beside the chosen turn.
-			# Low-speed motion is admitted by the real swept, turning hull.
+			# Um feixe reto ainda pode ver a pessoa ao lado da curva escolhida.
+			# O movimento em baixa velocidade é admitido pelo casco real varrido em curva.
 			desired = minf(desired,2.5)
 		else: desired = minf(desired,leader_speed+maxf(0,(gap-1.3)*1.1))
 	desired = minf(desired,sqrt(maxf(0,10.0*(length-offset-.7))))
@@ -304,8 +304,8 @@ func _reset_traffic_wait() -> void:
 
 func _update_traffic_wait(allow_progress_reset := true) -> void:
 	var position: Vector3 = car.global_position
-	# A queue that actually advances starts a fresh wait. Tiny physics jitter
-	# or red->green/reservation/blocker changes cannot restart the same wait.
+	# Uma fila que de fato avança começa uma espera nova. Tremidas mínimas de física
+	# ou mudanças vermelho->verde/reserva/bloqueador não podem reiniciar a mesma espera.
 	if allow_progress_reset and _traffic_wait_started > 0 and Vector2(position.x-_traffic_wait_anchor.x,position.z-_traffic_wait_anchor.z).length() > .5:
 		_reset_traffic_wait()
 		return
@@ -372,16 +372,16 @@ func _tick_yield_gate(delta: float) -> void:
 	if car._sense_tick: _yield_sensor = .16
 	car.junction_wait = bool(car._junction_gate(curve.get_baked_length(),true))
 	waiting_for_traffic = car.junction_wait
-	# Backing away clears space; it is not forward queue progress and must not
-	# renew a stuck episode's clock or fabricate a signal-phase change.
+	# Recuar abre espaço; não é progresso da fila para a frente e não pode
+	# renovar o relógio de um episódio travado nem fabricar uma mudança de fase do sinal.
 	_update_traffic_wait(false)
 	if is_instance_valid(_yield_owner):
 		_yield_owner_progress = Vector2(_yield_owner.global_position.x-_yield_owner_start.x,_yield_owner.global_position.z-_yield_owner_start.z).length()
 
 func _revoke_owner_sensor_lease() -> void:
 	if is_instance_valid(_sensor_lease_owner) and _sensor_lease_owner.get_meta("jessica_sensor_yield_owner",0) == get_instance_id():
-		# A native or external recovery may have replaced our pair/time. Leave
-		# that recovery intact; revoke only the short permission still ours.
+		# Uma recuperação nativa ou externa pode ter substituído nosso par/tempo. Deixa
+		# essa recuperação intacta; revoga só a permissão curta que ainda é nossa.
 		if _unjam_partner(_sensor_lease_owner) == car and float(_sensor_lease_owner.get("unjam_time")) <= .15:
 			_sensor_lease_owner.set("unjam_time",0.0)
 			_sensor_lease_owner.set("sensor_clock",0.0)
@@ -398,8 +398,8 @@ func _maintain_owner_sensor_lease() -> void:
 	if not is_instance_valid(owner): _revoke_owner_sensor_lease(); return
 	var owner_velocity: Vector3 = owner.get("horizontal_velocity")
 	var car_velocity: Vector3 = car.get("horizontal_velocity")
-	# At <=1.2m/s, native braking plus the 9/s velocity filter stops inside
-	# the verified .35m corridor. Faster motion must use ordinary sensing.
+	# A <=1.2m/s, a frenagem nativa mais o filtro de velocidade de 9/s para dentro
+	# do corredor verificado de .35m. Movimento mais rápido precisa usar o sensoriamento comum.
 	var normal: bool = owner.get("traffic") == true and owner.get("controlled") != true and owner.get("external_input") != true and owner.get("junction_wait") != true
 	normal = normal and float(owner.get("backoff_time")) <= 0 and float(owner.get("bypass_side")) == 0 and not owner.has_meta("crash_stun")
 	normal = normal and absf(float(owner.get("speed"))) <= 1.2 and owner_velocity.length() <= 1.25 and float(owner.get("speed")) >= 0
@@ -427,8 +427,8 @@ func _maintain_owner_sensor_lease() -> void:
 	_sensor_lease_grants += 1
 
 func _try_extend_crossing_yield() -> void:
-	# One additional metre is allowed only by a demonstrated Jetta overlap,
-	# real rear clearance and the same bounded recovery budget.
+	# Um metro adicional só é permitido por uma sobreposição demonstrada do Jetta,
+	# folga traseira real e o mesmo orçamento limitado de recuperação.
 	if _yield_extra_reverse or _yield_attempts >= 3 or _recovery_cooldown > 0: return
 	var collision: Dictionary = _sensor_lease_diagnostic.get("collider",{})
 	if _sensor_lease_diagnostic.get("reason","") != "owner_hull_overlap" or int(collision.get("id",0)) != car.get_instance_id(): return
@@ -464,8 +464,8 @@ func _owner_motion_clear(owner: CharacterBody3D) -> bool:
 	var checked_yaw: float = yaw
 	_sensor_lease_diagnostic.clear()
 	if not _owner_pose_clear(owner,point,yaw,shape,space): return false
-	# Integrate the actual normal-traffic control law at physics cadence.
-	# Check supported whole-hull poses/sweeps at <=4cm or <=.025rad changes.
+	# Integra a lei de controle real do trânsito normal na cadência da física.
+	# Checa poses/varreduras apoiadas do casco inteiro a cada <=4cm ou <=.025rad de mudança.
 	for i in 90:
 		var offset: float = road.get_closest_offset(point)
 		var near: Vector3 = road.sample_baked(minf(offset+2,length) if open else fposmod(offset+2,length),true)
@@ -584,11 +584,11 @@ func _stopped_vehicle_can_pass(body: Object) -> bool:
 	if gap >= 1.6 or absf(float(body.get("speed"))) > .3: return false
 	if body.get("controlled") == true or body.get("external_input") == true: return false
 	if not _bypass_signal_permitted(): return false
-	# Parked cars and an actual blocked traffic vehicle can use the same
-	# whole-maneuver admission as pedestrians; ordinary moving queues cannot.
+	# Carros estacionados e um veículo de trânsito realmente bloqueado podem usar a mesma
+	# admissão da manobra inteira dos pedestres; filas comuns em movimento não.
 	if body.get("traffic") != true: return true
-	# A nested queue can report stall_time=0 throughout successive greens.
-	# Use our measured stationary episode and the actual release phase instead.
+	# Uma fila aninhada pode informar stall_time=0 durante verdes sucessivos.
+	# Em vez disso, usa o episódio parado que medimos e a fase real de liberação.
 	if _traffic_green_started > 0 and Time.get_ticks_msec()-_traffic_green_started >= 3000 and body.get("blocked") == true: return true
 	if _queue_wait_expected(body): return false
 	return body.get("blocked") == true and float(body.get("stall_time")) >= 3.0
@@ -599,28 +599,28 @@ func _bypass_signal_permitted() -> bool:
 	if context.is_empty(): return true
 	if context.phase == "green": return true
 	var key: Vector3i = context.key_vector
-	# A body already beyond its stop line clears its leased crossing. A stopped
-	# approach may not begin an overtaking maneuver on amber/red.
+	# Um corpo já além da linha de parada libera o cruzamento reservado. Uma aproximação
+	# parada não pode começar uma manobra de ultrapassagem no amarelo/vermelho.
 	return (context.phase == "stop" or float(context.stop_gap) < -1.5) and JUNCTIONS.has_reservation(key,car.get_instance_id())
 
 func _plan_bypass() -> Dictionary:
 	# A side-position test alone cannot establish a reachable steering path.
 	# Plan both supported reverse travel and a complete S-shaped lane change.
 	var reverses: Array[float] = [4.5,3.0,2.1,1.8,1.5,1.2,.9,.6,0.0]
-	# WHEELBASE/tan(.48) = 4.80m. Every alternative respects the real steering
-	# limit. Prefer the original 6m/4.5m maneuver, but admit a shorter reverse
-	# for either a vehicle or a pedestrian when another car occupies the rear.
+	# WHEELBASE/tan(.48) = 4.80m. Toda alternativa respeita o limite real de
+	# direção. Prefere a manobra original de 6m/4.5m, mas admite uma ré mais curta
+	# tanto para veículo quanto para pedestre quando outro carro ocupa a traseira.
 	var radii: Array[float] = [6.0,5.6,5.2,5.0]
 	var forward: Vector3 = -car.global_basis.z
 	var right: Vector3 = car.global_basis.x
 	var preferred: float = -signf(hit_side)*3.4 if absf(hit_side) > .1 else -3.4
 	var shifts: Array[float] = [preferred,-preferred]
 	if is_instance_valid(blocker) and blocker is CharacterBody3D and blocker.get("horizontal_velocity") == null:
-		# A walking capsule needs less lateral room than another vehicle. This
-		# also keeps the passing hull inside a street bounded by shop fronts.
+		# Uma cápsula andando precisa de menos espaço lateral que outro veículo. Isso
+		# também mantém o casco que passa dentro de uma rua limitada por fachadas de loja.
 		shifts.append_array([signf(preferred)*1.4,-signf(preferred)*1.4,signf(preferred)*1.8,-signf(preferred)*1.8])
 	for reverse_distance: float in reverses:
-		# Leave the same physical stopping reserve behind the chosen reverse.
+		# Deixa a mesma reserva física de parada atrás da ré escolhida.
 		if not _rear_clear(reverse_distance+.3): continue
 		var start: Vector3 = car.global_position-forward*reverse_distance
 		for radius: float in radii:
@@ -718,8 +718,8 @@ func _tick_bypass(delta: float) -> void:
 	car.throttle_input = clampf((desired_speed-car.speed)*.65,-1,1) if _bypass_ready else 0.0
 
 func _find_bypass(offset: float, look: float) -> float:
-	# Same local passing-lane idea as CobraRaceDriver, with production full-hull
-	# admission and four supported wheel corners instead of a point-only test.
+	# Mesma ideia de faixa local de ultrapassagem do CobraRaceDriver, com admissão
+	# de casco inteiro de produção e quatro cantos de roda apoiados em vez de um teste só de ponto.
 	var preferred := -signf(hit_side)*3.4 if absf(hit_side) > .1 else -3.4
 	for alternative in [preferred,-preferred,preferred*.76,-preferred*.76]:
 		if absf(alternative-desired_lane) < .1: continue
@@ -732,7 +732,7 @@ func _lane_path_clear(offset: float, look: float, alternative: float) -> bool:
 	var right := forward.cross(Vector3.UP).normalized()
 	var actual_lane: float = (car.global_position-at).dot(right)
 	var target: Vector3 = car.global_position+right*(alternative-actual_lane)
-	# Validate the whole lateral transition, not only its destination.
+	# Valida a transição lateral inteira, não só o destino dela.
 	for weight in [.25,.5,.75,1.0]:
 		if not _pose_clear(car.global_position.lerp(target,weight),car.rotation.y): return false
 	if not _sweep_clear(car.global_position,target,car.rotation.y): return false
@@ -752,8 +752,8 @@ func _rear_clear(distance: float) -> bool:
 	return _sweep_clear(car.global_position,end,car.rotation.y)
 
 func _forward_arc_clear(steer_goal: float) -> bool:
-	# Predict the same bicycle steering used by Vehicle._drive_player. Each
-	# short segment checks full-hull admission, ground and a swept volume.
+	# Prevê a mesma direção de bicicleta usada por Vehicle._drive_player. Cada
+	# segmento curto checa admissão do casco inteiro, chão e um volume varrido.
 	var point: Vector3 = car.global_position
 	var yaw: float = car.rotation.y
 	var wheel: float = car.steering
@@ -790,8 +790,8 @@ func _pose_clear(point: Vector3, yaw: float) -> bool:
 func _supported_point(point: Vector3, yaw: float) -> Vector3:
 	var basis := Basis(Vector3.UP,yaw)
 	var space = car.get_world_3d().direct_space_state
-	# Keep this local surface detour on supported ground at the current grade;
-	# a tunnel roof/floor far below the street is not an admissible passing lane.
+	# Mantém este desvio local de superfície em chão apoiado na inclinação atual;
+	# um teto/piso de túnel muito abaixo da rua não é faixa de ultrapassagem admissível.
 	var height := -INF
 	_support_count = 0
 	for x in [-car.half_width*.8,car.half_width*.8]:
@@ -806,15 +806,15 @@ func _supported_point(point: Vector3, yaw: float) -> Vector3:
 			_support_count += 1
 			if hit.is_empty() or absf(float(hit.position.y)-point.y) > .25: return Vector3.INF
 			height = maxf(height,float(hit.position.y))
-	# This is only the pose used by admission queries. Vehicle still climbs
-	# the real curb ramp through move_and_slide; no body is repositioned.
+	# Esta é só a pose usada pelas consultas de admissão. Vehicle ainda sobe
+	# a rampa real do meio-fio via move_and_slide; nenhum corpo é reposicionado.
 	return Vector3(point.x,height+.0003,point.z)
 
 func _access_clear(steer_goal: float, target_speed: float) -> bool:
 	_admission_failure.clear()
-	# A road tangent is not a reachable future yaw. Integrate the same wheel
-	# limit/rate and bicycle yaw used by Vehicle._drive_player, then admit the
-	# complete supported hull along each short segment of actual forward travel.
+	# Uma tangente da via não é um yaw futuro alcançável. Integra o mesmo limite/taxa
+	# de roda e o yaw de bicicleta usados por Vehicle._drive_player e então admite o
+	# casco apoiado completo ao longo de cada segmento curto de avanço real.
 	var point: Vector3 = car.global_position
 	var yaw: float = car.rotation.y
 	var wheel: float = car.steering
@@ -852,7 +852,7 @@ func _sweep_clear(start: Vector3, end: Vector3, yaw: float) -> bool:
 	var safe: PackedFloat32Array = car.get_world_3d().direct_space_state.cast_motion(_clearance)
 	_clearance.motion = Vector3.ZERO
 	if safe[0] >= 1.0: return true
-	# Query the failed swept pose for evidence; never move the actual vehicle.
+	# Consulta a pose varrida que falhou para ter evidência; nunca move o veículo real.
 	var contact: Vector3 = start+(end-start)*minf(1.0,safe[1]+.001/maxf(.001,start.distance_to(end)))
 	_clearance.transform = Transform3D(basis,contact+basis*car.shape.position)
 	var hits: Array[Dictionary] = car.get_world_3d().direct_space_state.intersect_shape(_clearance,1)
@@ -948,7 +948,7 @@ func _debug_vehicle_controls() -> Dictionary:
 		"junction_wait":car.junction_wait,"junction_gap":car.junction_gap,"held":_debug_leases(car),"contacts":contacts}
 
 func debug_snapshot() -> Dictionary:
-	# Called only by a diagnostic/test; normal driving does not serialize nodes.
+	# Chamado só por diagnóstico/teste; a direção normal não serializa nós.
 	var obstacle := {}
 	if is_instance_valid(blocker):
 		obstacle = {"id":blocker.get_instance_id(),"class":blocker.get_class()}

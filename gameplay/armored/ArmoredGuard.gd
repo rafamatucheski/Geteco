@@ -1,5 +1,5 @@
 extends "res://runtime/RobberyActor.gd"
-## Finite convoy crew. The transport owns crime attribution, radio and persistence.
+## Equipe finita do comboio. O transporte é dono da atribuição de crime, do rádio e da persistência.
 const MODEL := preload("res://gameplay/armored/ArmoredGuardModel.gd")
 const APRON := preload("res://gameplay/armored/ArmoredBankApron.gd")
 var convoy
@@ -31,7 +31,7 @@ var _service_waypoint := 0
 func configure_security(profile: Dictionary) -> void:
 	security = profile.duplicate(true)
 	tier = 2 if str(security.get("weapon", "pistol")) != "pistol" else 1
-	# Restore saved health after configuring, before admission to the tree.
+	# Restaura a vida salva depois de configurar, antes da admissão na árvore.
 	if not is_inside_tree(): health = float(security.get("guard_health", 110.0))
 	_rounds = 12 if tier == 1 else 24
 
@@ -40,8 +40,8 @@ func _ready() -> void:
 	collision_layer = 2
 	collision_mask = 7
 	floor_snap_length = .4
-	# Radio belongs to the convoy. Civilian witness scans would otherwise create
-	# their own 2.5-second call and bypass the authored rural/adaptive delay.
+	# O rádio pertence ao comboio. Senão as varreduras de testemunhas civis criariam
+	# a própria chamada de 2.5 segundos e pulariam o atraso rural/adaptativo definido.
 	set_meta("gameplay_role", "security")
 	set_meta("local_security", true)
 	set_meta("police_place_id", "")
@@ -72,9 +72,9 @@ func reached_target(radius := .45) -> bool:
 	return Vector2(offset.x, offset.z).length() <= radius and absf(offset.y) < .65
 
 func _service_navigation_target() -> Vector3:
-	# Bank frontage, rear vault and lateral post form a finite walking path.
-	# Every hull crossing happens behind the truck, including the last return
-	# to the post after unloading; the final action target remains transport-owned.
+	# A frente do banco, o cofre dos fundos e o posto lateral formam um caminho finito a pé.
+	# Toda travessia do casco acontece atrás do caminhão, incluindo a última volta
+	# ao posto depois da descarga; o alvo final da ação continua pertencendo ao transporte.
 	var corner := Vector3.INF
 	var service_vehicle: Node3D
 	var door := Vector3.INF
@@ -105,8 +105,8 @@ func _service_navigation_target() -> Vector3:
 		_service_corner_passed = false
 		_service_waypoints.clear()
 		return patrol_target
-	# Reassigning the same patrol target every service tick must not send the
-	# carrier back to a corner already passed. Ignore stopped-vehicle jitter.
+	# Reatribuir o mesmo alvo de patrulha a cada tick de serviço não pode mandar o
+	# carregador de volta a uma esquina já passada. Ignora a tremida de veículo parado.
 	if _service_final == Vector3.INF or _service_final.distance_to(patrol_target) > .2 or _service_frontage.distance_to(corner) > .2:
 		_service_final = patrol_target
 		_service_frontage = corner
@@ -230,9 +230,9 @@ func _physics_process(delta: float) -> void:
 	cooldown = maxf(.15, float(security.get("shot_interval", .95)))
 
 func _service_traffic_clear(target: Vector3) -> bool:
-	# Only the two neutral carriers call this, at the existing support scan rate.
-	# Predict the crossing against moving vehicle hulls, including their rear end;
-	# waiting changes the pedestrian's movement, never traffic or damage rules.
+	# Só os dois carregadores neutros chamam isto, na taxa de varredura de apoio existente.
+	# Prevê a travessia contra cascos de veículos em movimento, incluindo a traseira;
+	# esperar muda o movimento do pedestre, nunca as regras de trânsito ou de dano.
 	var path := target - global_position
 	path.y = 0.0
 	if path.length() < .4: return true

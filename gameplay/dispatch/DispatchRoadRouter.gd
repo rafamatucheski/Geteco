@@ -89,8 +89,8 @@ func configure(p_routes: RefCounted) -> void:
 	_native_edges = []
 	_rebuild_spawn_index()
 
-## Index lane-segment bounds once per graph rebuild. Sampling remains unchanged,
-## including arbitrary spacing, height and the original edge iteration order.
+## Indexa os limites dos segmentos de faixa uma vez por reconstrução do grafo. A amostragem não muda,
+## incluindo espaçamento arbitrário, altura e a ordem original de iteração das arestas.
 func _rebuild_spawn_index() -> void:
 	_spawn_edges.clear()
 	_spawn_cells.clear()
@@ -335,8 +335,8 @@ func _fail(reason: String) -> Dictionary:
 
 func _build(nodes: Array[int], _start: Vector3, end_point: Vector3, goal: Vector3, start_projection: Vector3) -> Dictionary:
 	if nodes.size() < 2: return _fail("no_path")
-	# A streamed seam can expose two graph vertices at the same position.  Such
-	# an edge has no heading and Curve3D cannot bake/sample it safely.
+	# Uma emenda de streaming pode expor dois vértices do grafo na mesma posição. Uma
+	# aresta assim não tem direção e Curve3D não consegue fazer bake/amostrar com segurança.
 	for index in range(nodes.size() - 1):
 		if (routes.vertices[nodes[index]] as Vector3).distance_squared_to(routes.vertices[nodes[index + 1]]) < 0.0001:
 			return _fail("degenerate_path")
@@ -394,8 +394,8 @@ func spawn_candidates(target: Vector3, min_distance: float, max_distance: float,
 	for x in range(low.x, high.x + 1):
 		for z in range(low.y, high.y + 1):
 			for index in _spawn_cells.get(Vector2i(x, z), []): nearby[index] = true
-	# Restore the exact pre-index order before the original distance sort; even
-	# equal-distance candidates keep the same input order for that sort.
+	# Restaura a ordem exata anterior ao índice antes da ordenação original por distância; até
+	# candidatos à mesma distância mantêm a mesma ordem de entrada nessa ordenação.
 	var indices: Array = nearby.keys()
 	indices.sort()
 	for index in indices:

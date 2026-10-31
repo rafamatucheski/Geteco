@@ -1,5 +1,5 @@
 extends Node
-## Presentation coordinator only. Driving, damage, fire and equipment remain authoritative elsewhere.
+## Só coordenador de apresentação. Direção, dano, fogo e equipamento continuam sendo autoridade em outro lugar.
 
 const TIRE := preload("res://gameplay/vehicle_effects/VehicleTireEffects.gd")
 const IMPACT := preload("res://gameplay/vehicle_effects/VehicleImpactEffects.gd")

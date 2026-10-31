@@ -27,14 +27,14 @@ static func journey(graph: RefCounted, start: Vector3, index: int, returning: bo
 	router.configure(graph)
 	var street_start := Vector3(-342.25,0,0) if returning else Vector3(240,0,223.1)
 	var street_end := Vector3(238,0,226.9) if returning else Vector3(-337.75,0,-2)
-	# Use Dock Street instead of sending long vehicles into the tight quay
-	# frontage. This is still graph routing, not a straight-line shortcut.
+	# Usa a Dock Street em vez de mandar veículos longos para a frente apertada
+	# do cais. Isto ainda é roteamento pelo grafo, não um atalho em linha reta.
 	var via := Vector3(130,0,139.4 if returning else 135.6)
 	var street := Curve3D.new()
 	var heading := Vector3.BACK if returning else Vector3.LEFT
 	var cursor := street_start
-	# Memorial South avoids the edited bus tube on Market Street. The police
-	# apron clearance below keeps this wider chassis off its raised gutter.
+	# O Memorial South evita o tubo de ônibus editado na Market Street. A folga
+	# do pátio da polícia abaixo mantém este chassi mais largo fora da sarjeta elevada.
 	# O ponto de passagem fica NA faixa de ida (z≈137,8), não no eixo da rua (140,4): no eixo
 	# o roteador escolhia a faixa de volta (mais próxima), fazia retorno até lá e outro de novo
 	# para seguir a oeste. A rota passava duas vezes pelo mesmo trecho e o caminhão, que mede o
@@ -60,8 +60,8 @@ static func journey(graph: RefCounted, start: Vector3, index: int, returning: bo
 		for i in street_points.size():
 			var p := street_points[i]
 			if p.x > 54 and p.x < 86 and p.z > 135 and p.z < 137:
-				# Ramp ends at z134.7; the 2.72m truck needs more clearance
-				# than the graph's default inner lane offers. Stay on asphalt.
+				# A rampa termina em z134.7; o caminhão de 2.72m precisa de mais folga
+				# do que a faixa interna padrão do grafo oferece. Fica no asfalto.
 				var clearance := smoothstep(54.0,61.0,p.x)*(1.0-smoothstep(77.0,86.0,p.x))
 				street_points[i].z += .65*clearance
 	append_points(curve,street_points)

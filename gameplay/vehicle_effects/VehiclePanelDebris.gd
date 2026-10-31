@@ -1,6 +1,6 @@
 extends RigidBody3D
-## A detached panel owns its frozen appearance. It never damages people or blocks traffic.
-## Timers belong to this body and pause with the scene; no permanent global update loop.
+## Um painel solto é dono da aparência congelada. Nunca fere pessoas nem bloqueia o trânsito.
+## Os timers pertencem a este corpo e pausam com a cena; sem loop global de atualização permanente.
 const MAX_ACTIVE := 18
 const LIFETIME := 22.0
 static var _active: Array[WeakRef] = []

@@ -1,6 +1,6 @@
 extends Node3D
-## Reuses three real quarry rocks and existing loader hydraulics. Polling is
-## bounded to 3 bodies at 5 Hz and stops outside the quarry or during transitions.
+## Reaproveita três pedras reais da pedreira e a hidráulica de carregadeira existente. A consulta
+## é limitada a 3 corpos a 5 Hz e para fora da pedreira ou durante transições.
 const STATE := preload("res://gameplay/mining/jobs/MiningYardJobState.gd")
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const GROUND := preload("res://world/mining/MiningExterior.gd")
@@ -36,8 +36,8 @@ func nearest_action() -> Dictionary:
 	return {"id":"desert","target":"yard_job","label":"Conversar sobre o serviço da cava"}
 
 func _contact_actor() -> Node3D:
-	# One authored station, retained across streaming by its station ID. Never
-	# substitute a distant worker when the actual speaker is dead or unloaded.
+	# Uma estação definida, mantida através do streaming pelo ID da estação. Nunca
+	# substitui por um trabalhador distante quando quem fala de verdade está morto ou descarregado.
 	for actor in get_tree().get_nodes_in_group("mining_job_contacts"):
 		if not is_instance_valid(actor) or actor.get("dead") == true or not actor.is_visible_in_tree(): continue
 		if actor.global_position.distance_to(CONTACT) > 4.0: continue
@@ -125,8 +125,8 @@ func _process(delta: float) -> void:
 		if not _available(false) or state.status!="active": _settled.erase(index); continue
 		if rock.has_meta("mining_carried_by"):
 			var carrier:=instance_from_id(int(rock.get_meta("mining_carried_by")))
-			# Fleet restore preserves archetype/controller, not arbitrary metadata.
-			# Require real occupied hydraulics holding this body after save/reentry.
+			# A restauração da frota preserva arquétipo/controlador, não metadados arbitrários.
+			# Exige hidráulica real ocupada segurando este corpo depois de save/reentrada.
 			if is_instance_valid(carrier) and carrier is CharacterBody3D and session.world.driving.occupied and session.world.driving.car==carrier:
 				var hydraulics: Node=carrier.get_node_or_null("MiningMachine")
 				if hydraulics!=null and hydraulics.cargo==rock: _carried[index]=true
@@ -143,8 +143,8 @@ static func deposit_ready(rock: RigidBody3D) -> bool:
 	if rock.freeze or rock.has_meta("mining_carried_by") or rock.linear_velocity.length_squared()>.0225 or rock.angular_velocity.length_squared()>.04: return false
 	if not DEPOSIT.grow(-.75).has_point(Vector2(rock.global_position.x,rock.global_position.z)): return false
 	if rock.global_position.y< -27.8 or rock.global_position.y> -26.9: return false
-	# A rotated visual AABB has empty corners below the convex rock. Measure
-	# the physical hull itself or a rock resting on its side looks airborne.
+	# Uma AABB visual girada tem cantos vazios abaixo da pedra convexa. Mede
+	# o próprio casco físico, senão uma pedra deitada de lado parece estar no ar.
 	var bottom:=INF
 	for child in rock.get_children():
 		if child is CollisionShape3D and child.shape is ConvexPolygonShape3D:
@@ -188,7 +188,7 @@ func _build_markings() -> void:
 	_markings=Node3D.new()
 	_markings.name="QuarryJobGroundMarkings"
 	add_child(_markings)
-	# Paint has no collider, light, label or per-frame animation.
+	# A pintura não tem colisor, luz, rótulo nem animação por quadro.
 	for row in [{"center":DESTINATION,"size":Vector2(8,6),"color":Color("e3ddc8")},{"center":LAYOUT.CENTER+Vector3(-10.5,-28,-3),"size":Vector2(8,3),"color":Color("dcac3b")}]:
 		var surface:=SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)

@@ -118,8 +118,8 @@ func _physics_process(delta: float) -> void:
 	var speed := 6.5 if chase else 3.8
 	var movement := direction.normalized() * speed if distance > (1.0 if chase else 1.7) else Vector3.ZERO
 	if movement.length_squared() > 0.01:
-		# The full nose-to-rump collider turns with the dog, so the long model
-		# cannot stick its head through a wall while a small central capsule passes.
+		# O colisor completo do focinho à garupa gira com o cão, então o modelo longo
+		# não consegue enfiar a cabeça numa parede enquanto uma cápsula central pequena passa.
 		rotation.y = lerp_angle(rotation.y, atan2(-direction.x, -direction.z), minf(1.0, delta * 12.0))
 		# One support query per sensor tick prevents routing off bridge/tunnel edges.
 		if _sensor >= 0.199:
@@ -178,7 +178,7 @@ func _tick_attack(delta: float, target: Node3D) -> void:
 	_rig.jaw.rotation.x = -0.65 * windup * (1.0 - snap)
 	if not _attack_hit and _attack_time >= BITE_CONTACT:
 		_attack_hit = true
-		# Recheck at jaw contact: escaping, surrendering or cover cancels damage.
+		# Rechecagem no contato da mandíbula: fugir, render-se ou se proteger cancela o dano.
 		if can_bite(target):
 			var gameplay: Node3D = director.gameplay
 			gameplay.damage_player(minf(8.0, maxf(0.0, float(gameplay.health) - 1.0)))
@@ -188,7 +188,7 @@ func _tick_attack(delta: float, target: Node3D) -> void:
 func _animate_death(delta: float) -> void:
 	_death_time = minf(0.85, _death_time + delta)
 	var progress := smoothstep(0.0, 0.85, _death_time)
-	# Roll about the torso, then settle its side onto the ground.
+	# Rola em torno do torso e depois assenta o lado no chão.
 	visual.rotation.z = PI * 0.5 * progress
 	visual.position = Vector3(0.56 * sin(visual.rotation.z), -0.34 * progress + 0.56 * (1.0 - cos(visual.rotation.z)), 0) * body_scale
 	_rig.head.rotation.x = 0.3 * progress

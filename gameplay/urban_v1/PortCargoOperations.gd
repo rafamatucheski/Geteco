@@ -1,8 +1,8 @@
 extends Node3D
 signal work_truck_removed(index: int)
-## Three V1 quay cranes transfer cargo between Santa Mare and the terminal.
-## Cargo remains attached to the gantry cycle and blocks its landing pad only
-## while resting on the ground, matching the original 48-second operation.
+## Três guindastes de cais da V1 transferem carga entre o Santa Mare e o terminal.
+## A carga continua presa ao ciclo do pórtico e só bloqueia a área de pouso dele
+## enquanto descansa no chão, igual à operação original de 48 segundos.
 
 const LAYOUT := preload("res://world/regions/OriginalSouthPortLayout.gd")
 const CONTAINER := preload("res://world/regions/ShippingContainer3D.gd")
@@ -171,8 +171,8 @@ func _build_truck_route() -> void:
 		work_trucks.append({"truck":null,"phase":"approach","bay":index,"stop":stop,"stop_offset":truck_route.get_closest_offset(stop),"depot_offset":truck_route.get_closest_offset(depot),"loaded":false,"remaining":0.0,"deliveries":0})
 
 func _build_route_support(points: Array) -> void:
-	# The production region streams around the player. Freight still needs a
-	# physical floor when its circuit reaches warehouses two chunks away.
+	# A região de produção faz streaming em volta do jogador. A carga ainda precisa de um
+	# piso físico quando o circuito dela chega aos armazéns a dois chunks de distância.
 	for index in points.size()-1:
 		var a: Vector2 = points[index]*SCALE
 		var b: Vector2 = points[index+1]*SCALE
@@ -223,9 +223,9 @@ func _build_forklift_crates() -> void:
 			body.position = root.position
 			add_child(body)
 			forklift_crates.append({"visual":root,"body":body,"collision":collision})
-	# Three small pickup stocks sit beside the authored worker circuits. Their
-	# bodies stay out of each route, while the visible stacks explain where the
-	# carried crates come from.
+	# Três pequenos estoques de coleta ficam ao lado dos circuitos definidos dos trabalhadores. Os
+	# corpos deles ficam fora de cada rota, enquanto as pilhas visíveis explicam de onde
+	# vêm as caixas carregadas.
 	for index in 3:
 		var source_x: float = [3900.0,4430.0,5020.0][index]
 		var point := Vector3((source_x+34.0)*SCALE,0,3410.0*SCALE)
@@ -271,8 +271,8 @@ func _build_forklift_crates() -> void:
 		crew_crates.append({"visual":root,"body":body,"collision":collision})
 
 func _ensure_work_vehicles() -> void:
-	# Mount one detailed vehicle per scan so first arrival cannot cause a single
-	# large model-build spike. Failed clearance probes are retried on later scans.
+	# Monta um veículo detalhado por varredura para que a primeira chegada não cause um único
+	# pico grande de montagem de modelo. Sondas de folga que falham são tentadas de novo nas varreduras seguintes.
 	for step in 5:
 		var slot := posmod(_vehicle_spawn_cursor + step, 5)
 		if slot < FORKLIFT_POINTS.size():
@@ -332,7 +332,7 @@ func _watch_work_truck(index: int, vehicle: CharacterBody3D) -> void:
 
 func _work_truck_exiting(index: int, reference: WeakRef) -> void:
 	var vehicle = reference.get_ref()
-	# Reparenting and world teardown are not a destroyed shipment.
+	# Trocar o pai e desmontar o mundo não é uma remessa destruída.
 	if not is_inside_tree() or is_queued_for_deletion() or session.world.is_queued_for_deletion(): return
 	if is_instance_valid(vehicle) and vehicle.is_queued_for_deletion(): _work_truck_destroyed(index)
 
@@ -377,9 +377,9 @@ func _tick_truck(index: int, delta: float) -> void:
 				vehicle.brake_input = true
 		"waiting":
 			var crane_phase := fposmod(float(cranes[index].clock),CYCLE_SECONDS)
-			# Once the load leaves the ship its landing target must not change.
-			# Accepting a late truck during lowering slides cargo from the quay/cab
-			# to the bed. It must wait for the next lift instead.
+			# Depois que a carga sai do navio, o alvo de pouso dela não pode mudar.
+			# Aceitar um caminhão atrasado durante a descida desliza a carga do cais/cabine
+			# para a caçamba. Em vez disso ele precisa esperar o próximo içamento.
 			if absf(vehicle.speed) < .2 and crane_phase < 4.0:
 				state.phase = "loading"
 				if crane_phase < 4.0: cranes[index].clock = floor(float(cranes[index].clock)/CYCLE_SECONDS)*CYCLE_SECONDS
@@ -425,8 +425,8 @@ func _finish_truck_load(index: int) -> void:
 	visual.reparent(vehicle,true)
 	visual.position = Vector3(0.0,TRUCK_BED_TOP,TRUCK_BED_CENTER_Z)
 	visual.basis = Basis(Vector3.UP,PI*.5)
-	# The parent/local coordinate system changed at attachment. Do not render
-	# an interpolated sweep from the previous crane transform through the cab.
+	# O sistema de coordenadas pai/local mudou ao anexar. Não renderiza
+	# uma varredura interpolada da transform anterior do guindaste através da cabine.
 	visual.reset_physics_interpolation()
 	visual.show()
 	vehicle.set_meta("port_container_loaded",true)
@@ -512,8 +512,8 @@ func _sync_crane(index: int) -> void:
 	var pose := cargo_pose(index, float(crane.clock))
 	var visual := crane.visual as Node3D
 	visual.global_position = pose.ground + Vector3.UP * pose.lift
-	# Align while travelling overhead, before lowering; reset every unloaded
-	# cycle so a previous delivery's truck heading cannot leak into the crane.
+	# Alinha enquanto passa por cima, antes de descer; reinicia a cada ciclo
+	# descarregado para que a direção do caminhão de uma entrega anterior não vaze para o guindaste.
 	var landing_basis := Basis.IDENTITY
 	if truck_state.phase == "loading" and is_instance_valid(truck_state.truck):
 		landing_basis = truck_state.truck.global_basis.orthonormalized()*Basis(Vector3.UP,PI*.5)

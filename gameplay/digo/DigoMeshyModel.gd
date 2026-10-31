@@ -1,5 +1,5 @@
 extends Node3D
-## A single imported skinned mesh. Source animations remain in the supplied asset.
+## Uma única malha com skin importada. As animações de origem ficam no asset fornecido.
 const SOURCE := preload("res://assets/digo/digo.glb")
 var skeleton: Skeleton3D
 var outfit := -1
@@ -14,7 +14,7 @@ func _ready() -> void:
 	add_child(imported)
 	scale = Vector3.ONE * (1.76 / 1.70)
 	skeleton = imported.find_children("*", "Skeleton3D", true, false)[0] as Skeleton3D
-	# Lower the A-pose arms in skeleton space; the feet retain the authored rest pose.
+	# Abaixa os braços da pose A no espaço do esqueleto; os pés mantêm a pose de repouso definida.
 	for side in ["Left", "Right"]:
 		var bone := skeleton.find_bone("mixamorig_" + side + "Arm")
 		var parent := skeleton.get_bone_parent(bone)

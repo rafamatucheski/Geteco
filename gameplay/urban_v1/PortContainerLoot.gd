@@ -113,7 +113,7 @@ func _process(delta: float) -> void:
 			for point in [session.world.player.global_position+Vector3.UP,occupied.global_position+Vector3.UP*.3,occupied.loot_point()]:
 				if container.blocks_view(point,direction): blocks = true; break
 		container.set_obstructing(blocks)
-	# CameraRig remains the sole owner of camera interpolation and ordinary zoom.
+	# CameraRig continua o único dono da interpolação da câmera e do zoom comum.
 	session.world.camera.set_meta("port_container_zoom",.84 if is_instance_valid(occupied) else 1.0)
 	session.world.player.set_meta("port_container_shelter",is_instance_valid(occupied))
 	if is_instance_valid(occupied): session.world.camera.set_meta("port_container_focus",occupied.global_position)
@@ -232,7 +232,7 @@ func safe_to_restock(id: String, container: Node3D) -> bool:
 		if session.world.player.global_position.distance_to(center) < 70.0: return false
 		if not session.world.camera.is_position_behind(center) and session.world.camera.is_position_in_frustum(center): return false
 	if is_instance_valid(container) and (container == pending or container == occupied): return false
-	# Includes dead bodies and NPCs, plus the door swing outside the shell.
+	# Inclui cadáveres e NPCs, mais o arco da porta fora da casca.
 	var shape := BoxShape3D.new()
 	shape.size = Vector3(25.625,3.0,6.0625)
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -272,9 +272,9 @@ func report_witnessed_theft() -> bool:
 			seen[actor.get_instance_id()] = true
 			if not witness_can_see(actor): continue
 			var gameplay = session.world.gameplay
-			# This property crime happens during a modal lockpick too. The combat
-			# API rejects input-locked players; restore the lock synchronously,
-			# without yielding a frame or enabling weapon input in the minigame.
+			# Este crime contra a propriedade também acontece durante uma gazua modal. A API
+			# de combate rejeita jogadores com entrada travada; restaura a trava de forma síncrona,
+			# sem ceder um quadro nem habilitar a entrada de arma no minigame.
 			var was_locked: bool = session.world.player.input_locked
 			session.world.player.input_locked = false
 			gameplay.register_crime(maxi(0,12-gameplay.crime_points),session.world.player.global_position)

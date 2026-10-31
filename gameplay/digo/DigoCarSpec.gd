@@ -1,5 +1,5 @@
 extends RefCounted
-## Digo's personal two-door 1993 hatch. Independent of Vehicle to allow cold save restore.
+## O hatch pessoal duas portas 1993 do Digo. Independente de Vehicle para permitir restauração a frio do save.
 const ID := "digo_gol_1993"
 static func spec() -> Dictionary:
 	return {"id": ID, "label": "Gol quadrado 1993 · Digo", "scene": "res://gameplay/digo/DigoGolModel.tscn",

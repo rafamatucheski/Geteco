@@ -1,6 +1,6 @@
 extends "res://gameplay/v1_handling/V1Handling.gd"
-## Retains the existing collision-safe steering and lateral grip. Longitudinal
-## force, gear state and nitro are shared with drag instead of a parallel gearbox.
+## Mantém a direção e a aderência lateral existentes, seguras contra colisão. A força
+## longitudinal, o estado da marcha e o nitro são compartilhados com o drag em vez de um câmbio paralelo.
 const DRIVETRAIN := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
 const AXLE := preload("res://gameplay/desert_cars/AxleTraction.gd")
 var drive := DRIVETRAIN.new()
@@ -11,7 +11,7 @@ func configure(specification: Dictionary) -> void:
 	super.configure(specification)
 	if specification.get("desert_car",false) or specification.get("full_powertrain",false):
 		drive.configure(str(specification.id),specification.get("installed_parts",{}))
-		# Street engine braking in m/s², gentler for heavier vehicles.
+		# Freio-motor de rua em m/s², mais suave para veículos mais pesados.
 		_coast_deceleration = 1.8 * clampf(pow(clampf(mass, .5, 8.0), -.30), .8, 1.2)
 		_configured = true
 
@@ -22,15 +22,15 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 		return
 	var prior_speed := maxf(0.0,float(car.speed))
 	var entry_speed: float = car.horizontal_velocity.length()
-	# Stock handling supplies safe yaw/cornering only. Its friction is replaced by
-	# drivetrain coast/rolling resistance along the new heading below.
+	# A dirigibilidade de fábrica só fornece yaw/curva seguros. O atrito dela é substituído
+	# pela resistência de embalo/rolamento do trem de força ao longo da nova direção abaixo.
 	# Tração por eixo: o pedal, pesado pela fração da aderência que o motor pede, volta a
 	# entrar no volante e no escorregamento (RWD sai de traseira, FWD de frente) sem somar força.
 	if AXLE.applies(drive.race_mode): drive_power = clampf(throttle,0.0,1.0)*clampf(drive.grip_usage,0.0,1.0)
 	super.step(car,delta,0.0,turn,handbrake,wetness)
 	drive_power = -1.0
-	# Brakes hold the chassis while the driven tires spin. Keep this street-only;
-	# drag staging and its shared force/gear calibration remain independent.
+	# Os freios seguram o chassi enquanto os pneus de tração giram. Mantém isto só na rua;
+	# a preparação do drag e a calibração compartilhada de força/marcha continuam independentes.
 	if handbrake and throttle > .2:
 		if car.horizontal_velocity.length_squared() < .75*.75:
 			car.horizontal_velocity = Vector3.ZERO
@@ -64,9 +64,9 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 	# Limitador de rua: tira a força nos últimos 8% e não deixa passar do teto.
 	var cap := float(drive.spec.street_cap_mps) * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 	drive.step(delta,throttle*clampf((cap-drive.speed_mps)/(cap*.08),0.0,1.0),boost,1.0 if handbrake else 0.0)
-	# Use the driver's pedal, not the limiter's reduced throttle. Rolling/air
-	# resistance alone lets street cars coast almost indefinitely. Keep this
-	# street response outside the shared drag-race drivetrain calibration.
+	# Usa o pedal do motorista, não o acelerador reduzido do limitador. Só a resistência
+	# de rolamento/ar deixa carros de rua embalarem quase indefinidamente. Mantém esta
+	# resposta de rua fora da calibração compartilhada do trem de força da corrida de drag.
 	if throttle <= .01:
 		drive.speed_mps = move_toward(drive.speed_mps, 0.0, _coast_deceleration * clampf(delta, 0.0, .25))
 	drive.speed_mps = minf(drive.speed_mps,cap)

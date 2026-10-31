@@ -40,8 +40,8 @@ func _physics_process(delta: float) -> void:
 	if response_paused(): return
 	var region := _state_region()
 	if region != _region:
-		# A logical seam belongs to the same continuous world. Explicit
-		# travel still clears the response through Gameplay.on_region_changed.
+		# Uma emenda lógica pertence ao mesmo mundo contínuo. Uma viagem
+		# explícita ainda limpa a resposta via Gameplay.on_region_changed.
 		_region = region
 	_retire_tick -= delta
 	if _retire_tick <= 0.0:
@@ -53,8 +53,8 @@ func _physics_process(delta: float) -> void:
 		_active = false
 		return
 	if not wanted:
-		# Normal evasion does not erase a visible aircraft or a person on a rope.
-		# The transport lowers those already attached, then climbs and flies out.
+		# A evasão normal não apaga uma aeronave visível nem uma pessoa na corda.
+		# O transporte desce os que já estão presos, depois sobe e vai embora.
 		if is_instance_valid(helicopter): helicopter.begin_departure()
 		for dog in dogs:
 			if is_instance_valid(dog): dog.begin_withdrawal()
@@ -69,7 +69,7 @@ func _physics_process(delta: float) -> void:
 		for dog in dogs: dog.begin_withdrawal()
 		# Com 3 estrelas ele não solta mais ninguém, mas continua circulando até o fim da patrulha.
 		if is_instance_valid(helicopter) and not helicopter.recon_only: helicopter.cancel_drop()
-	# Interior coordinates belong to a different physical room; never use them outdoors.
+	# Coordenadas de interior pertencem a outra sala física; nunca as use do lado de fora.
 	if not exterior_active():
 		if is_instance_valid(helicopter): helicopter.begin_departure()
 		return
@@ -111,8 +111,8 @@ func _state_region() -> String:
 
 func ground_officers() -> Array[CharacterBody3D]:
 	var result: Array[CharacterBody3D] = []
-	# Dispatch squads live in DispatchUnit.officers rather than Gameplay.police.
-	# The shared group includes those squads and officers transferred indoors.
+	# Os esquadrões de despacho moram em DispatchUnit.officers e não em Gameplay.police.
+	# O grupo compartilhado inclui esses esquadrões e os policiais transferidos para dentro.
 	for officer in get_tree().get_nodes_in_group("v2_police_officers"):
 		if officer is CharacterBody3D and not officer.get_meta("police_rappelling", false): result.append(officer)
 	for officer in gameplay.police:
@@ -134,7 +134,7 @@ func launch_helicopter(zone: Dictionary) -> bool:
 	if is_instance_valid(helicopter) or not exterior_active() or (slots > 0 and officer_count() + slots > officer_limit()): return false
 	var center: Vector3 = zone.center
 	var spawn := center + Vector3(0, HOVER_HEIGHT + 7.0, 90.0)
-	# New aircraft never appear in the camera. The flight itself remains physical.
+	# Aeronaves novas nunca aparecem na câmera. O voo em si continua físico.
 	for index in 8:
 		var candidate := center + Vector3(sin(index * TAU / 8.0) * 90.0, HOVER_HEIGHT + 7.0, cos(index * TAU / 8.0) * 90.0)
 		if not point_on_screen(candidate, 10.0) and aerial_clear(candidate):
@@ -227,8 +227,8 @@ func is_landing_ground(hit: Dictionary) -> bool:
 		if bool(node.get_meta("mountain_terrain", false)) or bool(node.get_meta("police_landing_ground", false)): return true
 		if str(node.name) in ["Land", "OriginalPortSurface", "MountainTerrain"]: return true
 		node = node.get_parent()
-	# Harbor road/sidewalk colliders use several procedural factories. Only a
-	# genuinely low exterior slab is admitted by this fallback, never furniture/roof.
+	# Os colisores de via/calçada do Harbor usam várias fábricas procedurais. Só uma
+	# laje externa realmente baixa é admitida por este fallback, nunca mobília/telhado.
 	return _state_region() == "harbor" and absf((hit.position as Vector3).y) <= 0.18
 
 func capsule_clear(point: Vector3, radius: float = 0.36, height: float = 1.9, exclude: Array[RID] = []) -> bool:

@@ -29,11 +29,11 @@ func begin(vehicle: CharacterBody3D, destination: Vector3, direction: Vector3, b
 	active = true
 
 func point(t: float) -> Vector3:
-	# Cubic tangent follows the existing lane and ends parallel inside the bay.
+	# A tangente cúbica segue a faixa existente e termina paralela dentro da vaga.
 	var direction := -forward if reverse else forward
 	var handle := minf(length * .40, 5.5)
-	# Pull out into the adjacent lane before reaching the neighbouring parked
-	# bumper. Arrival's long approach tangent would drive straight into it.
+	# Sai para a faixa adjacente antes de chegar ao para-choque do vizinho
+	# estacionado. A tangente longa de aproximação da chegada iria direto nele.
 	var start_handle := .8 if pulling_out else handle
 	var finish_handle := minf(3.0,length*.4) if pulling_out else handle
 	return start.bezier_interpolate(start + direction * start_handle, finish - direction * finish_handle, finish, t)

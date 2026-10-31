@@ -1,5 +1,5 @@
 extends RefCounted
-## Shared attack geometry/timing. Values are initial playtest tuning, not measured FPS.
+## Geometria/tempo de ataque compartilhados. Valores são ajuste inicial de playtest, não FPS medido.
 const BUFFER_SECONDS := 0.16
 const PROFILES := {
 	"knife": {"rate": 1.20, "width": 0.72, "arc": 8.0, "window": 0.065, "move": 0.94},
@@ -18,7 +18,7 @@ static func rate(id: String, base_interval: float, interval: float) -> float:
 static func movement(id: String, age: float, contact: float) -> float:
 	var p := profile(id)
 	var end := contact + float(p.window)
-	# Only the committed part of the stroke costs movement; recovery is free.
+	# Só a parte comprometida do golpe custa movimento; a recuperação é livre.
 	var weight := smoothstep(maxf(0.0, contact - 0.12), contact, age)
 	weight *= 1.0 - smoothstep(contact, end, age)
 	return lerpf(1.0, float(p.move), weight)

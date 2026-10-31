@@ -35,7 +35,7 @@ func _draw() -> void:
 	for point in screen_points:
 		var shade:=Color(0.06,.10,.12,.85)
 		var ink:=Color(.9,.88,.78,.85)
-		# 14 × 18 pixels with a fine dark outline: only the familiar padlock shape.
+		# 14 × 18 pixels com um contorno escuro fino: só a forma familiar do cadeado.
 		draw_arc(point+Vector2(0,-5),4,PI,TAU,12,shade,5,true)
 		draw_arc(point+Vector2(0,-5),4,PI,TAU,12,ink,2,true)
 		draw_rect(Rect2(point+Vector2(-7,-5),Vector2(14,11)),shade)

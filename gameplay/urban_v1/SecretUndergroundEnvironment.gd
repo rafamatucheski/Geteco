@@ -1,6 +1,6 @@
 extends RefCounted
-## Camera-local atmosphere keeps outdoor weather/fog from washing out the
-## buried rooms. Surface cameras continue to use the live world environment.
+## Uma atmosfera local da câmera impede que o clima/neblina externos desbotem as
+## salas enterradas. As câmeras da superfície continuam usando o ambiente vivo do mundo.
 
 static func apply_to(camera: Camera3D) -> void:
 	camera.set_meta("uses_interior_depth",true)

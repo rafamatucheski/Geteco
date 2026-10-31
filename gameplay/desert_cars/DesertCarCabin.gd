@@ -1,6 +1,6 @@
 extends RefCounted
-## Closed body-coloured cabin with inset glazing, tapered shoulders and roof crown.
-## Kept separate so the vinyl can project to the same authored roof surface.
+## Cabine fechada na cor da carroceria, com vidros embutidos, ombros afunilados e teto abaulado.
+## Fica separada para que o vinil possa projetar na mesma superfície definida do teto.
 static func roof_point(s: Dictionary,x: float,z: float) -> Vector3:
 	var w := float(s["size"][0])
 	var h := float(s["size"][1])
@@ -29,8 +29,8 @@ static func create(root: Node3D,s: Dictionary,paint: Material,glass: Material,da
 	var windows := SurfaceTool.new()
 	var pillar := SurfaceTool.new()
 	for st: SurfaceTool in [shell,windows,pillar]: st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	# Painted frames surround genuine window openings. The boarding system makes
-	# glass translucent, so there must be no hidden body-coloured sheet behind it.
+	# Molduras pintadas cercam aberturas reais de janela. O sistema de embarque deixa
+	# o vidro translúcido, então não pode haver lâmina escondida na cor da carroceria atrás dele.
 	for side in [-1.0,1.0]:
 		var outside := [_side_point(s,side,front,belt),_side_point(s,side,roof_front,h-.105),_side_point(s,side,roof_back,h-.105),_side_point(s,side,back,belt)]
 		var inside := [_side_point(s,side,front+.090,belt+.043),_side_point(s,side,roof_front+.060,h-.15),_side_point(s,side,roof_back-.065,h-.15),_side_point(s,side,back-.12,belt+.043)]
@@ -41,7 +41,7 @@ static func create(root: Node3D,s: Dictionary,paint: Material,glass: Material,da
 		_quad(windows,inside[0]+offset,inside[1]+offset,inside[2]+offset,inside[3]+offset,Vector3(side,0,0))
 		var divider := clampf(l*float(s.door_back),roof_front+.085,roof_back-.06)
 		_quad(pillar,_side_point(s,side,divider-.025,belt+.035,.007),_side_point(s,side,divider-.025,h-.14,.007),_side_point(s,side,divider+.025,h-.14,.007),_side_point(s,side,divider+.025,belt+.035,.007),Vector3(side,0,0))
-	# Roof crown: the profile is gently curved across the car and along its roof.
+	# Teto abaulado: o perfil é levemente curvo ao longo da largura e do comprimento do teto.
 	for longitudinal in 5:
 		var z0 := lerpf(roof_front,roof_back,float(longitudinal)/5.0)
 		var z1 := lerpf(roof_front,roof_back,float(longitudinal+1)/5.0)

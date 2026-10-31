@@ -1,6 +1,6 @@
 extends RefCounted
-## A80 coupe authored in metres, nose at -Z. Shared fleet batches retain paint,
-## animated wheels, doors, damage and headlight semantics without per-frame work.
+## Cupê A80 feito em metros, nariz em -Z. Os lotes compartilhados da frota mantêm pintura,
+## rodas animadas, portas, dano e semântica de faróis sem trabalho por quadro.
 const SHAPE := preload("res://gameplay/desert_cars/DesertCarModel.gd")
 const SURFACE := preload("res://gameplay/desert_cars/SupraA80Shape.gd")
 
@@ -33,10 +33,10 @@ static func create(s: Dictionary) -> Node3D:
 		for z in [l*float(s.cabin_front),l*float(s.door_back)]:
 			SHAPE._box(root,"DoorSeam",Vector3(.009,.43,.010),Vector3(side*w*.483,.53,z),trim)
 		SHAPE._box(root,"SideSkirt",Vector3(.055,.08,1.73),Vector3(side*w*.482,.245,-.015),paint)
-		# The A80's small intake ahead of the rear wheel and body-colour louvre.
+		# A pequena entrada de ar do A80 à frente da roda traseira e a veneziana na cor da carroceria.
 		SHAPE._side_panel(root,"QuarterIntake",side*w*.482,[Vector2(.84,.44),Vector2(.905,.465),Vector2(.925,.585),Vector2(.84,.58)],trim)
 		SHAPE._beam(root,"QuarterIntakeLip",Vector3(side*w*.485,.435,.833),Vector3(side*w*.485,.584,.833),.019,paint)
-		# Wheelbase is independent of overall length; long overhangs identify A80.
+		# O entre-eixos é independente do comprimento total; balanços longos identificam o A80.
 		var wheel_spec := s.duplicate(true)
 		wheel_spec.size[2] = float(s.wheelbase)/.63
 		wheel_spec.style = "gt"
@@ -55,7 +55,7 @@ static func create(s: Dictionary) -> Node3D:
 
 static func _lamps(root: Node3D,s: Dictionary,trim: Material,front: Material,projector: Material,tail: Material,amber: Material,metal: Material) -> void:
 	for side in [-1.0,1.0]:
-		# An elliptical lens follows every point of the bonnet; no hovering plane.
+		# Uma lente elíptica segue cada ponto do capô; sem plano pairando.
 		var center := Vector2(side*.54,-2.01)
 		var housing := SURFACE._tool()
 		_deck_ellipse(housing,s,center,Vector2(.239,.153),.007)
@@ -78,12 +78,12 @@ static func _lamps(root: Node3D,s: Dictionary,trim: Material,front: Material,pro
 			_rear_disc(root,s,"RoundTailRim",Vector2(center_x,.649),.103,.013,metal)
 			_rear_disc(root,s,"RoundTailLens",Vector2(center_x,.649),.094,.018,tail)
 			_rear_disc(root,s,"RoundTailCore",Vector2(center_x,.649),.062,.020,tail)
-		# Front bumper indicators and the separate small reverse light.
+		# Piscas do para-choque dianteiro e a pequena luz de ré separada.
 		_fascia_patch(root,s,"A80FrontIndicator",side*.635,.405,.16,.045,-1.0,.014,amber)
 		_fascia_patch(root,s,"ReverseLens",side*.51,.385,.16,.043,1.0,.014,projector)
 
 static func _deck_ellipse(st: SurfaceTool,s: Dictionary,center: Vector2,radii: Vector2,lift: float) -> void:
-	# Four rings make the curved transparent lens and its perimeter sit flush.
+	# Quatro anéis deixam a lente transparente curva e o perímetro dela rentes.
 	for ring in 4:
 		for segment in 28:
 			var a := float(segment)*TAU/28.0
@@ -110,7 +110,7 @@ static func _rear_disc(root: Node3D,s: Dictionary,label: String,center: Vector2,
 	if mat.resource_name=="tail": part.set_meta("coupe_damage_material_key","tail")
 
 static func _fascia(root: Node3D,s: Dictionary,paint: Material,trim: Material,metal: Material) -> void:
-	# Body-colour bumper remains part of the continuous shell; recesses follow it.
+	# O para-choque na cor da carroceria continua parte da casca contínua; os recessos o acompanham.
 	_fascia_patch(root,s,"A80CentralIntake",0,.365,.98,.19,-1.0,.010,trim)
 	for side in [-1.0,1.0]:
 		_fascia_patch(root,s,"A80SideIntake",side*.635,.298,.16,.085,-1.0,.013,trim)
@@ -164,7 +164,7 @@ static func _spoiler(root: Node3D,_s: Dictionary,paint: Material) -> void:
 static func _brake(root: Node3D,center: Vector3,side: float,metal: Material,red: Material) -> void:
 	var disc := SHAPE._cylinder(root,"BrakeDisc",.19,.016,center+Vector3(side*.076,0,0),metal)
 	disc.set_meta("wheel_center",center)
-	# Caliper stays fixed to the axle; it is not part of the spinning wheel batch.
+	# A pinça fica presa ao eixo; não faz parte do lote da roda que gira.
 	SHAPE._box(root,"BrakeCaliper",Vector3(.035,.12,.07),center+Vector3(side*.086,0,-.17),red)
 
 static func _mirror(root: Node3D,center: Vector3,side: float,paint: Material,metal: Material) -> void:

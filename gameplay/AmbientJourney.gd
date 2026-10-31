@@ -1,12 +1,12 @@
 extends RefCounted
-## Complete open trips with a physically checked turn, then resume the opposite
-## lane. Never teleport, turn inside a junction, or reuse a yield manoeuvre.
+## Completa viagens abertas com uma curva checada fisicamente e então retoma a faixa
+## oposta. Nunca teleporta, faz curva dentro de um cruzamento ou reaproveita manobra de cessão.
 var _cursor := 0
 
 func update(production) -> void:
 	var cars: Array = production.vehicles
 	if cars.is_empty(): return
-	# At most one geometric plan per population tick; waiting cars keep braking.
+	# No máximo um plano geométrico por tick de população; carros esperando continuam freando.
 	for step in cars.size():
 		_cursor = posmod(_cursor, cars.size())
 		var car = cars[_cursor]
@@ -39,7 +39,7 @@ func update(production) -> void:
 				return
 		var turn := turnaround(car,graph)
 		if turn.is_empty():
-			# An impossible end is a genuine stall, eligible for unseen cleanup.
+			# Um fim impossível é um travamento de verdade, elegível para limpeza fora de vista.
 			if remaining < 2 and absf(car.speed)<.2: car.stuck_time += 2.0
 			return
 		car.set_meta("ambient_next_route",turn.next)
@@ -73,7 +73,7 @@ func turnaround(car: CharacterBody3D, graph: RefCounted) -> Dictionary:
 	var finish := curve.get_point_position(curve.point_count-1)
 	var next = graph.route_near(finish,0,-forward)
 	if next == null or next.get_baked_length()-next.get_closest_offset(finish)<16: return {}
-	# Leave enough tail to merge before the open turn curve brakes at its end.
+	# Deixa cauda suficiente para entrar na faixa antes que a curva aberta freie no fim.
 	curve.add_point(finish-forward*6)
 	curve.set_meta("traffic_open",true)
 	if not curve_clear(car,curve): return {}

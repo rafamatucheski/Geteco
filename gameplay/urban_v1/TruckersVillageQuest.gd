@@ -1,7 +1,7 @@
 extends Node
-## Local scavenger quest and explicit counter choices. The session supplies
-## normal interaction/HUD polling and owns atomic snapshots. Timer processing
-## sleeps completely unless the register or resident hostility is cooling down.
+## Missão local de coleta e escolhas explícitas no balcão. A sessão fornece a
+## consulta normal de interação/HUD e é dona dos snapshots atômicos. O processamento do timer
+## dorme por completo a menos que o caixa ou a hostilidade dos moradores esteja esfriando.
 const REWARD_ID := "tonico_old_pump"
 const REWARD := 450
 const TONICO_POINT := Vector3(-353,0,101)
@@ -112,7 +112,7 @@ func _action(target: String, label: String) -> Dictionary:
 func perform(target: String) -> bool:
 	if target == "truckers_village_buy_drink": return commerce.buy_drink()
 	if target == "truckers_village_rob_register": return commerce.rob_register()
-	# Recheck location, reach and current stage instead of trusting a cached UI.
+	# Rechecha local, alcance e etapa atual em vez de confiar numa UI em cache.
 	var action := nearest_action()
 	if action.is_empty() or action.target != target: return false
 	target = target.trim_prefix("truckers_village_")
@@ -159,8 +159,8 @@ func _counter_action(target: String) -> void:
 	perform("truckers_village_"+target)
 
 func _compact_counter_menu() -> void:
-	# Reuse input/focus/modal ownership, but remove the generic 620x440 panel
-	# and its nested 580x400 scroll minimum for this three-choice counter only.
+	# Reaproveita a posse de entrada/foco/modal, mas remove o painel genérico de 620x440
+	# e o mínimo de scroll aninhado de 580x400 só para este balcão de três escolhas.
 	var panel = session.get("panel")
 	if not panel is PanelContainer: return
 	if not _compact_state.is_empty(): _restore_counter_menu()
@@ -219,8 +219,8 @@ func _restore_counter_menu() -> void:
 	if previous.is_valid(): previous.call()
 
 func _service_vehicle():
-	# The last driven car is the one captured by ProductionWorld.save_game.
-	# Never service a traffic/mission vehicle merely passing through the yard.
+	# O último carro dirigido é o capturado por ProductionWorld.save_game.
+	# Nunca atende um veículo de trânsito/missão só passando pelo pátio.
 	var car = session.world.driving.car
 	if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.has_method("repair"): return null
 	if not session.controller.vehicles.has(car): return null
@@ -276,7 +276,7 @@ func _paid() -> bool:
 	return session != null and session.state.economy.snapshot().transactions.has("reward:" + REWARD_ID)
 
 func _reconcile() -> void:
-	# Wallet receipt is authoritative when an older quest marker is replayed.
+	# O recibo da carteira é a autoridade quando um marcador antigo de missão é reproduzido.
 	if _paid():
 		for key in ["started","belt","crank","completed"]: data[key] = true
 

@@ -1,6 +1,6 @@
 extends RefCounted
-## Called after Vehicle._ready and after tuning/save restore. Shared core remains
-## unchanged for all existing non-desert vehicles.
+## Chamado depois de Vehicle._ready e depois da restauração de tuning/save. O núcleo compartilhado
+## continua inalterado para todos os veículos existentes que não são do deserto.
 const CATALOG := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
 const STREET := preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd")
@@ -15,8 +15,8 @@ static func profile_of(car: Node) -> String:
 
 static func attach(car: CharacterBody3D, parts: Dictionary = {}) -> bool:
 	if not is_instance_valid(car): return false
-	# Existing player cars may enter Digo's programme explicitly. Do not invoke
-	# this automatically for unrelated traffic/police archetypes.
+	# Carros existentes do jogador podem entrar no programa do Digo explicitamente. Não chame
+	# isto automaticamente para arquétipos sem relação de trânsito/polícia.
 	# Carro do jogo base com perfil próprio usa a mecânica dele, não a de um carro do
 	# deserto escolhido pelo nome; o som e o visual originais ficam como estão.
 	var own_profile: bool = STREET.has(str(car.get("archetype")))

@@ -1,11 +1,11 @@
 extends RefCounted
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
-## Per-instance material finishes and bounded mesh kits; no frame processing. The saved
-## parts own the override, while Vehicle.paint_color retains its original colour.
+## Acabamentos de material por instância e kits de malha limitados; sem processamento por quadro. As peças
+## salvas são donas da substituição, enquanto Vehicle.paint_color mantém a cor original.
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
 const VISUAL_KIT_SLOTS := ["spoiler","skirts","front_lip","diffuser"]
-# Exact PassengerDesign / sport-coupe alloy palettes. Rotor greys #667177 and
-# #53585a deliberately remain in the fixed surface of the mixed wheel batch.
+# Paletas de liga exatas de PassengerDesign / cupê esportivo. Os cinzas de disco #667177 e
+# #53585a ficam de propósito na superfície fixa do lote misto de roda.
 const VERTEX_ALLOY_COLORS := [Color("aab6bc"),Color("9eaeb7"),Color("ba9865"),Color("bdad87"),Color("d9e2df"),Color("a47c51"),Color("abb6be"),Color("c1a36d"),Color("c4c8c9"),Color("b9c4c3"),Color("dfd5b2"),Color("b4b6b7"),Color("9caeb9"),Color("bebcb0"),Color("c7ac77"),Color("b8c2c6"),Color("adb9c1"),Color("b5b8a7"),Color("b7babc")]
 var _painter: RefCounted
 var _body_defaults: Array = []
@@ -42,7 +42,7 @@ func _is_rim(material: StandardMaterial3D) -> bool:
 	# A frota refeita em 21/10 chama o aro de "detail" dentro da malha da roda (só malhas com
 	# wheel_center chegam aqui, então o "detail" da carroceria não entra). A cópia é por instância.
 	if role == "detail": return true
-	# Only unlabelled legacy exports need the material-property fallback.
+	# Só exports legados sem rótulo precisam do fallback por propriedade de material.
 	return role.is_empty() and material.metallic > .35 and material.roughness < .6 and material.albedo_color.v > .30
 
 func _local_rim(material: StandardMaterial3D, copies: Dictionary) -> StandardMaterial3D:
@@ -54,9 +54,9 @@ func _local_rim(material: StandardMaterial3D, copies: Dictionary) -> StandardMat
 		_rim_vertex_defaults.append(material.vertex_color_use_as_albedo)
 	return copies[material]
 
-## The authored sport coupe batches rubber, rotor and forged spokes into one
-## vertex-coloured `wheel` surface. Give its bright alloy triangles their own
-## instance material rather than tinting the tyre along with the rim.
+## O cupê esportivo feito à mão agrupa borracha, disco e raios forjados numa só
+## superfície `wheel` com cor de vértice. Dá aos triângulos claros de liga um material
+## de instância próprio em vez de tingir o pneu junto com o aro.
 func _split_vertex_alloy(part: MeshInstance3D) -> void:
 	if part.material_override != null: return
 	var source := part.mesh
@@ -122,15 +122,15 @@ func apply(parts: Dictionary, original_paint: Color) -> void:
 		material.detail_enabled = bool(row[4]) if finish.is_empty() and paint.is_empty() else false
 	for i in _rims.size():
 		_rims[i].albedo_color = Color(str(wheels.wheel_color)) if wheels.has("wheel_color") else _rim_defaults[i]
-		# Only the explicitly separated bright alloy surface has no tyre/rotor
-		# shading baked into its colours. Other fleet batches must retain theirs.
+		# Só a superfície de liga clara separada explicitamente não tem sombreamento de pneu/disco
+		# embutido nas cores. Os outros lotes da frota precisam manter o deles.
 		_rims[i].vertex_color_use_as_albedo = false if wheels.has("wheel_color") and _rims[i].get_meta("tuning_isolated_alloy",false) else _rim_vertex_defaults[i]
 	if _kits != null:
 		_kits.apply(clean,TUNING.PARTS,Color(str(paint.body_color)) if paint.has("body_color") else original_paint)
 
 func damage_base(material: StandardMaterial3D, fallback: Dictionary) -> Dictionary:
-	# Wear remains on top of the purchased finish, including after a cold load.
-	# Factory values are retained independently so removing a finish is reversible.
+	# O desgaste continua por cima do acabamento comprado, inclusive depois de um carregamento a frio.
+	# Os valores de fábrica são guardados à parte para que remover um acabamento seja reversível.
 	for row in _body_defaults:
 		if row[0] != material: continue
 		var base := fallback.duplicate()
@@ -160,7 +160,7 @@ static func apply_vehicle(car: CharacterBody3D, parts: Dictionary) -> void:
 	appearance.apply(parts,car.paint_color)
 	if is_instance_valid(car.damage_look): car.damage_look.refresh_paint_finish()
 
-## Presentation-only workshop preview; the session owns purchase and persistence.
+## Prévia da oficina só de apresentação; a sessão é dona da compra e da persistência.
 static func preview_vehicle(car: CharacterBody3D, parts: Dictionary) -> void:
 	apply_vehicle(car,parts)
 	var adapter: Script = load("res://gameplay/desert_cars/DesertCarAdapter.gd")

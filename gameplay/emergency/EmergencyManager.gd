@@ -30,7 +30,7 @@ func configure(p_world: Node3D, p_gameplay: Node3D) -> void:
 	vehicle_audio.alarm_stream()
 
 func reset_region() -> void:
-	# Incident actors/sources belong to the world: never delete them on travel.
+	# Atores/fontes de incidente pertencem ao mundo: nunca os apague na viagem.
 	for crew in crews:
 		if not is_instance_valid(crew): continue
 		if is_instance_valid(crew.vehicle) and not crew.vehicle.controlled: crew.vehicle.queue_free()

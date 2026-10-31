@@ -1,6 +1,6 @@
 extends RefCounted
-## Single owner of jumping, roof traversal, fall damage and recovery.
-## The native capsule remains swept against the real walls/roof throughout.
+## Dono único do pulo, travessia de telhados, dano de queda e recuperação.
+## A cápsula nativa continua varrida contra as paredes/telhado reais o tempo todo.
 const GRAVITY := 20.0
 const JUMP_SPEED := 6.7
 const VAULT_SPEED := 8.0
@@ -86,9 +86,9 @@ func before_move(delta: float, direction: Vector3) -> void:
 			var edge_half: Vector2 = roof.definition.size * .5
 			var outside := maxf(absf(edge_local.x)-edge_half.x, absf(edge_local.z)-edge_half.y)
 			if outside > .38:
-				# Some original facades have a cornice outside the new roof slab.
-				# Keep moving until the entire swept capsule clears it. A catch is
-				# only possible within arm reach of the physical rail.
+				# Algumas fachadas originais têm cornija fora da laje nova do telhado.
+				# Continua se movendo até a cápsula varrida inteira passar dela. Agarrar só
+				# é possível ao alcance do braço do parapeito físico.
 				var descent := maxf(.02, actor.global_position.y - roof_height + .5)
 				if not actor.test_move(actor.global_transform,Vector3.DOWN*descent):
 					if outside <= .58: exit_speed = 0.0
@@ -98,7 +98,7 @@ func before_move(delta: float, direction: Vector3) -> void:
 	if actor.velocity.y <= 0.0 and phase == "jump":
 		phase = "fall"
 		age = 0.0
-	# Catch while descending outside the slab, with the hands at rail height.
+	# Agarra ao descer fora da laje, com as mãos na altura do parapeito.
 	if phase == "fall" and vaulting and low_roof and not grip_done and is_instance_valid(roof) and actor.global_position.y < roof_height - .42:
 		var local: Vector3 = roof.to_local(actor.global_position)
 		var half: Vector2 = roof.definition.size * .5
@@ -164,8 +164,8 @@ func _land() -> void:
 	var gameplay = actor.get_parent().get("gameplay")
 	if gameplay != null and last_drop > SAFE_DROP:
 		var damage := (last_drop - SAFE_DROP) * DAMAGE_PER_METRE
-		# The roof owner releases the interior on leaving its footprint, before
-		# landing. Damage is applied once here, never again by either roof owner.
+		# O dono do telhado libera o interior ao sair da área dele, antes de
+		# aterrissar. O dano é aplicado uma vez aqui, nunca de novo por nenhum dos donos do telhado.
 		gameplay.damage_environment(damage)
 		if is_instance_valid(gameplay.effects):
 			gameplay.effects.impact(actor.global_position + Vector3.UP * .04, Vector3.UP, "concrete", damage)

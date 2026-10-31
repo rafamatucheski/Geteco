@@ -46,11 +46,11 @@ func drop_dead_weapon(actor: Node3D, id: String) -> void:
 	if g._rng.randf() <= (g.LOOT_ARMOR_CHANCE_HEAVY if heavy else g.LOOT_ARMOR_CHANCE):
 		g.spawn_loot("armor", "", g.LOOT_ARMOR_POINTS, point + Vector3(g._rng.randf_range(-1.0, 1.0), 0, g._rng.randf_range(-1.0, 1.0)))
 
-## Civilian deaths roll independently of killer, crime and emergency response.
+## Mortes de civis sorteiam independentemente do assassino, do crime e da resposta de emergência.
 func drop_cash(actor: Node3D) -> void:
 	if not is_instance_valid(actor) or actor == g.player or actor.get("dead") != true or PROTECTION.is_protected(actor): return
 	if actor.get_meta("cash_drop_rolled", false): return
-	# Mark even an empty roll: damage to a corpse must never reroll its pockets.
+	# Marca até um sorteio vazio: dano num cadáver nunca pode sortear os bolsos de novo.
 	actor.set_meta("cash_drop_rolled", true)
 	var amount := CASH_DROP_RULES.roll(g._cash_rng)
 	if amount == 0: return

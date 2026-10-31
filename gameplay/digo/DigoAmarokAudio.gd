@@ -1,5 +1,5 @@
 extends Node
-## Low-rate exhaust layer over the existing diesel engine; no generation at runtime.
+## Camada de escapamento de taxa baixa sobre o motor diesel existente; sem geração em execução.
 const RUMBLE := preload("res://audio/digo/amarok_exhaust.wav")
 const RELEASE := preload("res://audio/digo/amarok_turbo_release.wav")
 static var _rumble: AudioStreamWAV

@@ -1,7 +1,7 @@
 extends Node3D
-## Productive V1 cemetery behavior adapted to the native V2 world: stable death
-## identity, plot reservation, funeral worker, keeper, storyteller and restored
-## grave markers. Runtime actors are attachments; the case ledger is the owner.
+## Comportamento produtivo do cemitério da V1 adaptado ao mundo nativo da V2: identidade
+## estável da morte, reserva de jazigo, agente funerário, zelador, contador de histórias e
+## lápides restauradas. Os atores em execução são anexos; o livro de casos é o dono.
 
 const ACTOR := preload("res://gameplay/urban_v1/UrbanRoutineActor.gd")
 const SPOKEN_LINE := preload("res://audio/VisibleDialogueVoice.gd")
@@ -47,8 +47,8 @@ var deaths: Dictionary = {}
 var quiet_left := 0.0
 var bodies: Array[Node] = []
 
-## Emergency collection can free these world-owned actors before our next tick.
-## Variant lets the validity guard run; a Node argument rejects freed instances.
+## A coleta de emergência pode liberar estes atores do mundo antes do nosso próximo tick.
+## Variant deixa a guarda de validade rodar; um argumento Node rejeita instâncias liberadas.
 func _alive(actor: Variant) -> bool:
 	return is_instance_valid(actor) and not actor.dead and not actor.is_queued_for_deletion()
 
@@ -88,8 +88,8 @@ func _ready() -> void:
 	refresh_context()
 
 func _exit_tree() -> void:
-	# Funeral actors and the hearse are world siblings, not children of this
-	# service. Never leave them running if the service is replaced or stopped.
+	# Os atores do funeral e o carro funerário são irmãos no mundo, não filhos deste
+	# serviço. Nunca os deixa rodando se o serviço for substituído ou parado.
 	_free_actor(mortician)
 	mortician = null
 	for mourner in mourners: _free_actor(mourner)
@@ -185,8 +185,8 @@ func _next_deceased_identity() -> String:
 	return identity
 
 func register_synthetic_case(identity: String, display_name: String) -> bool:
-	# Deterministic integration seam used by tests and by a future explicit
-	# EmergencyManager signal. It never grants money or touches personal saves.
+	# Ponto de integração determinístico usado pelos testes e por um futuro sinal explícito
+	# de EmergencyManager. Nunca dá dinheiro nem mexe em saves pessoais.
 	if identity.is_empty() or identity.length()>128 or cases.has(identity): return false
 	cases[identity] = {"identity":identity,"name":display_name.left(96),"phase":"morgue","plot":-1}
 	return true
@@ -205,8 +205,8 @@ func _sync_residents(in_house: bool) -> void:
 			keeper = _actor("keeper","ANSELMO")
 		if keeper.dead or keeper.frightened: return
 		if keeper.get_meta("keeper_room", 0) != session.room.get_instance_id():
-			# Leave room for the .30 m capsule in front of the workbench.
-			# Context scans must not undo physical movement every quarter second.
+			# Deixa espaço para a cápsula de .30 m na frente da bancada.
+			# As varreduras de contexto não podem desfazer o movimento físico a cada quarto de segundo.
 			keeper.global_position = session.room.to_global(Vector3(-2.35,.04,-1.85))
 			keeper.velocity = Vector3.ZERO
 			keeper.reset_physics_interpolation()
@@ -264,7 +264,7 @@ func _story_route() -> void:
 	if not _alive(storyteller) or storyteller.frightened: return
 	if is_instance_valid(storyteller_voice): storyteller_voice.stop()
 	var target: Vector3 = CENTER+STORY_STOPS[storyteller_stop]*SCALE+Vector3.UP*.04
-	# V1 keeps Elias on the central aisle before he turns toward a grave.
+	# A V1 mantém o Elias no corredor central antes de ele virar para um túmulo.
 	storyteller.set_route(PackedVector3Array([
 		Vector3(CENTER.x,.04,storyteller.global_position.z),
 		Vector3(CENTER.x,.04,target.z),
@@ -347,8 +347,8 @@ func _start_trip(identity: String) -> void:
 	mortician.has_attention = true
 	mortician.set_route(PackedVector3Array([GATE+Vector3(1.5,.04,-2), GATE+Vector3.UP*.04, Vector3(CENTER.x,.04,point.z), point+Vector3(plot_side*1.5,.04,0)]))
 	if _alive(keeper): keeper.set_route(_aisle_route(keeper, point+Vector3(0,.04,-1.6)))
-	# HarborWorldEvents creates five staggered funeral guests in production V1.
-	# They remain attachments to this one ledger-owned funeral, never save owners.
+	# HarborWorldEvents cria cinco convidados do funeral escalonados na V1 de produção.
+	# Eles continuam anexos a este funeral do livro, nunca donos de save.
 	for index in 5:
 		if deaths.has(identity + ":cemetery_mourner_%02d" % index): continue
 		var mourner = _actor("mourner",GUEST_NAMES[index],Color("343543") if index%2 else Color("45434b"))
@@ -359,8 +359,8 @@ func _start_trip(identity: String) -> void:
 		var lane := -0.65 if index%2==0 else 0.65
 		mourner.position = GATE+Vector3(signf(lane)*1.6,.04,-1.8-index*.85)
 		mourner.departure_delay = .8 + index * .65
-		# Keep the central aisle free even for the two plots nearest its edge.
-		# Whole-number grouping/index; preserve integer truncation and precision.
+		# Mantém o corredor central livre mesmo para os dois jazigos mais perto da borda.
+		# Agrupamento/índice em números inteiros; preserva o truncamento inteiro e a precisão.
 		@warning_ignore("integer_division")
 		var target := Vector3(CENTER.x+plot_side*(5.8-float(index%3)*1.1),.04,point.z+1.8+float(index/3)*1.1)
 		mourner.set_route(PackedVector3Array([GATE+Vector3(signf(lane)*1.6,.04,-1.2), GATE+Vector3(lane,.04,1.2), Vector3(CENTER.x+lane,.04,target.z), target]))
@@ -415,8 +415,8 @@ func _send_funeral_home() -> void:
 			mourner.has_attention = false
 			mourner.frightened = quiet_left > 0.0
 			var lane := -.85 if mourner.global_position.x < CENTER.x else .85
-			# Leave the walking lane before waiting. Arrival order can change when
-			# visitors avoid each other, so merely reversing queue slots is unsafe.
+			# Sai da faixa de caminhada antes de esperar. A ordem de chegada pode mudar quando
+			# os visitantes desviam uns dos outros, então só inverter as vagas da fila não é seguro.
 			var stop_z := -2.0 - index * .85
 			mourner.set_route(PackedVector3Array([Vector3(CENTER.x+lane,.04,mourner.global_position.z-.75),GATE+Vector3(lane,.04,1.2),GATE+Vector3(signf(lane)*1.6,.04,-1.2),GATE+Vector3(signf(lane)*1.6,.04,stop_z),GATE+Vector3(signf(lane)*3.2,.04,stop_z)]))
 
@@ -508,9 +508,9 @@ func snapshot() -> Dictionary:
 	for identity in identities:
 		var source: Dictionary = cases[identity]
 		var phase: String = str(source.phase)
-		# A half-materialized funeral never survives a save as a duplicated actor;
-		# it resumes from the persisted morgue queue. Emergency actors themselves
-		# are not persisted, so uncollected calls become a stable unrecovered case.
+		# Um funeral materializado pela metade nunca sobrevive a um save como ator duplicado;
+		# ele retoma da fila persistida do necrotério. Os próprios atores de emergência
+		# não são persistidos, então chamadas não coletadas viram um caso estável não recuperado.
 		if phase in ["collection","burial"]: phase = "morgue"
 		elif phase in ["discovered","dispatched"]: phase = "unrecovered"
 		records.append({"identity":identity,"name":str(source.name),"phase":phase,"plot":int(source.plot)})
@@ -527,8 +527,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	deaths.clear()
 	for identity in data.get("deaths", []): deaths[identity] = true
 	quiet_left = 0.0
-	# Runtime funeral actors are attachments, never save owners. A restore first
-	# tears them down and reconstructs only from the case ledger.
+	# Os atores de funeral em execução são anexos, nunca donos de save. Uma restauração primeiro
+	# os desmonta e reconstrói só a partir do livro de casos.
 	_free_actor(mortician)
 	mortician = null
 	for mourner in mourners: _free_actor(mourner)

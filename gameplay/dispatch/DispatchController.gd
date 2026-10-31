@@ -210,10 +210,10 @@ func _physics_process_traced(delta: float) -> void:
 	TRACE.end("controller.tick", traced)
 	TRACE.flush(self)
 
-## One approaching crew per rendered frame, shared across all dispatch units.
-## The builder advances by whole mesh parts; measure the actual span rather
-## than treating its requested budget as a hard deadline. Deployment retains
-## the existing immediate fallback if the preparation has not finished.
+## Uma equipe se aproximando por quadro renderizado, compartilhada entre todas as unidades de despacho.
+## O builder avança por partes inteiras de malha; mede o tempo real gasto em vez
+## de tratar o orçamento pedido como prazo rígido. O envio mantém
+## o fallback imediato existente se a preparação não terminou.
 func _warm_approaching_doors() -> void:
 	var frame := Engine.get_process_frames()
 	if _door_warm_frame == frame: return
@@ -254,7 +254,7 @@ func _prepare_unit_ground(unit: RefCounted) -> void:
 
 func _stall_prepare_unit_ground(unit: RefCounted) -> void:
 	if unit == null or unit.finished or not is_instance_valid(unit.vehicle) or not is_instance_valid(world): return
-	# Admit the floor before the existing suspension contract checks resumption.
+	# Admite o piso antes que o contrato de suspensão existente cheque a retomada.
 	if unit.suspended and distance_to_player(unit.vehicle.global_position) > RULES.RESUME_DISTANCE: return
 	var production: Variant = world.get("production")
 	if production == null: return
@@ -301,8 +301,8 @@ func _stall_prepare_unit_ground(unit: RefCounted) -> void:
 	if traced != 0 and admitted > 0:
 		TRACE.end("prepare_ground.build" if built > 0 or finished_jobs > 0 else "prepare_ground", traced, {"chunks_built":built,"jobs_finished":finished_jobs,"cell":str(Vector4(floorf(car.global_position.x/64.0),floorf(car.global_position.z/64.0),floorf(ahead.x/64.0),floorf(ahead.z/64.0))),"owners":prepared.keys()})
 
-## Claim before startup restoration, even while the controller is disabled.
-## These gates affect dispatch only; wanted decay and incident cleanup continue.
+## Reivindica antes da restauração de inicialização, mesmo com o controlador desligado.
+## Esses bloqueios só afetam o despacho; o decaimento de procurado e a limpeza de incidentes continuam.
 func claim_dispatch() -> void:
 	_owns_dispatch = true
 	if not is_instance_valid(gameplay): return
@@ -398,8 +398,8 @@ func foot_officer_count() -> int:
 			if is_instance_valid(officer) and not officer.dead: count += 1
 	return count
 
-## Transfer ownership without replenishing the crew. The interior controller
-## adds this same physical agent to Gameplay.police after a collision-safe entry.
+## Transfere a posse sem repor a equipe. O controlador de interior
+## acrescenta este mesmo agente físico a Gameplay.police depois de uma entrada segura contra colisão.
 func take_agent_for_interior(officer: CharacterBody3D) -> bool:
 	for unit in units:
 		if not unit.officers.has(officer): continue
@@ -700,8 +700,8 @@ func _dispatch_police(delta: float) -> void:
 	if _police_clock > 0.0: return
 	# Como em WantedManager._process: o intervalo reinicia mesmo sem despachar.
 	_police_clock = RULES.INTERVAL[stars]
-	# High-alert reinforcements continue while the pursuit is active. Live-unit
-	# and foot-agent caps still apply; clearing the first wave must not empty 6 stars.
+	# Reforços de alerta alto continuam enquanto a perseguição está ativa. Os limites de unidades
+	# vivas e de agentes a pé continuam valendo; limpar a primeira onda não pode esvaziar 6 estrelas.
 	if (stars < 5 and deployed_this_pursuit >= RULES.DEPLOYMENT[stars]) or not gameplay.last_known_valid: return
 	if units.size() >= RULES.MAX_UNITS: return
 	var anchor: Vector3 = gameplay.last_known
@@ -712,8 +712,8 @@ func _dispatch_police(delta: float) -> void:
 		if is_instance_valid(target) and gameplay.contact_age <= 1.0: anchor = target.global_position
 	dispatch_police_to(anchor)
 
-## Select one ordinary crew for a missing high-alert van or, once the van
-## quota is met, missing six-star armor support. Active caps remain unchanged.
+## Seleciona uma equipe comum para uma van de alerta alto que falta ou, quando a cota de
+## vans está cumprida, o apoio blindado de seis estrelas que falta. Os limites ativos não mudam.
 func _tactical_van_replacement(level: int, active: Array, responding: Array, armor_support := false) -> RefCounted:
 	var vans := RULES.tactical_van_count(responding)
 	if armor_support:
@@ -732,16 +732,16 @@ func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCoun
 	var level: int = 1 if investigation else gameplay.stars
 	if level <= 0 or units.size() >= RULES.MAX_UNITS: return null
 	var active := _active_police()
-	# A crew returning to its car or leaving the scene cannot satisfy the
-	# next response's van/tank quota. Wrecked or suspended teams cannot either.
+	# Uma equipe voltando ao carro ou saindo da cena não consegue cumprir a
+	# cota de van/tanque da próxima resposta. Equipes destruídas ou suspensas também não.
 	var responding := active.filter(func(u): return not u.wrecked and not u.suspended and u.state not in ["recall","departing"])
 	var variant := "patrol" if investigation else RULES.response_variant(level, responding)
 	var archetype := RULES.response_archetype(level,variant)
 	var replacement: RefCounted
 	var active_limit: int = RULES.MAX_ACTIVE[clampi(level,0,6)]
 	if active.size() >= active_limit:
-		# A direct four-to-six escalation may fill the last slot with its
-		# first van. Tank priority must not starve the second van forever.
+		# Uma escalada direta de quatro para seis pode preencher a última vaga com a
+		# primeira van. A prioridade do tanque não pode deixar a segunda van sem vez para sempre.
 		if variant == "tank" and RULES.tactical_van_count(responding) < RULES.tactical_van_limit(level):
 			variant = "tactical"
 			archetype = RULES.response_archetype(level,variant)
@@ -787,9 +787,9 @@ func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCoun
 		var plan: Dictionary = router.plan(point, anchor, heading)
 		TRACE.end("police.plan", step)
 		if not plan.ok: continue
-		# Composition changes use normal recall/departure, preserving the
-		# crew and its physical return. Only release a slot after a valid spawn
-		# and route exist; a blocked road must not dismiss the current response.
+		# Mudanças de composição usam o recolhimento/partida normal, preservando a
+		# equipe e o retorno físico dela. Só libera uma vaga depois que existem um spawn
+		# e uma rota válidos; uma via bloqueada não pode dispensar a resposta atual.
 		if replacement != null:
 			replacement.abort_response()
 			if _active_police().size() >= active_limit: return null

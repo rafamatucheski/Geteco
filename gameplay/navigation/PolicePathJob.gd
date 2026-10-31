@@ -1,6 +1,6 @@
 extends RefCounted
-## Preserve CanalTunnel3D's authored entry/axis path. Only its surface segment
-## is searched incrementally; there is no second copy of tunnel geometry here.
+## Preserva o caminho de entrada/eixo definido do CanalTunnel3D. Só o segmento de superfície
+## é buscado de forma incremental; não há aqui uma segunda cópia da geometria do túnel.
 const GRID := preload("res://gameplay/navigation/LocalGridPathSearch.gd")
 const TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 var done := false

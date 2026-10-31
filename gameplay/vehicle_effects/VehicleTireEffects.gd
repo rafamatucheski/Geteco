@@ -8,7 +8,7 @@ const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const ROAD_AUDIO := preload("res://audio/VehicleRoadAudio.gd")
 const STREET_PHYSICS := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
-## Imported resources are held while scripts load, before playable physics.
+## Os recursos importados ficam retidos enquanto os scripts carregam, antes da física jogável.
 # Playtest 30/10 ("o som do freio de mão e do drift é terrível"): os skid_*.wav de audio/acoustic
 # eram 1 s a 22 kHz, um seno puro com tremolo fixo e ruído branco chapado até 11 kHz, envelope
 # constante (repetição a cada segundo) e reiniciados do zero a cada liga-desliga. Agora são três
@@ -120,8 +120,8 @@ func _ready() -> void:
 	set_physics_process(false)
 
 func _process(delta: float) -> void:
-	# Exiting/streaming can put a stationary car to sleep before its next tire
-	# tick. This guard runs only during a held burnout, never for parked traffic.
+	# Sair/streaming pode pôr um carro parado para dormir antes do próximo tick de
+	# pneu. Esta guarda só roda durante um burnout segurado, nunca para trânsito estacionado.
 	if _burnout > 0.0 and (not is_instance_valid(vehicle) or not vehicle.is_physics_processing() or not vehicle.is_visible_in_tree() or vehicle.burnout_strength() <= 0.0):
 		_stop_emitters()
 		return
@@ -145,8 +145,8 @@ func physics_tick(delta: float, active: bool) -> void:
 		return
 	_idle = false
 	_skid_tick_msec = Time.get_ticks_msec()
-	# Contact probes are budgeted at 20 Hz, but the end of a drag wheel lock
-	# must release its audio on the same physics step as restored rolling grip.
+	# As sondas de contato têm orçamento de 20 Hz, mas o fim de um travamento de roda no drag
+	# precisa soltar o áudio no mesmo passo de física em que a aderência de rolamento volta.
 	if vehicle.has_meta("drag_service_brake_slip") and float(vehicle.get_meta("drag_service_brake_slip")) <= .15 and is_instance_valid(skid_audio) and skid_audio.playing:
 		var wet := last_contacts.any(func(contact): return not contact.is_empty() and bool(contact.get("wet",false)))
 		var lateral := absf(vehicle.horizontal_velocity.dot(vehicle.global_basis.x))
@@ -362,8 +362,8 @@ func _update_skid_audio(audible: bool, road_speed: float, lateral_speed: float, 
 
 ## lock_kind: 0 = só deriva lateral, 1 = freio de serviço travando, 2 = freio de mão.
 func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: float, lock_kind := 0) -> void:
-	# A burnout already has its own voice in the shared powertrain mixer. Avoid
-	# summing the same tire recording twice, while preserving braking and drift.
+	# Um burnout já tem voz própria no mixer compartilhado do trem de força. Evita
+	# somar duas vezes a mesma gravação de pneu, preservando frenagem e drift.
 	if audible and lock_kind == 0 and vehicle.get("brake_input") != true and lateral_speed <= maxf(0.0, road_speed) * .15:
 		var powertrain_audio := vehicle.get_node_or_null("DesertCarAudio")
 		if is_instance_valid(powertrain_audio) and powertrain_audio.has_method("has_wheelspin_voice") and powertrain_audio.has_wheelspin_voice():
@@ -376,7 +376,7 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 		var began := STALL_WORK.begin()
 		var family: String = ENGINE_PROFILE.family(str(vehicle.archetype))
 		var kind := "monaliza" if str(vehicle.archetype) == "monaliza" else ("heavy" if family in ["truck", "bus", "fire_diesel", "diesel"] else ("muscle" if family == "muscle" else ("sport" if family in ["sport", "vq35", "m8_v8", "rosso_v12", "bike_sport"] else "street")))
-		# Also covers isolated vehicles and --no-prewarm; sources are already held.
+		# Também cobre veículos isolados e --no-prewarm; as fontes já estão retidas.
 		prewarm_skid_audio()
 		var stream: AudioStreamWAV = _skid_streams[kind]
 		skid_audio = _skid_player("VehicleSkid", stream)
@@ -547,8 +547,8 @@ func _append_mark(side: int, contact: Dictionary, kind: String, rut := false) ->
 	_start_mark_timer()
 
 func _start_mark_timer() -> void:
-	# Tire traces keep aging when the vehicle physics sleeps after parking.
-	# Allocate only for cars that leave marks; stop ticking once they expire.
+	# As marcas de pneu continuam envelhecendo quando a física do veículo dorme depois de estacionar.
+	# Aloca só para carros que deixam marcas; para de fazer tick quando elas expiram.
 	if not is_instance_valid(_mark_timer):
 		_mark_timer = Timer.new()
 		_mark_timer.name = "TireMarkLifetime"
@@ -607,8 +607,8 @@ func _redraw_marks() -> void:
 	STALL_WORK.finish_slow("vehicle_tires.redraw_marks",began,5000,vehicle)
 
 func _cache_mark_corners(mark: Dictionary) -> void:
-	# A deposited segment never moves. Only its color fades on later redraws;
-	# keep the sampled geometry instead of normalizing it again for up to 30 s.
+	# Um segmento depositado nunca se move. Só a cor dele desbota nos redesenhos seguintes;
+	# mantém a geometria amostrada em vez de normalizá-la de novo por até 30 s.
 	var a: Vector3 = mark.a
 	var b: Vector3 = mark.b
 	var na: Vector3 = mark.na

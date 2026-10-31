@@ -1,6 +1,6 @@
 extends RefCounted
-## Called only after the session accepted and applied a loadout/part. Reuse the
-## game's recorded tactile menu cue and its configured effects volume bus.
+## Chamado só depois que a sessão aceitou e aplicou um equipamento/peça. Reaproveita o
+## som tátil gravado de menu do jogo e o barramento de volume de efeitos configurado.
 const MENU_AUDIO := preload("res://ui/MenuAudio.gd")
 const PLAYER := "TuningInstallConfirmation"
 

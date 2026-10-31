@@ -1,7 +1,7 @@
 extends Node3D
-## Functional V1 South Port launch cycle. The authored 2D coordinates are
-## converted once to the native V2 metre grid; workers move physical bodies and
-## cargo is conserved instead of being a decorative animation.
+## Ciclo funcional de lancha do South Port da V1. As coordenadas 2D definidas são
+## convertidas uma vez para a grade em metros nativa da V2; os trabalhadores movem corpos físicos e
+## a carga é conservada em vez de ser uma animação decorativa.
 
 const WORKER := preload("res://gameplay/urban_v1/PortWorker.gd")
 const SCALE := 1.0 / 16.0
@@ -43,8 +43,8 @@ func _ready() -> void:
 	refresh_context()
 
 func _exit_tree() -> void:
-	# Loaders live under the world so they do not inherit the launch transform.
-	# Explicitly release those sibling attachments when this service is removed.
+	# Os carregadores moram sob o mundo para não herdarem a transform da lancha.
+	# Libera explicitamente esses anexos irmãos quando este serviço é removido.
 	for index in boats.size():
 		var boat: Dictionary = boats[index]
 		if is_instance_valid(boat.worker): boat.worker.queue_free()
@@ -158,7 +158,7 @@ func _ensure_worker(index: int) -> void:
 func _loader_died(actor: CharacterBody3D, index: int) -> void:
 	worker_respawn[index] = 180.0
 	worker_was_dead[index] = true
-	# Return any held crate to its source; death must not create or erase freight.
+	# Devolve qualquer caixa segurada à origem; a morte não pode criar nem apagar carga.
 	var interrupted: Dictionary = actor.snapshot_routine()
 	if interrupted.carrying:
 		interrupted.crate_stock[int(interrupted.source_index)] += 1
@@ -207,8 +207,8 @@ func snapshot() -> Dictionary:
 
 func restore_snapshot(data: Dictionary) -> bool:
 	if not validate_snapshot(data): return false
-	# Restore is authoritative even while the berth is streamed in. Dispose the
-	# live attachment first so one loader cannot survive beside its restored copy.
+	# A restauração é a autoridade mesmo com o atracadouro no streaming. Descarta
+	# primeiro o anexo vivo para que um carregador não sobreviva ao lado da cópia restaurada.
 	for index in boats.size():
 		var live_boat: Dictionary = boats[index]
 		if is_instance_valid(live_boat.worker): live_boat.worker.queue_free()

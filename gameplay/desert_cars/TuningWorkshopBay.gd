@@ -1,6 +1,6 @@
 extends RefCounted
-## Static presentation set, not a walkable room. One material batch per finish;
-## the real workshop, actors and collision remain in the session's world.
+## Cenário estático de apresentação, não uma sala andável. Um lote de material por acabamento;
+## a oficina real, os atores e a colisão continuam no mundo da sessão.
 var _groups := {}
 var _materials := {}
 
@@ -30,7 +30,7 @@ func build() -> Node3D:
 		for z in [-3.15,3.15]: _box("mark",Vector3(x-signf(x)*.24,.009,z),Vector3(.54,.014,.065))
 	_box("steel",Vector3(0,.012,-3.65),Vector3(3.4,.025,.19))
 	for x in 34: _box("edge",Vector3(-1.65+x*.10,.029,-3.65),Vector3(.025,.015,.17))
-	# Back bench in human scale: 0.95m worktop, toe recess and drawer handles.
+	# Bancada do fundo em escala humana: tampo a 0.95m, recuo para os pés e puxadores de gaveta.
 	_box("wood",Vector3(.8,.96,-4.94),Vector3(4.5,.10,.84))
 	for x in [-.65,2.3]:
 		_box("steel",Vector3(x,.45,-4.97),Vector3(1.14,.82,.69))
@@ -50,7 +50,7 @@ func build() -> Node3D:
 	_box("steel",Vector3(2.35,1.20,-4.92),Vector3(.30,.065,.045))
 	_box("edge",Vector3(-.50,1.1,-4.85),Vector3(.24,.22,.24))
 	_box("steel",Vector3(-.50,1.23,-4.85),Vector3(.39,.09,.15))
-	# Cabinets and a compact rolling chest, kept outside the central vehicle bay.
+	# Armários e um carrinho de ferramentas compacto, mantidos fora da baia central do veículo.
 	for x in [-4.45,-3.57]:
 		_box("steel",Vector3(x,1.12,-5.30),Vector3(.85,2.20,.9))
 		_box("cabinet",Vector3(x,1.17,-4.84),Vector3(.77,2.02,.035))
@@ -60,7 +60,7 @@ func build() -> Node3D:
 	for i in 4: _box("edge",Vector3(3.7,.30+i*.18,-2.60),Vector3(.69,.026,.025))
 	for x in [3.39,4.01]:
 		for z in [-3.10,-2.70]: _box("rubber",Vector3(x,.12,z),Vector3(.11,.18,.12))
-	# Authored visible fixtures; illumination is provided by the showroom rig.
+	# Luminárias visíveis definidas; a iluminação vem do rig do showroom.
 	for x in [-3.0,2.4]:
 		_box("steel",Vector3(x,3.55,-5.72),Vector3(2.4,.15,.23))
 		_box("light",Vector3(x,3.49,-5.57),Vector3(2.22,.06,.08))

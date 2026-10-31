@@ -1,6 +1,6 @@
 extends RefCounted
-## Cabin dimensions authored alongside the exterior, independent of mirrors and
-## door cuts. The shared seated-driver system still builds and animates the cabin.
+## Dimensões da cabine definidas junto com o exterior, independentes dos retrovisores e
+## dos recortes de porta. O sistema compartilhado de motorista sentado ainda monta e anima a cabine.
 static func spec(s: Dictionary) -> Dictionary:
 	var w := float(s["size"][0])
 	var h := float(s["size"][1])
@@ -19,8 +19,8 @@ static func spec(s: Dictionary) -> Dictionary:
 		"rear":l*float(s.cabin_back)-.045,
 		"rear_top":l*float(s.roof_back)-.035,
 		"rows":str(s.body) in ["hatch","sedan"],
-		# Exterior roof already closes the cabin. A rectangular liner would cut
-		# through its tapered shoulders and appear as a second, transparent roof.
+		# O teto externo já fecha a cabine. Um forro retangular cortaria
+		# os ombros afunilados dele e apareceria como um segundo teto transparente.
 		"roof_liner":false,
 		"roof_rear":l*float(s.roof_back)-.035,
 		"roof_trim_x":w*(.30 if coupe else .34),

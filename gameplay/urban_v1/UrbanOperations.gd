@@ -1,6 +1,6 @@
 extends Node
-## Session-owned adapter for productive Harbor behaviors that do not belong to
-## NativeRegion geometry, the place catalog, Actor, combat or shared models.
+## Adaptador pertencente à sessão para comportamentos produtivos do Harbor que não pertencem à
+## geometria de NativeRegion, ao catálogo de lugares, a Actor, ao combate nem aos modelos compartilhados.
 
 var session
 var port

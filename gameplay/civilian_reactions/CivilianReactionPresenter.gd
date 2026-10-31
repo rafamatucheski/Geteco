@@ -45,7 +45,7 @@ func scream(actor: Node3D) -> bool:
 	if randf() >= SCREAM_CHANCE: return false
 	if preload("res://audio/DirectedVoiceBank.gd").enabled():
 		last_scream[id] = clock
-		# This phrase choice varies the response, never the speaker's identity.
+		# Esta escolha de frase varia a resposta, nunca a identidade de quem fala.
 		bubble(actor, random_phrase())
 		return true
 	if streams.is_empty(): return false
@@ -58,7 +58,7 @@ func scream(actor: Node3D) -> bool:
 		return true
 	return false
 
-## Shared authored presentation for gameplay and covered first-use preparation.
+## Apresentação escrita compartilhada pelo jogo e pela preparação de primeiro uso coberta.
 static func create_bubble_label() -> Label3D:
 	var label := Label3D.new()
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED

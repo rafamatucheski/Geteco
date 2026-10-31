@@ -1,5 +1,5 @@
 extends Node
-## Owns only the mine's initial equipment. Once driven, fleet/save owns vehicles.
+## É dono só do equipamento inicial da mina. Depois de dirigidos, a frota/save é dona dos veículos.
 const FLEET := preload("res://gameplay/mining/MiningFleet.gd")
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const ORIGIN := LAYOUT.CENTER
@@ -43,7 +43,7 @@ func spawn_equipment() -> void:
 			_watch_equipment(found)
 			continue
 		var record: Dictionary = _records.get(identity,{})
-		# A destroyed machine does not magically return when the save is loaded.
+		# Uma máquina destruída não volta magicamente quando o save é carregado.
 		if not record.is_empty() and float(record.health) <= 0: continue
 		var point: Vector3 = definition.point+Vector3.UP*.15
 		if not record.is_empty(): point = Vector3(record.position[0],record.position[1],record.position[2])
@@ -51,8 +51,8 @@ func spawn_equipment() -> void:
 		if region != session.state.region_id or point.distance_to(world.player.global_position) > 125.0:
 			_spawned = false
 			continue
-		# Per-vehicle residency, including equipment driven and saved elsewhere.
-		# Production's 145 m distance cleanup remains the owner of despawning.
+		# Residência por veículo, incluindo equipamento dirigido e salvo em outro lugar.
+		# A limpeza por distância de 145 m da produção continua dona do despawn.
 		var ray := PhysicsRayQueryParameters3D.create(point+Vector3.UP*3,point-Vector3.UP*4,1)
 		if world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): _spawned = false; continue
 		var car: CharacterBody3D = world.production.spawn_vehicle(str(definition.archetype),point,float(record.get("yaw",definition.yaw)))
@@ -125,7 +125,7 @@ static func create_rock(index: int) -> RigidBody3D:
 	rock.angular_damp = 1.2
 	rock.add_to_group("mining_cargo")
 	rock.set_meta("mining_origin_height",.58)
-	# Fractured quarry blocks, with the same maximum load envelope as before.
+	# Blocos fraturados da pedreira, com o mesmo envelope máximo de carga de antes.
 	var mesh: Mesh = preload("res://world/mining/MiningBatch.gd").mesh("rock")
 	var radius := .66+float(index%3)*.07
 	var rock_scale := Vector3(radius/.56,1.15/1.08,radius/.56)

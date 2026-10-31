@@ -1,5 +1,5 @@
 extends RefCounted
-## Only authored paving may be stepped onto. Furniture is never a stair.
+## Só se pode subir em calçamento definido. Mobília nunca é degrau.
 const MAX_HEIGHT := 0.20
 const MARGIN := 0.001
 
@@ -12,13 +12,13 @@ static func try_step(body: CharacterBody3D, motion: Vector3) -> void:
 	var top := obstacle.to_global(Vector3.UP * float(obstacle.get_meta("pedestrian_step_top", 0.0))).y
 	var height := top - body.global_position.y + MARGIN
 	if height <= MARGIN or height > MAX_HEIGHT: return
-	# Sweep the full capsule up and forward. Never teleport through a
-	# wall, ceiling, person or prop, and never change horizontal travel distance.
+	# Varre a cápsula inteira para cima e para a frente. Nunca teleporta através de
+	# parede, teto, pessoa ou prop, e nunca muda a distância horizontal percorrida.
 	var lift := Vector3.UP * height
 	if body.test_move(body.global_transform, lift, null, MARGIN): return
 	var raised := body.global_transform.translated(lift)
 	if body.test_move(raised, motion, null, MARGIN): return
-	# The blocking box itself supplies the support height. A downward capsule
-	# cast at the rounded lip reports a steep normal at low walking speeds,
-	# incorrectly rejecting exactly the same step that running can climb.
+	# A própria caixa que bloqueia fornece a altura de apoio. Uma cápsula lançada
+	# para baixo na borda arredondada informa uma normal íngreme em velocidades baixas de caminhada,
+	# rejeitando por engano exatamente o mesmo degrau que a corrida consegue subir.
 	body.global_position.y += height

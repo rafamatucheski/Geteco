@@ -1,6 +1,6 @@
 extends Node
-## Crime, testimony, pursuit and investigation are separate states. A witness
-## must perceive the event; hearing alone reports a location, never an identity.
+## Crime, testemunho, perseguição e investigação são estados separados. Uma testemunha
+## precisa perceber o evento; só ouvir informa um local, nunca uma identidade.
 const MAX_REPORTS := 24
 const REPORT_SECONDS := 2.5
 ## 21/10: 300 s deixava "INVESTIGAÇÃO LOCAL" quase sempre na tela (todo crime ouvido reinicia); agora 1 min.
@@ -55,7 +55,7 @@ func confirmed(points: int, point: Vector3, kind: String, testimony: Dictionary 
 
 func observe(points: int, point: Vector3, kind: String, victim: Node3D = null) -> bool:
 	if points <= 0 or not gameplay.state.weapons_allowed() or gameplay.health <= 0: return false
-	# The actual attacked officer has direct evidence, even when the blow was fatal.
+	# O policial realmente atacado tem prova direta, mesmo quando o golpe foi fatal.
 	if is_instance_valid(victim) and victim.get_meta("gameplay_role", "") == "police":
 		gameplay.register_crime(points, point, kind)
 		return true
@@ -83,8 +83,8 @@ func observe(points: int, point: Vector3, kind: String, victim: Node3D = null) -
 		witnesses.append({"ref": weakref(actor), "identified": identified})
 		if witnesses.size() >= 4: break
 	if witnesses.is_empty(): return false
-	# A burst is one pending testimony with accumulated consequences, not an
-	# unbounded queue of callbacks. Each report retains its observed position.
+	# Uma rajada é um testemunho pendente com consequências acumuladas, não uma
+	# fila sem limite de callbacks. Cada denúncia mantém a posição observada.
 	for report in pending:
 		if report.kind == kind and report.place == location() and report.region == region() and report.point.distance_to(point) < 4.0 and report.age < 0.5:
 			report.points = mini(600, int(report.points) + points)
@@ -103,8 +103,8 @@ func visible_event(observer: Node3D, point: Vector3, subject: Node3D = null) -> 
 	return hit.is_empty() or hit.collider == gameplay.player or (is_instance_valid(subject) and hit.collider == subject) or hit.position.distance_to(point + Vector3.UP) < 0.7
 
 func preserve_departing_witnesses() -> void:
-	# Streaming unloads people, not testimony they have already started. Keep
-	# only the evidence of witnesses alive at this boundary, with its countdown.
+	# O streaming descarrega pessoas, não o testemunho que elas já começaram. Mantém
+	# só a prova das testemunhas vivas nesta fronteira, com a contagem regressiva.
 	for report in pending:
 		for witness in report.witnesses:
 			var actor: Variant = witness.ref.get_ref()
@@ -140,8 +140,8 @@ func tick(delta: float) -> void:
 			heard = true
 			identified = identified or bool(witness.identified)
 		if not heard: continue
-		# A call keeps the original crime position. It never reads the player's
-		# current position after they have escaped or changed context.
+		# Uma chamada mantém a posição original do crime. Nunca lê a posição atual
+		# do jogador depois que ele escapou ou mudou de contexto.
 		if report.region != region() or report.place != location():
 			if identified: gameplay.register_crime(int(report.points), report.point, report.kind, report)
 			else:
@@ -182,8 +182,8 @@ func request_surrender() -> bool:
 	surrendering = true
 	surrender_time = 0.0
 	for round_index in gameplay._police_rounds.duplicate():
-		# Hostile civilians use the same projectile array. Their bullets keep
-		# flying; surrender is an agreement with the police, not invulnerability.
+		# Civis hostis usam o mesmo array de projéteis. As balas deles continuam
+		# voando; render-se é um acordo com a polícia, não invulnerabilidade.
 		var source: Variant = round_index.source.get_ref() if round_index.get("source") is WeakRef else null
 		if not is_instance_valid(source) or not source is Node: continue
 		if source.get_meta("gameplay_role", "") != "police" and not source.get_meta("dispatch_unit",false): continue
@@ -234,8 +234,8 @@ func snapshot() -> Dictionary:
 	for report in pending.slice(0,MAX_REPORTS):
 		var evidence := _witness_evidence(report)
 		if not evidence.heard: continue
-		# Snapshot the ongoing call, not live NPC identity. Loading streams new
-		# people; an already perceived crime must retain its remaining call time.
+		# Tira snapshot da chamada em andamento, não da identidade viva do NPC. O carregamento traz
+		# pessoas novas pelo streaming; um crime já percebido precisa manter o tempo de chamada restante.
 		reports.append({"points":int(report.points),"point":[report.point.x,report.point.y,report.point.z],
 			"exterior":[report.exterior.x,report.exterior.y,report.exterior.z],"kind":report.kind,
 			"age":float(report.age),"region":report.region,"place":report.place,

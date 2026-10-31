@@ -1,5 +1,5 @@
 extends Node
-## Vehicle condition without a frame loop: the existing handling consumes it.
+## Condição do veículo sem loop por quadro: a dirigibilidade existente a consome.
 const NODE_NAME := "PoliceTirePuncture"
 const POP_RATE := 32000
 const POP_SECONDS := .85

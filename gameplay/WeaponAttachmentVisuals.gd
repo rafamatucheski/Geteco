@@ -21,8 +21,8 @@ static func apply(root: Node3D, id: String, entry: Dictionary, muzzle: Vector3) 
 	if id in CUSTOM.MELEE:
 		_melee(root, id, parts, steel)
 		return
-	# The M4 effect anchor is 1 cm ahead of its authored barrel end. A short
-	# mounting sleeve joins attachments to the barrel without moving their mouth.
+	# A âncora de efeito da M4 fica 1 cm à frente da ponta definida do cano. Uma luva
+	# curta de montagem une os acessórios ao cano sem mover a boca deles.
 	if id == "m4a1" and (parts.get("barrel", "") == "barrel_long" or parts.get("muzzle", "") in ["suppressor", "compensator"]):
 		GEO._cylinder(root,"MuzzleMount",muzzle+Vector3(0,0,.0045),.015,.013,steel,Vector3(90,0,0))
 	var mouth := muzzle
@@ -76,13 +76,13 @@ static func apply(root: Node3D, id: String, entry: Dictionary, muzzle: Vector3) 
 			grip.rotation_degrees.x = 35
 			root.add_child(grip)
 	if parts.has("stock"):
-		# The authored meshes are material-batched before customization; use their
-		# measured attachment coordinates, not names removed by the batching pass.
+		# As malhas feitas à mão são agrupadas por material antes da customização; usa as
+		# coordenadas medidas de fixação, não nomes removidos pela passada de agrupamento.
 		var butt_z := .182 if id == "hunting_rifle" else (.29 if id == "ak47" else (.19 if id == "smg" else .25))
 		GEO._box(root,"StabilizedButtPad",Vector3(0,.01 if id == "smg" else -.02,butt_z),Vector3(.055,.14 if id == "hunting_rifle" else .095,.025),steel)
 	if parts.has("scope"):
 		if id == "hunting_rifle":
-			# Upgrade the existing optic's objective rather than stacking a second.
+			# Melhora a objetiva da mira existente em vez de empilhar uma segunda.
 			GEO._cylinder(root,"UpgradedObjective",Vector3(0,.097,-.222),.034,.042,steel,Vector3(90,0,0))
 			GEO._cylinder(root,"UpgradedObjectiveLens",Vector3(0,.097,-.244),.029,.002,_mat(Color("477d87"), .45, .5),Vector3(90,0,0))
 			return

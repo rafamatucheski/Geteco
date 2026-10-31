@@ -17,7 +17,7 @@ static func hub(root: Node3D, radius: float, side: float, center: Vector3, mater
 static func exhaust(root: Node3D, center: Vector3, material: Material) -> void:
 	var section := [Vector2(-.095,.055),Vector2(.095,.055),Vector2(.095,.044),Vector2(-.095,.044)]
 	var node := _profile(root,"ExhaustTip",section,16,Vector3.ZERO,material)
-	# Local profile axis is X; the exhaust outlet points towards the rear (+Z).
+	# O eixo local do perfil é X; a saída do escapamento aponta para trás (+Z).
 	node.rotation.y=-PI*.5
 	node.position=center
 

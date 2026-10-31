@@ -1,7 +1,7 @@
 extends Node
-## Opt-in adapter for workers and counter staff excluded from street crowd AI.
-## Owns a short collision-checked retreat, then returns to the interrupted post.
-## It adds no damage or death API and never enrolls protected garage residents.
+## Adaptador opcional para trabalhadores e atendentes de balcão fora da IA de multidão da rua.
+## É dono de um recuo curto checado contra colisão e depois volta ao posto interrompido.
+## Não acrescenta API de dano nem de morte e nunca inscreve moradores protegidos da garagem.
 ## Estilos opcionais (moradores dos prédios, 15/10/2026): com `styles` vazio o
 ## comportamento é o original (recuo curto protegendo o rosto). Com pesos, cada
 ## incidente sorteia fugir, se esconder agachado, ligar para a polícia, encarar
@@ -151,7 +151,7 @@ func _process(delta: float) -> void:
 	if actor.get_meta("v2_burning", false): _notice(actor.global_position, 1.0)
 	var emergency: Node = gameplay.get("emergency")
 	if emergency == null: return
-	# EmergencyManager already caps this list at 12 fires; no scene/group scan.
+	# EmergencyManager já limita esta lista a 12 incêndios; sem varredura de cena/grupo.
 	for fire in emergency.fires:
 		if not is_instance_valid(fire) or fire.is_queued_for_deletion() or fire.intensity <= 0: continue
 		if actor.global_position.distance_squared_to(fire.global_position) > FIRE_RADIUS * FIRE_RADIUS: continue
@@ -177,7 +177,7 @@ func _physics_process(delta: float) -> void:
 		var offset := _target - actor.global_position
 		offset.y = 0.0
 		var movement := offset.limit_length(WALK_SPEED * delta)
-		# Sweep ahead on both legs: a closed route leaves the NPC shielding in place.
+		# Varre adiante nos dois trechos: uma rota fechada deixa o NPC se protegendo no lugar.
 		if movement.length_squared() > .000001 and _safe_motion(movement):
 			actor.velocity.x = movement.x / delta
 			actor.velocity.z = movement.z / delta
@@ -268,7 +268,7 @@ func _safe_motion(movement: Vector3) -> bool:
 	return not hit.is_empty() and hit.normal.y > .65
 
 func _claim_pose() -> void:
-	if actor.get("carrying") == true: return # Keep the existing physical cargo grip.
+	if actor.get("carrying") == true: return # Mantém a pegada física existente na carga.
 	if model.has_meta("workplace_shield_pivots"):
 		for pair in model.get_meta("workplace_shield_pivots"):
 			for joint in [pair.shoulder, pair.elbow]:

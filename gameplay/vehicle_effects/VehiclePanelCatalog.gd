@@ -1,6 +1,6 @@
 extends RefCounted
-## Offline-prepared variants. Shared pristine geometry; only damaged instances
-## duplicate vertices. The remaining fleet keeps its existing presentation.
+## Variantes preparadas offline. Geometria intacta compartilhada; só as instâncias danificadas
+## duplicam vértices. O resto da frota mantém a apresentação existente.
 const IDS := ["sport_coupe", "monaliza", "metro_hatch", "police_cruiser"]
 static var _scenes: Dictionary = {}
 

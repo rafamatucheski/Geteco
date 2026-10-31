@@ -1,6 +1,6 @@
 extends RefCounted
-## Drives the visible anatomical rig, not the hidden legacy police bones.
-## The actor's capsule remains under helicopter physics throughout this pose.
+## Comanda o rig anatômico visível, não os ossos legados escondidos da polícia.
+## A cápsula do ator continua sob a física do helicóptero durante toda esta pose.
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 var officer: CharacterBody3D
 var visual: Node3D
@@ -60,8 +60,8 @@ func update(delta: float, next_phase: String, progress: float, rope_world: Vecto
 	body.pelvis.transform = Transform3D(hip_basis, hip_point)
 	body.spine.transform = Transform3D(Basis.from_euler(Vector3(lerpf(-.12, .045, land), -.4 * sway, -sway * .5)), Vector3(0, .12, 0))
 	body.head_node.transform = Transform3D(Basis.from_euler(Vector3(.10 + .12 * land, sin(clock*.8)*.045, 0)), Vector3(0, .4, 0))
-	# Weight hangs in the waist/leg harness. Unequal ankle offsets avoid a rigid
-	# seated mannequin; both feet plant and knees absorb the actual landing.
+	# O peso pende no arnês de cintura/perna. Offsets desiguais de tornozelo evitam um
+	# manequim sentado rígido; os dois pés firmam e os joelhos absorvem a aterrissagem real.
 	for i in 2:
 		var side := -1.0 if i == 0 else 1.0
 		var hang := Vector3(side * .17, .25 + .035 * sin(clock * 2.0 + i), .31 + .055 * sin(clock * 1.2 + i))
@@ -71,16 +71,16 @@ func update(delta: float, next_phase: String, progress: float, rope_world: Vecto
 	var harness: Vector3 = visual.rappel_harness.global_position if is_instance_valid(visual.get("rappel_harness")) else body.pelvis.to_global(Vector3(.015, -.025, .174))
 	var rope_direction := (rope_world - harness).normalized()
 	if rope_direction.y < .25: rope_direction = Vector3.UP
-	# Upper hand clamps the loaded line roughly half a metre above the harness.
-	# Reach stays anatomical even while the helicopter gently drifts sideways.
+	# A mão de cima prende a corda carregada cerca de meio metro acima do arnês.
+	# O alcance continua anatômico mesmo enquanto o helicóptero deriva de leve para o lado.
 	var upper := harness + rope_direction * (.64 + .025 * sin(clock * 2.1))
 	var lower := harness - rope_direction * .11 + body.global_basis * Vector3(.09, -.03, .015)
 	if not suspended and phase != "land":
 		upper = upper.lerp(body.to_global(Vector3(-.18, 1.05, .26)), release)
 		lower = lower.lerp(body.to_global(Vector3(.17, 1.08, .28)), release)
 	_pose_arms([upper, lower])
-	# Read the actual solved endpoints so the rope touches the gloves, even if
-	# a short/tall body clamps a hand to its anatomical reach.
+	# Lê as pontas resolvidas reais para que a corda toque as luvas, mesmo se
+	# um corpo baixo/alto limitar uma mão ao alcance anatômico dela.
 	_contacts = {
 		"upper_hand": body.forearms[0].to_global(Vector3(0, -KIT.FOREARM - .06, 0)),
 		"lower_hand": body.forearms[1].to_global(Vector3(0, -KIT.FOREARM - .06, 0)),
@@ -89,8 +89,8 @@ func update(delta: float, next_phase: String, progress: float, rope_world: Vecto
 		"phase": phase,
 	}
 	if is_instance_valid(visual.weapon):
-		# Rifle hangs by its sling against the chest, with muzzle down and away
-		# from the rope. It moves into the hands only during the release phase.
+		# O fuzil pende pela bandoleira contra o peito, com a boca do cano para baixo e longe
+		# da corda. Só vai para as mãos durante a fase de soltura.
 		var slung := Transform3D(Basis.from_euler(Vector3(-1.20, PI, -.42)), Vector3(-.08, .06, .27))
 		var ready := Transform3D(Basis.from_euler(Vector3(-.30, PI, .05)), Vector3(-.15, .10, .28))
 		visual.weapon.transform = slung.interpolate_with(ready, release)

@@ -71,8 +71,8 @@ func _ready() -> void:
 		visual.look_seed = look_seed if look_seed >= 0 else randi() % 100000
 		visual.uniform_tones = uniform_tones
 		add_child(visual)
-	# Authored encounters may override the tier's default loadout. The gun in
-	# the hands, its projectiles and the collectible drop must be the same ID.
+	# Encontros escritos podem substituir o equipamento padrão do nível. A arma nas
+	# mãos, os projéteis dela e o drop coletável precisam ter o mesmo ID.
 	if visual.weapon_id != weapon_id:
 		var previous: Node3D = visual.weapon
 		visual.equip(weapon_id)
@@ -161,8 +161,8 @@ func _shoot(target: Node3D) -> void:
 		burst = (burst + 1) % 3
 		cooldown = float(data.fire_interval) if burst != 0 else 1.35
 	elif weapon_id == "shotgun_auto":
-		# Two quick follow-up shots distinguish the semiauto while preserving a
-		# readable pause for the player to move between NPC volleys.
+		# Dois tiros rápidos em seguida distinguem a semiautomática e preservam uma
+		# pausa legível para o jogador se mover entre as rajadas dos NPCs.
 		burst = (burst + 1) % 2
 		cooldown = float(data.fire_interval) if burst != 0 else 1.1
 	else:

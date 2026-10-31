@@ -1,6 +1,6 @@
 extends SubViewportContainer
-## Same vehicle and paint in a static workshop bay. A single isolated viewport;
-## orbit rotates the display model, keeping the room and lighting stationary.
+## O mesmo veículo e pintura numa baia estática de oficina. Um único viewport isolado;
+## a órbita gira o modelo exibido, mantendo a sala e a iluminação paradas.
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const PAINT := preload("res://runtime/VehiclePaint.gd")
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
@@ -173,7 +173,7 @@ func set_auto_rotate(enabled: bool) -> void:
 
 func _update_view() -> void:
 	if not is_instance_valid(_camera): return
-	# Stationary room: the model turns on its own axle instead of orbiting walls.
+	# Sala parada: o modelo gira no próprio eixo em vez de as paredes orbitarem.
 	if is_instance_valid(_model): _model.rotation.y = .75-_yaw
 	_glow_disc.rotation.y = .75-_yaw
 	var offset := Vector3(sin(.75)*cos(_pitch),sin(_pitch),cos(.75)*cos(_pitch))*_distance/_zoom

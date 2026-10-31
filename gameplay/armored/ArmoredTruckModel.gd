@@ -1,6 +1,6 @@
 extends RefCounted
-## Purpose-built cash carrier. Static panels share one mesh per finish; only
-## wheels and the two vault leaves move. No per-frame script or extra lights.
+## Carro-forte feito sob medida. Painéis estáticos compartilham uma malha por acabamento; só
+## as rodas e as duas folhas do cofre se movem. Sem script por quadro nem luzes extras.
 static var _materials: Dictionary = {}
 var _batches: Dictionary = {}
 
@@ -27,7 +27,7 @@ func _build() -> Node3D:
 	box(Vector3(0,1.81,-1.07),Vector3(2.32,1.86,.18),"paint")
 	box(Vector3(0,.94,.79),Vector3(2.13,.13,3.63),"interior")
 	for side in [-1,1]:
-		# Skirt is broken around each rear wheel, never overlapping the tire.
+		# A saia é interrompida em volta de cada roda traseira, nunca sobrepondo o pneu.
 		box(Vector3(side*1.11,2.04,.8),Vector3(.2,1.34,3.94),"paint")
 		box(Vector3(side*1.11,1.13,-.07),Vector3(.2,.47,2.16),"paint")
 		box(Vector3(side*1.11,1.13,2.46),Vector3(.2,.47,.57),"paint")
@@ -62,8 +62,8 @@ func _build() -> Node3D:
 	for side in [-1,1]:
 		box(Vector3(side*.50,2.22,-2.15),Vector3(.83,.36,.035),"glass",Vector3(-.14,0,0))
 		box(Vector3(side*.49,2.05,-2.18),Vector3(.53,.025,.028),"trim",Vector3(0,0,side*.08))
-		# Equipment discovers each lamp from its surface centroid. Keeping the
-		# lenses separate preserves independent left/right damage and projectors.
+		# Equipment descobre cada lâmpada pelo centroide da superfície. Manter as
+		# lentes separadas preserva dano e projetores independentes à esquerda/direita.
 		box(Vector3(side*.84,1.29,-2.811),Vector3(.35,.24,.04),"headlight_left" if side < 0 else "headlight_right")
 		box(Vector3(side*.84,1.11,-2.821),Vector3(.35,.085,.04),"amber")
 		box(Vector3(side*.96,1.09,-2.96),Vector3(.10,.58,.1),"trim")

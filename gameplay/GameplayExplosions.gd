@@ -22,8 +22,8 @@ func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_
 	var crushed := is_instance_valid(source) and source.has_meta("heavy_crush_ratio")
 	if crushed:
 		if source.get_meta("heavy_crush_exploded",false): return
-		# Shared by destroyed listeners and Vehicle.crush's fallback. Mark first
-		# so chained destruction cannot trigger the same wreck twice.
+		# Compartilhado pelos ouvintes de destruição e pelo fallback de Vehicle.crush. Marca primeiro
+		# para que destruição encadeada não dispare o mesmo destroço duas vezes.
 		source.set_meta("heavy_crush_exploded",true)
 		if not g.state.weapons_allowed(): return
 		var owner_ref: Variant = source.get_meta("heavy_crush_source",null)

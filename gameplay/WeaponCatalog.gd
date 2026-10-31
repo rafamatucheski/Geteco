@@ -264,7 +264,7 @@ static func get_random_pitch_scale(weapon_id: String) -> float:
 	var variance := float(data.get("pitch_variance", 0.06))
 	return randf_range(1.0 - variance, 1.0 + variance)
 
-# Distances are world units, independent of projectile speed and camera zoom.
+# Distâncias são unidades do mundo, independentes da velocidade do projétil e do zoom da câmera.
 static func distance_damage(base_damage: int, distance: float, full_range: float, max_range: float, minimum: float) -> int:
 	if distance > max_range or base_damage <= 0: return 0
 	var weight := clampf((distance - full_range) / maxf(max_range - full_range, 0.001), 0.0, 1.0)

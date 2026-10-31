@@ -29,8 +29,8 @@ var stains: Array[Dictionary] = []
 var corpses: Array[Dictionary] = []
 var _meshes: Array[ArrayMesh] = []
 var _rng := RandomNumberGenerator.new()
-# Keep the exact material configuration alive across empty stain intervals.
-# Every stain still owns its independently animated material.
+# Mantém viva a configuração exata de material através de intervalos sem manchas.
+# Toda mancha ainda é dona do próprio material animado independente.
 var _shader_template: StandardMaterial3D
 
 
@@ -89,7 +89,7 @@ func stains_near(point: Vector3, radius: float) -> Array[Dictionary]:
 	return result
 
 
-## Contact consumers only need existence; preserve the same planar/scale test.
+## Os consumidores de contato só precisam saber que existe; preserva o mesmo teste planar/de escala.
 func has_stain_near(point: Vector3, radius: float) -> bool:
 	for stain in stains:
 		if not is_instance_valid(stain.node): continue

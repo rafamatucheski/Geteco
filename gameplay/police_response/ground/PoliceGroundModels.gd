@@ -1,6 +1,6 @@
 extends RefCounted
-## Authored motorcycle chassis and a compact, fully physical tracked vehicle.
-## Static geometry/materials are shared; no extra lights or autonomous loops.
+## Chassi de moto feito à mão e um veículo de esteiras compacto e totalmente físico.
+## Geometria/materiais estáticos são compartilhados; sem luzes extras nem loops autônomos.
 static var _materials: Dictionary = {}
 static var _boxes: Dictionary = {}
 static var _geometry: Dictionary = {}
@@ -18,8 +18,8 @@ static func motorcycle(model: Node3D) -> void:
 	var screen := _armor(model,"PoliceWindshield",Vector3(0,1.05,-.67),Vector2(.55,.045),Vector2(.43,.038),.38,.04,Color("718b98"))
 	screen.rotation.x = -.12
 	_box(model,"ScreenMount",Vector3(0,1.09,-.637),Vector3(.41,.035,.018),Color("29343c"))
-	# The rider is the authored articulated bike pilot. Child patches inherit its
-	# visibility on mount/dismount and never leave a floating police badge behind.
+	# O piloto é o motociclista articulado feito à mão. Os emblemas filhos herdam a
+	# visibilidade dele ao montar/desmontar e nunca deixam um distintivo de polícia flutuando para trás.
 	for part in model.get_children():
 		if not part is MeshInstance3D or part.mesh == null: continue
 		var material := part.get_active_material(0) as StandardMaterial3D
@@ -160,7 +160,7 @@ static func _hull_details() -> ArrayMesh:
 		DETAIL._tube(st,Vector3(side*.69,.76,-2.29),Vector3(side*.69,.80,-2.45),.063,Color("333c2d"),8)
 		DETAIL._tube(st,Vector3(side*.82,1.10,1.99),Vector3(side*.82,1.10,2.2),.12,Color("252c27"),10)
 		DETAIL._box(st,Vector3(side*1.1,1.26,.93),Vector3(.06,.055,1.06),Color("292f24"))
-	# Rear engine grilles and louvers are one batched mesh, not individual nodes.
+	# Grades traseiras do motor e venezianas são uma malha agrupada, não nós individuais.
 	DETAIL._box(st,Vector3(0,1.434,1.22),Vector3(1.56,.03,.70),Color("222c25"))
 	for index in 13:
 		DETAIL._box(st,Vector3(-.72+index*.12,1.46,1.22),Vector3(.065,.035,.69),Color("586444"))

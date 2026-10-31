@@ -84,9 +84,9 @@ static func flush(controller: Node) -> void:
 		census[key] = int(census.get(key, 0)) + 1
 	var entry := {
 		"label": "dispatch.summary", "start_usec": _window_start, "duration_usec": now - _window_start,
-		# Keep the legacy key as an alias, with the exact number of controller calls.
+		# Mantém a chave legada como alias, com o número exato de chamadas do controlador.
 		"physics_ticks": _controller_ticks, "controller_ticks": _controller_ticks,
-		# Engine counter delta since the first flush (separate from callback count).
+		# Delta do contador do motor desde o primeiro flush (separado da contagem de callbacks).
 		"engine_physics_ticks": Engine.get_physics_frames() - _window_physics_frames,
 		"spans": spans, "census": census,
 		# Máximo do último segundo (o motor só atualiza este monitor uma vez por segundo).

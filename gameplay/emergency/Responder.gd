@@ -8,7 +8,7 @@ var vehicle: CharacterBody3D
 var visual: Node3D
 var mode := "approach":
 	set(value):
-		# Dispatch can end service before this responder observes the missing fire.
+		# O despacho pode encerrar o serviço antes que este socorrista perceba que o incêndio sumiu.
 		if mode == "service" and value != "service" and role == "fire": _stop_water()
 		mode = value
 var action_time := 0.0

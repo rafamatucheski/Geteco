@@ -12,8 +12,8 @@ const GATE_WIDTH := 104.0 * SCALE
 const GATE_DEPTH := 0.16
 const GATE_HEIGHT := 1.05
 const GUARD_RANGE := 1.7
-# Passenger deck, quay and fishing landing, including clearance for a capsule
-# at the quay's southern edge. The freight lane begins east of this frontage.
+# Deque de passageiros, cais e atracadouro de pesca, incluindo folga para uma cápsula
+# na borda sul do cais. A faixa de carga começa a leste desta frente.
 const PUBLIC_TERMINAL := Rect2(217.5,176.0,26.0,27.2)
 
 var session
@@ -186,13 +186,13 @@ func _pay_bribe() -> void:
 	if not session.state.spend(100, "south_port_bribe:" + session._transaction()):
 		_guard_notice("GUARDA: São R$ 100. Saldo insuficiente.", _talking_staff)
 		return
-	# Guards inside the yard can also authorize an already-present visitor.
+	# Guardas dentro do pátio também podem autorizar um visitante que já está lá.
 	authorized_visit = _inside_security_zone(_actor_position_now())
 	authorized_entry = not authorized_visit
 	exiting_port = false
 	_alerted_reset()
 	session.close_menu()
-	# The debit and the visit permission belong to the same saved game state.
+	# O débito e a permissão de visita pertencem ao mesmo estado de jogo salvo.
 	session.save_game()
 	_guard_notice("GUARDA: Pode entrar. A cancela está liberada.", _talking_staff)
 
@@ -232,12 +232,12 @@ static func validate_snapshot(data: Dictionary) -> bool:
 
 func _process(delta: float) -> void:
 	for i in _staff_respawn.size(): _staff_respawn[i] = maxf(0,_staff_respawn[i]-delta)
-	# Loading restores the permission before the saved actor location is admitted.
+	# O carregamento restaura a permissão antes que a localização salva do ator seja admitida.
 	if session == null or not session.ready_for_play or not is_instance_valid(session.world.player): return
-	# Entering a building must not revoke an open visit or close a gate on its user.
+	# Entrar num prédio não pode revogar uma visita aberta nem fechar um portão em quem o usa.
 	if not session.state.place_id.is_empty(): return
-	# Cinematic spawning and save/rescue admission relocate the actor; they are
-	# not an unpaid perimeter crossing. Rebase only after admission finishes.
+	# O spawn cinemático e a admissão de save/resgate realocam o ator; não são
+	# uma travessia de perímetro não paga. Só refaz a base depois que a admissão termina.
 	if session.has_position_transition():
 		initialized = false
 		return
@@ -359,7 +359,7 @@ func _set_gate(open: bool) -> void:
 		hinge.rotation.y = -direction * PI * 0.48 if open else 0.0
 
 func _inside_security_zone(point: Vector3) -> bool:
-	# Public passenger quay has its own access to the city, outside freight security.
+	# O cais público de passageiros tem acesso próprio à cidade, fora da segurança de carga.
 	if PUBLIC_TERMINAL.has_point(Vector2(point.x,point.z)): return false
 	var authored := Vector2(point.x / SCALE, point.z / SCALE)
 	return (authored.x >= 3200.0 and authored.x <= 6100.0 and authored.y > 3400.0 and authored.y < 6000.0) \

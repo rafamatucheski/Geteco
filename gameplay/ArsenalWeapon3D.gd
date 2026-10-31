@@ -1,5 +1,5 @@
 extends RefCounted
-## Shared geometry for equipped weapons and the trunk arsenal.
+## Geometria compartilhada das armas equipadas e do arsenal do porta-malas.
 const POSE = preload("res://gameplay/WeaponPoseData.gd")
 const GEO := preload("res://gameplay/WeaponPresentation3D.gd")
 const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
@@ -494,8 +494,8 @@ static func build(root: Node3D, id: String) -> Vector3:
 	preload("res://gameplay/WeaponFinish3D.gd").apply(root, id, flash_pos)
 	return flash_pos
 
-## Ogive with shoulder and neck, preserving LoadedRocket's local Y extents.
-## The reload rig rotates/translates that MeshInstance as one piece.
+## Ogiva com ombro e gargalo, preservando a extensão Y local de LoadedRocket.
+## O rig de recarga gira/translada esse MeshInstance como uma peça só.
 static var _rocket_body_mesh: ArrayMesh
 static func _rocket_mesh() -> ArrayMesh:
 	if _rocket_body_mesh != null: return _rocket_body_mesh
@@ -524,8 +524,8 @@ static func _rocket_mesh() -> ArrayMesh:
 	_rocket_body_mesh = st.commit()
 	return _rocket_body_mesh
 
-## Six broad cylinder flutes are geometry, so they remain readable from either
-## side and rotate with the real reload cylinder. Same .028 radius/.08 length.
+## Seis caneluras largas no tambor são geometria, então continuam legíveis de qualquer
+## lado e giram com o tambor real da recarga. Mesmo raio .028/comprimento .08.
 static var _revolver_drum_mesh: ArrayMesh
 static func _fluted_drum_mesh() -> ArrayMesh:
 	if _revolver_drum_mesh != null: return _revolver_drum_mesh

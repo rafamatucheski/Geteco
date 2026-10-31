@@ -1,5 +1,5 @@
 extends Node3D
-## Independent equipment: follows Dante's waist, never the weapon or its pose.
+## Equipamento independente: segue a cintura do Dante, nunca a arma nem a pose dela.
 const PRICE := 300
 var gameplay
 var owned := false
@@ -37,8 +37,8 @@ func _ready() -> void:
 	lens.material_override = glass
 	lens.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	housing.add_child(lens)
-	# One shadowed, local source: useful behind and beside Dante, independent of aim.
-	# Shorter reach than the tactical light; never paints a forward cone.
+	# Uma fonte local com sombra: útil atrás e ao lado do Dante, independente da mira.
+	# Alcance menor que o da lanterna tática; nunca pinta um cone para a frente.
 	lamp = OmniLight3D.new()
 	lamp.omni_range = 7.0
 	lamp.omni_attenuation = 1.35

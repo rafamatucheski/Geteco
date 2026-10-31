@@ -1,6 +1,6 @@
 extends RefCounted
-## Shared, human-scale weapon geometry. Origin is the firing hand, muzzle faces -Z.
-## The same meshes appear equipped and as floor loot, preserving their silhouette.
+## Geometria de arma compartilhada, em escala humana. A origem é a mão que atira, a boca do cano olha para -Z.
+## As mesmas malhas aparecem equipadas e como loot no chão, preservando a silhueta.
 
 static func build(root: Node3D, id: String) -> void:
 	var steel := _mat(Color("697782"), 0.60, 0.40)
@@ -100,8 +100,8 @@ static func build(root: Node3D, id: String) -> void:
 		for y in [-0.015,-0.027,-0.039,-0.051]:
 			_box(root,"GripTexture",Vector3(0,y,0.02),Vector3(0.036,0.003,0.034),rubber)
 		_trigger_guard(root,Vector3(0,-0.014,-0.047),dark)
-		# These details belong to the slide and must travel with it during recoil
-		# and reload. Keep the barrel and grip attached to the stationary frame.
+		# Esses detalhes pertencem ao ferrolho e precisam acompanhá-lo no recuo
+		# e na recarga. Mantém o cano e a empunhadura presos à armação parada.
 		var slide := root.get_node("Slide") as Node3D
 		for child in root.get_children():
 			if child.name == "FrontSight" or String(child.name).begins_with("RearSight") or String(child.name).begins_with("SlideSerration") or child.name == "EjectionPort":
@@ -131,8 +131,8 @@ static func _mat(color: Color, metallic: float, roughness: float) -> StandardMat
 	if _materials.size() < MATERIAL_CACHE_LIMIT: _materials[key] = mat
 	return mat
 
-## Octagonal cross section catches light on broad, deliberate bevels. The
-## original box bounds and node origin stay exact for grips and animation.
+## A seção octogonal pega luz em chanfros largos e deliberados. Os
+## limites da caixa original e a origem do nó ficam exatos para empunhaduras e animação.
 static func _section_box(root: Node3D, label: String, p: Vector3, size: Vector3, mat: Material, bevel: float) -> void:
 	var part := MeshInstance3D.new()
 	part.name = label
@@ -267,8 +267,8 @@ static func _lathe(root: Node3D, label: String, profile: PackedVector2Array, mat
 	part.material_override = mat
 	root.add_child(part)
 
-## A shaped wooden stock narrows at the fore-end and wrist. The authored
-## Y/Z outline, butt and grip contact positions stay untouched.
+## Uma coronha de madeira moldada afina no guarda-mão e no punho. O contorno Y/Z
+## definido e as posições de contato da soleira e da empunhadura ficam intactos.
 static func _stock_profile(root: Node3D, label: String, outline: PackedVector2Array, width: float, mat: Material) -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -300,7 +300,7 @@ static func _stock_profile(root: Node3D, label: String, outline: PackedVector2Ar
 	root.add_child(part)
 
 static func _profile(root: Node3D, label: String, outline: PackedVector2Array, width: float, mat: Material) -> void:
-	# Extruded Y/Z silhouette: shaped stocks and blades instead of rectangular bars.
+	# Silhueta Y/Z extrudada: coronhas e lâminas moldadas em vez de barras retangulares.
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var indices := Geometry2D.triangulate_polygon(outline)

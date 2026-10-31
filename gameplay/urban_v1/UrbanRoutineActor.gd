@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## Cemetery-only actor. Shares the native combat contract, never garage actors.
+## Ator só do cemitério. Compartilha o contrato de combate nativo, nunca os atores da garagem.
 
 signal route_finished
 signal died(actor: CharacterBody3D)
@@ -97,8 +97,8 @@ func _physics_process(delta: float) -> void:
 	if route_index < route.size() and departure_delay == 0.0:
 		var offset: Vector3 = route[route_index]-global_position
 		offset.y = 0
-		# .20 m arrival slack leaves clearance between .30 m capsules on the
-		# cemetery's .85 m lanes, without backing into the following visitor.
+		# A folga de chegada de .20 m deixa espaço entre cápsulas de .30 m nas
+		# alamedas de .85 m do cemitério, sem dar ré no visitante seguinte.
 		if offset.length() < .20:
 			route_index += 1
 			if route_index >= route.size():

@@ -81,7 +81,7 @@ func _alert() -> void:
 	plan_clock = 0
 
 func vehicle_stolen(side: int) -> void:
-	# Called once from the actual boarding flow, including cancelled attempts.
+	# Chamado uma vez a partir do fluxo real de embarque, incluindo tentativas canceladas.
 	provoke(session.world.player)
 	stolen = true
 	car.remove_meta("gang_damage_handler")
@@ -196,7 +196,7 @@ func _deploy(_thief_side: int) -> void:
 	while crew.size()<2:
 		var index := crew.size()
 		var point := Vector3.INF
-		# Each occupant uses its seat's door; never move it across the cabin.
+		# Cada ocupante usa a porta do próprio assento; nunca o move através da cabine.
 		var side := int(signf(car.to_local(passengers[index].global_position).x))
 		for clearance in [.2, .4, .65]:
 			var seat_local: Vector3 = car.to_local(passengers[index].global_position)

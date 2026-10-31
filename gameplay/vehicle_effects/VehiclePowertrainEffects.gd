@@ -1,5 +1,5 @@
 extends Node
-## Normal exhaust with idle micro-wisps, punch puffs and damage smoke with wake deflection.
+## Escapamento normal com micro-fiapos em marcha lenta, baforadas de arrancada e fumaça de dano com desvio pelo vento do movimento.
 
 const RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
 const BACKFIRE_SPEED := 220.0/16.0

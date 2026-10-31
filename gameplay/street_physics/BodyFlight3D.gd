@@ -39,8 +39,8 @@ var _shapes: Array[Dictionary] = []
 var _pose := POSE.new()
 var _restored := false
 var _recovery_tween: Tween
-# Shared with DispatchUnit until resumption. Restore/cancellation updates this
-# desired state instead of publishing an invisible walking collider.
+# Compartilhado com DispatchUnit até a retomada. Restauração/cancelamento atualizam este
+# estado desejado em vez de publicar um colisor de caminhada invisível.
 var _suspension: Dictionary = {}
 var _impact_hull: CapsuleShape3D
 var _ground_contact: Dictionary = {}
@@ -60,8 +60,8 @@ func suspend_for_dispatch(state: Dictionary) -> void:
 	state.owner = weakref(self)
 	state.owner_physics = is_physics_processing()
 	state.tween_running = _recovery_tween != null and _recovery_tween.is_valid() and _recovery_tween.is_running()
-	# Only the last real movement support can justify its residual penetration.
-	# A new solid inserted before suspension must not become an accepted baseline.
+	# Só o último apoio de movimento real pode justificar a penetração residual dele.
+	# Um sólido novo inserido antes da suspensão não pode virar uma base aceita.
 	state.support = _ground_contact.duplicate() if _grounded and _support_matches(_ground_contact,_impact_transform()) else {}
 	set_physics_process(false)
 	if ragdoll != null: ragdoll.set_frozen(true)
@@ -90,8 +90,8 @@ func suspension_clear(exclude: Array[RID]) -> bool:
 	var space := actor.get_world_3d().direct_space_state
 	if not _suspension_shape_clear(space,query,impact_transform,false): return false
 	if not flying:
-		# A prone survivor may recover on its first resumed tick (health or elapsed
-		# down time). Check the actual return shapes before showing the whole unit.
+		# Um sobrevivente caído pode se recuperar no primeiro tick retomado (vida ou tempo
+		# no chão decorrido). Checa as formas reais de retorno antes de mostrar a unidade inteira.
 		for child in actor.get_children():
 			if not child is CollisionShape3D or child.disabled or child.shape == null or child == _shape: continue
 			query.shape = child.shape
@@ -101,8 +101,8 @@ func suspension_clear(exclude: Array[RID]) -> bool:
 
 func _suspension_shape_clear(space: PhysicsDirectSpaceState3D, query: PhysicsShapeQueryParameters3D,
 	impact_transform: Transform3D, returning: bool) -> bool:
-	# Keep every collider in the native query, including floors that may share a
-	# StaticBody with walls/ceilings. Saturation cannot certify free space.
+	# Mantém todo colisor na consulta nativa, incluindo pisos que podem compartilhar um
+	# StaticBody com paredes/tetos. A saturação não consegue certificar espaço livre.
 	var contacts := space.collide_shape(query,16)
 	if contacts.size() >= 32: return false
 	for i in range(0,contacts.size(),2):
@@ -119,16 +119,16 @@ func _suspension_shape_clear(space: PhysicsDirectSpaceState3D, query: PhysicsSha
 			allowance = maxf(allowance,float(support.depth))
 		if returning:
 			if not query.shape is CapsuleShape3D: return false
-			# Landing replaces the horizontal hull with the original capsule. Its
-			# lower support can extend farther into the same floor (about 1 cm for
-			# Responder). Accept only that geometric difference + native safe margin;
-			# the existing walking solver recovers the contact after normal get-up.
+			# A aterrissagem substitui o casco horizontal pela cápsula original. O apoio
+			# inferior dela pode entrar mais no mesmo piso (cerca de 1 cm para o
+			# Responder). Aceita só essa diferença geométrica + a margem segura nativa;
+			# o solver de caminhada existente recupera o contato depois do levantar normal.
 			var return_pose := query.transform
 			return_pose.origin -= impact_transform.origin
 			allowance += maxf(0.0,_capsule_minimum(_impact_hull,Transform3D(impact_transform.basis,Vector3.ZERO),normal)
 				-_capsule_minimum(query.shape,return_pose,normal))
-		# Only the unchanged native support may differ by float representation
-		# between its geometric support and the query's contact pair (~6e-9 m).
+		# Só o apoio nativo inalterado pode diferir pela representação em float
+		# entre o apoio geométrico dele e o par de contato da consulta (~6e-9 m).
 		if depth > allowance and not (same_support and is_equal_approx(depth,allowance)): return false
 	return true
 
@@ -141,7 +141,7 @@ func _support_matches(support: Dictionary, pose: Transform3D) -> bool:
 
 func _remember_support(contact: KinematicCollision3D, normal: Vector3) -> void:
 	var pose := _impact_transform()
-	# Plane math stays relative to the hull center, even far from the world origin.
+	# A matemática do plano fica relativa ao centro do casco, mesmo longe da origem do mundo.
 	var plane := normal.dot(contact.get_position()-pose.origin)
 	var relative := Transform3D(pose.basis,Vector3.ZERO)
 	_ground_contact = {"pose":pose,"world":actor.get_world_3d().space,
@@ -149,7 +149,7 @@ func _remember_support(contact: KinematicCollision3D, normal: Vector3) -> void:
 		"depth":maxf(0.0,plane-_capsule_minimum(_impact_hull,relative,normal))}
 
 static func _capsule_minimum(hull: CapsuleShape3D, pose: Transform3D, axis: Vector3) -> float:
-	# Exact support of the transformed sphere + axial segment, including scale.
+	# Apoio exato da esfera transformada + segmento axial, incluindo a escala.
 	return pose.origin.dot(axis)-hull.radius*(pose.basis.transposed()*axis).length() \
 		-maxf(0.0,hull.height*.5-hull.radius)*absf(pose.basis.y.dot(axis))
 
@@ -181,7 +181,7 @@ static func launch(p_actor: CharacterBody3D, impact_velocity: Vector3, p_lethal:
 	return flight
 
 func _ready() -> void:
-	# Stop the old hit writer before capturing the base pose for this owner.
+	# Para o antigo escritor de golpe antes de capturar a pose base para este dono.
 	preload("res://gameplay/CharacterFallPresentation3D.gd")._cancel_hit(actor)
 	_saved_layer = actor.collision_layer
 	_saved_mask = actor.collision_mask
@@ -212,8 +212,8 @@ func _ready() -> void:
 			return
 		ragdoll.dispose()
 		ragdoll = null
-	# The actor has no collision layer during flight, so the vehicle can keep moving,
-	# while the swept fallback still collides with vehicle hulls instead of passing through.
+	# O ator não tem camada de colisão durante o voo, então o veículo pode continuar andando,
+	# enquanto o fallback varrido ainda colide com os cascos de veículo em vez de atravessá-los.
 	actor.collision_mask = 5
 	var impact_source: Node = source.get_ref() if source != null else null
 	if impact_source is PhysicsBody3D:
@@ -247,7 +247,7 @@ func _ragdoll_audio(point: Vector3, speed: float) -> void:
 
 func _fly(delta: float) -> void:
 	_age += delta
-	# External fire/explosion damage can clear the actor's mask mid-flight.
+	# Dano externo de fogo/explosão pode limpar a máscara do ator no meio do voo.
 	actor.collision_mask = 5
 	vertical -= GRAVITY*delta
 	var motion := velocity + Vector3.UP*vertical
@@ -286,7 +286,7 @@ func _present(recovery := 0.0) -> void:
 	var start := _visual_base.basis.orthonormalized()
 	var basis := start.slerp(target,fall*(1.0-recovery))
 	visual.basis = basis.scaled(_visual_base.basis.get_scale())
-	# Rotate around the pelvis, preserving the same settled pose at landing.
+	# Gira em torno da pélvis, preservando a mesma pose assentada na aterrissagem.
 	var center := lerpf(.86,.19,fall)*(1.0-recovery)+.86*recovery
 	visual.position = _visual_base.origin+Vector3.UP*center-basis*Vector3.UP*.86
 	_pose.apply(_age,_grounded,recovery)

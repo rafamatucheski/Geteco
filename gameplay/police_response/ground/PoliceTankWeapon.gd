@@ -1,5 +1,5 @@
 extends RefCounted
-## AI aims the same swept cannon used by a player who steals the tank.
+## A IA mira o mesmo canhão varrido usado por um jogador que rouba o tanque.
 var aim := 0.0
 
 func tick(unit: RefCounted, delta: float, target: Node3D) -> void:

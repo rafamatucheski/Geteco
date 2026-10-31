@@ -15,7 +15,7 @@ var g: Node3D
 func _init(host: Node3D) -> void:
 	g = host
 
-## Passenger fires outside the side window; the owning car is excluded from its own round.
+## O passageiro atira para fora da janela lateral; o próprio carro fica excluído do tiro.
 func police_vehicle_shoot(vehicle: CharacterBody3D, amount: float) -> bool:
 	if g.police_surrendering() or not g.police_force_authorized() or g._police_rounds.size() >= 128: return false
 	var suspect: Node3D = g.pursuit_target()
@@ -84,7 +84,7 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 	visual.attack()
 	g.npc_gunfire.emit(origin, direction, officer)
 	STALL_WORK.finish("shot.police", STALL_WORK.begin())
-	# Match the weapon carried and fired by this dispatched officer.
+	# Corresponde à arma carregada e disparada por este policial despachado.
 	g._play_weapon_stream(AUDIO.gunfire_take(weapon_id, g._rng), origin, g.NPC_GUNFIRE_DB, g._rng.randf_range(0.95, 1.05), g.HEARING_GUNFIRE)
 
 func _advance_police_rounds(delta: float) -> void:

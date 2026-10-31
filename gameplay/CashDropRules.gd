@@ -1,5 +1,5 @@
 extends RefCounted
-## One roll per civilian death. Probabilities include the chance of no drop.
+## Um sorteio por morte de civil. As probabilidades incluem a chance de não cair nada.
 static func roll(rng: RandomNumberGenerator) -> int:
 	var chance := rng.randi_range(0, 99)
 	if chance < 50: return 0

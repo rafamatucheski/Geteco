@@ -73,9 +73,9 @@ func update_pose(delta: float, aiming: bool, reloading: bool, progress: float, g
 		_body_aim_weight = lerpf(_body_aim_weight, 1.0 if aiming else 0.0, 1.0 - exp(-14.0 * delta))
 		_body_reloading = reloading
 		_body_reload_progress = clampf(progress, 0.0, 1.0)
-		# The visible rig is forward +Z, in metres; the retained legacy rig is
-		# forward -Z with a different height and shorter arms. Mixing these spaces
-		# put the rifle at the back of the head and stretched the visible hands.
+		# O rig visível é frente +Z, em metros; o rig legado retido é
+		# frente -Z, com outra altura e braços mais curtos. Misturar esses espaços
+		# pôs o fuzil atrás da cabeça e esticou as mãos visíveis.
 		body.hand_provider = _body_weapon_targets
 		body.hand_targets = _body_weapon_targets()
 		return
@@ -94,7 +94,7 @@ func update_pose(delta: float, aiming: bool, reloading: bool, progress: float, g
 	if aiming or not pistol: left = target + desired_basis * support
 	var supporting := (aiming or not pistol) and not reloading
 	if reloading:
-		# V1 magazine fetch, insertion and charging phases, in procedural rig space.
+		# Fases de pegar o carregador, inserir e manejar da V1, no espaço do rig procedural.
 		var weight := smoothstep(0.0, 0.10, progress) * (1.0 - smoothstep(0.88, 1.0, progress))
 		target = target.lerp(Vector3(0.24 if weapon_id in ["pistol", "smg"] else 0.19, 0.91, -0.32), weight)
 		desired_basis = desired_basis.slerp(Basis.from_euler(Vector3(0.22, 0.55, -0.52 if weapon_id == "m4a1" else -0.38)), weight)
@@ -115,7 +115,7 @@ func update_pose(delta: float, aiming: bool, reloading: bool, progress: float, g
 			hand = left_upper_arm.position - offset + (hand + offset - left_upper_arm.position).limit_length(0.418)
 			hand = right_upper_arm.position + (hand - right_upper_arm.position).limit_length(0.418)
 	_solve_arm(right_upper_arm, right_lower_arm, hand, 1.0)
-	# The barrel basis is independent of the forearm: -Z always points forward.
+	# A base do cano é independente do antebraço: -Z sempre aponta para a frente.
 	var realised := right_upper_arm.transform * right_lower_arm.transform * Vector3(0, -0.20, 0)
 	weapon.transform = Transform3D(gun_basis, realised - gun_basis * POSE_DATA.GRIPS[weapon_id])
 	if supporting: left_hand = weapon.transform * POSE_DATA.SUPPORT_GRIPS[weapon_id]
@@ -216,7 +216,7 @@ func _ready() -> void:
 	# Cabeça 3D (Capacete Tático, Quepe ou Óculos Escuros)
 	head_node = Node3D.new()
 	head_node.position = Vector3(0.0, 1.21, 0.0)
-	# Scale the complete head so the cap, helmet and facial details stay fitted.
+	# Escala a cabeça inteira para que boné, capacete e detalhes do rosto continuem encaixados.
 	head_node.scale = Vector3(0.62, 0.70, 0.62)
 	model_root.add_child(head_node)
 	torso_node.add_child(_create_limb(0.05, 0.14, mat_skin, Vector3(0.0, 0.24, 0.0)))
@@ -292,7 +292,7 @@ func _ready() -> void:
 	right_upper_arm.add_child(right_lower_arm)
 	right_lower_arm.add_child(_create_limb(0.042, 0.18, mat_skin if tier < UnitTier.SWAT else mat_black, Vector3(0, -0.09, 0)))
 
-	# Weapon geometry is supplied by NPCCombatRig after the articulated rig.
+	# A geometria da arma é fornecida por NPCCombatRig depois do rig articulado.
 	muzzle_flash_3d = MeshInstance3D.new()
 	var sph_f := SphereMesh.new()
 	sph_f.radius = 0.07
@@ -332,7 +332,7 @@ func _ready() -> void:
 	right_upper_leg.add_child(right_lower_leg)
 	right_lower_leg.add_child(_create_limb(0.058, 0.30, mat_uniform, Vector3(0, -0.15, 0)))
 	right_lower_leg.add_child(_create_shoe(mat_black, Vector3(0, -0.3075, -0.035)))
-	# Keep kinematic bones uniform; diversity changes sleeves, not IK lengths.
+	# Mantém os ossos cinemáticos uniformes; a diversidade muda mangas, não comprimentos de IK.
 	for upper in [left_upper_arm, right_upper_arm]:
 		upper.position.x *= float(appearance.width)
 		for child in upper.get_children():
@@ -382,8 +382,8 @@ func _body_weapon_targets() -> Array:
 	var right_shoulder: Vector3 = spine_model * body._shoulders[0]
 	var left_shoulder: Vector3 = spine_model * body._shoulders[1]
 	var ready_grip := Vector3(-.20, .93, .12) if pistol else Vector3(-.15, 1.16, .26)
-	# A fixed x=-.20 put the resting hand inside the larger uniform. Keep
-	# the grip outside the actual torso while retaining the anatomical reach.
+	# Um x=-.20 fixo punha a mão em repouso dentro do uniforme maior. Mantém
+	# a empunhadura fora do torso real preservando o alcance anatômico.
 	if pistol or not optimize_weapon_targets:
 		var body_profile: Dictionary = body.wardrobe.get("body_profile", {})
 		if pistol and not body_profile.is_empty():
@@ -432,8 +432,8 @@ func _body_weapon_targets() -> Array:
 	var right_reach: float = reach_limits.x if reach_limits.x > 0.0 else .594
 	var left_reach: float = reach_limits.y if reach_limits.y > 0.0 else .594
 	if supports:
-		# Both hands and the single weapon share one rigid frame. Fit that frame
-		# to both anatomical reach spheres instead of solving two unrelated arms.
+		# As duas mãos e a arma única compartilham um quadro rígido. Ajusta esse quadro
+		# às duas esferas de alcance anatômico em vez de resolver dois braços sem relação.
 		if optimize_weapon_targets:
 			# Mantém a ordem das operações internas para preservar o arredondamento.
 			var right_center := right_shoulder + right_offset
@@ -486,8 +486,8 @@ func _body_weapon_targets() -> Array:
 func weapon_hand_contacts() -> Array:
 	return _weapon_hand_contacts.duplicate()
 
-## Equipment is merged into the articulated native body meshes. Each joint
-## retains its original draw surface instead of adding dozens of tiny nodes.
+## O equipamento é fundido nas malhas do corpo nativo articulado. Cada junta
+## mantém a superfície de desenho original em vez de acrescentar dezenas de nós minúsculos.
 func _install_tactical_equipment() -> void:
 	if not is_instance_valid(body) or is_instance_valid(rappel_equipment): return
 	var palette := {"top_color": _uniform_base_color, "accent_color": Color("343b40") if tier != UnitTier.ARMY else Color("4b5134")}
@@ -511,8 +511,8 @@ func _install_tactical_equipment() -> void:
 	rappel_harness.name = "DescenderAttachment"
 	rappel_harness.position = Vector3(.015, -.025, .174)
 	rappel_equipment.add_child(rappel_harness)
-	# The same geometry is already part of the rig at all times; this marker
-	# names the real attachment for rope simulation and tests.
+	# A mesma geometria já faz parte do rig o tempo todo; este marcador
+	# dá nome ao ponto de fixação real para a simulação de corda e os testes.
 	rappel_harness.set_meta("load_bearing_attachment", true)
 
 ## Corpo importado: as juntas não têm malha para mesclar, então cada peça vira uma malha filha da junta (que
@@ -547,12 +547,12 @@ func _merge_equipment(joint: MeshInstance3D, part: String) -> void:
 		_build_equipment(b, part)
 		var original: Array = MESH_ARRAYS.arrays_of(joint.mesh, 0).duplicate(true)
 		var offset: int = original[Mesh.ARRAY_VERTEX].size()
-		# Godot returns generated tangents on readback even though this rigid
-		# cloth shader uses vertex normals only. The old tangent stream cannot
-		# keep its old vertex count after equipment vertices are appended.
+		# O Godot devolve tangentes geradas na leitura mesmo que este shader de pano
+		# rígido use só normais de vértice. O fluxo antigo de tangentes não consegue
+		# manter a contagem antiga de vértices depois que os vértices do equipamento são anexados.
 		original[Mesh.ARRAY_TANGENT] = null
-		# The builder already owns CPU arrays. Uploading a temporary equipment
-		# mesh just to read it back forces an avoidable RenderingServer round trip.
+		# O builder já é dono dos arrays na CPU. Subir uma malha temporária de equipamento
+		# só para lê-la de volta força uma ida e volta evitável ao RenderingServer.
 		var vertices: PackedVector3Array = original[Mesh.ARRAY_VERTEX]
 		var normals: PackedVector3Array = original[Mesh.ARRAY_NORMAL]
 		var colors: PackedColorArray = original[Mesh.ARRAY_COLOR]
@@ -608,7 +608,7 @@ func _build_equipment(b: RefCounted, part: String) -> void:
 				var strap := Transform3D(Basis(Vector3.FORWARD,side*.28),Vector3(side*.11,-.09,.123))
 				b.loft([[.04,.020,.01,dark,0.0,3.5],[-.1,.020,.01,dark,0.0,3.5]],dark,strap,6)
 		"helmet":
-			# Rails, headset, NVG bracket and chin restraint fit the anatomical head.
+			# Trilhos, headset, suporte de NVG e jugular encaixam na cabeça anatômica.
 			if tier != UnitTier.FBI:
 				for side in [-1.0,1.0]:
 					_equipment_box(b,Vector3(side*.118,.177,-.005),Vector3(.028,.042,.105),dark)

@@ -55,8 +55,8 @@ func _physics_process(delta: float) -> void:
 	if place != _place or next_room != _room or region != _region:
 		_change_context(place, region, next_room)
 	if place.is_empty():
-		# Only a recent visual/radio contact beside the actual entrance licenses
-		# following a crossing; knowing that a player owns a house never does.
+		# Só um contato visual/de rádio recente ao lado da entrada real autoriza
+		# seguir uma travessia; saber que um jogador é dono de uma casa nunca autoriza.
 		if gameplay.stars > 0 and gameplay.last_known_valid and float(gameplay.contact_age) <= .3:
 			if gameplay.last_known.distance_to(gameplay.player.global_position) < 2.0:
 				_last_seen_exterior = gameplay.last_known
@@ -86,8 +86,8 @@ func _physics_process(delta: float) -> void:
 			break
 
 func _change_context(place: String, region: String, next_room: Node3D) -> void:
-	# Rooms unload when the player exits. Visitors unload with that room rather
-	# than teleporting through furniture or appearing at an exterior entrance.
+	# As salas descarregam quando o jogador sai. Os visitantes descarregam com a sala em vez
+	# de teleportar através da mobília ou aparecer numa entrada externa.
 	_clear_visitors()
 	var same_region := _region.is_empty() or region == _region
 	_place = place
@@ -129,8 +129,8 @@ func admit(officer: CharacterBody3D) -> bool:
 	officer.global_position = point
 	officer.velocity = Vector3.ZERO
 	officer.reset_pursuit_context(_place, search_destination(officer))
-	# Native room and officer already share the real 3D world and depth buffer.
-	# No sprite scaling, cloned rig or per-officer viewport is needed.
+	# A sala nativa e o policial já compartilham o mundo 3D real e o buffer de profundidade.
+	# Não é preciso escalar sprite, clonar rig nem viewport por policial.
 	_visitors.append(officer)
 	return true
 

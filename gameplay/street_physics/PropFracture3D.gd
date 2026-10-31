@@ -1,6 +1,6 @@
 extends RefCounted
-## Split authored mesh surfaces into three spatial shards, retaining their materials.
-## Runs only at impact; debris lifetime and body count belong to FragileProps3D.
+## Divide as superfícies de malha definidas em três cacos espaciais, mantendo os materiais.
+## Só roda no impacto; o tempo de vida dos destroços e a contagem de corpos pertencem a FragileProps3D.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var _cached_arrays := OS.get_environment("GETECO_PROP_FRACTURE_CACHE") != "0"
 static func split(root: Node3D, axis: int) -> Array[MeshInstance3D]:

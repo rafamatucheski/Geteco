@@ -11,12 +11,12 @@ static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 	var rubber := GEO._mat(Color("181b1c"), 0.0, 0.84)
 	var brass := GEO._mat(Color("a78a50"), 0.7, 0.4)
 	if id in ["ak47", "m4a1", "smg", "micro_smg", "shotgun", "magnum"]:
-		# A real annular lip and recessed bore: the opening remains readable
-		# when the weapon turns, instead of a black disk painted on a closed cap.
+		# Um lábio anular real e um cano rebaixado: a abertura continua legível
+		# quando a arma gira, em vez de um disco preto pintado numa tampa fechada.
 		var tip := muzzle + Vector3(0, 0, 0.021)
 		var bore_scale := 1.0
-		# Open the physical barrel as well: an annulus behind its solid cap
-		# is invisible. Keep the existing effect anchor and exterior envelope.
+		# Abre também o cano físico: um anel atrás da tampa sólida dele
+		# fica invisível. Mantém a âncora de efeito e o envelope externo existentes.
 		var nearest := INF
 		var barrel: MeshInstance3D
 		for child in root.get_children():
@@ -33,8 +33,8 @@ static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 			barrel.mesh = opened
 			bore_scale = opened.bottom_radius / 0.016
 			tip.z = minf(tip.z, barrel.position.z - opened.height * 0.5 + 0.007)
-			# Join the sleeve at its rear edge instead of overlapping two
-			# cylindrical walls at the same radius (visible z-fighting).
+			# Une a luva pela borda traseira em vez de sobrepor duas
+			# paredes cilíndricas no mesmo raio (z-fighting visível).
 			var sleeve_length := tip.z + 0.007 - (barrel.position.z - opened.height * 0.5)
 			opened.height -= sleeve_length
 			barrel.position.z += sleeve_length * 0.5
@@ -63,7 +63,7 @@ static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 		else:
 			for z in [-0.20,-0.176,-0.152,-0.128,-0.104]:
 				GEO._box(root,"ForeEndVent",Vector3(0,0.014,z),Vector3(0.048,0.018,0.008),rubber)
-				# The SMG receiver ends at -.18; the rifle's forward tooth floats over its exposed barrel.
+				# O receptor da SMG termina em -.18; o dente dianteiro do fuzil flutua sobre o cano exposto.
 				if id not in ["smg", "micro_smg"] or z >= -.18:
 					GEO._box(root,"RailTooth",Vector3(0,0.048,z),Vector3(0.034,0.009,0.009),steel)
 			GEO._box(root,"ButtPad",Vector3(0,0,0.247 if id == "m4a1" else 0.187),Vector3(0.044,0.095,0.008),rubber)
@@ -182,7 +182,7 @@ static func _face(st: SurfaceTool, points: Array[Vector3]) -> void:
 	if normal.dot(center) < 0:
 		points.reverse()
 		normal = -normal
-	# Godot uses clockwise front faces; supply the outward normal explicitly.
+	# O Godot usa faces frontais horárias; fornece a normal para fora explicitamente.
 	for i in range(1,points.size()-1):
 		for k in [0,i+1,i]:
 			st.set_normal(normal)
@@ -190,8 +190,8 @@ static func _face(st: SurfaceTool, points: Array[Vector3]) -> void:
 
 static func _open_muzzle_mesh() -> ArrayMesh:
 	if _muzzle_mesh != null: return _muzzle_mesh
-	# Closed tube section, travelling from the rear outer wall around the lip
-	# and back through the inner wall. No triangle crosses the bore opening.
+	# Seção de tubo fechada, indo da parede externa traseira, contornando o lábio
+	# e voltando pela parede interna. Nenhum triângulo cruza a abertura do cano.
 	var profile := PackedVector2Array([
 		Vector2(0.007, 0.016), Vector2(-0.005, 0.016),
 		Vector2(-0.007, 0.014), Vector2(-0.007, 0.010),

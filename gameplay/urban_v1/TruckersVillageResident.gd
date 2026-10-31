@@ -1,6 +1,6 @@
 extends CharacterBody3D
-## Local resident: deliberate strolling with physical swept movement, bounded
-## pursuit, and line-of-sight combat only after the village conflict is active.
+## Morador local: passeio deliberado com movimento físico varrido, perseguição
+## limitada e combate com linha de visão só depois que o conflito da vila está ativo.
 signal attacked(actor,source)
 signal died(actor)
 var definition: Dictionary = {}
@@ -85,7 +85,7 @@ func set_hostile(value: bool,source: Node3D = null) -> void:
 		reinforcement_entry=Vector3.INF
 		_reinforcement_home=Vector3.INF
 		_pause = 2.0
-		# Rejoin the closest authored node; never teleport into a home/prop.
+		# Volta ao nó definido mais próximo; nunca teleporta para dentro de uma casa/prop.
 		var closest := INF
 		for i in patrol_points.size():
 			var distance := global_position.distance_squared_to(patrol_points[i])
@@ -100,8 +100,8 @@ func _physics_process(delta: float) -> void:
 		var offset := target.global_position-global_position
 		offset.y = 0
 		facing = offset
-		# The conflict belongs to this settlement; no pursuit across Harbor.
-		# Tonico defends his service point; roaming neighbours may pursue.
+		# O conflito pertence a este povoado; sem perseguição pelo Harbor.
+		# O Tonico defende o ponto de atendimento dele; os vizinhos que andam por aí podem perseguir.
 		if _reinforcement_home.is_finite() and _reinforcement_home.distance_to(target.global_position)>24:
 			reinforcement_entry=Vector3.INF
 			_reinforcement_home=Vector3.INF
@@ -173,8 +173,8 @@ func _fire_pellets(origin: Vector3, end: Vector3) -> void:
 	var up := right.cross(direction).normalized()
 	var spread := origin.distance_to(end)*.035
 	last_pellet_hits = 0
-	# Every pellet owns a real physics ray: partial cover blocks its own share
-	# of the blast instead of applying guaranteed damage through a wall.
+	# Cada chumbo tem um raio de física real: uma cobertura parcial bloqueia a parte dela
+	# do disparo em vez de aplicar dano garantido através de uma parede.
 	for offset in [Vector2.ZERO,Vector2(-.9,-.1),Vector2(.9,.1),Vector2(-.45,.65),Vector2(.45,.65),Vector2(-.45,-.65),Vector2(.45,-.65)]:
 		var tip: Vector3 = end+(right*offset.x+up*offset.y)*spread
 		var ray := PhysicsRayQueryParameters3D.create(origin,tip,7,[get_rid()])

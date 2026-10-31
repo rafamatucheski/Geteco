@@ -1,5 +1,5 @@
 extends RefCounted
-## Articulated presentation on one swept body, with no per-limb physics solver.
+## Apresentação articulada sobre um corpo varrido, sem solver de física por membro.
 var joints: Array[Dictionary] = []
 var models: Array[Dictionary] = []
 
@@ -37,8 +37,8 @@ func apply(age: float, grounded: bool, recovery := 0.0) -> void:
 		if not is_instance_valid(node): continue
 		var initial: Transform3D = pose.initial
 		var rotation: Vector3 = pose.rest + Vector3(lag*(1.0 if i%2 == 0 else -.5),0,0)
-		# Police/civilian body variants have non-uniform scale. Interpolate only
-		# rotations, then restore scale; Basis.slerp rejects those scaled bases.
+		# As variantes de corpo de polícia/civil têm escala não uniforme. Interpola só
+		# as rotações e depois restaura a escala; Basis.slerp rejeita essas bases escaladas.
 		var from_rotation := initial.basis.get_rotation_quaternion()
 		var to_rotation := Quaternion.from_euler(rotation)
 		node.basis = Basis(from_rotation.slerp(to_rotation,weight)) * Basis.from_scale(initial.basis.get_scale())
