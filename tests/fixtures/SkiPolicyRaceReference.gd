@@ -1,12 +1,12 @@
-## Frozen V2 differential reference for persisted race receipt contracts.
-## Test fixture only; do not load from gameplay or update to mirror a candidate.
+## Referência diferencial congelada da V2 para contratos persistidos de recibos de corrida.
+## Só fixture de teste; não carregue pela jogabilidade nem atualize para espelhar um candidato.
 extends RefCounted
-## Stateless settlement policy for the optional ski races connected in V1.
+## Política de acerto sem estado para as corridas de esqui opcionais ligadas na V1.
 ##
-## V1 (`world/mountain_pass/SkiRaceController.gd:_finish`) pays the course
-## reward after every finish and adds the record bonus whenever the new time is
-## better.  Receipt serials are derived from Economy transactions so this can
-## be integrated without adding another field to the persisted activity state.
+## A V1 (`world/mountain_pass/SkiRaceController.gd:_finish`) paga a recompensa
+## do percurso a cada chegada e soma o bônus de recorde sempre que o novo tempo é
+## melhor.  Os seriais dos recibos derivam das transações da Economy, então isto pode
+## ser integrado sem acrescentar outro campo ao estado persistido da atividade.
 
 const MAX_RECEIPT_SERIAL := 10000000
 

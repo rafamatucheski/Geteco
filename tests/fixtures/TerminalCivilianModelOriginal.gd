@@ -218,8 +218,8 @@ static func _pick(rng: RandomNumberGenerator, values: Array, weights: Array) -> 
 func _build_rig() -> void:
 	var w := wardrobe
 	var profile := KIT.build_profile(w.female, w.build)
-	# Service uniforms can retain authored proportions instead of rounding them
-	# to the three generic civilian builds. Generated meshes remain cached.
+	# Uniformes de serviço podem manter as proporções autorais em vez de arredondá-las
+	# para os três biotipos civis genéricos. As malhas geradas continuam em cache.
 	profile.merge(w.get("body_profile", {}), true)
 	scale = Vector3.ONE * float(w.height)
 	pelvis = _joint(self, "Pelvis", Vector3(0, PELVIS_Y, 0), KIT.pelvis_mesh(profile, w.top, w.bottom, w.bag))

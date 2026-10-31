@@ -1,7 +1,7 @@
 extends Node3D
-## Reusable intercity coach. Local +Z is the nose, floor at Y=0.
-## Set livery / operator_name before adding it to the scene.
-const DOOR_Z := 5.05 # Ahead of the front axle.
+## Ônibus intermunicipal reutilizável. O +Z local é a frente, piso em Y=0.
+## Defina livery / operator_name antes de adicioná-lo à cena.
+const DOOR_Z := 5.05 # À frente do eixo dianteiro.
 var livery := Color("197f88")
 var operator_name := "COSTA SUL"
 var fleet_number := "2407"
@@ -42,7 +42,7 @@ func _ready() -> void:
 			_box(Vector3(side * 1.30, 1.11 + i * 0.12, -4.87), Vector3(0.025, 0.035, 1.04), dark)
 		var brand := _text(operator_name, Vector3(side * 1.315, 1.64, -0.1), 58, Color("f8f1d9"))
 		brand.rotation.y = side * PI / 2.0
-	# Right-side boarding door has glazing, step and metal jambs.
+	# A porta de embarque do lado direito tem vidro, degrau e batentes de metal.
 	_box(Vector3(-1.32, 1.48, DOOR_Z), Vector3(0.07, 2.24, 1.15), dark)
 	_box(Vector3(-1.37, 0.39, DOOR_Z), Vector3(0.19, 0.13, 1.19), metal)
 	_box(Vector3(-1.36, 1.51, DOOR_Z), Vector3(0.035, 2.10, 0.055), metal)

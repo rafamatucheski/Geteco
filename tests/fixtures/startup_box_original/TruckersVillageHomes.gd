@@ -1,6 +1,6 @@
 extends Node3D
-## Six native 3D walk-in homes. Player, residents, architecture and furniture
-## share one depth buffer and physical world; no sprite/projection workaround.
+## Seis casas 3D nativas em que se entra a pé. Jogador, moradores, arquitetura e mobília
+## compartilham um buffer de profundidade e um mundo físico; sem gambiarra de sprite/projeção.
 const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
 signal house_entered(index: int)
 signal house_exited(index: int)
@@ -71,8 +71,8 @@ func build(village: Node3D,layout: Array) -> void:
 	interior_camera = Camera3D.new()
 	interior_camera.name = "HomesCamera"
 	interior_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	# Exterior trees remain intact. Only their crowns leave the indoor view so
-	# foreground foliage cannot cover the room, its furniture or its residents.
+	# As árvores externas ficam intactas. Só as copas saem da vista interna para que
+	# a folhagem em primeiro plano não cubra a sala, a mobília nem os moradores.
 	interior_camera.cull_mask &= ~preload("res://gameplay/urban_v1/TruckersVillageVegetation.gd").INTERIOR_OCCLUDING_CANOPY_LAYER
 	interior_camera.size = 17
 	interior_camera.far = 80
@@ -165,13 +165,13 @@ func _shell(room: Dictionary,color: Color) -> void:
 	var upper: Node3D = room.upper
 	var roof: Node3D = room.roof
 	var paint := color.to_html(false)
-	# All floor finishes are shallow and walkable over the terrain collider.
+	# Todos os acabamentos de piso são rasos e caminháveis sobre o colisor do terreno.
 	_box(home,Vector3(0,.017,0),Vector3(12.6,.028,8.6),"80694d")
 	for z in range(-4,5): _box(home,Vector3(0,.036,z),Vector3(12.6,.008,.028),"655540")
 	var walls: Array = [[Vector3(-6.4,1.5,0),Vector3(.2,3,9)],[Vector3(6.4,1.5,0),Vector3(.2,3,9)],[Vector3(-3.7,1.5,4.4),Vector3(5.6,3,.2)],[Vector3(3.7,1.5,4.4),Vector3(5.6,3,.2)]]
 	if room.index == 0:
-		# Casa 1 grows into a narrow pantry annex. Split the original rear wall
-		# around its doorway so the route to the cellar is physically continuous.
+		# A Casa 1 ganha um anexo estreito de despensa. Divide a parede dos fundos original
+		# em volta da porta para que o caminho até o porão seja fisicamente contínuo.
 		walls.append([Vector3(-3.29,1.5,-4.4),Vector3(6.22,3,.2)])
 		walls.append([Vector3(3.99,1.5,-4.4),Vector3(5.02,3,.2)])
 	else:
@@ -192,7 +192,7 @@ func _shell(room: Dictionary,color: Color) -> void:
 			_box(upper,Vector3(x,1.75,z),Vector3(1.8,1.3,.05),"536968")
 			for edge in [-.94,.94]: _box(upper,Vector3(x+edge,1.75,z*1.01),Vector3(.10,1.5,.09),"675c45")
 			_box(upper,Vector3(x,1.75,z*1.013),Vector3(.07,1.3,.05),"bfb294")
-			# Interior curtains sit on the room-facing side of the rear glazing.
+			# As cortinas internas ficam do lado da sala do vidro dos fundos.
 		_box(upper,Vector3(x,2.5,-4.20),Vector3(2.1,.05,.05),"675c45")
 		for edge in [-.75,.75]: _box(upper,Vector3(x+edge,1.8,-4.18),Vector3(.30,1.4,.035),"b4aa87")
 	var pivot := Node3D.new()
