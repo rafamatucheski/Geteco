@@ -28,6 +28,11 @@ var lane := 1.8
 var progress := 0.0
 var recoveries := 0
 var falls := 0
+## Onde cada queda começou (x, z do carro e y do último quadro), no máximo FALL_POINTS_MAX.
+## O relatório de 17/10 dizia "sob a passarela e em z≈60" sem coordenada gravada; a passarela
+## (120, 78) foi apagada em 21/10, então a próxima medição precisa dizer onde as quedas restam.
+const FALL_POINTS_MAX := 32
+var fall_points: Array = []
 var _starts: Array[Vector3] = []
 var _directions: Array[Vector3] = []
 var _lengths: Array[float] = []
@@ -85,6 +90,9 @@ func drive(delta: float) -> float:
 	if car.global_position.y < _lane_point(progress).y - FALL_TOLERANCE:
 		falls += 1
 		recoveries += 1
+		if fall_points.size() < FALL_POINTS_MAX:
+			var at := car.global_position
+			fall_points.append([snappedf(at.x, .1), snappedf(at.y, .1), snappedf(at.z, .1), snappedf(progress, .1)])
 		_place(progress)
 		_stuck_progress = progress
 		_stuck_clock = 0.0
@@ -123,7 +131,7 @@ func finish() -> void:
 	_release()
 
 func summary() -> Dictionary:
-	return {"recoveries": recoveries, "falls": falls,"mean_speed_mps": snappedf(_speed_sum / maxf(1, _speed_samples), .01),
+	return {"recoveries": recoveries, "falls": falls, "fall_points": fall_points, "mean_speed_mps": snappedf(_speed_sum / maxf(1, _speed_samples), .01),
 		"lane_offset_m": lane, "distance_m": snappedf(progress, .1), "frames_3d_off": frames_3d_off, "frames_paused": frames_paused}
 
 func _press(action: StringName, strength: float) -> void:
