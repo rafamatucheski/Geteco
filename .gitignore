@@ -60,3 +60,6 @@ evidence/auditoria-viaria/20260929-correcoes/perf-projects/
 # Logs e sondas soltas de evidência; só relatórios .md/.json/.patch entram no Git.
 evidence/**/*.log
 evidence/**/*.gd
+
+# Cópias de trabalho temporárias dos agentes do Claude Code.
+/.claude/worktrees/
