@@ -33,7 +33,7 @@ static func build(parent: Node3D, transforms: Array[Transform3D], prefix: String
 			instance.multimesh = batch
 			instance.material_override = part.material
 			instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			# Small passive markers disappear into terrain naturally at this range.
+			# Pequenos marcadores passivos somem no terreno de forma natural a esta distância.
 			instance.visibility_range_end = 300.0
 			instance.visibility_range_end_margin = 24.0
 			parent.add_child(instance)
