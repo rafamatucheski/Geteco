@@ -68,7 +68,7 @@ static func deliver(world: Dictionary, id: int, point: Vector3, rotation: Vector
 static func claim(world: Dictionary, wallet: RefCounted) -> Dictionary:
 	var state:=data(world)
 	if not valid(state) or state.status!="active" or state.delivered.size()!=COUNT: return {"ok":false}
-	var result: Dictionary=wallet.grant_world_reward({"id":RECEIPT,"kind":"cash","amount":REWARD})
+	var result: Dictionary=wallet.grant_world_reward({"id":RECEIPT,"kind":"cash","amount":REWARD,"label":"Limpeza da cava"})
 	if not result.get("ok",false): return result
 	state.status="complete"
 	world[KEY]=state

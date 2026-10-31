@@ -12,6 +12,7 @@ var weapon: VBoxContainer
 var interaction_row: PanelContainer
 var objective_card: PanelContainer
 var feedback_card: PanelContainer
+var money_notice: PanelContainer
 var minimap: Control
 var vehicle_name: Label
 var backpack: Button
@@ -107,9 +108,10 @@ func _ready() -> void:
 	_notifications=VBoxContainer.new(); _notifications.name="Notifications"; _notifications.add_theme_constant_override("separation",8); _center_feed.add_child(_notifications)
 	objective_card=preload("res://ui/hud/NotificationUI.gd").new(); objective_card.name="ObjectiveUpdate"; _notifications.add_child(objective_card); objective_label=objective_card.message
 	feedback_card=preload("res://ui/hud/NotificationUI.gd").new(); feedback_card.name="Feedback"; _notifications.add_child(feedback_card); notice_label=feedback_card.message
+	money_notice=preload("res://ui/hud/MoneyReceivedNotice.gd").new(); _notifications.add_child(money_notice)
 	speed_label=STYLE.label("",16); speed_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; root_control.add_child(speed_label)
 	var help := Label.new(); help.name="Help"; help.hide(); add_child(help)
-	for node in [player_status,_upper_right,_lower_right,current_objective,vehicle_name,minimap.caption,minimap.weekday_label,interaction_row,_center_feed,_notifications,radio_label,objective_card,feedback_card,speed_label]:
+	for node in [player_status,_upper_right,_lower_right,current_objective,vehicle_name,minimap.caption,minimap.weekday_label,interaction_row,_center_feed,_notifications,radio_label,objective_card,feedback_card,money_notice,speed_label]:
 		_watch_layout(node)
 	get_viewport().size_changed.connect(_queue_layout); _layout()
 
@@ -135,6 +137,10 @@ func _try_bind() -> void:
 	_legacy_sources.append(get_node("Help")); _bound=true
 	_controls.device_changed.connect(_sync_prompts); _controls.bindings_changed.connect(_sync_prompts)
 	_sync_prompts(); refresh_from_state()
+
+## Ganho de dinheiro no centro da tela; true quando abriu aviso novo (som uma vez por aviso).
+func present_money(amount: int, origin := "") -> bool:
+	return is_instance_valid(money_notice) and money_notice.receive(amount, origin)
 
 func refresh_from_state() -> void:
 	if not _bound: _try_bind()

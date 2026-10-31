@@ -81,7 +81,7 @@ func _claim() -> void:
 		session.show_message("Libere espaço na carteira para receber pelo serviço.")
 		return
 	session.save_game()
-	session.show_message("Cava liberada. Recebidos R$ 1.800.")
+	session.show_message("Cava liberada.")
 
 func suspend() -> void:
 	if session==null: return
