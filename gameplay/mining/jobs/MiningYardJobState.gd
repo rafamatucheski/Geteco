@@ -74,7 +74,7 @@ static func claim(world: Dictionary, wallet: RefCounted) -> Dictionary:
 	# Pausado com as três pedras entregues também recebe: não há mais nada a fazer na cava,
 	# e exigir "Retomar" antes de "Receber" só escondia o pagamento do jogador.
 	if not ready_to_claim(world): return {"ok":false}
-	var result: Dictionary=wallet.grant_world_reward({"id":RECEIPT,"kind":"cash","amount":REWARD})
+	var result: Dictionary=wallet.grant_world_reward({"id":RECEIPT,"kind":"cash","amount":REWARD,"label":"Limpeza da cava"})
 	if not result.get("ok",false): return result
 	state.status="complete"
 	world[KEY]=state

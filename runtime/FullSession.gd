@@ -2214,9 +2214,13 @@ func _wire_money_audio() -> void:
 	if not state.economy.money_gained.is_connected(_on_money_gained):
 		state.economy.money_gained.connect(_on_money_gained)
 
-## Sempre que entra dinheiro toca o "cash" do RewardAudio; rajadas e sites que já tocam o mesmo
-## som na sequência caem na janela de coalescência dele, então ninguém toca duas vezes.
-func _on_money_gained(_amount: int) -> void:
+## Sempre que entra dinheiro mostra "+R$" no centro (MoneyReceivedNotice) e toca o "cash" do
+## RewardAudio uma vez por aviso: créditos somados no mesmo aviso não repetem o som. Débitos,
+## carregar save e restore_snapshot não emitem money_gained, então não aparecem aqui.
+func _on_money_gained(amount: int) -> void:
+	if is_instance_valid(world) and is_instance_valid(world.hud) and world.hud.has_method("present_money"):
+		if world.hud.present_money(amount, state.economy.gain_label): REWARD_AUDIO.play(self, "cash")
+		return
 	REWARD_AUDIO.play(self, "cash")
 
 func _process_traced(delta: float) -> void:

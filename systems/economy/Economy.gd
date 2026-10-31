@@ -21,6 +21,9 @@ const PERSONAL_SLOTS := {
 ## Avisa cada crédito de dinheiro (dinheiro solto e recompensas com recibo). É o ponto único
 ## para o som de dinheiro: quem ouve não precisa saber de onde veio o pagamento.
 signal money_gained(amount: int)
+## Origem legível do crédito que está sendo avisado ("Limpeza da cava"); vale só durante o
+## emit de money_gained. Fica fora do snapshot: não é estado de jogo.
+var gain_label := ""
 var _data := {"version": 1, "balance": 0, "weapons": {"fists": {"magazine": -1, "reserve": -1}},
 	"equipped_weapon": "fists", "outfits": ["dante_classic"], "outfit": "dante_classic",
 	"inventory": {}, "discoveries": [], "collectibles": [], "achievements": [], "transactions": {}}
@@ -262,7 +265,7 @@ func confiscate_carried_ammo() -> int:
 	_data = candidate
 	return taken
 
-func grant_reward(receipt_id: String, amount: int) -> bool:
+func grant_reward(receipt_id: String, amount: int, label := "") -> bool:
 	if not _valid_id(receipt_id) or receipt_id.length() > 110 or amount < 0 or amount > LIMIT or int(_data.balance) > LIMIT - amount: return false
 	var key := "reward:" + receipt_id
 	if not RECEIPTS.lookup(_data,"reward",receipt_id).is_empty(): return false
@@ -271,7 +274,10 @@ func grant_reward(receipt_id: String, amount: int) -> bool:
 	_data.balance += amount
 	if not compact:
 		_data.transactions[key] = {"kind": "reward", "item": receipt_id, "amount": amount}
-	if amount > 0: money_gained.emit(amount)
+	if amount > 0:
+		gain_label = label
+		money_gained.emit(amount)
+		gain_label = ""
 	return true
 
 func grant_world_reward(definition: Dictionary) -> Dictionary:
@@ -297,7 +303,7 @@ func grant_world_reward(definition: Dictionary) -> Dictionary:
 	var before := _data.duplicate(true)
 	match kind:
 		"cash":
-			if not grant_reward(str(id),amount): return _result(false,"wallet_full")
+			if not grant_reward(str(id),amount,str(definition.get("label",""))): return _result(false,"wallet_full")
 		"weapon":
 			var weapon_id: Variant = definition.get("item")
 			var ammo_value: Variant = definition.get("ammo",0)
