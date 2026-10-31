@@ -41,7 +41,7 @@ static func collectibles() -> Array:
 		# Native model local positions, not projected coordinates re-scaled twice.
 		{"id":"mountain_expedition_pack","region":"mountain","place":"","point":at(Vector2(6200,-320),"mountain")+Vector3(3.2,0,3.8)},
 		{"id":"mountain_expedition_journal","region":"mountain","place":"mountain_mystery_cave","point":Vector3(-3.4,0,-.5)},
-		{"id":"mountain_expedition_camera","region":"mountain","place":"mountain_mystery_cave","point":Vector3(4.6,0,-2.7)}] + vicente_letters()
+		{"id":"mountain_expedition_camera","region":"mountain","place":"mountain_mystery_cave","point":Vector3(4.6,0,-2.7)}] + vicente_letters() + preload("res://data/catalogs/PilotTapes.gd").points()
 
 ## Cartas de Vicente (20/10/2026). Harbor e serra em coordenadas de mundo (a ponte, de x ~500 em
 ## diante, já é a região da serra), presas ao chão pelo raio

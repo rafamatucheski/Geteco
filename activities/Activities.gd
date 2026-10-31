@@ -6,6 +6,7 @@ const TowJobs := preload("res://data/catalogs/TowJobs.gd")
 const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
 const LETTERS := preload("res://data/catalogs/VicenteLetters.gd")
+const TAPES := preload("res://data/catalogs/PilotTapes.gd")
 const PHONE := preload("res://activities/RacePhone.gd")
 ## Frase de descoberta da V1: a conquista espera ela terminar (1,15 s) para não sobrepor.
 const DISCOVERY_CUE_SECONDS := 1.15
@@ -337,11 +338,13 @@ func _create_pickup(id: String, point: Vector3, fixed := false) -> void:
 	var item := BoxMesh.new()
 	item.size = Vector3(.27,.1,.19) if id != "mountain_expedition_pack" else Vector3(.35,.4,.25)
 	if LETTERS.is_letter(id): item.size = Vector3(.3,.03,.2)
+	# Fita cassete: mesma BoxMesh e mesmo StandardMaterial3D do achado (só muda a cor), sem shader novo.
+	elif TAPES.is_tape(id): item.size = Vector3(.2,.03,.13)
 	mesh.mesh = item
 	mesh.position.y = .26
 	var material := StandardMaterial3D.new()
 	# Envelope amarelado das cartas de Vicente; o resto segue o achado de papel antigo.
-	material.albedo_color = Color("efe4c8") if LETTERS.is_letter(id) else Color("b6a57d")
+	material.albedo_color = Color("efe4c8") if LETTERS.is_letter(id) else Color("2b2b30") if TAPES.is_tape(id) else Color("b6a57d")
 	mesh.material_override = material
 	art.add_child(mesh)
 	holder.configure(art,id)
@@ -361,6 +364,7 @@ func _create_pickup(id: String, point: Vector3, fixed := false) -> void:
 			# está na carteira e o checkpoint segue a regra normal de admissão.
 			var saved := _commit()
 			if LETTERS.is_letter(id): _read_letter(id)
+			elif TAPES.is_tape(id): _tape_found()
 			elif saved: session.show_message(announcement if not announcement.is_empty() else "Achado recolhido."))
 	session.world.add_child(area)
 	_pickups[id] = area
@@ -376,6 +380,16 @@ func _read_letter(id: String) -> void:
 		lines.append({"speaker":"Maciota","message":"Dez cartas. Ele escreveu mais do que falou a vida inteira. A mala que eu guardei pra você tá no porta-malas da Monaliza."})
 		session.save_game()
 	session.show_dialogue(lines)
+
+## Contador "Fitas X/10" pelo aviso comum; na décima, abre o galpão (recibo único) e salva.
+func _tape_found() -> void:
+	var economy = session.state.economy
+	var found := TAPES.found(economy.snapshot().collectibles)
+	if TAPES.try_unlock(economy):
+		session.show_message("Fitas %d/10. O galpão do piloto, no Pátio dos Armazéns, está aberto." % found)
+		session.save_game()
+	else:
+		session.show_message("Fitas %d/10" % found)
 
 func _beacon(point: Vector3, color: Color, gate: bool = false) -> Node3D:
 	var root := Node3D.new()
