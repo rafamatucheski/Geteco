@@ -521,7 +521,7 @@ func _release() -> void:
 
 func _update_hud() -> void:
 	if not is_instance_valid(_hud): return
-	var controls = get_node("/root/GameInput")
+	var controls = GameInput
 	var touch := bool(controls.get_meta("touch_controls_active", false)) or OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args()
 	var use_key: String = "Pescar" if touch else controls.hint("interact")
 	var exit_key: String = "Sair" if touch else controls.hint("exit_vehicle") + " sair"

@@ -335,7 +335,7 @@ func _stall_physics_tick(delta: float) -> void:
 	if controlled_automatically:
 		direction = automatic_direction
 	elif is_player:
-		var axis: Vector2 = get_node("/root/GameInput").movement()
+		var axis: Vector2 = GameInput.movement()
 		if camera:
 			var right := camera.global_basis.x
 			var back := camera.global_basis.z
@@ -343,7 +343,7 @@ func _stall_physics_tick(delta: float) -> void:
 			back.y = 0
 			direction = (right.normalized() * axis.x + back.normalized() * axis.y).limit_length()
 		# Corrida pelo `GameInput`: no controle é alternável (`sprint_toggled`), no teclado é segurar.
-		target_speed = 6.5 * sprint_scale if get_node("/root/GameInput").sprinting() else 3.5
+		target_speed = 6.5 * sprint_scale if GameInput.sprinting() else 3.5
 	elif route.size() > 1:
 		# Mira a faixa da direita do trecho, não o eixo: quem vem no sentido oposto usa a outra faixa.
 		var previous := route[(waypoint - 1 + route.size()) % route.size()]

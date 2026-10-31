@@ -406,9 +406,9 @@ func save_settings(path := "") -> Error:
 	config.set_value("display","camera_view",camera_view)
 	for key in GRAPHICS.KEYS:
 		if key not in ["msaa","render_scale","shadow_quality"]: config.set_value("graphics",key,get(key))
-	config.set_value("controls","bindings",get_node("/root/GameInput").export_bindings())
-	config.set_value("controls","gamepad_bindings",get_node("/root/GameInput").export_gamepad_bindings())
-	config.set_value("controls","gamepad_bindings_version",get_node("/root/GameInput").GAMEPAD_BINDINGS_VERSION)
-	config.set_value("controls","controller_layout",get_node("/root/GameInput").controller_layout)
+	config.set_value("controls","bindings",GameInput.export_bindings())
+	config.set_value("controls","gamepad_bindings",GameInput.export_gamepad_bindings())
+	config.set_value("controls","gamepad_bindings_version",GameInput.GAMEPAD_BINDINGS_VERSION)
+	config.set_value("controls","controller_layout",GameInput.controller_layout)
 	config.set_value("controls","aim_assist",controller_aim_assist)
 	return config.save(path)

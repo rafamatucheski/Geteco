@@ -131,7 +131,7 @@ func begin_flight() -> bool:
 
 func _physics_process(delta: float) -> void:
 	if not flying or busy or get_tree().paused: return
-	var axis: Vector2 = get_node("/root/GameInput").movement()
+	var axis: Vector2 = GameInput.movement()
 	var right: Vector3 = world.camera.global_basis.x
 	var back: Vector3 = world.camera.global_basis.z
 	right.y = 0; back.y = 0

@@ -71,7 +71,7 @@ func open() -> void:
 
 func show_topic(index: int) -> void:
 	var topic: Array = TOPICS[index]
-	var input := get_node("/root/GameInput")
+	var input := GameInput
 	article.text = str(topic[0]) + "\n\n" + str(topic[1])
 	if index in [4, 5]:
 		var wheel_help := "Hold %s to open the weapon wheel and slow down the world. Point at an item with the mouse and release to confirm. While holding the wheel key, press %s to switch between weapons and consumables. Release over a consumable to use one item." if TranslationServer.get_locale().begins_with("en") else "Segure %s para abrir a roda de armas e desacelerar o mundo. Aponte para um item com o mouse e solte a tecla para confirmar. Enquanto segura a roda, aperte %s para alternar entre armas e consumíveis. Ao soltar sobre um consumível, Dante usa uma unidade."

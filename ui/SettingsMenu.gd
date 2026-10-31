@@ -167,10 +167,10 @@ func _ready() -> void:
 	_layout()
 	PRESENTATION.typography(self)
 	AUDIO.hook_buttons(self)
-	get_node("/root/GameInput").bindings_changed.connect(func(): if is_visible_in_tree(): _refresh_controls())
-	get_node("/root/GameInput").device_changed.connect(_refresh_controller_diagram)
-	get_node("/root/GameInput").bindings_changed.connect(_refresh_help)
-	get_node("/root/GameInput").device_changed.connect(_refresh_help)
+	GameInput.bindings_changed.connect(func(): if is_visible_in_tree(): _refresh_controls())
+	GameInput.device_changed.connect(_refresh_controller_diagram)
+	GameInput.bindings_changed.connect(_refresh_help)
+	GameInput.device_changed.connect(_refresh_help)
 
 func _build_help(page: VBoxContainer) -> void:
 	page.name = "HUDHelp"
@@ -197,7 +197,7 @@ func _build_help(page: VBoxContainer) -> void:
 
 func _refresh_help() -> void:
 	if not is_instance_valid(_help_bindings): return
-	var controls := get_node("/root/GameInput")
+	var controls := GameInput
 	_help_bindings.text = tr("Conversar / continuar: %s\nDiário de missões: %s\nPausa e configurações: %s") % [controls.prompt("interact"), controls.prompt("journal"), controls.prompt("pause_game")]
 	var wheel_help := "Hold %s: weapon wheel\nWith the wheel open, %s: weapons / consumables" if TranslationServer.get_locale().begins_with("en") else "Segurar %s: roda de armas\nCom a roda aberta, %s: armas / consumíveis"
 	_help_bindings.text += "\n" + wheel_help % [controls.hint("weapon_wheel", true), controls.hint("interact", true)]
@@ -410,7 +410,7 @@ func _percent(value: float) -> String:
 	return tr("%d%%") % roundi(value * 100.0)
 
 func _settings() -> Node:
-	return get_node("/root/V2Settings")
+	return V2Settings
 
 func _build_video(page: VBoxContainer) -> void:
 	var s := _settings()
@@ -536,7 +536,7 @@ func _build_audio(page: VBoxContainer) -> void:
 	_row(page, "Silenciar em segundo plano", "Sem som quando a janela do jogo perde o foco.", _widgets.mute_unfocused)
 
 func _build_controls(page: VBoxContainer) -> void:
-	var controls := get_node("/root/GameInput")
+	var controls := GameInput
 	var mode_row := HBoxContainer.new()
 	page.add_child(mode_row)
 	for index in 2:
@@ -589,7 +589,7 @@ func _refresh_controls() -> void:
 	for child in _controls_list.get_children():
 		_controls_list.remove_child(child)
 		child.queue_free()
-	var controls := get_node("/root/GameInput")
+	var controls := GameInput
 	for group in CONTROL_GROUPS:
 		_section(_controls_list, group[0])
 		var header := HBoxContainer.new()
@@ -678,14 +678,14 @@ func _refresh_controller_diagram() -> void:
 	if not is_instance_valid(_pad_diagram): return
 	for index in CONTROLLER_LAYOUT.CONTEXT_NAMES.size():
 		_context_choice.set_item_text(index, tr("Mapa do controle · %s") % tr(CONTROLLER_LAYOUT.CONTEXT_NAMES[index]))
-	var controls := get_node("/root/GameInput")
+	var controls := GameInput
 	_layout_choice.select(controls.controller_layout)
 	var device: String = controls.controller_name()
 	_controller_status.text = tr("Conectado: %s") % device if not device.is_empty() else "Nenhum controle conectado · você pode consultar o layout."
 	_pad_diagram.queue_redraw()
 
 func _pad_hint(action: String) -> String:
-	return get_node("/root/GameInput").gamepad_hint(action)
+	return GameInput.gamepad_hint(action)
 
 # --- Comportamento ---------------------------------------------------------------------
 
@@ -774,20 +774,20 @@ func _begin_remap(action: String, slot: int, button: Button, gamepad := false) -
 	remap_gamepad = gamepad
 	button.text = "Pressione…"
 	button.add_theme_color_override("font_color", ACCENT)
-	get_node("/root/GameInput").remapping = true
-	_status.text = tr("Pressione a nova tecla ou botão do mouse para \"%s\". Delete limpa, Esc cancela.") % get_node("/root/GameInput").label(action)
-	if gamepad: _status.text = tr("Pressione o novo botão ou gatilho para \"%s\". Options ou Esc cancela; Delete limpa.") % get_node("/root/GameInput").label(action)
+	GameInput.remapping = true
+	_status.text = tr("Pressione a nova tecla ou botão do mouse para \"%s\". Delete limpa, Esc cancela.") % GameInput.label(action)
+	if gamepad: _status.text = tr("Pressione o novo botão ou gatilho para \"%s\". Options ou Esc cancela; Delete limpa.") % GameInput.label(action)
 
 func _cancel_remap() -> void:
 	if remap_action.is_empty(): return
 	remap_action = ""
 	remap_button = null
-	get_node("/root/GameInput").remapping = false
+	GameInput.remapping = false
 	_refresh_controls()
 
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree(): return
-	get_node("/root/GameInput").observe_event(event)
+	GameInput.observe_event(event)
 	if remap_action.is_empty(): return
 	# Consume navigation while capturing, including stick motion and releases.
 	get_viewport().set_input_as_handled()
@@ -797,7 +797,7 @@ func _input(event: InputEvent) -> void:
 	elif not event.is_pressed(): return
 	# O clique que abriu a captura chega como "released"; o próximo clique é a escolha.
 	get_viewport().set_input_as_handled()
-	var controls := get_node("/root/GameInput")
+	var controls := GameInput
 	var action := remap_action
 	var slot := remap_slot
 	var keycode: int = (event.physical_keycode if event.physical_keycode else event.keycode) if event is InputEventKey else 0
@@ -868,8 +868,8 @@ func _restore_tab_defaults() -> void:
 			s.voice_language = "pt_BR"
 		2:
 			s.controller_aim_assist = false
-			get_node("/root/GameInput").reset_bindings()
-			get_node("/root/GameInput").set_controller_layout(0)
+			GameInput.reset_bindings()
+			GameInput.set_controller_layout(0)
 	s.apply_settings()
 	_load_widgets()
 	_status.text = "Padrões restaurados nesta aba. Salve para manter."
@@ -893,9 +893,9 @@ const SNAPSHOT_KEYS := ["controller_aim_assist", "master_volume", "music_volume"
 
 func _capture_snapshot() -> Dictionary:
 	var s := _settings()
-	var result := {"bindings": get_node("/root/GameInput").export_bindings().duplicate(true)}
-	result.gamepad_bindings = get_node("/root/GameInput").export_gamepad_bindings().duplicate(true)
-	result.controller_layout = get_node("/root/GameInput").controller_layout
+	var result := {"bindings": GameInput.export_bindings().duplicate(true)}
+	result.gamepad_bindings = GameInput.export_gamepad_bindings().duplicate(true)
+	result.controller_layout = GameInput.controller_layout
 	for key in SNAPSHOT_KEYS: result[key] = s.get(key)
 	return result
 
@@ -905,6 +905,6 @@ func _restore_snapshot() -> void:
 	for key in SNAPSHOT_KEYS:
 		if snapshot.has(key): s.set(key, snapshot[key])
 	s.apply_settings()
-	get_node("/root/GameInput").import_bindings(snapshot.get("bindings", {}))
-	get_node("/root/GameInput").import_gamepad_bindings(snapshot.get("gamepad_bindings", {}))
-	get_node("/root/GameInput").set_controller_layout(int(snapshot.get("controller_layout",0)))
+	GameInput.import_bindings(snapshot.get("bindings", {}))
+	GameInput.import_gamepad_bindings(snapshot.get("gamepad_bindings", {}))
+	GameInput.set_controller_layout(int(snapshot.get("controller_layout",0)))

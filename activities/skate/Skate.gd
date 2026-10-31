@@ -232,7 +232,7 @@ func _physics_process(delta: float) -> void:
 		if session.modal:
 			player_board.drive(0, 0, true)
 		else:
-			var controls = get_node("/root/GameInput")
+			var controls = GameInput
 			var ahead := maxf(Input.get_action_strength("move_up"), Input.get_action_strength("accelerate"))
 			var behind := maxf(Input.get_action_strength("move_down"), Input.get_action_strength("brake"))
 			var throttle := ahead - behind

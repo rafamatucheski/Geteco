@@ -152,7 +152,7 @@ func _physics_process(delta: float) -> void:
 func _update_hud() -> void:
 	if not is_instance_valid(_label): return
 	_label.text=String(TranslationServer.translate("Leito seco · %d")) %maxi(1,ceili(countdown)) if phase=="countdown" else String(TranslationServer.translate("Leito seco · %.1f s / 45 s · %d/%d")) %[elapsed,next_gate,COURSE.GATES-1]
-	_label.text+="\n"+get_node("/root/GameInput").hint("interact")+" · Abandonar prova"
+	_label.text+="\n"+GameInput.hint("interact")+" · Abandonar prova"
 	_label.visible=active and not session.modal and not get_tree().paused
 
 func _finish() -> void:

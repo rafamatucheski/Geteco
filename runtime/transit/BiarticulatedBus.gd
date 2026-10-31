@@ -184,7 +184,7 @@ func _physics_process(delta: float) -> void:
 	if health<=0 or input_locked or engine_disabled or not (controlled or external_input):
 		speed = 0; horizontal_velocity = Vector3.ZERO; return
 	if not external_input:
-		var axis: Vector2 = get_node("/root/GameInput").vehicle_input()
+		var axis: Vector2 = GameInput.vehicle_input()
 		throttle_input = axis.y; steer_input = -axis.x
 		brake_input = Input.is_action_pressed("handbrake")
 	if door_amount>0:

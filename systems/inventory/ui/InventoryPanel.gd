@@ -19,8 +19,8 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme=STYLE.create_theme(14)
 	hide(); set_process(false); get_viewport().size_changed.connect(_layout)
-	get_node("/root/GameInput").device_changed.connect(_update_hints)
-	get_node("/root/GameInput").bindings_changed.connect(_update_hints)
+	GameInput.device_changed.connect(_update_hints)
+	GameInput.bindings_changed.connect(_update_hints)
 func _style(color: Color,border: Color,radius:=3) -> StyleBoxFlat:
 	var style:=StyleBoxFlat.new(); style.bg_color=color; style.border_color=border
 	style.set_border_width_all(1); style.set_corner_radius_all(radius)
@@ -215,7 +215,7 @@ func _details() -> void:
 
 func _update_hints() -> void:
 	if not is_instance_valid(device_hint): return
-	var controls := get_node("/root/GameInput")
+	var controls := GameInput
 	device_hint.text=(String(TranslationServer.translate("%s  selecionar   ·   %s  fechar"))%[controls.prompt("ui_accept"),controls.prompt("ui_cancel")]) if controls.using_gamepad else String(TranslationServer.translate("%s  fechar   ·   Arrastar  mover · Clique direito  usar\nShift + clique  transferir · R  girar"))%controls.prompt("inventory")
 	if controls.get_meta("touch_controls_active",false): device_hint.text=tr("Toque para selecionar · Arraste para mover")
 	if is_instance_valid(drop_button):

@@ -252,7 +252,7 @@ func _make_ski_pose(carve: float) -> Array:
 func _process(delta: float) -> void:
 	if not skiing or _ski_pose.is_empty() or session.world.gameplay.health <= 0: return
 	var actor = session.world.player
-	var controls := get_node("/root/GameInput")
+	var controls := GameInput
 	var axis: Vector2 = controls.movement()
 	var desired := clampf(axis.x,-1.0,1.0)*clampf(glide.length()/5.0,0.0,1.0)
 	_ski_carve = lerpf(_ski_carve,desired,1.0-exp(-7.0*delta))
@@ -288,7 +288,7 @@ func motion(delta: float, _walking_direction: Vector3) -> Vector3:
 	if race.countdown>0 and race.mode!="": return Vector3.ZERO
 	fall_time=maxf(0,fall_time-delta)
 	if fall_time>0: return Vector3.ZERO
-	var controls := get_node("/root/GameInput")
+	var controls := GameInput
 	var axis: Vector2 = controls.movement()
 	var brake := maxf(maxf(0,axis.y),Input.get_action_strength("brake"))
 	if InputMap.has_action("handbrake") and Input.is_action_pressed("handbrake"): brake=1
@@ -334,7 +334,7 @@ func _physics_process(delta: float) -> void:
 			if best > 0: status.text += String(TranslationServer.translate("\nRecorde: %.2f s")) % best
 		else:
 			status.text = "Ski · "+speed_text
-		var controls := get_node("/root/GameInput")
+		var controls := GameInput
 		status.text += String(TranslationServer.translate("\n%s frear · %s impulso")) % [controls.hint("brake" if controls.using_gamepad else "handbrake"),controls.hint("accelerate" if controls.using_gamepad else "sprint")]
 	_shadow_clock+=delta
 	if _shadow_clock>=.5:

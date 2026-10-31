@@ -162,8 +162,8 @@ func _ready() -> void:
 	_area.add_child(view3d); _area.move_child(view3d,_sea.get_index()+1)
 	_apply_mode()
 	get_viewport().size_changed.connect(_layout); resized.connect(_layout)
-	get_node("/root/GameInput").device_changed.connect(_update_hints)
-	get_node("/root/GameInput").bindings_changed.connect(_update_hints)
+	GameInput.device_changed.connect(_update_hints)
+	GameInput.bindings_changed.connect(_update_hints)
 	_update_hints(); _layout(); _restore_view(); center=target_center; zoom=target_zoom
 	PRESENTATION.typography(self)
 	_refresh_tabs(); _refresh_focus(); _redraw(); canvas.grab_focus.call_deferred()
@@ -370,7 +370,7 @@ func _priority(kind: String) -> int:
 	return 3
 
 func _update_hints() -> void:
-	var controls := get_node("/root/GameInput")
+	var controls := GameInput
 	_close.text=controls.prompt("world_map")+"  "+tr("Fechar")
 	_hints.text="Arrastar  Mover    ·    Roda  Zoom    ·    Clique  Selecionar    ·    Duplo clique  Marcar"
 	if map_3d: _hints.text="Arrastar  Mover    ·    Botão direito  Girar    ·    Roda  Zoom    ·    Clique  Selecionar    ·    Duplo clique  Marcar"
@@ -478,7 +478,7 @@ func _pointer_blocked(point: Vector2) -> bool:
 func _clamp_center() -> void: target_center=target_center.clamp(_bounds.position-Vector2.ONE*100,_bounds.end+Vector2.ONE*100)
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree() or not controller.session.modal: return
-	get_node("/root/GameInput").observe_event(event)
+	GameInput.observe_event(event)
 	if event.is_action_pressed("world_map"):
 		controller.session.close_menu(); get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause_game"):
@@ -584,7 +584,7 @@ func _process(delta: float) -> void:
 	if _route_clock>=.75:
 		_route_clock=0.0
 		_update_route()
-	var controls := get_node("/root/GameInput")
+	var controls := GameInput
 	if controls.using_gamepad:
 		var motion: Vector2=controls.movement()
 		if motion.length()>.1:

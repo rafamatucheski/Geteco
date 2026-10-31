@@ -609,11 +609,11 @@ func _physics_process(delta: float) -> void:
 		var throttle := maxf(Input.get_action_strength("move_up"),Input.get_action_strength("accelerate"))-maxf(Input.get_action_strength("move_down"),Input.get_action_strength("brake"))
 		var steering := Input.get_axis("move_right","move_left")
 		var lean := Input.get_axis("move_up","move_down")
-		var touch: Vector2 = get_node("/root/GameInput").touch_move
+		var touch: Vector2 = GameInput.touch_move
 		if not touch.is_zero_approx():
 			steering = -touch.x
 			lean = touch.y
-		var controls := get_node("/root/GameInput")
+		var controls := GameInput
 		player_bike.drive(throttle,steering,Input.is_action_pressed("handbrake"),not controls.remapping and Input.is_action_pressed("motorcycle_wheelie"))
 		# Strong enough to square a 0.4 s flight to the landing face, and to
 		# over-rotate when W stays held from lip to landing.

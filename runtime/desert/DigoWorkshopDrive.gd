@@ -40,7 +40,7 @@ func _physics_process(delta: float) -> void:
 	if session.state.region_id != "desert" or not session.world.driving.occupied or session.desert.busy(): return
 	var car := candidate_car()
 	if not is_instance_valid(car) or session.world.gameplay.health <= 0 or absf(car.speed) > 2.2: return
-	var pedal: Vector2 = get_node("/root/GameInput").vehicle_input()
+	var pedal: Vector2 = GameInput.vehicle_input()
 	var intended_z: float = -car.global_basis.z.z*pedal.y
 	# The authored doorway faces south. A crossing, never proximity alone, owns admission.
 	var entering: bool = session.state.place_id.is_empty()

@@ -2006,7 +2006,7 @@ func _intro_interact(id: String) -> bool:
 
 func _input(event: InputEvent) -> void:
 	if world.player != null and world.player.get_meta("developer_free_flight",false): return
-	get_node("/root/GameInput").observe_event(event)
+	GameInput.observe_event(event)
 	if is_instance_valid(equipment_wheel) and equipment_wheel.active:
 		equipment_wheel.handle_input(event)
 		get_viewport().set_input_as_handled()
@@ -2067,11 +2067,11 @@ func _input(event: InputEvent) -> void:
 	if police_motor_pool != null and police_motor_pool.blocks_input(): return
 	if not rebinding_action.is_empty():
 		if event is InputEventKey and event.pressed and not event.echo:
-			var controls = get_node("/root/GameInput")
+			var controls = GameInput
 			if event.keycode != KEY_ESCAPE:
 				var error: String = controls.rebind(rebinding_action,event)
 				if not error.is_empty(): show_message(error); get_viewport().set_input_as_handled(); return
-				get_node("/root/V2Settings").save_settings()
+				V2Settings.save_settings()
 			rebinding_action = ""
 			controls.remapping = false
 			show_controls()
@@ -2229,7 +2229,7 @@ func _process_traced(delta: float) -> void:
 	if is_instance_valid(world.driving.car) and is_instance_valid(world.driving.car.equipment): world.driving.car.equipment.set_input_enabled(not modal)
 	if not modal and not world.driving.occupied and not get_tree().paused and (building_social == null or not building_social.blocks_gameplay_input()):
 		var aim: Vector3 = world.gameplay.aim_from_screen(world.camera.aim_screen_position())
-		var controls = get_node("/root/GameInput")
+		var controls = GameInput
 		if controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx():
 			aim = controls.aim_target_3d(world.player,world.camera,delta)
 			# Robbery intimidation and every non-shot aim consumer read the same
@@ -2293,7 +2293,7 @@ func _process_traced(delta: float) -> void:
 	if not modal and (prompt_input_action == "vehicle_interact" or action.get("id","") in ["port_container","railway","regional_coach","fishing","building_social"]):
 		var caption: String = str(action.get("label", "")).strip_edges()
 		if prompt_input_action == "vehicle_interact" and caption.is_empty(): caption = "Descer" if action.get("id", "") == "enter" else "Subir"
-		prompt.text = get_node("/root/GameInput").hint(prompt_input_action)+"  "+caption
+		prompt.text = GameInput.hint(prompt_input_action)+"  "+caption
 		hud_prompt = caption
 
 func _set_objective(text: String, hint := false) -> void:

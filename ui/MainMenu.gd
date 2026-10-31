@@ -27,7 +27,7 @@ var sky: Node
 func _ready() -> void:
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	var launch = get_node("/root/V2Launch")
+	var launch = V2Launch
 	if not launch.direct_start_consumed:
 		launch.direct_start_consumed = true
 		for flag in ["--sandbox", "--slice", "--no-save", "--skip-arrival"]:
@@ -35,7 +35,7 @@ func _ready() -> void:
 				direct_start_requested = true
 				break
 	%LoadPanel.hide()
-	latest_save = get_node("/root/V2Launch").latest_slot()
+	latest_save = V2Launch.latest_slot()
 	btn_continue = Button.new()
 	btn_continue.text = "Continuar"
 	btn_new_game.get_parent().add_child(btn_continue)
@@ -130,7 +130,7 @@ func _show_slots(new_game: bool) -> void:
 	%Title.text = "Novo jogo" if new_game else "Carregar jogo"
 	%LabelLoadStatus.text = "Escolha um slot vazio. Os jogos existentes serão preservados." if new_game else "Escolha o progresso para continuar."
 	var enabled_options := 0
-	for row in get_node("/root/V2Launch").list_slots():
+	for row in V2Launch.list_slots():
 		if new_game and row.id == "progress": continue
 		if not new_game and not row.exists: continue
 		var button := Button.new()
@@ -177,7 +177,7 @@ func _confirm_delete(id: String, new_game: bool) -> void:
 	dialog.popup_centered()
 
 func _delete_slot(id: String, new_game: bool) -> void:
-	var launch = get_node("/root/V2Launch")
+	var launch = V2Launch
 	var error: Error = launch.delete_slot(id)
 	latest_save = launch.latest_slot()
 	btn_continue.visible = not latest_save.is_empty()
@@ -219,7 +219,7 @@ func _inspect_v1_save(path: String) -> void:
 		STYLE.trap_focus(%LoadPanel)
 		return
 	%LabelLoadStatus.text = "Conversão validada. Escolha um slot vazio para criar uma cópia V2; o save V1 continuará intacto."
-	for row in get_node("/root/V2Launch").list_slots():
+	for row in V2Launch.list_slots():
 		if row.id == "progress" or row.exists: continue
 		var button := Button.new()
 		button.text = "Importar para " + row.label
@@ -234,10 +234,10 @@ func _inspect_v1_save(path: String) -> void:
 	STYLE.trap_focus(%LoadPanel)
 
 func _publish_v1_import(slot_id: String) -> void:
-	var error := V1_IMPORT.publish(pending_import,slot_id,get_node("/root/V2Launch"))
+	var error := V1_IMPORT.publish(pending_import,slot_id,V2Launch)
 	for child in %SlotListContainer.get_children(): child.queue_free()
 	if error == OK:
-		latest_save = get_node("/root/V2Launch").latest_slot()
+		latest_save = V2Launch.latest_slot()
 		btn_continue.visible = not latest_save.is_empty()
 		%Title.text = "Importação concluída"
 		%LabelLoadStatus.text = "A cópia V2 foi criada no slot escolhido. O arquivo V1 original não foi modificado."
@@ -271,7 +271,7 @@ func _start_direct() -> void:
 
 func _start_rachas() -> void:
 	if starting: return
-	var error := preload("res://runtime/desert/DragStandaloneProfile.gd").prepare(get_node("/root/V2Launch"))
+	var error := preload("res://runtime/desert/DragStandaloneProfile.gd").prepare(V2Launch)
 	if error!=OK:
 		_show_slots(false)
 		%Title.text="Rachas"
@@ -299,7 +299,7 @@ func _show_loading(id: String, new_game: bool) -> void:
 	var region := "harbor"
 	if id=="rachas": region="desert"
 	if not new_game:
-		for row in get_node("/root/V2Launch").list_slots():
+		for row in V2Launch.list_slots():
 			if row.id == id: region = str(row.get("region", "harbor"))
 	# New game and failed previews already have an opaque, running presenter.
 	# Transfer that same curtain instead of opening two native windows (and two
@@ -327,7 +327,7 @@ func _show_loading(id: String, new_game: bool) -> void:
 
 func _start(id: String, new_game: bool) -> void:
 	if starting: return
-	var error: Error = get_node("/root/V2Launch").prepare(id, new_game)
+	var error: Error = V2Launch.prepare(id, new_game)
 	if error != OK:
 		_show_slots(new_game)
 		%LabelLoadStatus.text = "Este slot mudou ou não pode ser aberto. Escolha outro; nenhum save foi alterado."
@@ -341,7 +341,7 @@ func _start(id: String, new_game: bool) -> void:
 			# Draw the fully opaque loading screen before any world loading starts.
 			await get_tree().process_frame
 			await get_tree().process_frame
-			var path: String = get_node("/root/V2Launch").selected_path
+			var path: String = V2Launch.selected_path
 			if sky.preview_path != path or sky.preview_fingerprint != sky.fingerprint(path):
 				await sky.discard_preview()
 				sky.boot_path(path)

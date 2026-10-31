@@ -80,7 +80,7 @@ func _movement_intent(player: CharacterBody3D) -> Vector3:
 	# move_and_slide removes inward velocity at a closed door. Read the intended
 	# movement instead, using the same camera basis and remapped controls as Actor.
 	if player.controlled_automatically: return player.automatic_direction
-	var axis: Vector2 = get_node("/root/GameInput").movement()
+	var axis: Vector2 = GameInput.movement()
 	var right: Vector3 = session.world.camera.global_basis.x
 	var back: Vector3 = session.world.camera.global_basis.z
 	right.y = 0.0

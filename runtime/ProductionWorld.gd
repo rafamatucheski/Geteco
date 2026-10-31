@@ -681,9 +681,9 @@ func _prewarm_resident_regions() -> void:
 		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 
 func _apply_player_settings() -> void:
-	if is_instance_valid(environment): get_node("/root/V2Settings").apply_environment(environment.environment)
+	if is_instance_valid(environment): V2Settings.apply_environment(environment.environment)
 	if is_instance_valid(sun) and sun_shadow_near_enabled:
-		sun.directional_shadow_max_distance = get_node("/root/V2Settings").shadow_distance_metres()
+		sun.directional_shadow_max_distance = V2Settings.shadow_distance_metres()
 
 func _eager_preparation_for_benchmark() -> bool:
 	return OS.is_debug_build() and world.get_meta("background_loading_baseline",false)
