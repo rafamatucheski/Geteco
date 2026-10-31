@@ -1,5 +1,5 @@
 extends Node3D
-## Uses existing residents and physical relics; no extra population or frame loop.
+## Usa moradores existentes e relíquias físicas; sem população extra nem laço de quadro.
 const STATE := preload("res://runtime/desert/DesertContractState.gd")
 const CONTACTS := preload("res://runtime/desert/DesertCampaign.gd").LOCATIONS
 const RELICS := preload("res://world/desert/expansion/DesertRelics.gd")

@@ -1,6 +1,6 @@
 extends "res://runtime/railway/RailwayTransit.gd"
-## Shares the train's passenger/menu/camera recovery contract. Movement belongs
-## to the native road driver, including traffic, signals and swept collision.
+## Divide o contrato de recuperação de passageiro/menu/câmera do trem. O movimento pertence
+## ao motorista nativo da estrada, incluindo trânsito, sinais e colisão varrida.
 const COACH_ROUTES := preload("res://runtime/regional/RegionalCoachRoute.gd")
 const COACH := preload("res://runtime/regional/RegionalCoach.gd")
 var _road: Curve3D
@@ -18,7 +18,7 @@ func _nearby_station() -> Dictionary:
 		if station.region != session.state.region_id: continue
 		if session.world.player.global_position.distance_to(station.arrival) < BOARD_RADIUS:
 			return station
-		# Retain the existing coach boarding points used by older saves/maps.
+		# Mantém os pontos de embarque de ônibus existentes usados por saves/mapas antigos.
 		var legacy: Vector3 = Vector3(1930,0,1220)/16.0 if station.id == "harbor" else station.road_point
 		if station.id != "desert" and session.world.player.global_position.distance_to(legacy) < 3.0:
 			return station
@@ -163,7 +163,7 @@ func _physics_process(delta: float) -> void:
 	if train.arrived(): _arrive(destination_id)
 
 func _tick_ambient(_delta: float) -> void:
-	pass # Regional coaches exist only for an admitted passenger journey.
+	pass # Ônibus regionais só existem para uma viagem de passageiro admitida.
 
 func _update_train_pose() -> void:
 	if not is_instance_valid(train): return

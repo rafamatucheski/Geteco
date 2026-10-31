@@ -1,5 +1,5 @@
 extends RefCounted
-## Shared read-only destination for the minimap and world map. Never advances a quest.
+## Destino compartilhado só de leitura para o minimapa e o mapa do mundo. Nunca avança uma missão.
 const NAMES := {"maciota":"Maciota", "helena":"North Pier · Helena", "harbor_parcel":"Encomenda no porto", "ferrugem":"Ferrugem", "neco":"Neco", "neco_bay":"Baia do Neco", "ashbend_start":"Telefone dos Cobras", "ashbend_finish":"Chegada nas docas", "ashbend_resident":"Moradora de Ashbend", "resident_encounter":"Moradora de Ashbend", "cobra_supply":"Quadra dos Cobras", "supply_encounter":"Quadra dos Cobras", "boss_encounter":"Líder dos Cobras", "cobra_leader_house":"Casa do líder", "transfer_document":"Lista de Vicente", "jessica":"Jessica", "jessica_jetta":"Jetta de Jessica", "harbor_bank":"North Pier"}
 
 static func destination(point: Vector3, title: String, kind: String, region: String, text := "", source := "mission") -> Dictionary:
@@ -49,8 +49,8 @@ static func resolve(session) -> Dictionary:
 	if result.is_empty() and transit != null and is_instance_valid(transit.urban_service) and is_instance_valid(transit.urban_service.driver_work):
 		var stop: Vector3 = transit.urban_service.driver_work.target_position()
 		if stop.is_finite(): result = destination(stop,"Próxima parada","bus",state.region_id,"Siga para a próxima parada.","work")
-	# Explicitly marking a place selects the GPS destination. Campaign objectives
-	# and progression stay intact; clearing the pin restores their navigation.
+	# Marcar um lugar explicitamente escolhe o destino do GPS. Objetivos da campanha
+	# e progressão ficam intactos; limpar o alfinete restaura a navegação deles.
 	var waypoint: Vector2 = session.world.get_meta("map_waypoint",Vector2.INF)
 	if waypoint.is_finite(): result = destination(Vector3(waypoint.x,0,waypoint.y),str(session.world.get_meta("map_waypoint_title","Destino marcado")),"waypoint",str(session.world.get_meta("map_waypoint_region",state.region_id)),"","waypoint")
 	return result

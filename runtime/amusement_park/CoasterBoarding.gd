@@ -1,5 +1,5 @@
 extends RefCounted
-## Reversible station choreography using Dante's real skeleton, in the main world.
+## Coreografia reversível na estação usando o esqueleto real do Dante, no mundo principal.
 const SECONDS := 3.4
 
 static func present(park, seconds: float, exiting: bool, _delta: float) -> void:
@@ -44,6 +44,6 @@ static func present(park, seconds: float, exiting: bool, _delta: float) -> void:
 	if exiting: eye = park._saved.get("ride_eye",eye)
 	var blend := smoothstep(2.85,SECONDS,t)
 	park.view.global_transform = station.interpolate_with(eye,blend)
-	# Keep Dante visible while stepping/sitting; the final head camera owns the ride.
+	# Mantém o Dante visível enquanto pisa/senta; a câmera final na cabeça é dona do passeio.
 	actor.visual.visible = bool(park._saved.visible) and blend < .65
 	actor.reset_physics_interpolation()

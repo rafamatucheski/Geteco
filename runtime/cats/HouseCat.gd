@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## Decoration with scenery collision. No combat groups, damage or death handlers.
+## Decoração com colisão de cenário. Sem grupos de combate, dano nem handlers de morte.
 const MODEL = preload("res://runtime/cats/CatModel.gd")
 const AUDIO = preload("res://runtime/cats/CatAudio.gd")
 var cat_id := ""
@@ -37,7 +37,7 @@ func configure(id: String, index: int, resident: bool, owner_runtime) -> void:
 	shape.shape = capsule
 	shape.position.y = .29
 	add_child(shape)
-	# The narrow torso capsule alone does not cover the nose and haunches.
+	# Só a cápsula estreita do tronco não cobre o focinho e as ancas.
 	for offset in [Vector3(0,.32,-.24),Vector3(0,.23,.23)]:
 		var end_shape := CollisionShape3D.new()
 		var end_ball := SphereShape3D.new()

@@ -1,5 +1,5 @@
 extends Node3D
-## Drive-in service owns access and its temporary camera, never the vehicle identity.
+## O serviço de entrar dirigindo cuida do acesso e da câmera temporária, nunca da identidade do veículo.
 const PLACE := "desert_digo"
 const KEY := "digo_workshop_drive"
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
@@ -79,7 +79,7 @@ func candidate_car() -> CharacterBody3D:
 	var car: CharacterBody3D = session.world.driving.car
 	if not is_instance_valid(car) or car.health <= 0 or car.engine_disabled or car.external_input: return null
 	if not PERF.eligible(str(car.archetype)) or car.half_width > 1.45 or car.half_length > 3.1: return null
-	# These cars have a separate story/residence owner and cannot be relocated by service.
+	# Estes carros têm outro dono de história/residência e não podem ser realocados pelo serviço.
 	if car.get_meta("residence_vehicle",false) or car.vehicle_id in ["story_tow_vehicle","neco_tow_truck","jessica_jetta_gli"]: return null
 	return car
 
@@ -131,12 +131,12 @@ func perform(target: String) -> bool:
 
 func _transfer(car: CharacterBody3D, entering: bool) -> void:
 	close_service_view()
-	# Reuse the existing curtain; no car, controller or camera is cloned for admission.
+	# Reaproveita a cortina existente; nenhum carro, controlador ou câmera é clonado para a admissão.
 	var success: bool = await session.transfer_garage_vehicle(PLACE,car,entering)
 	session._set_digo_vehicle_gate(false)
 	if success:
 		car.set_meta("garage_origin",session.room.global_position if entering else Vector3.ZERO)
-		# GarageRewards remains the sole owner of earned garage vehicles.
+		# O GarageRewards continua o único dono dos veículos de garagem conquistados.
 		if car.get_meta("garage_reward",false):
 			session.garage_rewards._capture_all()
 			session.garage_rewards.on_location_changed()
@@ -162,7 +162,7 @@ func write_snapshot() -> void:
 	if session.state.place_id != PLACE or not is_instance_valid(car) or car.get_meta("garage_place","") != PLACE:
 		session.state.world_state.erase(KEY)
 		return
-	# Only the access metadata lives here; the body stays with its existing owner.
+	# Só os metadados de acesso vivem aqui; o corpo fica com o dono existente.
 	session.state.world_state[KEY] = {"version":1,"vehicle_id":car.vehicle_id,"garage_owned":bool(car.get_meta("garage_reward",false)),"was_driven":session.world.driving.occupied}
 
 static func valid(value: Variant) -> bool:
@@ -183,8 +183,8 @@ static func valid_world(world: Dictionary) -> bool:
 		if not record is Dictionary or record.get("vehicle_id","") != value.vehicle_id: continue
 		if not preload("res://runtime/FleetState.gd").validate(record): return false
 		if record.get("region","") != "desert" or record.get("was_driven") != value.was_driven: return false
-		# Native interiors are instantiated at z=-2400; unrelated street records
-		# must never be interpreted as an interior driver's position.
+		# Os interiores nativos são instanciados em z=-2400; registros de rua sem relação
+		# nunca podem ser interpretados como a posição de um motorista no interior.
 		return absf(float(record.position[0])) <= 11.0 and absf(float(record.position[2])+2400.0) <= 8.0
 	return false
 
@@ -195,7 +195,7 @@ func restore_saved_driver() -> bool:
 	if saved.is_empty(): return true
 	if not valid(saved): restore_diagnostic["stage"] = "invalid_metadata"; return false
 	if saved.garage_owned:
-		# Its normal on_location_changed restores this owner after ready_for_play.
+		# O on_location_changed normal dele restaura este dono depois de ready_for_play.
 		return session.garage_rewards.data.vehicles.has(saved.vehicle_id)
 	var record: Dictionary = session.controller.starting_vehicle()
 	var car: CharacterBody3D = session.world.driving.car
@@ -330,15 +330,15 @@ func _update_camera(allow_fallback := true) -> bool:
 	var accepted_v_offset := _camera.v_offset
 	var distance: float = clampf(8.6/_zoom,8.0,9.2)
 	var target: Vector3 = _car.global_position+Vector3(0,_focus.y,0)
-	# South-facing parking keeps the lift behind the complete car and the north
-	# wall behind the subject. Orbit stays in the physically clear half of the bay.
+	# Estacionar de frente para o sul mantém o elevador atrás do carro inteiro e a parede
+	# norte atrás do objeto. A órbita fica na metade fisicamente livre da baia.
 	var candidates: Array[float] = [clampf(_yaw,-.95,.95)]
 	if allow_fallback: candidates.append_array([.45,-.45,0.0])
 	for angle in candidates:
 		var desired: Vector3 = _car.global_position+Vector3(sin(angle)*distance,4.1,cos(angle)*distance)
 		if _rear_inspection:
-			# The lift columns are at x=+-2.1,z=-3.5. Rear inspection stays
-			# inside their central corridor; its entire sight cone is checked below.
+			# As colunas do elevador ficam em x=+-2.1,z=-3.5. A inspeção traseira fica
+			# dentro do corredor central delas; o cone de visão inteiro é checado abaixo.
 			desired = _car.global_position+Vector3(sin(angle)*.6,3.0,-clampf(6.8/_zoom,6.2,7.4))
 		if is_instance_valid(session.room):
 			var local: Vector3 = session.room.to_local(desired)
@@ -351,7 +351,7 @@ func _update_camera(allow_fallback := true) -> bool:
 		_camera.v_offset = 0.0
 		_camera.fov = 42.0 if _rear_inspection else 30.0
 		_camera.look_at(target,Vector3.UP)
-		# Composition shifts the aim point, never the physical camera after collision.
+		# A composição desloca o ponto de mira, nunca a câmera física depois da colisão.
 		var composition_offset: float = 1.3 if _rear_inspection else 1.8
 		var composition: Vector3 = target-_camera.global_basis.x*composition_offset
 		_camera.look_at(composition,Vector3.UP)
@@ -359,8 +359,8 @@ func _update_camera(allow_fallback := true) -> bool:
 		_yaw = angle
 		_accepted_yaw = angle
 		return true
-	# Rejected candidates never become the presented view. In particular, the
-	# final zero-angle fallback must not leak its failed 50-degree pose.
+	# Candidatos recusados nunca viram a vista apresentada. Em particular, o
+	# recurso final de ângulo zero não pode vazar a pose falha de 50 graus.
 	_camera.global_transform = accepted_transform
 	_camera.fov = accepted_fov
 	_camera.h_offset = accepted_h_offset
@@ -369,8 +369,8 @@ func _update_camera(allow_fallback := true) -> bool:
 	return false
 
 func _fit_car_in_preview(minimum_fov: float) -> bool:
-	# The scene camera serves a preview beside a sidebar and above a footer.
-	# Fit the full volume on every orbit pose instead of trusting the centre ray.
+	# A câmera da cena serve uma prévia ao lado de uma barra lateral e acima de um rodapé.
+	# Encaixa o volume inteiro em toda pose de órbita em vez de confiar no raio central.
 	# A vista traseira fica presa entre as colunas do elevador: perua e minivan (~5,5 m) só
 	# cabem abrindo até 60°; sem isso a câmera ficava na frente ao olhar aerofólio/difusor.
 	for angle in range(int(minimum_fov),61 if _rear_inspection else 51,2):
@@ -414,8 +414,8 @@ func _car_visible_from(origin: Vector3) -> bool:
 
 func _close_service_room() -> void:
 	if not is_instance_valid(session.room) or is_instance_valid(_service_shutter): return
-	# NativePlace cuts the already-solid front walls down for its normal overhead
-	# view. A low service camera sees their authored full height while it owns input.
+	# O NativePlace corta as paredes da frente já sólidas para a vista normal de
+	# cima. Uma câmera de serviço baixa vê a altura total escrita delas enquanto é dona da entrada.
 	for mesh in session.room.model.find_children("FrontWall*","MeshInstance3D",true,false):
 		if not mesh.mesh is BoxMesh: continue
 		_service_walls.append({"node":weakref(mesh),"mesh":mesh.mesh,"position":mesh.position})
@@ -458,7 +458,7 @@ func _close_service_room() -> void:
 	_service_shutter.add_child(barrier)
 
 func _open_service_room() -> void:
-	# Release the physical aperture immediately, before close_menu returns control.
+	# Solta a abertura física na hora, antes de close_menu devolver o controle.
 	if is_instance_valid(_service_shutter):
 		var barrier := _service_shutter.get_node_or_null("Collision") as StaticBody3D
 		if is_instance_valid(barrier): barrier.collision_layer = 0

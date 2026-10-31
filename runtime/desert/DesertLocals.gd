@@ -1,6 +1,6 @@
 extends Node
-## Residents use the native civilian body, steering, damage and reaction director.
-## One admission per half-second; they count towards the existing population cap.
+## Os moradores usam o corpo civil nativo, a direção, o dano e o diretor de reação.
+## Uma admissão a cada meio segundo; eles contam para o teto de população existente.
 const ACTOR := preload("res://scripts/Actor.gd")
 const MODEL := preload("res://assets/CivilianModel.gd")
 const ROUTINES := [
@@ -76,7 +76,7 @@ func _process(delta: float) -> void:
 		actor.set_meta("region_id","desert")
 		actor.set_meta("desert_routine",routine.id)
 		session.world.add_child(actor)
-		# Construct the authored outfit before attaching its rig to the real actor.
+		# Constrói a roupa escrita antes de prender o rig dela ao ator real.
 		for previous in actor.visual.get_children():
 			actor.visual.remove_child(previous)
 			previous.queue_free()

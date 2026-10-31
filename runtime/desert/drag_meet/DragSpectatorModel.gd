@@ -1,6 +1,6 @@
 extends "res://assets/CivilianModel.gd"
-## Local cheering pose; the shared civilian rig and crowd hot path are unchanged.
-## The existing 45m admission and rig pose LOD bound all animation work.
+## Pose local de torcida; o rig civil compartilhado e o caminho quente da multidão não mudam.
+## A admissão de 45m existente e o LOD de pose do rig limitam todo o trabalho de animação.
 var _cheer_weight := 0.0
 
 func _pose(dt: float) -> void:
@@ -10,8 +10,8 @@ func _pose(dt: float) -> void:
 		return
 	_cheer_weight = move_toward(_cheer_weight, 1.0, minf(dt, .25) * 4.0)
 	if _cheer_weight <= 0.0: return
-	# One or both arms rise above shoulder level, with staggered pumps/waves.
-	# Identity and clock avoid a synchronized crowd, without timers or tweens.
+	# Um ou os dois braços sobem acima do ombro, com socos no ar/acenos defasados.
+	# Identidade e relógio evitam uma multidão sincronizada, sem timers nem tweens.
 	var beat := clock * 2.8 + _seed
 	for index in 2:
 		var side := -1.0 if index == 0 else 1.0

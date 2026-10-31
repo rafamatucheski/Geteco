@@ -1,5 +1,5 @@
 extends RefCounted
-## The meet has its own durable save. Campaign slots are never selected or copied.
+## O encontro tem save durável próprio. Os slots da campanha nunca são escolhidos nem copiados.
 const STORE := preload("res://runtime/SaveStore.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
@@ -25,7 +25,7 @@ static func initial_snapshot() -> Dictionary:
 	state.world_state.vehicles=[{"archetype":"desert_mirage","vehicle_id":"drag_profile_starter",
 		"was_driven":true,"paint":"738997ff","position":[point.x,point.y,point.z],"yaw":-PI*.5,
 		"health":float(FLEET.spec("desert_mirage").get("durability",180)),"region":"desert","equipment":{}}]
-	# A fixed starting allowance lives only in this profile; reopening never pays it again.
+	# Uma verba inicial fixa vive só neste perfil; reabrir nunca a paga de novo.
 	state.economy.grant_reward("drag_profile_start",2000)
 	var snapshot: Dictionary=state.snapshot()
 	return snapshot if GAME_STATE.new().restore_snapshot(snapshot) else {}

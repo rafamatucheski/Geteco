@@ -87,8 +87,8 @@ func _drive_through_port_exit(driving) -> bool:
 	if not is_instance_valid(car) or car.health <= 0 or car.input_locked: return false
 	var local: Vector3 = session.room.to_local(car.global_position)
 	var outward: Vector3 = session.room.global_basis.inverse() * car.horizontal_velocity
-	# Catch the nose before the rear wheels can leave the finite access ramp.
-	# Stop first: the existing transfer owns clearance checks and rollback.
+	# Segura a frente antes que as rodas traseiras saiam da rampa de acesso finita.
+	# Para primeiro: a transferência existente cuida das checagens de folga e do rollback.
 	var extent: float = absf(car.global_basis.z.z) * car.half_length + absf(car.global_basis.x.z) * car.half_width
 	if absf(local.x) > 3.0 or local.z + extent < 7.65 or outward.z <= .1: return false
 	car.speed = 0.0

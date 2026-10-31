@@ -1,13 +1,13 @@
 extends Node3D
-## Edited station architecture with separate urban and regional service controllers.
+## Arquitetura de estação editada com controladores separados de serviço urbano e regional.
 const FACTORY := preload("res://world/urban_detail/UrbanBuildingFactory.gd")
 const EDIT_DATA := preload("res://world/editing/WorldEditData.gd")
 const PIECES := preload("res://world/editing/WorldEditPieces.gd")
 const LOAD_DISTANCE := 105.0
 const UNLOAD_DISTANCE := 135.0
 const INTERVAL := 0.25
-# Undo the old floor projection and map source pixels into the native /16 map.
-# This is a calibration ratio, not another /16 applied to metric geometry.
+# Desfaz a projeção antiga do piso e mapeia pixels da fonte para o mapa nativo /16.
+# Isto é uma razão de calibração, não outro /16 aplicado à geometria métrica.
 const FLOOR_CALIBRATION := Vector3(18.0 / 16.0, 1.0, 18.0 * 0.76822128 / 16.0)
 const STOPS := [
 	{"id":"urban_station_0","name":"Terminal Sul","road":"dock_street","point":Vector2(1650,2200),"tangent":Vector2.RIGHT,"width":120.0,"direction":-1},
@@ -45,8 +45,8 @@ func configure(owner_controller, use_edits := true) -> void:
 		var source: Dictionary = STOPS[index]
 		var tangent: Vector2 = source.tangent
 		var forward: Vector2 = tangent * int(source.direction)
-		# UnifiedRoadNetwork2D._offset_lane_centerline uses orthogonal(), then
-		# reverses the curve for direction -1. All six source lanes are straight.
+		# UnifiedRoadNetwork2D._offset_lane_centerline usa orthogonal() e depois
+		# inverte a curva para a direção -1. As seis faixas de origem são retas.
 		var lane: Vector2 = source.point + tangent.orthogonal() * float(source.width) * 0.25 * int(source.direction)
 		var angle := forward.angle()
 		var origin: Vector2 = lane - forward * 90.0 - Vector2.DOWN.rotated(angle) * 60.0

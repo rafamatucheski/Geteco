@@ -49,7 +49,7 @@ func _menu(title: String) -> void:
 	if g.world.driving.occupied: g.world.driving.car.input_locked = true
 	g.panel.show()
 	g.panel.custom_minimum_size = Vector2(620,440)
-	# Compact conversation screens release this legacy minimum only for themselves.
+	# Telas compactas de conversa soltam este mínimo antigo só para elas mesmas.
 	g.column.get_parent().custom_minimum_size = Vector2(580,400)
 	g.column.get_parent().horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	g.column.get_parent().focus_mode = Control.FOCUS_NONE
@@ -181,19 +181,19 @@ func _compact_menu_size(extent: Vector2) -> void:
 	g.panel.size = extent
 
 func _fit_compact_menu(identity: Node, maximum: Vector2) -> void:
-	# Wait for wrapping at the new width. Bound the result, keeping the existing
-	# scroller for long records; short menus should not reserve empty space.
+	# Espera a quebra de linha na nova largura. Limita o resultado, mantendo a
+	# rolagem existente para registros longos; menus curtos não devem reservar espaço vazio.
 	await g.get_tree().process_frame
 	await g.get_tree().process_frame
 	if not is_instance_valid(identity) or identity.get_parent() != g.column or not g.panel.visible: return
-	# Shared panel/margin chrome is 84 px; allow 16 px for focus and final wrap.
+	# A moldura compartilhada de painel/margem tem 84 px; deixa 16 px para o foco e a quebra final.
 	var extent: Vector2 = Vector2(maximum.x, minf(maximum.y, g.column.get_combined_minimum_size().y + 100.0))
 	g.panel.set_meta("modal_preferred_size", extent)
 	g.panel.custom_minimum_size = extent
 	g.panel.size = extent
 	g.panel.position = ((g.panel.get_viewport_rect().size - g.panel.size) * .5).round()
 
-## Read-only text must never look or behave like a mission action.
+## Texto só de leitura nunca pode parecer nem se comportar como ação de missão.
 func _menu_information(text: String, font_size := 16, parent: Node = null) -> Label:
 	var label := Label.new()
 	label.text = text
@@ -229,7 +229,7 @@ func show_journal_information() -> void:
 		g._button("Arquivo de Vicente", secret_file.open_from_journal)
 	g._button("Ver missões", Callable(g, "show_journal"))
 	g._button("Fechar", Callable(g, "close_menu"))
-	# Read the first record before navigating the actions below the records.
+	# Lê o primeiro registro antes de navegar pelas ações abaixo dos registros.
 	var scroll: ScrollContainer = g.column.get_parent()
 	if records.get_child_count() > 0: records.get_child(0).grab_focus.call_deferred()
 	scroll.set_deferred("scroll_vertical", 0)
@@ -310,9 +310,9 @@ func _show_services_available(service: String) -> void:
 		if g.state.place_id == "harbor_clothing" and g.storefronts.open_clothing(): return
 		g._show_shop("outfit")
 		return
-	# Vehicle repair belongs to its physical service. Maciota is handled above
-	# by Services.perform(); Northgate admits the occupied car in its exterior
-	# bay. This fallback must never charge or clear wanted state remotely.
+	# O reparo de veículo pertence ao serviço físico. O Maciota é tratado acima
+	# por Services.perform(); o Northgate admite o carro ocupado na baia
+	# externa. Este recurso nunca pode cobrar nem limpar o estado de procurado remotamente.
 	if service == "garage":
 		g.show_message("Use a bancada da garagem para cuidar da Monaliza.")
 		return

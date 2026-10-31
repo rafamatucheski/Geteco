@@ -1,5 +1,5 @@
 extends Node3D
-## Shared taxi body; per-car sign state and registration, with no extra light source.
+## Carroceria de táxi compartilhada; estado do luminoso e placa por carro, sem fonte de luz extra.
 var sign_material: StandardMaterial3D
 var plates: Array[Label3D] = []
 var available := true

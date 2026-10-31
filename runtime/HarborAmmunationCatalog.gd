@@ -135,7 +135,7 @@ func _build_catalog() -> void:
 	caption.add_theme_font_override("font", preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf"))
 	caption.add_theme_color_override("font_color", Color("f1eee7"))
 	center.add_child(caption)
-	# Preserve the existing, lit 3D model; no extra viewports for list icons.
+	# Preserva o modelo 3D iluminado existente; sem viewports extras para ícones de lista.
 	var stage := PanelContainer.new()
 	stage.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	stage.add_theme_stylebox_override("panel", stage_style())
@@ -505,7 +505,7 @@ func _select_item(index: int) -> void:
 	change_selection(0)
 
 func _refresh_list(category: int) -> void:
-	# Rebuild only when category/catalog changes. Selection and purchases retain focus.
+	# Reconstrói só quando a categoria/catálogo muda. Seleção e compras mantêm o foco.
 	if category != list_category or int(item_list.get_meta("stock_count", -1)) != stock.size():
 		for child in item_list.get_children(): child.free()
 		list_category = category
@@ -567,7 +567,7 @@ func _refresh_comparison(id: String) -> void:
 	columns.text = "PRÉVIA  ←  EQUIPADA"
 	columns.add_theme_font_size_override("font_size", 14)
 	comparison.add_child(columns)
-	# Values come from combat data with installed attachments applied.
+	# Valores vêm dos dados de combate com os acessórios instalados aplicados.
 	var current_rows := CUSTOM.stats(equipped_id, session.world.gameplay.customization)
 	var selected_rows := CUSTOM.stats(id, session.world.gameplay.customization)
 	for row in selected_rows:

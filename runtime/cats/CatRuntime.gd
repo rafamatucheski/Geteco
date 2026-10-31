@@ -1,5 +1,5 @@
 extends Node
-## Owns a bounded set of discoveries/residents; the residence owns all save data.
+## Cuida de um conjunto limitado de descobertas/moradores; a residência é dona de todos os dados do save.
 const LOCATIONS = preload("res://runtime/cats/CatLocations.gd")
 const CAT = preload("res://runtime/cats/HouseCat.gd")
 const FURNITURE = preload("res://runtime/cats/CatFurniture.gd")
@@ -71,7 +71,7 @@ func refresh() -> void:
 		_rebuild_home(indoors,context,_epoch)
 
 func _rebuild_home(indoors: bool, context: String, epoch: int) -> void:
-	# Retired collision shapes must leave the physics world before admission.
+	# Formas de colisão aposentadas precisam sair do mundo de física antes da admissão.
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	if epoch != _epoch or context != _context or not is_inside_tree(): return
@@ -90,8 +90,8 @@ func _refresh_discoveries() -> void:
 			continue
 		if cats.has(row.id): continue
 		var origin: Vector3 = row.point
-		# A roof is rendered before its traversable upper floor is opened. Its
-		# authored datum is stable; ground discoveries require streamed support.
+		# Um telhado é renderizado antes de o andar superior atravessável ser aberto. O
+		# dado escrito dele é estável; descobertas no chão exigem apoio em streaming.
 		if not row.has("roof"):
 			origin = floor_point(origin)
 			if not origin.is_finite() or not point_clear(origin,.40): continue
@@ -153,8 +153,8 @@ func _build_home(indoors: bool) -> void:
 	var definition: Dictionary = _home_definition
 	var origin: Vector3 = session.room.global_position if indoors else definition.exterior_position
 	var frame: Basis = session.room.global_basis if indoors else Basis(Vector3.UP,float(definition.get("editor_rotation",0)))
-	# Explicit floor candidates, then real support/body queries. No actor is
-	# placed on top of a cabinet and no random navigation crosses a solid.
+	# Candidatos de piso explícitos, depois consultas reais de apoio/corpo. Nenhum ator é
+	# posto em cima de um armário e nenhuma navegação aleatória atravessa um sólido.
 	for z in range(-4,5) if indoors else range(5,8):
 		for x in range(-6,7) if indoors else range(-3,4):
 			var point := origin+frame*Vector3(x*.95,0,z*.9)
@@ -166,7 +166,7 @@ func _build_home(indoors: bool) -> void:
 	for id in home.adopted_cats():
 		var index: int = int(id.trim_prefix("cat_"))-1
 		var point := Vector3.INF
-		# Spread personalities through the free space without blocking the door.
+		# Espalha as personalidades pelo espaço livre sem bloquear a porta.
 		for offset in home_points.size():
 			var candidate: Vector3 = home_points[(index*7+offset)%home_points.size()]
 			var spaced := true
@@ -217,7 +217,7 @@ func _build_furniture() -> void:
 				for index in footprints.size():
 					if rectangle.grow(.08).intersects(footprints[index]) or rectangle.intersects(approaches[index]) or approach_rect.intersects(footprints[index]): free=false; break
 				if not free: continue
-				# Reserve both the prop and its front approach on clear floor.
+				# Reserva o objeto e a aproximação pela frente em piso livre.
 				var access := point+Vector3(0,0,-.78)
 				if not floor_point(access).is_finite() or not point_clear(access,.30): continue
 				var prop: Node3D = FURNITURE.create(kind)

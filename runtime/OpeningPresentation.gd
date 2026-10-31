@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Native ferry film, followed by playable disembarkation at the passenger quay.
+## Filme nativo da balsa, seguido do desembarque jogável no cais de passageiros.
 const FILM := preload("res://cutscenes/opening/ferry/FerryFilm.gd")
 signal completed(skipped: bool)
 var film: Control
@@ -25,7 +25,7 @@ func _ready() -> void:
 	_previous_3d_disabled = _viewport.disable_3d
 	_owns_pause = true
 	get_tree().paused = true
-	# The opaque ferry film needs no hidden live city render underneath it.
+	# O filme opaco da balsa não precisa de um render vivo escondido da cidade por baixo.
 	_viewport.disable_3d = true
 	film = FILM.new()
 	film.finished.connect(func(destination: StringName): _complete(destination, false))

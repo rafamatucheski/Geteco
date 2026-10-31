@@ -54,7 +54,7 @@ static func claim(session, choice: String) -> Dictionary:
 	var car: CharacterBody3D
 	var record := {}
 	if choice == "car":
-		# Delivery uses collision-checked paddock spaces, outside the timed strip.
+		# A entrega usa vagas de paddock checadas contra colisão, fora da reta cronometrada.
 		var base: Vector3 = session.desert.drag.staging_point
 		for offset in [Vector3(12,.15,-9),Vector3(16,.15,-9),Vector3(20,.15,-9),Vector3(-12,.15,-9)]:
 			var point: Vector3 = base + offset

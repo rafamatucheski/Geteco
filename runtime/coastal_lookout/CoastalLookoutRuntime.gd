@@ -1,5 +1,5 @@
 extends Node
-## Local scenery and interaction residency; never unlocks or mounts another region.
+## Residência local de cenário e interação; nunca libera nem monta outra região.
 const SITE = preload("res://world/places/coastal_lookout/CoastalLookout.gd")
 const BINOCULARS = preload("res://runtime/coastal_lookout/CoastalBinoculars.gd")
 const HORIZON = preload("res://world/desert/DesertHorizon.gd")
@@ -34,9 +34,9 @@ func _prepare_templates() -> void:
 	if _site_template != null or _preparing: return
 	_preparing = true
 	var began := Time.get_ticks_usec()
-	# FullSession creates this runtime under its loading curtain, before physics
-	# or play is admitted. Build detached templates here, not on first approach.
-	# Only resources remain cached: distant collision/light/render nodes are freed.
+	# O FullSession cria este runtime sob a cortina de carregamento, antes de a física
+	# ou o jogo serem admitidos. Monta modelos soltos aqui, não na primeira aproximação.
+	# Só os recursos ficam em cache: nós distantes de colisão/luz/render são liberados.
 	# Cede o quadro entre as partes: montado de uma vez levava ~11 s num quadro só (o
 	# horizonte do deserto, ~9 s), a janela parava de responder no carregamento
 	# (auditoria de 16/10). _update_residency já espera os modelos ficarem prontos.
@@ -117,8 +117,8 @@ func _update_residency() -> void:
 		if _site_template == null or _horizon_template == null or _city_template == null: return
 		var began := Time.get_ticks_usec()
 		site = _site_template.instantiate()
-		# PackedScene deliberately stores geometry/resources, not script-private
-		# generator state. Hydrate only the live handles required by this site.
+		# O PackedScene guarda de propósito geometria/recursos, não o estado privado de script
+		# do gerador. Hidrata só as referências vivas exigidas por este local.
 		site._built = true
 		site._head = site.get_node("BinocularHead")
 		site._lighthouse_sightline = null

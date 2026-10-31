@@ -1,6 +1,6 @@
 extends RefCounted
-## Authored civilian demand, evaluated once at admission, never per frame.
-## Repeated entries are weights. Mission/reward cars remain out of these pools.
+## Demanda civil escrita, avaliada uma vez na admissão, nunca por quadro.
+## Entradas repetidas são pesos. Carros de missão/recompensa ficam fora destes grupos.
 const POOLS := {
 	"city": ["metro_hatch", "metro_hatch", "besouro_1300", "besouro_1300", "orbita_micro", "union_sedan", "sedan_classic", "station_wagon", "mare_microvan", "nimbus_minivan", "taxi_yellow", "taxi_yellow", "courier_van", "ranch_single", "ranch_pickup", "atlas_crew_pickup", "sertao_trail_pickup", "sport_coupe", "sakura_s15", "kite_type_s", "brisa_s", "potro_68", "caiman_454", "monte_rei_84"],
 	"work": ["courier_van", "courier_van", "toco_minitruck", "toco_minitruck", "mare_microvan", "mare_microvan", "ranch_single", "ranch_pickup", "lumber_pickup_4x4", "atlas_crew_pickup", "sertao_trail_pickup", "besouro_1300", "metro_hatch", "union_sedan", "station_wagon", "taxi_yellow", "lince_rs"],

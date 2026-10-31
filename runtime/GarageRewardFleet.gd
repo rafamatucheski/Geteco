@@ -1,7 +1,7 @@
 extends RefCounted
 const ID := "cobra_boss_ironback"
-# ironback.scn is the same untouched BossMuscleModel snapshot exported by
-# tools/bake_vehicles.gd; this reward has its own ID and HarborBossMuscle rules.
+# ironback.scn é o mesmo snapshot intocado do BossMuscleModel exportado por
+# tools/bake_vehicles.gd; esta recompensa tem ID próprio e as regras do HarborBossMuscle.
 const SPEC := {"id":ID,"label":"Ironback V8","scene":"res://assets/garage_rewards/ironback.scn",
 	"model_class":"res://prototypes/living_cast/BossMuscleModel.gd","source_controller":"prototypes/living_cast/HarborBossMuscle.gd",
 	"bounds_size":[2.23600006103516,1.34099853038788,5.06999969482422],"bounds_center":[0.0,.675499320030212,.00499987602233887],

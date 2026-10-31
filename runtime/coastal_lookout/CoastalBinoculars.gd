@@ -1,6 +1,6 @@
 extends Node
-## The fixed observation optic borrows input, never player position or save state.
-## FullSession routes its action/input and cancels it before a position transition.
+## A luneta fixa de observação pega a entrada emprestada, nunca a posição do jogador nem o save.
+## O FullSession roteia a ação/entrada dela e a cancela antes de uma transição de posição.
 const OVERLAY := preload("res://runtime/coastal_lookout/BinocularOverlay.gd")
 const ACTIVE_META := &"coastal_binoculars_active"
 const INTERACTION_RADIUS := 1.5
@@ -70,8 +70,8 @@ func enter() -> bool:
 	world.hud.hide()
 	optical_camera = Camera3D.new()
 	optical_camera.name = "CoastalBinocularCamera"
-	# The optical head is updated in render time; inherited physics interpolation
-	# would interpolate an otherwise stationary viewpoint after mouse movement.
+	# A cabeça óptica é atualizada no tempo de render; a interpolação de física herdada
+	# interpolaria um ponto de vista que, fora isso, é parado depois do movimento do mouse.
 	optical_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	optical_camera.near = 0.08
 	optical_camera.far = 3500.0
@@ -102,10 +102,10 @@ func handle_input(event: InputEvent) -> bool:
 	# GUI Buttons need touch-generated mouse events, while raw screen drags own
 	# the optical pan. Consuming emulation here swallowed every touch button.
 	if event is InputEventMouse and event.device == InputEvent.DEVICE_ID_EMULATION: return false
-	# Keeping the interaction key down must not immediately leave on OS repeat.
+	# Manter a tecla de interação apertada não pode sair na hora pela repetição do SO.
 	if event.is_echo(): return true
 	if event.is_action_pressed("pause_game"):
-		# Release first; the normal PauseInput still receives this same event.
+		# Solta primeiro; o PauseInput normal ainda recebe este mesmo evento.
 		leave()
 		return false
 	if event.is_action_pressed("interact") or event.is_action_pressed("ui_cancel") or event.is_action_pressed("exit_vehicle"):
@@ -121,7 +121,7 @@ func handle_input(event: InputEvent) -> bool:
 	elif event is InputEventKey and event.pressed:
 		if event.physical_keycode in [KEY_EQUAL, KEY_KP_ADD]: adjust_zoom(-4.0)
 		elif event.physical_keycode in [KEY_MINUS, KEY_KP_SUBTRACT]: adjust_zoom(4.0)
-	# Touch buttons on the optical overlay need the raw finger event.
+	# Os botões de toque da camada óptica precisam do evento cru do dedo.
 	if event is InputEventScreenTouch: return false
 	return true
 
@@ -148,7 +148,7 @@ func _process(delta: float) -> void:
 			if stick.length() > 0.18: direction = stick
 		if not controls.touch_aim.is_zero_approx(): direction = controls.touch_aim
 	look_delta(direction * delta * 0.6 * optical_camera.fov / FOV_WIDE)
-	# Trigger zoom also works without adding bindings to the persistent input map.
+	# O zoom pelo gatilho também funciona sem adicionar ligações ao mapa de entrada persistente.
 	if controls != null and controls.using_gamepad:
 		adjust_zoom((Input.get_action_strength("fire") - Input.get_action_strength("aim")) * delta * 20.0)
 	_clock += delta
@@ -169,8 +169,8 @@ func _environment_source() -> Environment:
 func _optical_environment() -> Environment:
 	var source := _environment_source()
 	var result: Environment = source.duplicate(true) if source != null else Environment.new()
-	# Perspective needs a horizon; the orthographic world uses only a flat color.
-	# This camera-local sky preserves world lighting and never edits Weather state.
+	# A perspectiva precisa de um horizonte; o mundo ortográfico usa só uma cor chapada.
+	# Este céu local à câmera preserva a iluminação do mundo e nunca edita o estado do Weather.
 	_sky_material = ProceduralSkyMaterial.new()
 	_sky_material.sky_curve = 0.18
 	_sky_material.ground_curve = 0.18
@@ -200,10 +200,10 @@ func _refresh_sky() -> void:
 	_panorama_fog(env)
 
 func _panorama_fog(env: Environment) -> void:
-	# Harbor's 18–75 m depth fog is authored for the overhead street camera.
-	# The optical camera observes kilometres of coastline: keep the same haze,
-	# tint and illumination but scale only its depth range to the panorama.
-	# Weather remains visible; rain/storm/night still shorten optical visibility.
+	# A névoa de profundidade de 18–75 m do Harbor foi escrita para a câmera de rua vista de cima.
+	# A câmera óptica observa quilômetros de costa: mantém a mesma névoa,
+	# tom e iluminação, mas escala só a faixa de profundidade para o panorama.
+	# O clima continua visível; chuva/tempestade/noite ainda encurtam a visibilidade óptica.
 	var weather_state := 0
 	var daylight := 1.0
 	var session = world.session

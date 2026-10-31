@@ -1,5 +1,5 @@
 extends "res://scripts/Actor.gd"
-## Stationary domestic routines retain the real Actor body and native rig.
+## Rotinas domésticas paradas mantêm o corpo Actor real e o rig nativo.
 const HOME_MODEL := preload("res://runtime/desert/DesertVillageResidentModel.gd")
 const HUMAN_KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 signal home_resident_died
@@ -14,7 +14,7 @@ func _ready() -> void:
 	identity=int(specification.get("appearance",{}).get("variant",9730))
 	home_activity=str(specification.get("activity","read"))
 	controlled_automatically=true
-	# Update the held spoon after the rig has solved its hands this frame.
+	# Atualiza a colher segurada depois que o rig resolveu as mãos neste quadro.
 	process_priority=1
 	automatic_direction=Vector3.ZERO
 	set_meta("gameplay_role","civilian")
@@ -60,8 +60,8 @@ func _ready() -> void:
 	home_model.teleported()
 
 func _add_sleep_collision() -> void:
-	# Feet are +.87 m from the bed centre; the two blocks separately respect
-	# mattress and higher pillow, instead of suspending a walking capsule.
+	# Os pés ficam a +.87 m do centro da cama; os dois blocos respeitam separadamente
+	# o colchão e o travesseiro mais alto, em vez de suspender uma cápsula de caminhada.
 	for row in [[Vector3(0,.02,-.74),Vector3(.58,.28,1.35)],
 		[Vector3(0,.15,-1.54),Vector3(.30,.26,.35)]]:
 		var collider := CollisionShape3D.new()
@@ -81,8 +81,8 @@ func _hand_targets() -> Array:
 
 func _cooking_hand(t: float) -> Vector3:
 	var target: Vector3=specification.get("cook_target",specification.get("cooking_point",Vector3.ZERO)+Basis(Vector3.UP,rotation.y)*Vector3(0,1.22,.6))
-	# The authored target is inside the pot. Keep the hand above its rim while
-	# the spoon reaches into it; the ordinary arm IK still limits human reach.
+	# O alvo escrito fica dentro da panela. Mantém a mão acima da borda enquanto
+	# a colher entra nela; o IK comum do braço ainda limita o alcance humano.
 	target.y+=.14
 	return get_parent().to_global(target)+global_basis*Vector3(cos(t*1.8)*.065,sin(t*1.8)*.016,sin(t*1.8)*.055)
 
@@ -116,8 +116,8 @@ func _fall_over(impact := Vector3.ZERO) -> void:
 		_death_notified=true
 		home_resident_died.emit()
 	if home_activity=="sleep" and not has_meta("street_pose_owned") and not has_meta("street_down"):
-		# Already lying on a validated mattress/pillow. A standing fall would
-		# translate this pose beyond the bed and lift it above its support.
+		# Já deitado num colchão/travesseiro validado. Uma queda em pé
+		# levaria esta pose para além da cama e a ergueria acima do apoio.
 		if _reaction_tween!=null: _reaction_tween.kill()
 		home_model.hand_provider=Callable()
 		home_model.hand_targets=[null,null]

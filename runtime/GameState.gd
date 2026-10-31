@@ -73,8 +73,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	for key in ["region_id","place_id","checkpoint_id"]:
 		if not data.get(key) is String or str(data[key]).length() > 128: return false
 	if data.region_id not in ["harbor","mountain","desert"]: return false
-	# Reject the entire snapshot before touching live state. Maciota is a native
-	# Harbor interior and deliberately does not live in PlaceCatalog.
+	# Recusa o snapshot inteiro antes de mexer no estado vivo. O Maciota é um interior
+	# nativo do Harbor e de propósito não vive no PlaceCatalog.
 	if not _location_is_compatible(data.region_id,data.place_id): return false
 	if data.world.has("digo_workshop_drive") and (data.region_id != "desert" or data.place_id != "desert_digo"): return false
 	if data.world.has("pedestrian"):
@@ -173,8 +173,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 		for receipt in data.economy.get("transactions",{}):
 			if str(receipt).begins_with("spend:curitiba_wine_"): return false
 	if data.world.has("port_containers") and not preload("res://gameplay/urban_v1/PortContainerState.gd").validate_snapshot(data.world.port_containers): return false
-	# Optional for compatibility with V2 saves written before port/cemetery state
-	# existed. Once present, both halves are mandatory and validated atomically.
+	# Opcional por compatibilidade com saves V2 gravados antes de existir o estado de porto/cemitério.
+	# Uma vez presente, as duas metades são obrigatórias e validadas de forma atômica.
 	if data.world.has("urban_operations"):
 		if not data.world.urban_operations is Dictionary or not preload("res://gameplay/urban_v1/UrbanOperations.gd").validate_snapshot(data.world.urban_operations): return false
 	if not _validate_cross_contracts(next_economy,next_campaign,next_canonical_campaign,data.world): return false
@@ -182,8 +182,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if data.world.has("desert_drag_return") and not preload("res://activities/desert_drag/DragReturnCourse.gd").validate_snapshot(data.world.desert_drag_return): return false
 	# Ato 1, cadeia da Helena: etapas coerentes com a campanha e recibo se e só se a missão terminou.
 	if not preload("res://systems/campaign/HelenaAct1State.gd").validate(data.world,data.economy,next_campaign.snapshot()): return false
-	# The dedicated Rachas profile starts at the meet without completing story
-	# missions. This save mode does not change the bridge's campaign-only policy.
+	# O perfil dedicado dos Rachas começa no encontro sem concluir missões da
+	# história. Este modo de save não muda a política só-de-campanha da ponte.
 	if data.world.has("drag_standalone"):
 		var racing_mode: Variant=data.world.drag_standalone
 		if not racing_mode is Dictionary or racing_mode.size()!=1: return false
@@ -204,9 +204,9 @@ func restore_snapshot(data: Dictionary) -> bool:
 	return true
 
 func _migrate_schema_2(data: Dictionary) -> bool:
-	# Schema 2 predates the canonical nine-beat ledger. There is no trustworthy
-	# field to infer it from, so compatibility is explicit: start that independent
-	# ledger at its authored initial state and preserve every existing V2 field.
+	# O esquema 2 é anterior ao livro canônico de nove etapas. Não há campo confiável
+	# de onde deduzi-lo, então a compatibilidade é explícita: inicia esse livro
+	# independente no estado inicial escrito e preserva todo campo V2 existente.
 	var migrated := data.duplicate(true)
 	migrated.schema_version = SCHEMA_VERSION
 	migrated.canonical_campaign = CANONICAL_CAMPAIGN.new().snapshot()
@@ -244,7 +244,7 @@ static func _reward_aliases(id: String) -> Array[String]:
 
 static func _world_reward_contracts() -> Dictionary:
 	var result := {}
-	# Historical receipts remain valid when an authored service facade is removed.
+	# Recibos históricos continuam válidos quando uma fachada de serviço escrita é removida.
 	for definition in PLACES.definitions(true):
 		for reward in definition.get("rewards",[]):
 			if reward is Dictionary and reward.get("id") is String:
@@ -288,10 +288,10 @@ static func _validate_cross_contracts(next_economy, next_campaign, next_canonica
 			var id := key.trim_prefix("reward:canonical_contract:")
 			if not canonical_data.completed_contracts.has(id): return false
 	var contracts := _world_reward_contracts()
-	# A receipt may legitimately precede its world marker when a save is
-	# interrupted between wallet publication and marker reconciliation. Validate
-	# the receipt payload here, but keep that state loadable so the pickup can add
-	# only the missing marker without paying again.
+	# Um recibo pode legitimamente vir antes do marcador no mundo quando um save é
+	# interrompido entre a publicação da carteira e a reconciliação do marcador. Valida
+	# o conteúdo do recibo aqui, mas mantém esse estado carregável para o item adicionar
+	# só o marcador que falta sem pagar de novo.
 	for canonical_id_value in contracts:
 		var canonical_id := str(canonical_id_value)
 		var contract: Dictionary = contracts[canonical_id]
@@ -315,9 +315,9 @@ static func _validate_cross_contracts(next_economy, next_campaign, next_canonica
 			"weapon":
 				if not wallet.weapons.has(contract.get("item","")): return false
 			_:
-				# Consumables can leave inventory after a legitimate collection. The
-				# permanent zero-value receipt proves that grant; older saves without
-				# receipts still need the original item. Invalid receipts were rejected above.
+				# Consumíveis podem sair do inventário depois de uma coleta legítima. O
+				# recibo permanente de valor zero prova essa concessão; saves antigos sem
+				# recibos ainda precisam do item original. Recibos inválidos foram recusados acima.
 				if not _reward_receipt(transactions,canonical_id,0) and int(wallet.inventory.get(contract.get("item",""),0)) < int(contract.get("amount",1)): return false
 	return true
 

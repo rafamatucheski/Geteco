@@ -1,5 +1,5 @@
 extends RefCounted
-## Paint only authored body materials. Original meshes and other surfaces stay shared.
+## Pinta só os materiais de carroceria escritos. As malhas originais e outras superfícies continuam compartilhadas.
 static var _sources: Dictionary = {}
 var materials: Array[StandardMaterial3D] = []
 var original_color := Color.WHITE
@@ -56,8 +56,8 @@ func _is_paint(material: StandardMaterial3D, key: String, source: Dictionary) ->
 	if not key.is_empty(): return key == "paint"
 	if material.resource_name == "paint": return true
 	if source.is_empty(): return false
-	# Old exports lack semantic tags: match the exact authored paint recipe,
-	# never an approximate body color or all materials on a vehicle.
+	# Exports antigos não têm tags semânticas: casa a receita de pintura escrita exata,
+	# nunca uma cor de carroceria aproximada nem todos os materiais de um veículo.
 	return material.albedo_color.is_equal_approx(Color.html(source.color)) and is_equal_approx(material.metallic,float(source.metallic)) and is_equal_approx(material.roughness,float(source.roughness)) and not material.emission_enabled and material.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED
 
 func _local(original: StandardMaterial3D, copies: Dictionary) -> StandardMaterial3D:

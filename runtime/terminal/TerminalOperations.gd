@@ -27,17 +27,17 @@ func configure(value) -> void:
 func _ready() -> void:
 	name = "TerminalOperations"
 
-## Resolve only the real route required near this saved exterior position.
-## The startup caller still holds the curtain and ready_for_play is false.
-## No coach, passenger, collision or simulation timer is prepared here.
+## Resolve só a rota real exigida perto desta posição exterior salva.
+## Quem chama na partida ainda segura a cortina e ready_for_play é false.
+## Nenhum ônibus, passageiro, colisão ou timer de simulação é preparado aqui.
 func prepare_startup_route() -> void:
 	if controller.state.region_id != "harbor" or not controller.state.place_id.is_empty(): return
 	if controller.world.player.global_position.distance_to(ROUTES.point(0,0)) >= 100: return
 	if not controller.urban_transit.instances.has("harbor_coach_terminal"): return
 	prepare_road()
 
-## Only immutable meshes are prepared; admission remains atomic in build().
-## The time budget is soft: one identity is indivisible and may cross it.
+## Só malhas imutáveis são preparadas; a admissão continua atômica em build().
+## O orçamento de tempo é flexível: uma identidade é indivisível e pode ultrapassá-lo.
 func prepare_startup_passenger_meshes(budget_usec: int = 4000) -> void:
 	if _passenger_meshes_prepared or controller.session.ready_for_play: return
 	if controller.state.region_id != "harbor" or not controller.state.place_id.is_empty(): return
@@ -186,8 +186,8 @@ func _stall_physics_process(delta: float) -> void:
 					else:
 						suspend(p)
 	if not running or not resident: return
-	# Arrival's route-city coach remains independent. No terminal manoeuvre starts
-	# during the scripted M00 disembark, so both flows cannot claim its crossing.
+	# O ônibus da cidade-rota da chegada continua independente. Nenhuma manobra do terminal começa
+	# durante o desembarque roteirizado da M00, para os dois fluxos não disputarem a travessia.
 	if controller.session.arrival.active and controller.session.arrival.phase=="disembark": return
 	for gate in gates: gate.tick(delta)
 	var authorizing: bool = gates.any(func(gate): return gate.state in ["checking","opening","passing"])
@@ -263,7 +263,7 @@ func clear_person(point: Vector3, actor: CharacterBody3D) -> bool:
 	return get_world_3d().direct_space_state.intersect_shape(query,1).is_empty()
 
 func exchange(coach: Node3D) -> bool:
-	# One person uses the door at a time; alighters walk away before boarding starts.
+	# Uma pessoa usa a porta por vez; quem desce se afasta antes de o embarque começar.
 	for p in coach.passengers:
 		if not _passenger_present(p): continue
 		var actor = p.actor

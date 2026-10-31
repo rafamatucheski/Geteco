@@ -2,8 +2,8 @@ extends Node3D
 ## GETECO_COLLISION_LOOKAHEAD=0 desliga a antecipação do chão do ônibus (NativeRegion.request_collision_soon).
 static var _collision_lookahead := OS.get_environment("GETECO_COLLISION_LOOKAHEAD") != "0"
 const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
-## Line 510 operates independently of the player. Identities and trips survive
-## distance culling; only nearby actors and vehicles participate in physics.
+## A linha 510 opera independente do jogador. Identidades e viagens sobrevivem
+## ao corte por distância; só atores e veículos próximos participam da física.
 const BUS := preload("res://runtime/transit/BiarticulatedBus.gd")
 const PATH := preload("res://runtime/transit/ArticulatedPath.gd")
 const GRAPH := preload("res://gameplay/NativeTrafficRoutes.gd")
@@ -301,9 +301,9 @@ func _stall_refresh_presence() -> void:
 			bus._apply_poses(poses,false)
 			if bus.admits(poses,false): bus.set_active(true)
 		elif not near and bus.active:
-			# The previous camera can still see Harbor for the first frames of a
-			# region/interior transition. Visibility only protects distance culling;
-			# it cannot retain physical bodies after their region is suspended.
+			# A câmera anterior ainda pode ver o Harbor nos primeiros quadros de uma
+			# transição de região/interior. A visibilidade só protege o corte por distância;
+			# não pode reter corpos físicos depois que a região deles é suspensa.
 			if not enabled or (not bus.player_aboard and not controller._on_screen(point,25)): bus.set_active(false)
 	for person in people:
 		if person.phase=="fleeing":
@@ -435,7 +435,7 @@ func exchange(bus) -> bool:
 		if person.actor.dead: person.phase="unavailable"; continue
 		person.phase="boarding"
 		if not walk(person,stops[index].inside): return false
-		# The capsule reaches the gate before boarding; no wall crossing is hidden.
+		# A cápsula chega à porta antes do embarque; nenhuma travessia de parede fica escondida.
 		person.phase="to_door"
 		return false
 	return not people.any(func(p): return p.stop==index and p.phase in ["boarding","to_door","leaving"])

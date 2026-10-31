@@ -1,5 +1,5 @@
 extends RefCounted
-## Local race-meet sky, driven by the existing world clock. Adds no light/shadow.
+## Céu local do encontro de corrida, guiado pelo relógio do mundo existente. Não adiciona luz/sombra.
 const SHADER := preload("res://runtime/atmosphere/drag_strip_sky.gdshader")
 const COMPACT := preload("res://world/desert/DesertCompactLayout.gd")
 const STRIP := Rect2(Vector2(-1060+COMPACT.DRAG.x,-1380+COMPACT.DRAG.z),Vector2(1200,200))
@@ -50,8 +50,8 @@ func apply(env: Environment, point: Vector3, hour: float, cloud_cover: float, mo
 		installed = true
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
-	# The cubemap branch retains the old flat background for reflections.
-	# Visible clouds and disks do not change existing car reflection lighting.
+	# O ramo do cubemap mantém o fundo chapado antigo para reflexos.
+	# Nuvens e discos visíveis não mudam a iluminação de reflexo existente dos carros.
 	material.set_shader_parameter("base_color",env.background_color)
 	material.set_shader_parameter("region_weight",weight)
 	material.set_shader_parameter("hour",fposmod(hour,1.0))

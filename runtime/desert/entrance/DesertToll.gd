@@ -28,7 +28,7 @@ func nearest_action() -> Dictionary:
 func perform() -> bool:
 	if nearest_action().is_empty(): return false
 	var car:=_car()
-	# Derive serial from the persisted wallet, so load/reentry cannot reuse a debit.
+	# Deriva o serial da carteira persistida, para que carregar/reentrar não reaproveite um débito.
 	var serial:=0
 	for key in session.state.economy.snapshot().transactions:
 		if str(key).begins_with("spend:desert_toll:"):
@@ -62,9 +62,9 @@ func _refresh() -> void:
 	var plaza=get_tree().get_first_node_in_group(PLAZA.GROUP)
 	if not is_instance_valid(plaza): return
 	var opened: Array[bool]=[is_instance_valid(paid_car),false]
-	# Ordinary traffic uses the same gates. A gate never closes onto an occupant.
-	# Dispatch, coaches and other NPC drivers are outside the ambient fleet.
-	# All actual vehicles share this group, including their physical occupancy.
+	# O trânsito comum usa as mesmas cancelas. Uma cancela nunca fecha sobre um ocupante.
+	# Despacho, ônibus e outros motoristas NPC ficam fora da frota ambiente.
+	# Todos os veículos reais dividem este grupo, incluindo a ocupação física.
 	for car in get_tree().get_nodes_in_group("drivable"):
 		if not is_instance_valid(car): continue
 		var local: Vector3=car.global_position-PLAZA.POSITION
@@ -74,7 +74,7 @@ func _refresh() -> void:
 		var clearance: float=car.half_length+2.0
 		if absf(local.z-barrier_z)<clearance and absf(plaza.arms[lane].rotation.z)>.1: opened[lane]=true
 		if lane==1 or (car!=_car() and (car.traffic or car.external_input)): opened[lane]=true
-	# Pedestrians standing under an already raised arm are also protected.
+	# Pedestres parados sob um braço já erguido também ficam protegidos.
 	var player: Vector3=session.world.player.global_position-PLAZA.POSITION
 	for lane in 2:
 		if absf(player.x-(2.8 if lane==0 else -2.8))<2.1 and absf(player.z-(-4.3 if lane==0 else 4.3))<1.0 and absf(plaza.arms[lane].rotation.z)>.1: opened[lane]=true

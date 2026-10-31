@@ -43,8 +43,8 @@ static func claim(world: Dictionary, economy: RefCounted, index: int, alive: boo
 	var saved: Variant=world.get(KEY,defaults())
 	if not valid(saved) or int(saved.defeated_mask)!=FULL_MASK or not validate_wallet(world,economy.snapshot()): return {"ok":false,"changed":false}
 	if (int(saved.cache_mask)&(1<<index))!=0: return {"ok":true,"changed":false}
-	# Stage the entire inventory transaction, including grid capacity. Publishing
-	# its validated data preserves the live wallet's session-only cheat settings.
+	# Prepara a transação de inventário inteira, incluindo a capacidade da grade. Publicar
+	# os dados validados preserva as configurações de cheat só da sessão da carteira viva.
 	var staged := ECONOMY.new()
 	staged._data=economy.snapshot()
 	var id: String=WEAPONS[index]

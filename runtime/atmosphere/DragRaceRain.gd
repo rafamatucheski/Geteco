@@ -26,13 +26,13 @@ func apply(emitter: GPUParticles3D, camera: Camera3D, delta: float, storm: bool)
 			_active = false
 		return
 	_clock += delta
-	# Wind is world-space: the moving perspective naturally changes its screen angle.
-	# Material billboarding would undo the velocity alignment, so use the emitter's.
+	# O vento está no espaço do mundo: a perspectiva em movimento muda naturalmente o ângulo na tela.
+	# O billboard do material desfaria o alinhamento à velocidade, então usa o do emissor.
 	material.billboard_mode = BaseMaterial3D.BILLBOARD_DISABLED
 	emitter.draw_pass_1.size = Vector2(.035,.34)
 	emitter.transform_align = GPUParticles3D.TRANSFORM_ALIGN_Z_BILLBOARD_Y_TO_VELOCITY
 	var gust := .06*sin(_clock*.63)+.025*sin(_clock*1.7)
 	process.direction = Vector3((.42 if storm else .16)+gust,-1,.08).normalized()
-	# The normal emitter sits around the driver, outside this low side camera.
-	# Keep rain in the foreground without increasing its 600-particle budget.
+	# O emissor normal fica em volta do motorista, fora desta câmera lateral baixa.
+	# Mantém a chuva no primeiro plano sem aumentar o orçamento de 600 partículas.
 	emitter.global_position = camera.global_position-camera.global_basis.z*12.0+Vector3.UP*8.0

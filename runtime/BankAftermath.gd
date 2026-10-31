@@ -45,7 +45,7 @@ func advance(days: float, away: bool) -> void:
 			began_investigation = true
 	if data.aftermath == "closed":
 		data.elapsed_days = minf(CLOSED_DAYS, float(data.elapsed_days) + days)
-		# Both installation and removal happen outside the player's view.
+		# Tanto a instalação quanto a remoção acontecem fora da vista do jogador.
 		if float(data.elapsed_days) >= CLOSED_DAYS and away: heist._reopen_bank()
 		elif began_investigation: heist._session_save()
 
@@ -59,8 +59,8 @@ func bank_is_away() -> bool:
 	if not session.state.place_id.is_empty(): return true
 	var camera := session.world.camera as Camera3D
 	if not is_instance_valid(camera): return false
-	# Project the complete facade bounds, not just its center, so the edge of
-	# the building cannot be replaced while still visible at a wide zoom.
+	# Projeta os limites inteiros da fachada, não só o centro, para que a borda do
+	# prédio não seja trocada enquanto ainda está visível num zoom largo.
 	var screen := Rect2(Vector2.ZERO, camera.get_viewport().get_visible_rect().size).grow(40.0)
 	var projected := Rect2()
 	var first := true

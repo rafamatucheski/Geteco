@@ -15,9 +15,9 @@ static func modern_renderer() -> bool:
 	return RenderingServer.get_current_rendering_method() in ["forward_plus","mobile"]
 
 static func apply_viewport(view: Viewport, settings: Node) -> void:
-	# Temporal AA/FSR2 and SSR enable a process-wide advanced shader group in Forward+.
-	# Measured on RTX 4060: ~5 GiB extra private memory, retained even after disabling.
-	# Old preferences and direct callers must not enable that group again.
+	# TAA/FSR2 e SSR ligam um grupo de shaders avançados de todo o processo no Forward+.
+	# Medido na RTX 4060: ~5 GiB a mais de memória privada, retidos mesmo depois de desligar.
+	# Preferências antigas e chamadas diretas não podem ligar esse grupo de novo.
 	var mode: int = clampi(settings.aa_mode,0,2)
 	if not modern_renderer(): mode = 0
 	var target_msaa := mini(settings.msaa, 2) as Viewport.MSAA if mode == 0 else Viewport.MSAA_DISABLED
@@ -27,7 +27,7 @@ static func apply_viewport(view: Viewport, settings: Node) -> void:
 	elif mode == 2: target_screen_aa = Viewport.SCREEN_SPACE_AA_SMAA
 	if modern_renderer() and settings.upscale_mode != 0 and settings.render_scale < .999:
 		target_scale_mode = Viewport.SCALING_3D_MODE_FSR
-	# Do not rebuild AA targets on unrelated preferences (audio, brightness, etc.).
+	# Não reconstrói os alvos de AA em preferências sem relação (áudio, brilho etc.).
 	if view.use_taa: view.use_taa = false
 	# Leave FSR2 before restoring MSAA; their render targets cannot coexist.
 	if view.scaling_3d_mode == Viewport.SCALING_3D_MODE_FSR2 and target_scale_mode != view.scaling_3d_mode:

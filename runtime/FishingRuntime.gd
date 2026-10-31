@@ -1,5 +1,5 @@
 extends Node
-## Harbor owns this exterior; the fishing controller owns its attempt and ledger.
+## O Harbor é dono deste exterior; o controlador de pesca cuida da tentativa e do livro.
 const SITE := preload("res://world/places/fishing/FishingSite.gd")
 var session
 var site: Node3D

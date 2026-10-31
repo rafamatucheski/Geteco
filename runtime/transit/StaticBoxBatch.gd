@@ -1,6 +1,6 @@
 extends RefCounted
-## Reuse CPU arrays for ordinary boxes instead of reading every uploaded mesh.
-## Other geometry keeps SurfaceTool's original path and format.
+## Reaproveita arrays de CPU para caixas comuns em vez de ler toda malha enviada.
+## Outras geometrias mantêm o caminho e o formato originais do SurfaceTool.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var unit_box: BoxMesh
 static var unit_arrays: Array = []
@@ -8,8 +8,8 @@ static var unit_arrays: Array = []
 static func append_from(tool: SurfaceTool, mesh: Mesh, surface: int, pose: Transform3D, vertex_offset: int) -> int:
 	if not mesh is BoxMesh or mesh.subdivide_width != 0 or mesh.subdivide_height != 0 or mesh.subdivide_depth != 0 or mesh.flip_faces or mesh.add_uv2:
 		tool.append_from(mesh,surface,pose)
-		# Native Cylinder append already obtained its arrays. Count its vertices from
-		# the same generator parameters instead of performing a second GPU readback.
+		# O append nativo de Cylinder já obteve os arrays. Conta os vértices a partir
+		# dos mesmos parâmetros do gerador em vez de fazer uma segunda leitura da GPU.
 		if mesh is CylinderMesh:
 			var cylinder: CylinderMesh = mesh
 			var count := (cylinder.rings+2)*(cylinder.radial_segments+1)

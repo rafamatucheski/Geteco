@@ -39,8 +39,8 @@ func _ready() -> void:
 		visual.appearance_female=female
 	add_child(visual)
 	if guard:
-		# Share the native barrel basis, grip targets and muzzle with the guard rig.
-		# Parenting a gun to the legacy forearm pointed it away from its target.
+		# Compartilha a base nativa do cano, os alvos de pegada e a boca com o rig do guarda.
+		# Pendurar a arma no antebraço antigo a apontava para longe do alvo.
 		visual.equip("shotgun" if shotgun else "pistol")
 		weapon=visual.weapon
 	if health<=0: _fall(true)
@@ -62,8 +62,8 @@ func _fall(restored := false, impact := Vector3.ZERO) -> void:
 	collision_layer=0
 	collision_mask=0
 	velocity=Vector3.ZERO
-	# The room owns persistent blood; the generic hit effect must not add a
-	# second pool at the feet before the body has finished falling.
+	# A sala é dona do sangue persistente; o efeito genérico de acerto não pode pôr uma
+	# segunda poça nos pés antes de o corpo terminar de cair.
 	set_meta("v2_blood_pool", true)
 	if is_instance_valid(weapon): weapon.hide()
 	# Bank/fuel rigs install their articulated body deferred from _ready.
@@ -138,8 +138,8 @@ func _death_blood() -> void:
 		first = false
 	var center := bounds.get_center() if not first else global_position
 	center.y = _floor_y
-	# Body ownership stays with Robberies until leaving the room. Registering it
-	# in the street corpse budget would fade it and trigger _ensure_actors again.
+	# A posse do corpo fica com o Robberies até sair da sala. Registrá-lo
+	# no orçamento de cadáveres da rua o faria sumir e dispararia _ensure_actors de novo.
 	blood.spawn_pool(center, true)
 	_fall_meshes.clear()
 func _physics_process(delta: float) -> void:
@@ -157,7 +157,7 @@ func _physics_process(delta: float) -> void:
 	if not heist.data.bank_shots or gameplay.health<=0:
 		reaction_remaining=1.25
 		return
-	# Telegraph the response; persisted hostility never fires on the admission frame.
+	# Avisa a resposta antes; hostilidade persistida nunca atira no quadro de admissão.
 	reaction_remaining=maxf(0.0,reaction_remaining-delta)
 	if entry_remaining>0 or reaction_remaining>0: return
 	cooldown=maxf(0,cooldown-delta)

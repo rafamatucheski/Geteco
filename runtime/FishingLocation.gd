@@ -1,11 +1,11 @@
 extends RefCounted
-## Shared exterior reservation and map destination, independent of scene scripts.
+## Reserva externa compartilhada e destino de mapa, independentes dos scripts de cena.
 const ANCHOR := Vector3(-500,0,-35)
 const ENTRY := ANCHOR+Vector3(0,0,30)
 const GROUNDS := Rect2(-538,-62,76,59)
 const DRIVEWAY := Rect2(-504,-5,8,3)
-# Older checkpoints remain valid on the original flat land. Leave the retired
-# venue as a meadow instead of generating a trunk inside a saved pedestrian/car.
+# Checkpoints antigos continuam válidos na terra plana original. Deixa o local
+# aposentado como campo em vez de gerar um tronco dentro de um pedestre/carro salvo.
 const LEGACY_ANCHOR := Vector3(-175,0,-3)
 const LEGACY_GROUNDS := Rect2(-213,-30,76,63)
 const ROAD_WIDTH := 6.5

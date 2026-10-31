@@ -39,7 +39,7 @@ static func _bed(root: Node3D) -> void:
 	root.set_meta("use_activity", "sleep")
 	if not _meshes.has("bed"):
 		var parts: Array = []
-		# Dense teal fabric, stitched inset and cream piping, with a cut-out front.
+		# Tecido verde-azulado denso, recorte costurado e debrum creme, com frente vazada.
 		MODEL._oval(parts, Vector3(0, 0.007, 0), Vector3(0.425, 0.012, 0.354), Color("607e7a"))
 		MODEL._oval(parts, Vector3(0, 0.014, -0.025), Vector3(0.347, 0.014, 0.286), Color("c8bfa6"))
 		for side in [-1.0, 1.0]:
@@ -49,7 +49,7 @@ static func _bed(root: Node3D) -> void:
 		MODEL._oval(parts, Vector3(0, 0.182, 0.326), Vector3(0.374, 0.014, 0.047), Color("8faaa0"))
 		_meshes.bed = MODEL._bake(parts)
 	MODEL._node("FabricBed", _meshes.bed, root)
-	# Three separate volumes preserve the entry and the sleeping area.
+	# Três volumes separados preservam a entrada e a área de dormir.
 	_solid_box(root, "LeftBolster", Vector3(-0.41, 0.086, 0.025), Vector3(0.12, 0.17, 0.72))
 	_solid_box(root, "RightBolster", Vector3(0.41, 0.086, 0.025), Vector3(0.12, 0.17, 0.72))
 	_solid_box(root, "BackBolster", Vector3(0, 0.09, 0.337), Vector3(0.81, 0.18, 0.14))

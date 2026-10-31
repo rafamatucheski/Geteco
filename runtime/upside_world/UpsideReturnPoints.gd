@@ -1,6 +1,6 @@
 extends RefCounted
-## Existing accessible Harbor pavement approaches, never procedural random X/Z.
-## These are candidates only: the live session must stream, sweep and check support.
+## Aproximações existentes e acessíveis pela calçada do Harbor, nunca X/Z aleatórios procedurais.
+## São só candidatos: a sessão viva precisa fazer streaming, varrer e checar o apoio.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const IDS := ["harbor_curitiba_cellar","harbor_hospital","harbor_clothing","harbor_fuel","harbor_bank","harbor_fire_station"]
 

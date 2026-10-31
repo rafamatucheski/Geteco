@@ -16,7 +16,7 @@ func start(tree: SceneTree) -> void:
 	_tree = tree
 	tree.node_added.connect(_added)
 	tree.node_removed.connect(_removed)
-	# Autoload comes first; only the few existing root nodes need seeding.
+	# O autoload vem primeiro; só os poucos nós raiz existentes precisam ser semeados.
 	_seed(tree.root)
 
 func _seed(node: Node) -> void:

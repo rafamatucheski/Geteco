@@ -1,6 +1,6 @@
 extends RefCounted
-## Incremental hybrid A*: poses, forward/reverse arcs and the actual M8 hull.
-## The search uses physical support and swept space, including sidewalks.
+## A* híbrido incremental: poses, arcos para frente/ré e o casco real do M8.
+## A busca usa apoio físico e espaço varrido, incluindo calçadas.
 const STEP := 2.0
 const TURN := PI/8.0
 const MAX_NODES := 7000
@@ -37,7 +37,7 @@ func begin(vehicle, target: Vector3, yaw: float) -> void:
 	action = 0
 	expanded = 0
 	var box := BoxShape3D.new()
-	# Cover the corners swept between orientation samples as well as the hull.
+	# Cobre os cantos varridos entre amostras de orientação, além do casco.
 	box.size = car.rotation_shape.size+Vector3(.3,0,.3)
 	padded_shape = box
 	query.shape = box
@@ -88,8 +88,8 @@ func primitive(start: Vector3, yaw: float, gear: int, turn: float) -> Vector3:
 	var space: PhysicsDirectSpaceState3D = car.get_world_3d().direct_space_state
 	var p := start
 	for i in 8:
-		# A stopped bumper can be millimetres from the blocker. Do not forbid
-		# the very first reverse motion solely because planning padding overlaps.
+		# Um para-choque parado pode estar a milímetros do bloqueio. Não proíbe
+		# o primeiríssimo movimento de ré só porque a folga de planejamento se sobrepõe.
 		query.shape = car.rotation_shape if i==0 else padded_shape
 		var angle := yaw+turn*(float(i)+.5)/8.0
 		var basis := Basis(Vector3.UP,angle)
@@ -98,8 +98,8 @@ func primitive(start: Vector3, yaw: float, gear: int, turn: float) -> Vector3:
 		if not is_finite(height) or absf(height-p.y)>.23: return Vector3.INF
 		next.y = height
 		var sweep_start := p
-		# Small kerbs are wheel steps, not walls. Check the lifted hull's full
-		# horizontal sweep; the driver performs the actual checked upward move.
+		# Meios-fios pequenos são degraus para a roda, não paredes. Checa a varredura horizontal
+		# inteira do casco elevado; o motorista faz o movimento real checado para cima.
 		sweep_start.y = maxf(p.y,next.y)
 		query.transform = Transform3D(basis,sweep_start+basis*car.shape.position)
 		query.motion = next-sweep_start

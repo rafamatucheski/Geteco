@@ -1,5 +1,5 @@
 extends Node
-## Bounded on-device evidence. Disk writes happen only after pausing/backgrounding.
+## Evidência limitada no aparelho. Escritas em disco só acontecem depois de pausar/ir para segundo plano.
 var world: Node
 var previous_usec := 0
 var was_active := false

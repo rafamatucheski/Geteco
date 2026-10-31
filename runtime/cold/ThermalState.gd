@@ -1,5 +1,5 @@
 extends RefCounted
-## Numerical rules from V1 ColdSurvivalController; no scene or player dependencies.
+## Regras numéricas do ColdSurvivalController da V1; sem dependências de cena ou jogador.
 const PROTECTION := {"dante_ski":.9,"dante_ski_retro":.9,"dante_ski_neon":.9,"dante_ski_patrol":.9,"dante_arctic":.8,"dante_trench":.6,"dante_lumberjack":.35,"dante_classic":.15,"dante_suit":.1,"dante_cowboy":.1,"dante_madmax":.1,"dante_ghillie":.25,"dante_puffer":.7,"dante_biker":.3,"dante_hoodie":.2,"dante_tracksuit":.15,"dante_varsity":.2,"dante_mechanic":.2,"dante_urban_camo":.25,"dante_tuxedo":.1}
 var temperature := 100.0
 var exposure := 0.0

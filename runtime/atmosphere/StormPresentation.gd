@@ -1,5 +1,5 @@
 extends Node
-## V1 thunder cadence and delayed audio, translated to the shared 3D sunlight.
+## Cadência de trovão e áudio atrasado da V1, traduzidos para a luz solar 3D compartilhada.
 ## One reusable world discharge; no transient lights or delayed timer callbacks.
 const BOLT := preload("res://runtime/atmosphere/LightningBolt3D.gd")
 const MIN_STRIKE_DISTANCE := 9.0
@@ -8,7 +8,7 @@ const STRIKE_ATTEMPTS := 6
 var weather
 var mixer
 var bolt: Node3D
-# Process-local diagnostic switch; does not change weather or persistent state.
+# Chave de diagnóstico local ao processo; não muda o clima nem o estado persistente.
 var bolts_enabled := true
 var strike_position := Vector3.INF
 var lightning_timer := 14.0
@@ -26,7 +26,7 @@ var _bolt_rng := RandomNumberGenerator.new()
 var _strike_focus := Vector3.ZERO
 
 func _ready() -> void:
-	# Weather updates coverage and the baseline light at priority 100.
+	# O Weather atualiza a cobertura e a luz base na prioridade 100.
 	process_priority = 101
 	_rng.randomize()
 	bolt = BOLT.new()
@@ -60,11 +60,11 @@ func trigger_lightning() -> bool:
 	strike_position = Vector3.INF
 	if is_instance_valid(bolt):
 		bolt.clear()
-		# The race sky already renders its own distant discharge. Keep one event.
+		# O céu da corrida já renderiza a própria descarga distante. Mantém um evento só.
 		var local_sky: Variant = weather.get("drag_sky")
 		var sky_has_bolt: bool = local_sky != null and local_sky.installed
 		if bolts_enabled and not sky_has_bolt:
-			# Geometry never consumes the cadence RNG or the gameplay/global RNG.
+			# A geometria nunca consome o RNG da cadência nem o RNG global/do jogo.
 			_bolt_rng.seed = _rng.state
 			strike_position = _pick_strike_position(_strike_focus)
 			if strike_position.is_finite():
@@ -99,8 +99,8 @@ func _pick_strike_position(focus: Vector3) -> Vector3:
 			point = focus+Vector3(cos(angle),0,sin(angle))*_bolt_rng.randf_range(14,28)
 		var distance := Vector2(point.x-focus.x,point.z-focus.z).length()
 		if distance < MIN_STRIKE_DISTANCE or distance > MAX_STRIKE_DISTANCE: continue
-		# Static surfaces only: never attach a strike to an actor or moving car.
-		# Start above roofs, so the discharge stops at the first exposed surface.
+		# Só superfícies estáticas: nunca prende um raio a um ator ou carro em movimento.
+		# Começa acima dos telhados, para a descarga parar na primeira superfície exposta.
 		var query := PhysicsRayQueryParameters3D.create(point+Vector3.UP*80,point-Vector3.UP*80,1)
 		var hit := space.intersect_ray(query)
 		if hit.is_empty(): continue

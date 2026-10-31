@@ -58,8 +58,8 @@ func _ready() -> void:
 	art.first_index = 3 if variant == 1 else 7 if variant == 2 else -1
 	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(art)
-	# Keep the first framing still until the independent presenter takes over.
-	# Hidden Godot artwork must not keep animating/rendering behind that window.
+	# Mantém o primeiro enquadramento parado até o apresentador independente assumir.
+	# A arte escondida do Godot não pode continuar animando/renderizando atrás dessa janela.
 	art.set_process(false)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -79,7 +79,7 @@ func _ready() -> void:
 	stack.add_child(brand)
 	var status := HBoxContainer.new()
 	stack.add_child(status)
-	# Technical stage details stay available for diagnostics, outside the interface.
+	# Detalhes técnicos da etapa ficam disponíveis para diagnóstico, fora da interface.
 	_stage = _label("Carregando…", 16, TEXT, BODY_FONT)
 	_stage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	status.add_child(_stage)
@@ -143,8 +143,8 @@ func set_stage(value: float, message: String) -> void:
 		SESSION_OPS.finish(_diagnostic_stage, "advanced")
 		_diagnostic_stage = SESSION_OPS.begin(self, "loading", message, {"progress":value})
 	_target = maxf(_target, clampf(value, 0.0, 1.0))
-	# Send the real target, not main-thread interpolation. The presentation loop
-	# smooths the bar independently and then holds it during a slow world stage.
+	# Envia o alvo real, não a interpolação da thread principal. O laço de apresentação
+	# suaviza a barra de forma independente e depois a segura durante uma etapa lenta do mundo.
 	if is_instance_valid(_presenter): _presenter.SetProgress(_target)
 	stage_message = message
 	if not stage_only and _shown < _target: set_process(true)

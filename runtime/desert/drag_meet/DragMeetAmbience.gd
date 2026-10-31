@@ -1,6 +1,6 @@
 extends Node3D
-## Five spatial loops and one detail. Music is owned by DragMeetScore so the
-## 800 m race never depends on the crowd's streaming radius.
+## Cinco loops espaciais e um detalhe. A música pertence ao DragMeetScore para que a
+## corrida de 800 m nunca dependa do raio de streaming da multidão.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const ROSTER := preload("res://runtime/desert/drag_meet/DragMeetRoster.gd")
 const LOOP_BUDGET := 5
@@ -81,8 +81,8 @@ func update(listener: Vector3, suppressed: bool, elapsed: float, workshop_active
 		var pitch := 1.0
 		var gain := float(source.volume)-(20.0 if suppressed else 0.0)-(12.0 if speaking else 0.0)
 		if heat_phase in ["staging","racing","braking"]:
-			# Leave the RPM cues of the two actual racers intelligible. Spatial
-			# spectators can still be heard passing, with no extra artificial motors.
+			# Deixa inteligíveis os sons de RPM dos dois corredores reais. Os espectadores
+			# espaciais ainda podem ser ouvidos passando, sem motores artificiais extras.
 			gain += (1.0 if heat_phase=="staging" else -4.0) if source.category=="crowd" else -18.0
 		if source.category=="engine":
 			var phase := fposmod(elapsed+float(abs(hash(source.id))%17),19.0)

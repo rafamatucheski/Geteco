@@ -55,7 +55,7 @@ var _push_age := 1.0
 var _push_inward := Vector3.FORWARD
 
 func _ready() -> void:
-	process_physics_priority = 100 # Apply the gesture after Actor's walking pose.
+	process_physics_priority = 100 # Aplica o gesto depois da pose de caminhada do Actor.
 	set_physics_process(false)
 
 func _physics_process(delta: float) -> void:
@@ -77,8 +77,8 @@ func _physics_process(delta: float) -> void:
 		player.skeleton.set_bone_pose_rotation(bone, before[bone].slerp(player.skeleton.get_bone_pose_rotation(bone), weight))
 
 func _movement_intent(player: CharacterBody3D) -> Vector3:
-	# move_and_slide removes inward velocity at a closed door. Read the intended
-	# movement instead, using the same camera basis and remapped controls as Actor.
+	# move_and_slide remove a velocidade para dentro numa porta fechada. Lê o movimento
+	# pretendido em vez disso, usando a mesma base de câmera e controles remapeados do Actor.
 	if player.controlled_automatically: return player.automatic_direction
 	var axis: Vector2 = GameInput.movement()
 	var right: Vector3 = session.world.camera.global_basis.x
@@ -156,12 +156,12 @@ func update(delta: float) -> void:
 			_blocked_entry_id = ""
 	if not near or _entering or _leaving or _reentry_remaining > 0.0 or _blocked_entry_id == id or _blocked():
 		return
-	# A locked home's physical door already blocks the body. Do not latch a
-	# failed crossing here: buying at the threshold must immediately allow entry.
+	# A porta física de uma casa trancada já bloqueia o corpo. Não trava uma
+	# travessia falha aqui: comprar na soleira precisa permitir a entrada na hora.
 	if session.activities != null and not session.activities.can_enter_home(id): return
 	if not _door_allows(id): return
 	if id == "cobra_leader_house" and not _leader_accessible(): return
-	# Pushing opens the door; only an intentional inward crossing transfers.
+	# Empurrar abre a porta; só uma travessia intencional para dentro transfere.
 	# Union/posto: quem já está atrás da folha (cápsula + meia espessura dela) atravessou; a
 	# folha fecha quando ele passa de 0,5 m e sem isso ficava preso no vestíbulo.
 	# Estação Zero: o vão no concreto tem ~1,8 m de fundo; quem passava dos 0,3 m ficava
@@ -231,7 +231,7 @@ func _entry_interrupted() -> bool:
 	return session.modal or session.is_transition_blocked() or session.transition_generation != _entry_generation or session.world.gameplay.health <= 0 or session.world.driving.occupied or session.world.driving.is_body_transition_active()
 
 func _update_facade(id: String, near: bool, delta: float) -> void:
-	# These garages already have raised/open gates; do not search for hinges.
+	# Estas garagens já têm portões erguidos/abertos; não procura dobradiças.
 	# A baia pintada do quartel também é aberta: o portão antigo não existe nela (sem
 	# visual nem colisão), e esperar o valor dele chegar a 0,85 deixava passar da janela.
 	if id in ["maciota", "port_boss_garage"] or id == "harbor_fire_station" and _painted(id): return
@@ -255,7 +255,7 @@ func _update_facade(id: String, near: bool, delta: float) -> void:
 				_contact_depth = (contact - _door_position(id, _definition_for(id))).dot(_inward(id))
 				break
 	if not is_instance_valid(_facade): return
-	# Ownership gates the physical hinge as well as admission into the room.
+	# A posse trava a dobradiça física e também a admissão na sala.
 	var owned: bool = session.activities == null or session.activities.can_enter_home(id)
 	owned = owned and preload("res://runtime/ShopSafety.gd").admission_allowed(id, session.world.gameplay.stars)
 	if id == "harbor_bank" and not session.robberies.can_enter_bank(): owned = false
@@ -273,8 +273,8 @@ func _update_facade(id: String, near: bool, delta: float) -> void:
 		_push_remaining = .65
 	else:
 		_push_remaining = maxf(0.0, _push_remaining - delta)
-	# Presence cannot start an opening, but keeps an already open leaf from
-	# closing through the capsule when the player stops in the threshold.
+	# A presença não pode iniciar uma abertura, mas impede que uma folha já aberta
+	# feche através da cápsula quando o jogador para na soleira.
 	var local := player.global_position - _door_position(id, _definition_for(id))
 	var depth := local.dot(inward) - _contact_depth
 	var across := Vector3(-inward.z, 0, inward.x)
@@ -300,7 +300,7 @@ func _enter(id: String, definition: Dictionary) -> void:
 	if not is_instance_valid(session) or not is_instance_valid(player):
 		_entering = false
 		return
-	# A death, arrest or vehicle transition may take ownership during the zoom.
+	# Uma morte, prisão ou transição de veículo pode tomar a posse durante o zoom.
 	var interrupted := _entry_cancelled or _entry_interrupted()
 	if not session.modal and not session.is_transition_blocked() and not session.world.driving.is_body_transition_active():
 		player.input_locked = false
@@ -335,7 +335,7 @@ func _leave() -> void:
 			player.input_locked = true
 			var camera = session.world.camera
 			camera.zoom_out_from_store(_door_position(id, definition), _close_size(id), CAMERA_SECONDS)
-			# Establish the close starting frame before the exterior can render.
+			# Estabelece o quadro inicial de fechamento antes que o exterior possa renderizar.
 			camera._process(0.0)
 			await get_tree().create_timer(CAMERA_SECONDS).timeout
 			if is_instance_valid(camera): camera.clear_store_focus()

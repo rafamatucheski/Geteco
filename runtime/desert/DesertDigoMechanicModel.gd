@@ -1,6 +1,6 @@
 extends "res://gameplay/digo/DigoMeshyModel.gd"
-## The supplied Digo mesh keeps his face and proportions; only this desert
-## instance wears work clothes and receives the workshop's procedural pose.
+## A malha fornecida do Digo mantém o rosto e as proporções; só esta instância
+## do deserto usa roupa de trabalho e recebe a pose procedural da oficina.
 const G := preload("res://world/desert/DesertGeometry.gd")
 var activity := "repair"
 var speed := 0.0
@@ -38,7 +38,7 @@ func _ready() -> void:
 	_tool.transform=Transform3D.IDENTITY
 	G.box(_tool,"SpannerHandle",Vector3(0,.045,0),Vector3(.028,.018,.21),Color("adb3b4"))
 	G.box(_tool,"SpannerJaw",Vector3(0,.045,-.11),Vector3(.065,.02,.045),Color("adb3b4"))
-	# Accessories use the same depth buffer and skeleton; no actor viewport.
+	# Os acessórios usam o mesmo buffer de profundidade e esqueleto; sem viewport de ator.
 	set_meta("desert_mechanic_clothes",true)
 	_work_weight=1.0
 

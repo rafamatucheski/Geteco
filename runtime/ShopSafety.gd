@@ -1,6 +1,6 @@
 extends RefCounted
-## Peaceful retail interiors share admission, combat and resident protection.
-## Banks and hostile/story interiors keep their existing gameplay contracts.
+## Interiores de lojas pacíficas compartilham admissão, combate e proteção dos moradores.
+## Bancos e interiores hostis/de história mantêm os contratos de jogo existentes.
 const IDS := ["harbor_curitiba_cellar", "harbor_supermarket", "harbor_ammunation",
 	"mountain_gunshop", "harbor_clothing", "mountain_outfitters", "mountain_boutique",
 	"mountain_village_outfitters", "harbor_fuel", "ski_lodge", "desert_digo", "harbor_gym"]

@@ -1,6 +1,6 @@
 extends RefCounted
 const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
-## V1 apron geometry, converted once from authored floor pixels to native metres.
+## Geometria do pátio da V1, convertida uma vez de pixels de piso escritos para metros nativos.
 static func point(x: float, z: float) -> Vector3:
 	return Vector3((1700+x)/16.0,.12,(1060+z)/16.0)
 static func arc(curve: Curve3D, center: Vector2, radius: float, begin: float, end: float) -> void:
@@ -18,8 +18,8 @@ static func apron(kind: String, bay: int) -> Curve3D:
 		"departing":
 			c.add_point(point(x-30,10)); c.add_point(point(205,10))
 			arc(c,Vector2(205,55),45,-PI/2,0)
-			# Native traffic drives east on the southern lane (V1 used the
-			# opposite offset). Cross the street before turning into that lane.
+			# O trânsito nativo segue para leste na faixa sul (a V1 usava o
+			# offset oposto). Atravessa a rua antes de virar nessa faixa.
 			c.add_point(point(250,177)); arc(c,Vector2(293,177),43,PI,PI/2)
 		"arriving":
 			c.add_point(point(-323,220)); c.add_point(point(305,220))

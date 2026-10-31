@@ -1,5 +1,5 @@
 extends Node
-## Session-local tools. No campaign writes; only our own NPCs are removable.
+## Ferramentas locais da sessão. Nenhuma escrita na campanha; só os nossos NPCs podem ser removidos.
 const ACTOR := preload("res://scripts/Actor.gd")
 const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const MAX_CIVILIANS := 20
@@ -138,7 +138,7 @@ func _physics_process(delta: float) -> void:
 	var direction := right.normalized()*axis.x + back.normalized()*axis.y
 	direction.y = float(Input.is_physical_key_pressed(KEY_SPACE))-float(Input.is_physical_key_pressed(KEY_CTRL))
 	var point: Vector3 = world.player.global_position + direction.limit_length()*flight_speed*(3.0 if Input.is_physical_key_pressed(KEY_SHIFT) else 1.0)*delta
-	# Region changes use the normal travel/streaming admission, never an accidental fly-through.
+	# Trocas de região usam a admissão normal de viagem/streaming, nunca um voo acidental através.
 	if CONNECTION.logical_region(point) != world.session.state.region_id:
 		report("Use o teletransporte de região no painel.")
 		return

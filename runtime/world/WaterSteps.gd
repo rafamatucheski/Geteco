@@ -1,6 +1,6 @@
 extends Node3D
-## Native adaptation of MountainLakeWater: source durations, palette and /16 scale.
-## Cosmetic only: no swimming, damage, movement or collision changes.
+## Adaptação nativa do MountainLakeWater: durações da fonte, paleta e escala /16.
+## Só cosmético: sem natação, dano, movimento nem mudanças de colisão.
 const MAX_MARKS := 48
 var marks: Array[Dictionary] = []
 var wet_steps := 0

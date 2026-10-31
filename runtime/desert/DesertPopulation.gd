@@ -1,6 +1,6 @@
 extends RefCounted
-## Residents belong to places, never to arbitrary highway shoulders.
-## One actor per slot; short authored routes stay in the inhabited forecourts.
+## Os moradores pertencem a lugares, nunca a acostamentos arbitrários da rodovia.
+## Um ator por vaga; rotas curtas escritas ficam nos pátios habitados.
 static func slots() -> Array[Dictionary]:
 	return [
 		_spot("santa_lua",Vector3(-536,0,-497),"talk",Vector3.RIGHT),

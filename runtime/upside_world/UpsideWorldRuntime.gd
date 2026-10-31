@@ -44,8 +44,8 @@ func token() -> int: return _token
 func owns(expected: int) -> bool:
 	if expected<=0 or expected!=_token or not busy() or not is_instance_valid(session): return false
 	if not _released: return session._owns_transition(expected)
-	# The illusion token hands off to one registered departure at a time.
-	# It must never act as an unconditional permit after another owner arrives.
+	# O token da ilusão passa para uma saída registrada por vez.
+	# Nunca pode agir como licença incondicional depois que outro dono chega.
 	var generation: int = session.transition_generation
 	var kind: String = session.transition_kind
 	if generation == _handoff_generation and kind.is_empty(): return true
@@ -72,7 +72,7 @@ func try_start() -> bool:
 	_handoff_generation=0
 	_safe_return_pending=false
 	set_meta("end_reason","")
-	# The house camera must relinquish ownership before our snapshot is taken.
+	# A câmera da casa precisa abrir mão da posse antes de o nosso snapshot ser tirado.
 	if session.amusement_park!=null: session.amusement_park._end_house_view()
 	_saved={"point":world.player.global_position,"locked":world.player.input_locked,
 		"visual_visible":world.player.visual.visible,"hud_visible":world.hud.visible,
@@ -231,7 +231,7 @@ func _request_return() -> void:
 		cancel("return_unavailable"); return
 	_returning=false
 	_retry=.4
-	# Keep the curtain opaque while the finite safe-return retry runs.
+	# Mantém a cortina opaca enquanto a nova tentativa finita de retorno seguro roda.
 
 func release_for_return(expected: int) -> bool:
 	if not owns(expected) or not _returning or _released or not _still_owns_scene(): return false
@@ -282,8 +282,8 @@ func cancel(reason := "", restore_player := true) -> void:
 		if point.is_finite():
 			world.player.teleport(point)
 		elif is_instance_valid(arena):
-			# Never remove the only floor under a living visitor. Keep ownership,
-			# camera and physical arena until a validated room point becomes free.
+			# Nunca remove o único chão sob um visitante vivo. Mantém a posse,
+			# a câmera e a arena física até um ponto validado da sala ficar livre.
 			_wait_for_safe_room(reason)
 			_finishing=false
 			return
@@ -300,8 +300,8 @@ func _safe_room_point() -> Vector3:
 	if not is_instance_valid(_entry_room) or session.room!=_entry_room or session.state.place_id!=STATE.PLACE: return Vector3.INF
 	var candidates: Array[Vector3]=[]
 	if _saved.has("point"): candidates.append(_saved.point)
-	# This authored walk route was validated against Umbra's real furnishings;
-	# every live point still needs capsule clearance and floor support now.
+	# Esta rota de caminhada escrita foi validada contra os móveis reais do Umbra;
+	# todo ponto vivo ainda precisa de folga de cápsula e apoio no chão agora.
 	for local: Vector3 in HOUSE.house_route(): candidates.append(_entry_room.to_global(local)+Vector3.UP*.04)
 	if _saved.has("point"):
 		for offset: Vector3 in [Vector3(.65,0,0),Vector3(-.65,0,0),Vector3(0,0,.65),Vector3(0,0,-.65)]: candidates.append(_saved.point+offset)
@@ -317,8 +317,8 @@ func _wait_for_safe_room(reason: String) -> void:
 	_admitting=false
 	world.player.input_locked=true
 	world.player.velocity=Vector3.ZERO
-	# Freeze the bounded play timer while an exceptional blocked return
-	# waits. No extra arena, tween or async retry is created per attempt.
+	# Congela o timer limitado de jogo enquanto um retorno excepcionalmente bloqueado
+	# espera. Nenhuma arena, tween ou nova tentativa assíncrona extra é criada por tentativa.
 	if is_instance_valid(veil) and veil.has_method("set_amount"): veil.set_amount(.20)
 	if not is_instance_valid(_safe_notice):
 		_safe_notice=Label.new()

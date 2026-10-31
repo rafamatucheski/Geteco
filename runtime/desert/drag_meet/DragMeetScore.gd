@@ -1,6 +1,6 @@
 extends Node
-## Two synchronized, offline-composed stems. Survives the spatial crowd's LOD;
-## never changes global bus levels, the radio station, or a persisted setting.
+## Dois stems sincronizados, compostos offline. Sobrevive ao LOD da multidão espacial;
+## nunca muda níveis de bus globais, a estação de rádio nem uma configuração persistida.
 const STEM_PATHS := ["res://audio/drag_night/patio.ogg", "res://audio/drag_night/pulso.ogg"]
 const SPEAKERS := [Vector3(-782,1.3,-786), Vector3(-888,1.3,-772)]
 const LOOP_SECONDS := 73.8461451247
@@ -40,8 +40,8 @@ func update_context(listener: Vector3, phase: String, blocked: bool, speaking: b
 	if speaking: gains-=Vector2.ONE*16.0
 	var music_bus := AudioServer.get_bus_index("Music")
 	var muted := music_bus>=0 and (AudioServer.is_bus_mute(music_bus) or AudioServer.get_bus_volume_db(music_bus)<=-79.9)
-	# Driver-selected radio wins. Both stems fade together, preserving the user's
-	# choice and preventing two unrelated songs from playing over each other.
+	# O rádio escolhido pelo motorista vence. Os dois stems somem juntos, preservando a
+	# escolha do usuário e evitando que duas músicas sem relação toquem uma sobre a outra.
 	if blocked or muted or radio_active or (not in_race and near_gain<=.001): gains=Vector2(SILENT_DB,SILENT_DB)
 	targets[0]=maxf(SILENT_DB,gains.x)
 	targets[1]=maxf(SILENT_DB,gains.y)
@@ -60,8 +60,8 @@ func _start_pair() -> void:
 			if ResourceLoader.exists(path,"AudioStream"):
 				original=ResourceLoader.load(path,"AudioStream") as AudioStreamOggVorbis
 			elif FileAccess.file_exists(path):
-				# Source-only worktree before import; exported PCK uses the resource
-				# branch above. A missing asset is diagnosed once, never per tick.
+				# Worktree só com fontes, antes da importação; o PCK exportado usa o ramo de
+				# recurso acima. Um asset ausente é diagnosticado uma vez, nunca por tick.
 				original=AudioStreamOggVorbis.load_from_file(path)
 			if original==null:
 				push_warning("DragMeetScore missing stem: "+path)
@@ -70,8 +70,8 @@ func _start_pair() -> void:
 			stream.loop=true
 			players[index].stream=stream
 	if players[0].stream==null or players[1].stream==null: return
-	# Start as one pair at the visit's musical clock, including after a mute or
-	# returning from another region. Asset length and phase are identical.
+	# Começa como um par no relógio musical da visita, inclusive depois de um mudo ou
+	# de voltar de outra região. Duração e fase dos assets são idênticas.
 	for index in players.size():
 		var player := players[index]
 		player.play(fposmod(_clock,LOOP_SECONDS))
@@ -88,8 +88,8 @@ func _process(delta: float) -> void:
 		if not is_equal_approx(next,targets[index]): settled=false
 		if next>SILENT_DB+.01 or targets[index]>SILENT_DB: silent=false
 	if settled:
-		# Native playback continues without a parent frame callback. Context
-		# updates wake the same fade when phase, speech, radio or settings change.
+		# A reprodução nativa continua sem callback de quadro do pai. Atualizações de contexto
+		# acordam o mesmo fade quando fase, fala, rádio ou configurações mudam.
 		if silent:
 			for player in players: player.stop()
 		set_process(false)

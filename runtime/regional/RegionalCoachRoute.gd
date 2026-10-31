@@ -1,6 +1,6 @@
 extends RefCounted
-## Scheduled coaches share the authored roads, including the campaign-gated
-## northern bridge. Preparing route data never mounts a distant rendered region.
+## Ônibus programados dividem as estradas escritas, incluindo a ponte norte
+## travada pela campanha. Preparar dados de rota nunca monta uma região renderizada distante.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const VILLAGE := preload("res://world/mountain_detail/OriginalVillageLayout.gd")
 const GATE := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
@@ -14,9 +14,9 @@ class CoachGraph extends GRAPH:
 		var geometry := super._curve_geometry(path,closed)
 		var points: Array[Vector3] = geometry.points
 		var sections: Array[Dictionary] = geometry.sections
-		# The ice access is a sharp turn off the pass. Gentle controls immediately
-		# before it leave too little room for the lane-offset arc, making a hook.
-		# Coalesce only this approach; keep its physical road and graph forks.
+		# O acesso ao gelo é uma curva fechada saindo do passo. Controles suaves logo
+		# antes dela deixam pouco espaço para o arco com offset de faixa, formando um gancho.
+		# Junta só esta aproximação; mantém a estrada física e as bifurcações do grafo.
 		var index := 1
 		while index<points.size()-1:
 			var first: Dictionary=sections[index-1]
@@ -65,8 +65,8 @@ static func plan(controller, from: String, to: String) -> Dictionary:
 		roads.append_array(CONNECTION.traffic_connectors())
 		if unlocked:
 			var bridge := BRIDGE.centerline()
-			# Same physical seam used by the armored service; no connection to
-			# the eastern mountain bridge at a different elevation.
+			# A mesma costura física usada pelo serviço blindado; sem ligação com
+			# a ponte leste da montanha, que está em outra altitude.
 			var projection := Vector3.INF
 			var gap := 4.0
 			for road in roads:

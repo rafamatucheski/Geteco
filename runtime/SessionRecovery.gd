@@ -91,7 +91,7 @@ func _hold_recovery_presentation(presentation: CanvasLayer) -> void:
 		g._recovery_time_scale = Engine.time_scale
 		g._recovery_slow_motion = true
 	Engine.time_scale = g._recovery_time_scale * 0.2
-	# Wall-clock timing keeps the message readable despite the slowed world.
+	# O tempo de relógio de parede mantém a mensagem legível apesar do mundo desacelerado.
 	await g.get_tree().create_timer(2.4, false, false, true).timeout
 	if not is_instance_valid(presentation) or presentation != g.death_presentation: return
 	var blackout := ColorRect.new()
@@ -115,7 +115,7 @@ func _finish_recovery_presentation() -> void:
 	g._restore_recovery_time_scale()
 	var presentation: CanvasLayer = g.death_presentation
 	if not is_instance_valid(presentation): return
-	# Remove the message behind the opaque cover, then reveal the settled camera.
+	# Remove a mensagem atrás da capa opaca e depois revela a câmera assentada.
 	for child in presentation.get_children():
 		if child is Control and child.name != "RecoveryBlackout": child.hide()
 	await g.get_tree().create_timer(0.3, false, false, true).timeout
@@ -131,14 +131,14 @@ func _on_arrest() -> void:
 	if g.arrest_pending or g.rescue_pending: return
 	g._cancel_for(&"arrest_1")
 	g.arrest_pending = true
-	# Gameplay's arrest signal already owns this lock; illusion cleanup must
-	# not release it while the custody presentation is running.
+	# O sinal de prisão do Gameplay já é dono desta trava; a limpeza da ilusão não
+	# pode soltá-la enquanto a apresentação da custódia está rodando.
 	g.world.player.input_locked = true
 	g._cancel_for(&"arrest_2")
 	g.prompt.text = ""
 	g._cancel_for(&"arrest_3")
-	# Service/mission teardown may restore an earlier input snapshot.
-	# Custody takes final ownership before yielding to the presentation.
+	# A desmontagem de serviço/missão pode restaurar um snapshot de entrada anterior.
+	# A custódia toma a posse final antes de ceder à apresentação.
 	g.world.player.input_locked = true
 	await g._show_v1_arrest_presentation()
 	if not g.arrest_pending or not g.is_inside_tree(): return
@@ -150,7 +150,7 @@ func _on_death() -> void:
 	g._cancel_for(&"death_2")
 	# Fora do registro: a resposta é o saque perdido, mostrado no "SE FODEU".
 	g.bank_death_loss = g.robberies.player_died() if g.robberies != null else 0
-	# The old arrest coroutine must not select custody or consume this rescue.
+	# A corrotina antiga de prisão não pode escolher custódia nem consumir este resgate.
 	g.arrest_pending = false
 	# Um resgate que não é desta morte pode estar em curso: o _respawn da própria prisão (delegacia
 	# escolhida, cortina abrindo; a rendição não para as balas de civis hostis) ou o da chegada.
@@ -161,15 +161,15 @@ func _on_death() -> void:
 	if g.respawn_busy:
 		g.respawn_busy = false
 		if g.transition_kind == "rescue": g._finish_transition(g.transition_generation)
-	# Falling out of the world and an invalid restored position reach this path
-	# directly, without damage_player. Establish the same dead state before any
-	# boarding cleanup or death presentation reads it.
+	# Cair para fora do mundo e uma posição restaurada inválida chegam a este caminho
+	# direto, sem damage_player. Estabelece o mesmo estado de morto antes que qualquer
+	# limpeza de embarque ou apresentação de morte o leia.
 	g.world.gameplay.health = 0
 	g._cancel_for(&"death_3")
 	g.world.player.input_locked = true
 	g.world.player.on_player_death()
-	# Damage may have posed death before Driving restored the on-foot capsule.
-	# Reassert the dead body's collision after cancelling that presentation.
+	# O dano pode ter posto a pose de morte antes de o Driving restaurar a cápsula a pé.
+	# Reafirma a colisão do corpo morto depois de cancelar essa apresentação.
 	g.world.player.collision_layer = 0
 	g.world.player.collision_mask = 0
 	g.world.player.set_physics_process(false)

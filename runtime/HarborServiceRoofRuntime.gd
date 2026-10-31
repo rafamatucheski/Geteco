@@ -85,8 +85,8 @@ func _update_ground_access() -> void:
 		if workshop is Node3D: model = workshop
 	var authored_point: Variant = model.get("roof_access_point") if is_instance_valid(model) else null
 	if authored_point is Vector3 and authored_point.is_finite():
-		# Architecture owns the placement. Never fall back around the spawn if
-		# furniture or an actor temporarily blocks the authored wall access.
+		# A arquitetura é dona do posicionamento. Nunca recorre a algo perto do spawn se
+		# um móvel ou ator bloquear temporariamente o acesso escrito pela parede.
 		var point: Vector3 = model.to_global(authored_point)+Vector3.UP*.04
 		var yaw: Variant = model.get("roof_access_yaw")
 		var ladder_frame := model.global_basis.orthonormalized()*Basis(Vector3.UP,float(yaw) if yaw!=null else PI)
@@ -354,8 +354,8 @@ func _add_roof_obstacles(destination: Node3D, target: Dictionary) -> void:
 				if bounds.end.y<.12 or bounds.size.y<.08 or bounds.size.x<.10 or bounds.size.z<.10: continue
 				if bounds.size.x>target.size.x*.75 or bounds.size.z>target.size.y*.75: continue
 				if bounds.position.x>target.size.x*.5 or bounds.end.x<-target.size.x*.5 or bounds.position.z>target.size.y*.5 or bounds.end.z<-target.size.y*.5: continue
-				# Sibling batches also contain street furniture. Only roof-mounted
-				# instances in this parcel become rooftop obstacles.
+				# Lotes irmãos também contêm mobiliário urbano. Só instâncias montadas no
+				# telhado deste lote viram obstáculos de cobertura.
 				if root_node!=source and bounds.position.y<-.45: continue
 				bounds.size.y = bounds.end.y
 				bounds.position.y = 0

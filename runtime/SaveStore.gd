@@ -70,8 +70,8 @@ func save(state) -> Error:
 		accepted = STATE.new().restore_snapshot(data)
 		STALL_WORK.finish("save.validate", trace)
 		if not accepted: return ERR_INVALID_DATA
-	# Check the exact UTF-8 payload before changing recovery files or creating a
-	# temporary that read_valid() could never accept. Reuse these same bytes.
+	# Checa o conteúdo UTF-8 exato antes de mudar arquivos de recuperação ou criar um
+	# temporário que read_valid() nunca aceitaria. Reaproveita esses mesmos bytes.
 	trace = STALL_WORK.begin()
 	var encoded := JSON.stringify(data,"\t").to_utf8_buffer()
 	STALL_WORK.finish("save.encode", trace)
@@ -88,8 +88,8 @@ func save(state) -> Error:
 		result = _promote_recovered_temp()
 		if result != OK: return result
 	elif FileAccess.file_exists(temp):
-		# Inspect before replacing an abandoned temporary. Invalid content is
-		# preserved for diagnosis instead of being silently truncated.
+		# Inspeciona antes de substituir um temporário abandonado. Conteúdo inválido é
+		# preservado para diagnóstico em vez de ser truncado em silêncio.
 		var suffix := "preserved" if not read_valid(temp).is_empty() else "corrupt"
 		result = _preserve(temp,suffix)
 		if result != OK: return result
@@ -119,7 +119,7 @@ func save(state) -> Error:
 			if result != OK: return result
 		else:
 			if FileAccess.file_exists(path+".bak"):
-				# A malformed backup is evidence, not disposable scratch data.
+				# Um backup malformado é evidência, não rascunho descartável.
 				if read_valid(path+".bak").is_empty(): result = _preserve(path+".bak","corrupt")
 				else: result = DirAccess.remove_absolute(ProjectSettings.globalize_path(path+".bak"))
 				if result != OK: return result
@@ -153,7 +153,7 @@ func _commit_by_bytes(temp: String) -> Error:
 			backup_after = _mark(path+".bak")
 		else:
 			if FileAccess.file_exists(path+".bak"):
-				# A malformed backup is evidence, not disposable scratch data.
+				# Um backup malformado é evidência, não rascunho descartável.
 				trace = STALL_WORK.begin()
 				var backup_ok := _still_valid(path+".bak", backup_mark)
 				STALL_WORK.finish("save.verify_backup", trace)
@@ -175,8 +175,8 @@ func _commit_by_bytes(temp: String) -> Error:
 	return result
 
 func publish_import_snapshot(data: Dictionary) -> Error:
-	# Publication boundary for a future V1 converter. The caller supplies an
-	# in-memory V2 snapshot; this method never opens, renames or deletes a V1 file.
+	# Fronteira de publicação para um futuro conversor da V1. Quem chama fornece um
+	# snapshot V2 em memória; este método nunca abre, renomeia nem apaga um arquivo da V1.
 	if FileAccess.file_exists(path) or FileAccess.file_exists(path+".bak") or FileAccess.file_exists(path+".tmp"):
 		return ERR_ALREADY_EXISTS
 	var staged = STATE.new()

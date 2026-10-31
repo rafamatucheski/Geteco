@@ -14,8 +14,8 @@ static func phone_ring() -> AudioStreamWAV:
 	ring.mix_rate = 22050
 	ring.data = data
 	return ring
-## Legacy police/yard exchanges remain data for migrations; current arrival uses
-## the home call, terminal meeting and workshop drive only.
+## As conversas antigas de polícia/pátio ficam como dados para migrações; a chegada atual usa
+## só a ligação em casa, o encontro no terminal e a viagem até a oficina.
 const HOME_CALL := [
 	["DANTE", "Alô?", "Hello?"],
 	["VOZ AO TELEFONE", "Seu irmão está em Harbor.", "Your brother is in Harbor."],

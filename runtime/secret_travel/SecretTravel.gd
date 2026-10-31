@@ -35,8 +35,8 @@ func _process(delta: float) -> void:
 		site.position=SITES[id].point
 		add_child(site)
 		if id=="desert":
-			# The abandoned mine relay is recessed among sandstone, screened from
-			# the highway to the east. Keep its southern approach and arrival clear.
+			# O retransmissor da mina abandonada fica recuado entre arenitos, escondido
+			# da rodovia a leste. Mantém livres a aproximação pelo sul e a chegada.
 			var rock:=preload("res://world/desert/DesertSurfaceRocks.gd")
 			rock.rock(site,"RelayEastScreen",Vector3(1.0,.88,-.10),Vector3(1.1,1.95,2.2),Color("a88b65"),true)
 			rock.rock(site,"RelayWestScreen",Vector3(-1.0,.72,-.30),Vector3(.95,1.6,1.7),Color("b49971"),true)

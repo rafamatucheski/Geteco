@@ -1,5 +1,5 @@
 extends Node3D
-## One streamed worker; the static shop belongs to DesertRegion's chunk.
+## Um trabalhador em streaming; a oficina estática pertence ao chunk do DesertRegion.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const WORKER := preload("res://runtime/desert/DesertDigoWorker.gd")
 var session
@@ -44,7 +44,7 @@ func _process(delta: float) -> void:
 func reconcile() -> void:
 	var active: bool=session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and not session.is_transition_blocked()
 	var nearby: bool=active and session.world.player.global_position.distance_squared_to(workshop_point())<75.0*75.0
-	# An active drag owns its rival; avoid a second Digo at the workshop.
+	# Um arrancadão ativo é dono do rival; evita um segundo Digo na oficina.
 	if nearby and session.get("desert")!=null and session.desert.busy(): nearby=false
 	if not nearby:
 		if is_instance_valid(actor):

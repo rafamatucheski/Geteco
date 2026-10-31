@@ -1,7 +1,7 @@
 extends Node3D
-## World-anchored contact trajectories. Eight probes per 100 ms at peak; the
-## GPU animates descent and splash together, without per-drop physics objects.
-## Probe rate is spread across physics ticks, with at most two rays per tick.
+## Trajetórias de contato ancoradas no mundo. Oito sondas a cada 100 ms no pico; a
+## GPU anima a descida e o respingo juntos, sem objetos de física por gota.
+## A taxa de sondagem se espalha pelos ticks de física, com no máximo dois raios por tick.
 const CAPACITY := 128
 const MAX_PROBES := 8
 var rings: MultiMeshInstance3D
@@ -110,7 +110,7 @@ func set_conditions(focus: Vector3, strength: float, daylight: float, covered: b
 	rings.visible = _strength>.01
 	drops.visible = rings.visible
 	if not rings.visible and _has_contacts: _clear()
-	# Mist needs a validated ground height, set by the bounded physics probe.
+	# A névoa precisa de uma altura de chão validada, definida pela sonda de física limitada.
 	if _strength<.55:
 		mist.visible = false
 		mist.emitting = false
@@ -124,7 +124,7 @@ func _physics_process(delta: float) -> void:
 	if _tick>=.1:
 		_tick = 0.0
 		_update_bounds()
-	# A hitch must not queue a burst of catch-up raycasts on the next frame.
+	# Um engasgo não pode enfileirar uma rajada de raycasts de recuperação no próximo quadro.
 	_probe_budget = minf(2.0,_probe_budget+maxf(delta,0.0)*_strength*MAX_PROBES*10.0)
 	var count := floori(_probe_budget)
 	if count==0: return
@@ -143,15 +143,15 @@ func _physics_process(delta: float) -> void:
 			mist.visible = valid and absf(hit.position.y-_focus.y)<1.2 and _strength>.55
 			mist.emitting = mist.visible
 			if mist.visible: mist.global_position = hit.position+Vector3.UP*.22
-			# This probe positions the mist only. Repeated impacts exactly under
-			# the focus would create another visible effect glued to the player.
+			# Esta sonda só posiciona a névoa. Impactos repetidos exatamente sob
+			# o foco criariam outro efeito visível grudado no jogador.
 			continue
 		if not valid: continue
 		impact_count += 1
 		_has_contacts = true
 		if water.is_empty() and hit.position.y>_focus.y+1.2: roof_impact_count += 1
 		var transform := Transform3D(Basis(Quaternion(Vector3.UP,hit.normal)),hit.position+hit.normal*.04)
-		# Up to .65s of actual descent. The ring starts only when this reaches zero.
+		# Até .65s de descida real. O anel só começa quando isto chega a zero.
 		var custom := Color(fmod(Time.get_ticks_msec()/1000.0,3600.0),_daylight,_rng.randf_range(.4,.65),0 if water.is_empty() else 1)
 		rings.multimesh.set_instance_transform(_cursor,transform)
 		rings.multimesh.set_instance_custom_data(_cursor,custom)
@@ -159,8 +159,8 @@ func _physics_process(delta: float) -> void:
 		drops.multimesh.set_instance_custom_data(_cursor,custom)
 		if not water.is_empty() and is_instance_valid(water.surface):
 			water_impact_count += 1
-			# The surface owns the delayed response; the existing GPU drop and ring
-			# share this exact descent duration, with no extra timers or raycasts here.
+			# A superfície é dona da resposta atrasada; a gota e o anel de GPU existentes
+			# dividem exatamente essa duração de descida, sem timers nem raycasts extras aqui.
 			water.surface.receive_rain_impact(water.position, _strength, custom.b)
 		_cursor = (_cursor+1)%CAPACITY
 
@@ -169,8 +169,8 @@ func _update_bounds() -> void:
 	var visible_bounds := AABB(Vector3(_sample_bounds.position.x,_focus.y-10,_sample_bounds.position.z),Vector3(_sample_bounds.size.x,60,_sample_bounds.size.z))
 	rings.custom_aabb = visible_bounds
 	drops.custom_aabb = visible_bounds
-	# Streaming can replace a lake while rain is active. Refresh once per 100 ms;
-	# probes only visit this small cached list and validate references before use.
+	# O streaming pode trocar um lago enquanto a chuva está ativa. Atualiza uma vez a cada 100 ms;
+	# as sondas só visitam esta pequena lista em cache e validam as referências antes de usar.
 	_water_surfaces.clear()
 	for surface in get_tree().get_nodes_in_group("native_water_surface"):
 		if is_instance_valid(surface) and surface.has_method("contains_water") and surface.has_method("rain_surface_height_at") and surface.has_method("receive_rain_impact"):
@@ -186,8 +186,8 @@ func _water_contact(point: Vector3, solid_hit: Dictionary) -> Dictionary:
 		var value: Variant = surface.rain_surface_height_at(point)
 		if typeof(value) not in [TYPE_FLOAT, TYPE_INT]: continue
 		var height := float(value)
-		# A roof, bridge or bank above the lake still receives the impact. Water
-		# must lie inside this existing ray and strictly above its first solid hit.
+		# Um telhado, ponte ou margem acima do lago ainda recebe o impacto. A água
+		# precisa estar dentro deste raio existente e estritamente acima do primeiro acerto sólido.
 		if not is_finite(height) or height < point.y - 10.0 or height > point.y + 40.0 or height <= highest: continue
 		highest = height
 		result = {"surface":surface, "position":Vector3(point.x, height, point.z)}

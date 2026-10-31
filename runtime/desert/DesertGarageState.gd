@@ -27,8 +27,8 @@ static func valid(value: Variant, economy: Dictionary = {}) -> bool:
 			if not TUNING.compatible(part,record.archetype): return false
 			seen.append(part)
 			if not economy.is_empty():
-				# The shared desert save contract verifies these gifts against the
-				# two durable rival proofs. They are never purchases or resale items.
+				# O contrato compartilhado de save do deserto verifica estes presentes contra as
+				# duas provas duráveis de rival. Eles nunca são compras nem itens de revenda.
 				if TUNING.PARTS[part].has("rival_reward"): continue
 				if record.get("honor_gift",false) and part in preload("res://data/TakeshiRewardSpec.gd").PARTS.values(): continue
 				# Peças que vieram montadas no Coyote do Vicente, com o recibo do achado da caverna.
@@ -63,7 +63,7 @@ static func buy(world: Dictionary, economy, vehicle_id: String, archetype: Strin
 	world.desert_garage = saved
 	return checked
 
-## Validate the complete draft before charging; removals and owned parts are free.
+## Valida o rascunho completo antes de cobrar; remoções e peças possuídas são grátis.
 static func apply_loadout(world: Dictionary, economy, vehicle_id: String, archetype: String, requested: Dictionary, wins: int) -> Dictionary:
 	if vehicle_id.is_empty() or vehicle_id.length()>128: return {"ok":false,"reason":"Identidade do carro inválida"}
 	var saved := data(world)
@@ -76,8 +76,8 @@ static func apply_loadout(world: Dictionary, economy, vehicle_id: String, archet
 	for slot in requested:
 		var part: String = requested[slot]
 		if not TUNING.compatible(part,archetype): return {"ok":false,"reason":"Peça incompatível com este carro"}
-		# Already installed or owned rewards remain usable even when their unlock
-		# came from another workshop. New parts still require the current wins.
+		# Recompensas já instaladas ou possuídas continuam utilizáveis mesmo quando a liberação
+		# veio de outra oficina. Peças novas ainda exigem as vitórias atuais.
 		if part in inventory: continue
 		var checked := TUNING.purchase_check({},inventory,part,wins,economy.balance-cost)
 		if not checked.ok: return checked

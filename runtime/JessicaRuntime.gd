@@ -113,10 +113,10 @@ func _bank_parking() -> Vector3:
 	return _bank_definition().exterior_position+Vector3(0,.12,18.4)
 
 func _bank_definition() -> Dictionary:
-	# Contact streaming polls at 4 Hz even before Jessica is unlocked. Building
-	# the entire place catalogue there repeated unrelated map work every poll.
-	# Compare a copied bank row so live editor changes (including in-place edits)
-	# and disk reloads still move the encounter and accepted mission target.
+	# O streaming de contatos consulta a 4 Hz mesmo antes de a Jessica ser liberada. Montar
+	# o catálogo inteiro de lugares ali repetia trabalho de mapa sem relação a cada consulta.
+	# Compara uma cópia da linha do banco para que mudanças vivas do editor (inclusive no lugar)
+	# e recargas do disco ainda movam o encontro e o alvo da missão aceita.
 	var source_row := SERVICE_BUILDINGS.row_for("harbor_bank")
 	if _bank_definition_cache.is_empty() or source_row != _bank_source_row:
 		_bank_definition_cache = PLACES.get_definition("harbor_bank")
@@ -310,15 +310,15 @@ func _ensure_car() -> void:
 	_saved_vehicle = FLEET_STATE.capture(car,"harbor")
 
 func _on_car_exiting(owned_car: CharacterBody3D) -> void:
-	# Capture before the body/equipment leave the tree, including wreck cleanup
-	# between proximity polls. Streaming never creates a fresh undamaged Jetta.
+	# Captura antes de o corpo/equipamento saírem da árvore, incluindo a limpeza de destroços
+	# entre consultas de proximidade. O streaming nunca cria um Jetta novo sem dano.
 	if is_instance_valid(owned_car): _saved_vehicle = FLEET_STATE.capture(owned_car,"harbor")
 	if owned_car == car:
 		car = null
 		_neon = null
 
 func _match_dante_height() -> void:
-	# Measure once at spawn. Fixed female build stays slimmer at the same height.
+	# Mede uma vez no spawn. O corpo feminino fixo fica mais esguio na mesma altura.
 	var bounds := AABB()
 	var first := true
 	for part in session.world.player.visual.find_children("*","MeshInstance3D",true,false):
@@ -384,23 +384,23 @@ func _board() -> bool:
 	return true
 
 func _plan_getaway(via_foundry := true) -> Dictionary:
-	# The default Foundry/Quay itinerary uses the wide surface roads. The legacy
-	# Union/Market candidate remains available for explicit route diagnostics.
-	# Project each waypoint onto its directed lane before the native searches.
+	# O itinerário padrão Foundry/Quay usa as ruas largas de superfície. O candidato
+	# antigo Union/Market continua disponível para diagnóstico explícito de rota.
+	# Projeta cada waypoint na faixa dirigida antes das buscas nativas.
 	var router = ROUTER.new()
 	router.configure(session.controller.traffic_routes)
 	var union_lane: Dictionary = router.nearest_edge(GETAWAY_VIA,false,Vector3.BACK)
 	var market_lane: Dictionary = router.nearest_edge(GETAWAY_MARKET,false,Vector3.RIGHT)
 	var first_requested: Vector3 = GETAWAY_VIA
 	if via_foundry:
-		# Derive Foundry's east lane from the real graph and current bank street;
-		# never invent a fixed Z lane or bypass the Quay crossing controller.
+		# Deriva a faixa leste da Foundry do grafo real e da rua atual do banco;
+		# nunca inventa uma faixa Z fixa nem contorna o controlador do cruzamento da Quay.
 		first_requested = Vector3(175,0,car.global_position.z)
 		union_lane = router.nearest_edge(first_requested,false,Vector3.RIGHT)
 		market_lane = router.nearest_edge(Vector3(186,0,45),false,Vector3.BACK)
 	var bay: Vector3 = session.world.maciota_place.tour_parking
-	# Keep the M8 bay occupied by Maciota. The adjacent west slot has clear
-	# pedestrian exits and remains inside the twelve-metre workshop radius.
+	# Mantém a baia do M8 ocupada pelo Maciota. A vaga oeste vizinha tem saídas
+	# livres para pedestre e fica dentro do raio de doze metros da oficina.
 	var parking: Vector3 = Vector3(bay.x-3.25,0,session.world.maciota_place.to_global(session.world.maciota_place.exterior_origin).z+2.9)
 	var corridor_z: float = session.world.maciota_place.entry_position.z+1.2
 	var road_turn_radius: float = 5.6
@@ -439,8 +439,8 @@ func _plan_getaway(via_foundry := true) -> Dictionary:
 	route_legs.road_ids = [_plan_road_ids(router,first),_plan_road_ids(router,second),_plan_road_ids(router,third)]
 	route_legs.second_start_projection = _lane_diagnostic(router.nearest_edge(first_end,false,direction))
 	route_legs.third_start_projection = _lane_diagnostic(router.nearest_edge(second_end,false,second_direction))
-	# Native curve resampling can leave a small same-lane projection offset.
-	# Refuse a gap, height jump or opposed tangent; never move the body to match.
+	# A reamostragem nativa da curva pode deixar um pequeno desvio de projeção na mesma faixa.
+	# Recusa lacuna, salto de altura ou tangente oposta; nunca move o corpo para casar.
 	if not first_seam.clear or not second_seam.clear:
 		return {"ok":false,"reason":"getaway_route_seam","diagnostics":route_legs.duplicate(true)}
 	var combined: Curve3D = Curve3D.new()
@@ -540,8 +540,8 @@ func _create_driver_model() -> void:
 	_seat_passenger()
 
 func _seat_passenger() -> void:
-	# Reuse Dante's actual rig and the production cabin fit; no duplicated actor
-	# or viewport. Collision/control ownership is independent of visibility.
+	# Reaproveita o rig real do Dante e o encaixe de cabine da produção; sem ator
+	# ou viewport duplicados. A posse de colisão/controle independe da visibilidade.
 	var player = session.world.player
 	var cabin: Dictionary = INTERIOR.spec(car)
 	if cabin.is_empty(): return
@@ -683,8 +683,8 @@ func _inside_courtyard() -> bool:
 	if not is_instance_valid(car): return false
 	var garage = session.world.maciota_place
 	var bounds: AABB = garage.courtyard_bounds
-	# Verify the complete footprint at its actual yaw, rather than just its
-	# center or the proximity of the workshop's pedestrian door.
+	# Verifica a pegada completa no yaw real, em vez de só o
+	# centro ou a proximidade da porta de pedestre da oficina.
 	for x in [-car.half_width,car.half_width]:
 		for z in [-car.half_length,car.half_length]:
 			var point: Vector3 = garage.to_local(car.to_global(Vector3(x,.01,z)))-garage.exterior_origin
@@ -725,15 +725,15 @@ func _stop_car() -> void:
 func _restore_player(destination := Vector3.INF) -> void:
 	if _saved_player.is_empty(): return
 	var player = session.world.player
-	# Release the vehicle pose before any actor revival/death presentation can
-	# claim the skeleton. Restore only the state owned by this passenger ride.
+	# Solta a pose do veículo antes que qualquer apresentação de revivência/morte do ator possa
+	# tomar o esqueleto. Restaura só o estado que pertence a esta carona.
 	player.release_seated(false)
 	if _saved_player.has("pose") and not _saved_player.pose.is_empty(): player._apply_pose(_saved_player.pose)
 	if _saved_player.has("visual_transform"): player.visual.transform = _saved_player.visual_transform
 	if _saved_player.has("body_basis"): player.global_basis = _saved_player.body_basis
-	# Flush the validated exterior pose while this passenger body is still
-	# absent from collision. Re-enabling it at the seat briefly overlaps the
-	# vehicle and makes kinematic recovery push the parked car sideways.
+	# Aplica a pose exterior validada enquanto este corpo de passageiro ainda está
+	# fora da colisão. Religá-lo no assento sobrepõe por um instante o
+	# veículo e faz a recuperação cinemática empurrar o carro estacionado de lado.
 	if destination.is_finite():
 		player.teleport(destination)
 		player.force_update_transform()

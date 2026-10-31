@@ -1,5 +1,5 @@
 extends Node3D
-## One optional rival at the edge of the meet, released with the visit.
+## Um rival opcional na borda do encontro, liberado com a visita.
 const MODEL := preload("res://assets/CivilianModel.gd")
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const HONOR := preload("res://runtime/TakeshiHonor.gd")

@@ -1,6 +1,6 @@
 extends RefCounted
-## Shared generation pass over the baked fleet. Never edits the source scenes.
-## Geometry/materials are cached; no additional lights, viewports or frame loop.
+## Passada de geração compartilhada sobre a frota bakeada. Nunca edita as cenas-fonte.
+## Geometria/materiais ficam em cache; sem luzes, viewports nem laço de quadro adicionais.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const PAINT := preload("res://runtime/VehiclePaint.gd")
@@ -50,8 +50,8 @@ static func decorate(id: String, model: Node3D) -> void:
 			if not _materials.has(recipe):
 				var material := original.duplicate() as StandardMaterial3D
 				material.resource_name = "glass" if is_glass else "paint"
-				# Paint already has a broad specular lobe. A second clearcoat lobe
-				# adds a white highlight independent of the body color on flat panels.
+				# A pintura já tem um lóbulo especular largo. Um segundo lóbulo de clearcoat
+				# adiciona um brilho branco independente da cor da carroceria em painéis planos.
 				material.clearcoat_enabled = is_glass
 				material.clearcoat = .65 if is_glass else .15
 				material.clearcoat_roughness = .12 if is_glass else .45
@@ -61,8 +61,8 @@ static func decorate(id: String, model: Node3D) -> void:
 					material.metallic = .28
 					material.roughness = .12
 				else:
-					# Broad, subdued paint highlights keep the body color readable on
-					# horizontal panels. Preserve authored finishes that are rougher.
+					# Brilhos de pintura largos e contidos mantêm a cor da carroceria legível em
+					# painéis horizontais. Preserva acabamentos escritos que são mais ásperos.
 					material.roughness = maxf(material.roughness,.6)
 					material.metallic_specular = minf(material.metallic_specular,.25)
 				_materials[recipe] = material
@@ -74,7 +74,7 @@ static func decorate(id: String, model: Node3D) -> void:
 				part.transform = Transform3D.IDENTITY
 			if is_paint and part.mesh is BoxMesh:
 				if van and part.mesh.size.is_equal_approx(Vector3(1.8,.95,1.15)):
-					# The old solid upper cab buried the entire windshield.
+					# A cabine superior sólida antiga enterrava o para-brisa inteiro.
 					part.position = Vector3(0,2.015,-.955)
 					var roof := BoxMesh.new()
 					roof.size = Vector3(1.8,.15,1.09)
@@ -84,20 +84,20 @@ static func decorate(id: String, model: Node3D) -> void:
 					cargo.size = Vector3(1.9,1.185,2.83)
 					part.mesh = cargo
 					part.position.z = .96
-				# Keep all authored extents and axle anchors, soften only box panels.
+				# Mantém todas as extensões escritas e âncoras de eixo; suaviza só os painéis de caixa.
 				var size: Vector3 = part.mesh.size
 				if size.x > .09 and size.z > .07:
 					if not _shapes.has(size): _shapes[size] = _beveled_box(size)
 					part.mesh = _shapes[size]
 	if id in CABINS:
-		# Replace the rectangular glass walls with one closed tapered greenhouse.
+		# Troca as paredes de vidro retangulares por uma estufa fechada e afunilada.
 		for part in cabin_parts:
 			if part.mesh.get_surface_count() <= cabin_parts[part].size(): part.free()
 			else: _remove_glass_surfaces(part,cabin_parts[part])
 		for part in model.get_children():
 			if not part is MeshInstance3D or part.mesh == null: continue
 			var bounds: AABB = part.transform * part.get_aabb()
-			# Remove the old floating B pillars and pickup glass fixup borders.
+			# Remove as antigas colunas B flutuantes e as bordas de correção do vidro da picape.
 			var old_pillar := id in ["union_sedan","sedan_classic","metro_hatch"] and bounds.size.x < .07 and bounds.size.y > .35 and bounds.size.z < .15 and absf(bounds.get_center().y-1.05) < .03
 			if old_pillar or (part.has_meta("fleet_fixup") and bounds.get_center().y > 1.0): part.free()
 		if not _cabins.has(id): _cabins[id] = _build_cabin(CABINS[id],id == "metro_hatch",van)
@@ -110,8 +110,8 @@ static func decorate(id: String, model: Node3D) -> void:
 
 static func _glazing_texture() -> ImageTexture:
 	if _glass_texture != null: return _glass_texture
-	# Soft sky bands keep glass readable under the game's flat ambient fill;
-	# specular/clearcoat still respond to real lights. Opaque, shared, no probe.
+	# Faixas suaves de céu mantêm o vidro legível sob o preenchimento ambiente chapado do jogo;
+	# especular/clearcoat ainda respondem às luzes reais. Opaco, compartilhado, sem probe.
 	var image := Image.create_empty(64,64,false,Image.FORMAT_RGB8)
 	for y in 64:
 		for x in 64:
@@ -158,8 +158,8 @@ static func _seat_lenses(id: String, model: Node3D) -> void:
 		if part != null: part.position.z += float(_lamp_offsets[id][path])
 
 static func _remove_glass_surfaces(part: MeshInstance3D, removed: Array) -> void:
-	# A merged surface is not a whole vehicle part: preserve bed, bumpers, bars,
-	# chrome and indicators that were exported alongside the glazing.
+	# Uma superfície fundida não é uma peça inteira do veículo: preserva caçamba, para-choques, barras,
+	# cromados e indicadores que foram exportados junto com o vidro.
 	var source: Mesh = part.mesh
 	var roles: Array[String] = []
 	var materials: Array[Material] = []
@@ -194,7 +194,7 @@ static func _quad(st: SurfaceTool, points: Array, outward: Vector3) -> void:
 	points = points.duplicate()
 	var normal: Vector3 = (points[1]-points[0]).cross(points[2]-points[0]).normalized()
 	if normal.dot(outward) < 0: points.reverse(); normal = -normal
-	# Godot front faces wind clockwise when viewed from outside.
+	# As faces da frente no Godot giram em sentido horário vistas de fora.
 	for i in [0,2,1,0,3,2]:
 		st.set_normal(normal)
 		st.set_uv([Vector2(0,1),Vector2(1,1),Vector2(1,0),Vector2(0,0)][i])

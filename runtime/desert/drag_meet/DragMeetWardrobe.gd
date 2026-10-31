@@ -14,8 +14,8 @@ static func dress(model: Node3D) -> void:
 		"body_profile":{"bust":false},"head_scale":Vector3.ONE*.94},true)
 	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").apply(model)
 
-## Shared by the person at the meet, the seated driver and the baked portrait.
-## Jackets use their continuous cloth shell rather than isolated chest bulges.
+## Compartilhado pela pessoa no encontro, pelo motorista sentado e pelo retrato bakeado.
+## As jaquetas usam a casca de tecido contínua em vez de volumes isolados no peito.
 static func style_rival(model: Node3D, identity: String) -> void:
 	var looks := {
 		"rauhz":{"hair":2,"top":0,"top_color":Color("14171b"),"inner":Color("14171b"),"accent":Color("bd4b40")},

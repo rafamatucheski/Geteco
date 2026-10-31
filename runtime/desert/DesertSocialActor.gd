@@ -1,5 +1,5 @@
 extends "res://scripts/Actor.gd"
-## Uses the normal civilian damage, panic, collision and streaming owners.
+## Usa os donos normais de dano, pânico, colisão e streaming dos civis.
 var social_activity := "talk"
 var social_facing := Vector3.FORWARD
 var person: Node3D
@@ -13,8 +13,8 @@ func _ready() -> void:
 	if social_activity=="inspect": person.hand_provider=_work_gesture
 
 func _physics_process(delta: float) -> void:
-	# The reaction director owns movement until danger and recovery finish.
-	# Keep a home route even for stationary roles so they return after fleeing.
+	# O diretor de reação é dono do movimento até o perigo e a recuperação acabarem.
+	# Mantém uma rota de casa mesmo para papéis parados, para que voltem depois de fugir.
 	var normal:=not dead and not controlled_automatically
 	var at_home:=not route.is_empty() and global_position.distance_squared_to(route[0])<.64
 	if normal and social_activity=="walk":

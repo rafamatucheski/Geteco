@@ -58,7 +58,7 @@ static func prepare_wheels() -> void:
 			var angle := TAU*index/8.0
 			hub_cylinder(recess,.032,.012,Vector3(cos(angle)*.206,side*.079,sin(angle)*.206))
 			hub_cylinder(alloy,.016,.022,Vector3(cos(angle)*.137,side*.085,sin(angle)*.137))
-		# Narrow raised ring on the tire's sidewall catches light without a flat disc.
+		# Um anel estreito em relevo na lateral do pneu pega luz sem um disco chapado.
 		var bead := TorusMesh.new()
 		bead.inner_radius = .359; bead.outer_radius = .373
 		bead.rings = 32; bead.ring_segments = 6
@@ -96,7 +96,7 @@ static func lettering(parent: Node3D, text: String, at: Vector3, yaw: float, pix
 	parent.add_child(label)
 
 static func exterior_details(model: Node3D, length: float, section: int, door_z: float) -> void:
-	# Static detail is merged into the existing material batches below.
+	# O detalhe estático é fundido nos lotes de material existentes abaixo.
 	for side in [-1,1]:
 		var spans := [[-length*.5,length*.5]] if side<0 else [[-length*.5,door_z-.7],[door_z+.7,length*.5]]
 		for span in spans:
@@ -105,7 +105,7 @@ static func exterior_details(model: Node3D, length: float, section: int, door_z:
 			for height in [.68,2.76]:
 				box(model,Vector3(side*1.281,height,midpoint),Vector3(.024,.055,width),"rubber")
 			box(model,Vector3(side*1.275,2.42,midpoint),Vector3(.025,.035,width),"rubber")
-		# Panel joints, access covers and reflectors below the glazing.
+		# Juntas de painel, tampas de acesso e refletores abaixo do vidro.
 		for z in [-length*.5+.45,length*.5-.55]:
 			box(model,Vector3(side*1.277,1.03,z),Vector3(.022,.64,.025),"rubber")
 			box(model,Vector3(side*1.293,.74,z),Vector3(.035,.075,.19),"amber")
@@ -113,7 +113,7 @@ static func exterior_details(model: Node3D, length: float, section: int, door_z:
 			var at: float = -length*.5+.1+z*1.2
 			if side>0 and absf(at-door_z)<.7: continue
 			box(model,Vector3(side*1.29,2.17,at),Vector3(.022,1.12,.085),"rubber")
-		# Six posters, above wheel arches and behind the sliding-door clearance.
+		# Seis cartazes, acima das caixas de roda e atrás da folga da porta deslizante.
 		var ad_z := .72
 		var ad_width := 3.9 if section==0 else 3.4
 		var ad_key: String = ["ad_lume","ad","ad_aurora"][section]
@@ -123,7 +123,7 @@ static func exterior_details(model: Node3D, length: float, section: int, door_z:
 		panel(model,Vector3(side*1.31,1.25,ad_z),Vector2(ad_width,.43),side*PI*.5,ad_key)
 		lettering(model,brand,Vector3(side*1.318,1.28,ad_z),side*PI*.5,.0052,ink)
 		lettering(model,"510",Vector3(side*1.30,2.57,length*.5-.58),side*PI*.5,.0025,Color("e8dfbf"))
-	# Roof equipment: slats and maintenance hatch, no new lights or per-frame work.
+	# Equipamento de teto: aletas e escotilha de manutenção, sem luzes novas nem trabalho por quadro.
 	box(model,Vector3(0,3.28,.3),Vector3(1.32,.025,2.12),"metal")
 	for vent in 10:
 		box(model,Vector3(0,3.3,-.62+vent*.2),Vector3(1.19,.024,.065),"rubber")
@@ -232,7 +232,7 @@ static func _stall_build(parent: Node3D, length: float, section: int) -> Diction
 		doors.append(leaf)
 	exterior_details(model,length,section,door_z)
 	if primitives_began != 0: TRANSIT_WORK.finish("urban.model.primitives",primitives_began,{"section":section,"children":model.get_child_count()})
-	# Bake static parts by material once. Door leaves and wheel transforms remain movable.
+	# Bakeia as partes estáticas por material uma vez. Folhas de porta e transformações das rodas continuam móveis.
 	var batch_began := TRANSIT_WORK.begin()
 	var append_usec := 0
 	var append_max_usec := 0

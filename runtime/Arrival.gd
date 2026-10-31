@@ -1,6 +1,6 @@
 extends Node
-## Harbor arrival: a call at home, Maciota at the passenger street exit, then
-## a physical ride to his industrial workshop. V1 checkpoints migrate in place.
+## Chegada ao Harbor: uma ligação em casa, o Maciota na saída de passageiros da rua e depois
+## uma carona física até a oficina industrial dele. Checkpoints da V1 migram no lugar.
 const DIALOGUE := preload("res://runtime/ArrivalDialogue.gd")
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
 const STORY := preload("res://systems/campaign/HarborStory.gd")
@@ -97,8 +97,8 @@ func _next_line() -> void:
 		if done.is_valid(): done.call()
 		return
 	var line: Dictionary = _dialogue_lines[_dialogue_index]
-	# A missing take stays captioned. Never synthesize non-verbal tones and
-	# present them as the newly written dialogue's dub.
+	# Um take ausente fica só na legenda. Nunca sintetiza tons não verbais
+	# para apresentá-los como dublagem do diálogo recém-escrito.
 	_voice_source = str(line.voice_text)
 	_voice_persona = str(line.voice_persona)
 	voice.stream = VOICE.recorded_line(_voice_source, _voice_persona)
@@ -123,7 +123,7 @@ func start_or_resume(loaded: bool = false) -> void:
 	var story_repaired := opening_completed and STORY.mark_opening(session.state.world_state)
 	if flags.get("harbor_maciota_met",false) or (loaded and session.state.intro.stage == "complete"):
 		story_repaired = STORY.mark_maciota(session.state.world_state) or story_repaired
-	# Existing V2 journeys that predate M00 continue without replaying an opening.
+	# Jornadas V2 existentes anteriores à M00 continuam sem repetir uma abertura.
 	if loaded and flags.is_empty() and phase in ["new", "complete"]:
 		phase = "complete"
 		active = false
@@ -145,8 +145,8 @@ func start_or_resume(loaded: bool = false) -> void:
 	elif flags.get("harbor_arrival_seen", false):
 		_street_meeting()
 		if _legacy_relocated and session.state.place_id.is_empty():
-			# A migrated yard checkpoint must resume beside the new public exit,
-			# never strand a player at the removed scrapyard meeting.
+			# Um checkpoint migrado do pátio precisa retomar ao lado da nova saída pública,
+			# nunca largar o jogador no encontro removido do ferro-velho.
 			session.controller.region.set_focus(PARK)
 			for i in 3: await get_tree().physics_frame
 			var point: Vector3 = PARK + Vector3(4,.1,2)
@@ -155,8 +155,8 @@ func start_or_resume(loaded: bool = false) -> void:
 	elif opening_completed: _begin_disembark()
 	else:
 		if not loaded:
-			# The playable quay continues the same rainy night as the ferry film.
-			# Resuming an existing journey keeps its saved weather and clock.
+			# O cais jogável continua a mesma noite chuvosa do filme da balsa.
+			# Retomar uma jornada existente mantém o clima e o relógio salvos.
 			session.weather.time_of_day = .94
 			session.weather.weather_state = 1
 			session.weather.rain_intensity = .25
@@ -325,20 +325,20 @@ func _build_route() -> Curve3D:
 		for index in range(points.size()-1):
 			var closest := Geometry3D.get_closest_point_to_segment(street_finish,points[index],points[index+1])
 			if absf(closest.z-street_finish.z)<.1: street_finish = closest; break
-	# Dock joins Quay beside the terminal. Arrive in its northbound native lane
-	# and turn into the west court; requesting a southbound goal forced a city
-	# loop and an unrelated pair of closely spaced intersections.
+	# A Dock encontra a Quay ao lado do terminal. Chega pela faixa nativa sentido norte
+	# e vira para o pátio oeste; pedir um objetivo sentido sul forçava uma volta
+	# pela cidade e um par sem relação de cruzamentos muito próximos.
 	var street := graph.route_between(street_start,street_finish,Vector3.FORWARD)
 	if street == null: return null
 	var result := Curve3D.new()
 	result.bake_interval = .25
-	# Public terminal service apron joins Dock Street. The graph supplies every
-	# city junction; only the two off-street parking accesses are hand authored.
+	# O pátio público de serviço do terminal encontra a Dock Street. O grafo fornece todo
+	# cruzamento da cidade; só os dois acessos ao estacionamento fora da rua são feitos à mão.
 	for point in [PARK, Vector3(PARK.x,0,147.0)]:
 		result.add_point(point)
 	for i in street.point_count: result.add_point(street.get_point_position(i), street.get_point_in(i), street.get_point_out(i))
-	# Leave Quay with a quarter-circle instead of crossing directly through the
-	# frontage. Depot is west of x170.94; this turn remains east of x180.
+	# Sai da Quay com um quarto de círculo em vez de cruzar direto pela
+	# fachada. O Depot fica a oeste de x170.94; esta curva continua a leste de x180.
 	var lane_end := street.get_point_position(street.point_count-1)
 	var quay_handle := quay_radius*.55228475
 	result.set_point_in(result.point_count-1,Vector3.BACK*quay_handle)
@@ -346,15 +346,15 @@ func _build_route() -> Curve3D:
 	result.set_meta("court_access_start",lane_end)
 	result.add_point(Vector3(lane_end.x-quay_radius,0,approach_z),Vector3.RIGHT*quay_handle,Vector3.LEFT*3.0)
 	result.add_point(Vector3(175,0,approach_z),Vector3.RIGHT*3.0,Vector3.LEFT*3.0)
-	# A quarter-circle turns the full hull into the west bay. Its outer swept
-	# corners fit between the frontage (z109.56) and Depot (z112.5), unlike
-	# a sharp waypoint turn. The final tangent is north before the stop point.
+	# Um quarto de círculo vira o casco inteiro para a baia oeste. Os cantos externos
+	# varridos cabem entre a fachada (z109.56) e o Depot (z112.5), ao contrário de
+	# uma curva fechada por waypoint. A tangente final é norte antes do ponto de parada.
 	var radius := approach_z-yard.z
 	var handle := radius*.55228475
 	result.add_point(Vector3(yard.x+radius,0,approach_z),Vector3.RIGHT*handle,Vector3.LEFT*handle)
 	result.add_point(yard,Vector3.BACK*handle)
-	# The native driver's bypass logic reads lane widths/directions from the
-	# route. Preserve that public road metadata when adding the two accesses.
+	# A lógica de desvio do motorista nativo lê larguras/sentidos das faixas da
+	# rota. Preserva esses metadados públicos da rua ao adicionar os dois acessos.
 	result.set_meta("lane_sections",street.get_meta("lane_sections",[]))
 	result.set_meta("lane_index",street.get_meta("lane_index",0))
 	result.set_meta("junction_reach",street.get_meta("junction_reach",4.0))
@@ -414,8 +414,8 @@ func _board() -> void:
 	_set_phase("city_tour", "Conheça a cidade com Maciota.", session.world.maciota_place.entry_position)
 
 func _boarding_current(generation: int, expected_car, expected_driver) -> bool:
-	# A cancelled walk also resumes its caller. The old caller must not unlock
-	# a newer encounter, retry its dialogue or board its replacement actors.
+	# Uma caminhada cancelada também retoma quem a chamou. O chamador antigo não pode liberar
+	# um encontro mais novo, repetir o diálogo nem embarcar os atores substitutos.
 	if generation != _generation or not active or not is_inside_tree() or is_queued_for_deletion(): return false
 	if car != expected_car or maciota != expected_driver or phase != "tour_boarding": return false
 	if not is_instance_valid(car) or car.is_queued_for_deletion() or car.health<=0 or not is_instance_valid(maciota) or maciota.is_queued_for_deletion():
@@ -489,10 +489,10 @@ func _physics_process(delta: float) -> void:
 		if _exit_retry <= 0: cancel_ride()
 		return
 	if car.health <= 0 or session.world.gameplay.health <= 0: cancel_ride(); return
-	# StreetPhysics suspends traffic while its real impact impulse settles, but
-	# restores only cars without a controlled driver. This passenger car owns a
-	# cinematic driver, so remember that suspension and resume its same route
-	# only after the stun ends. Cancellation/death/recovery never resume it.
+	# A StreetPhysics suspende o trânsito enquanto o impulso real do impacto assenta, mas
+	# só restaura carros sem motorista controlado. Este carro de passageiro tem um
+	# motorista cinematográfico, então lembra essa suspensão e retoma a mesma rota
+	# só depois que o atordoamento acaba. Cancelamento/morte/recuperação nunca a retomam.
 	if car.get_meta("crash_was_traffic",false) and not _traffic_crash_pending:
 		_traffic_crash_pending = true
 		_note_car_mode("street_crash_suspended")
@@ -517,12 +517,12 @@ func _physics_process(delta: float) -> void:
 		_caption_wait = maxf(7, voice.stream.get_length() if voice.stream != null else 0.0) + 3
 		session.show_speech("MACIOTA", _voice_source, _caption_wait, false, "maciota", _voice_source, "maciota", "arrival:TOUR")
 	if voice.playing and voice.stream != null:
-		# Audio owns its playback clock. Keep the matching caption visible even
-		# when frame/physics timing temporarily advances faster than the mixer.
+		# O áudio é dono do relógio de reprodução. Mantém a legenda correspondente visível mesmo
+		# quando o tempo de quadro/física avança temporariamente mais rápido que o mixer.
 		session.notice_time = maxf(session.notice_time,maxf(0.0,voice.stream.get_length()-voice.get_playback_position())+.35)
 	if _at_tour_end():
-		# The court is a safe waiting point. Finish every narrated line and its
-		# caption before unlocking the player for the workshop conversation.
+		# O pátio é um ponto de espera seguro. Termina cada fala narrada e a legenda
+		# dela antes de liberar o jogador para a conversa na oficina.
 		if _narration_pending():
 			if _narration_hold_started < 0:
 				_narration_hold_started = Time.get_ticks_msec()
@@ -578,8 +578,8 @@ func _exit_point(side: int, occupied := Vector3.INF) -> Vector3:
 
 func _leave_car() -> bool:
 	_traffic_crash_pending = false
-	# Ending this trip also cancels StreetPhysics' pre-impact traffic intent.
-	# Keep damage and settling impulses; an empty parked car must not resume it.
+	# Encerrar esta viagem também cancela a intenção de trânsito pré-impacto da StreetPhysics.
+	# Mantém os impulsos de dano e assentamento; um carro estacionado vazio não pode retomá-la.
 	if car.has_meta("crash_was_traffic"): car.remove_meta("crash_was_traffic")
 	car.traffic = false
 	car.controlled = false
@@ -590,8 +590,8 @@ func _leave_car() -> bool:
 	var driver := _exit_point(-1, passenger)
 	var passenger_side := 1
 	var driver_side := -1
-	# A frontage can block one door even at a valid physical stop. Both people
-	# may use the free side only after independent capsule and swept-path checks.
+	# Uma fachada pode bloquear uma porta mesmo numa parada física válida. As duas pessoas
+	# só podem usar o lado livre depois de checagens independentes de cápsula e trajeto varrido.
 	if not passenger.is_finite():
 		passenger_side = -1
 		driver = _exit_point(-1)
@@ -637,7 +637,7 @@ func cancel_ride() -> bool:
 	_note_car_mode("cancel_requested")
 	if voice.playing:
 		voice.stop()
-		# Continue the interrupted line if the passenger boards again.
+		# Continua a fala interrompida se o passageiro embarcar de novo.
 		_caption = maxi(-1,_caption-1)
 	session.notice_time = 0
 	if not is_instance_valid(car): _request_ride_recovery("vehicle_removed"); return false
@@ -652,8 +652,8 @@ func cancel_ride() -> bool:
 	return true
 
 func _finish_tour() -> void:
-	# The parked cinematic car has no free-driving controls. Stop its simulation
-	# when finished so unloading the city floor cannot make it fall away.
+	# O carro cinematográfico estacionado não tem controles de direção livre. Para a simulação
+	# dele ao terminar, para que descarregar o chão da cidade não o faça cair.
 	if is_instance_valid(car): car.set_physics_process(false)
 	session.world.maciota_place.maciota.show()
 	_set_phase("meet_maciota", "Entre na garagem e converse com Maciota.", session.world.maciota_place.entry_position)
@@ -673,8 +673,8 @@ func snapshot() -> Dictionary:
 
 static func validate_snapshot(data: Dictionary) -> bool:
 	var version: Variant = data.get("version")
-	# JSON numbers are floats. Array membership compares Variant types, while
-	# the version contract accepts the same integral number read from disk.
+	# Números JSON são floats. A pertença em Array compara tipos Variant, enquanto
+	# o contrato de versão aceita o mesmo número inteiro lido do disco.
 	if typeof(version) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(version)) or (version != 1 and version != VERSION): return false
 	if not data.get("flags") is Dictionary: return false
 	var valid_phases: Array = LEGACY_PHASES if version == 1 else PHASES
@@ -744,8 +744,8 @@ func _recover_ride() -> void:
 	controls_locked = false
 	var player: CharacterBody3D = session.world.player
 	session.world.camera.target = player
-	# A deleted body can leave a clear, supported spot at its last position.
-	# Otherwise reuse the existing capsule-admitted rescue flow and its retry UI.
+	# Um corpo apagado pode deixar um ponto livre e apoiado na última posição.
+	# Senão reaproveita o fluxo de resgate admitido por cápsula e a UI de nova tentativa.
 	if session.world.gameplay.health > 0 and session.position_clear(player.global_position):
 		player.collision_layer = _player_layer
 		player.collision_mask = _player_mask

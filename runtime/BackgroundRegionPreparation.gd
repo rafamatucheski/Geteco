@@ -1,7 +1,7 @@
 extends Node
-## Low-priority resource I/O only. Never instantiate procedural worlds here:
-## an indivisible _ready() cannot obey a main-thread time budget.
-## Geometry/collision remain owned by the existing proximity streamer.
+## Só I/O de recurso de baixa prioridade. Nunca instancia mundos procedurais aqui:
+## um _ready() indivisível não consegue obedecer a um orçamento de tempo da thread principal.
+## Geometria/colisão continuam com o streamer de proximidade existente.
 const MANIFEST := preload("res://runtime/RegionPreparationResources.gd")
 const MAX_HELD := 128
 var controller: Node
@@ -34,8 +34,8 @@ func request(path: String, id: String) -> void:
 	set_process(true)
 
 func take(id: String) -> void:
-	# Prioritize newly needed resources; this never blocks a live mount waiting
-	# for I/O. The normal loader/streamer remains authoritative at the destination.
+	# Prioriza recursos recém-necessários; isto nunca bloqueia uma montagem viva esperando
+	# I/O. O loader/streamer normal continua oficial no destino.
 	var urgent: Array[Dictionary] = []
 	var other: Array[Dictionary] = []
 	for task in pending:
@@ -66,7 +66,7 @@ func _step() -> void:
 		var state := ResourceLoader.load_threaded_get_status(active_path)
 		if state == ResourceLoader.THREAD_LOAD_IN_PROGRESS: return
 		if state == ResourceLoader.THREAD_LOAD_LOADED:
-			# get() is permitted only after LOADED; otherwise it blocks the frame.
+			# get() só é permitido depois de LOADED; senão bloqueia o quadro.
 			var resource := ResourceLoader.load_threaded_get(active_path)
 			if resource != null:
 				if held.size() >= MAX_HELD: held.erase(held.keys()[0])
@@ -91,8 +91,8 @@ func _step() -> void:
 	active_region = task.region
 
 func _exit_tree() -> void:
-	# Collect the engine's request without blocking teardown or keeping a world
-	# alive. A static coroutine owns only the tree signal and resource path.
+	# Recolhe o pedido do motor sem bloquear a desmontagem nem manter um mundo
+	# vivo. Uma corrotina estática só guarda o sinal da árvore e o caminho do recurso.
 	if not active_path.is_empty():
 		var script: GDScript = get_script()
 		script.drain_request(get_tree(),active_path)

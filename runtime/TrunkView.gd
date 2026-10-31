@@ -1,19 +1,19 @@
 extends Node3D
-## V2 presentation for the Monaliza trunk, adapted from V1's
-## res://world/harbor/monaliza/TrunkLiveView.gd. V1 needed a SubViewport
-## projection hack because its world was 2D; V2's world is already real 3D,
-## so this opens the actual trunk lid on the actual parked car, lights the
-## actual trunk bay and places the actual weapon models inside it, framed by
-## the existing CameraRig instead of a synthetic showcase stage.
+## Apresentação V2 do porta-malas do Monaliza, adaptada de
+## res://world/harbor/monaliza/TrunkLiveView.gd da V1. A V1 precisava de um truque de projeção
+## com SubViewport porque o mundo dela era 2D; o mundo da V2 já é 3D de verdade,
+## então isto abre a tampa real do porta-malas no carro real estacionado, ilumina o
+## compartimento real e põe os modelos reais das armas dentro dele, enquadrados pelo
+## CameraRig existente em vez de um palco de vitrine sintético.
 
 const WEAPON := preload("res://gameplay/ArsenalWeapon3D.gd")
 const PIVOT_NAME := "MonalizaTrunkHinge"
-# Keep the attached GT spoiler above the rear glazing throughout the lift.
+# Mantém o aerofólio GT preso acima do vidro traseiro durante toda a subida.
 const OPEN_ANGLE := -1.30
 const OPEN_SPEED := 2.6
-# Same model-root-space offsets as V1's TrunkLiveView.SLOT_POSITIONS: both
-# come from the same res://world/harbor/monaliza/MonalizaModel.gd geometry,
-# and geteco_v2's baked res://assets/fleet/monaliza.scn preserves that space.
+# Os mesmos offsets no espaço da raiz do modelo que TrunkLiveView.SLOT_POSITIONS da V1: os dois
+# vêm da mesma geometria de res://world/harbor/monaliza/MonalizaModel.gd,
+# e o res://assets/fleet/monaliza.scn bakeado da geteco_v2 preserva esse espaço.
 const SLOT_POSITIONS := {
 	"longa": Vector3(0.12, 0.67, 1.66),
 	"curta": Vector3(-0.38, 0.67, 1.97),
@@ -28,8 +28,8 @@ const SLOT_LABELS := {"longa": "LONGA", "curta": "CURTA", "corpo": "CORPO", "gra
 const CLOSE_OFFSET := Vector3(0, 7.0, 3.25)
 const CLOSE_SIZE := 6.4
 const TRAY_CENTER := Vector3(0, 0.648, 1.80)
-# Both current fleet variants contain the offline-partitioned hinged lid and
-# recessed bay. The loadout stays inside it and uses ordinary depth testing.
+# As duas variantes atuais da frota têm a tampa com dobradiça particionada offline e o
+# compartimento rebaixado. O conjunto fica dentro dele e usa teste de profundidade comum.
 const LIFT_HEIGHT := 0.0
 # Geometria do compartimento (espaço do modelo, mesmo das posições dos slots).
 const FLOOR_Y := 0.648
@@ -160,8 +160,8 @@ func _replace_weapon(slot: String, id: String) -> void:
 			for surface in part.mesh.get_surface_count():
 				var material: Material = part.get_active_material(surface)
 				if material is StandardMaterial3D:
-					# Arsenal meshes/materials are cached and shared by equipped guns.
-					# Never change their depth state globally through a trunk display.
+					# Malhas/materiais do arsenal ficam em cache e são compartilhados pelas armas equipadas.
+					# Nunca muda o estado de profundidade deles globalmente por uma exibição do porta-malas.
 					var local: StandardMaterial3D = material.duplicate()
 					local.no_depth_test = false
 					local.render_priority = 0
@@ -174,7 +174,7 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(weapons): return
 	_update_focus(delta)
 	_open_amount = move_toward(_open_amount, 1.0, delta * OPEN_SPEED)
-	# Ease-out: fast off the latch, settling gently at the top of the rise.
+	# Ease-out: sai rápido da trava e assenta suave no topo da subida.
 	var eased := 1.0 - pow(1.0 - _open_amount, 3.0)
 	if is_instance_valid(pivot): pivot.rotation.x = lerpf(0.0, OPEN_ANGLE, eased)
 	weapons.position.y = lerpf(0.0, LIFT_HEIGHT, eased)
@@ -216,9 +216,9 @@ func close() -> void:
 	queue_free()
 
 # ---------------------------------------------------------------------------
-# Trunk dressing: felt-lined tray, stitched trim, a courtesy light and a
-# roadside kit, matching the level of finish V1's TrunkLiveView built for the
-# same car. Built once per open() and freed with the rest of `weapons`.
+# Acabamento do porta-malas: bandeja forrada de feltro, borda costurada, uma luz de cortesia e um
+# kit de estrada, no mesmo nível de acabamento que o TrunkLiveView da V1 montava para o
+# mesmo carro. Montado uma vez por open() e liberado junto com o resto de `weapons`.
 
 func _safety(material: StandardMaterial3D) -> StandardMaterial3D:
 	material.no_depth_test = false
@@ -350,8 +350,8 @@ func _build_dressing() -> void:
 	# Roadside emergency kit riding beside the loadout, exactly like V1's.
 	_build_warning_triangle(trim, steel)
 
-	# Courtesy light: warm point light that reads the loadout regardless of
-	# outdoor time of day, plus a tight spot for a cleaner rim on the guns.
+	# Luz de cortesia: luz pontual quente que mostra o conjunto independente da
+	# hora do dia lá fora, mais um spot fechado para um contorno mais limpo nas armas.
 	courtesy_light = OmniLight3D.new()
 	courtesy_light.name = "TrunkCourtesyLight"
 	courtesy_light.position = Vector3(-0.64, 1.05, 1.79)
@@ -488,8 +488,8 @@ func _rebuild_cutout(slot: String, weapon: Node3D, filled: bool) -> void:
 	if not is_instance_valid(dressing): return
 	var pad: MeshInstance3D = slot_pads.get(slot)
 	if not is_instance_valid(pad): return
-	# A filled slot recesses a silhouette of the actual weapon into the foam;
-	# an empty slot keeps a plain outline so the tray still reads as organised.
+	# Uma vaga ocupada afunda uma silhueta da arma real na espuma;
+	# uma vaga vazia mantém um contorno simples para a bandeja ainda parecer organizada.
 	var led: StandardMaterial3D = slot_leds.get(slot)
 	if led != null:
 		var status := Color("46e07a") if filled else Color("ffa63a")

@@ -38,8 +38,8 @@ func _get_message(source: StringName, _context: StringName) -> StringName:
 	var translated := _resolve(value, 0)
 	if _cache.size() >= CACHE_LIMIT: _cache.clear()
 	_cache[value] = translated
-	# Identity is a resolved source-language message too. Returning empty here
-	# lets Godot try the English fallback on the first display of composed labels.
+	# A identidade também é uma mensagem resolvida no idioma de origem. Devolver vazio aqui
+	# deixa o Godot tentar o recurso em inglês na primeira exibição de rótulos compostos.
 	return StringName(translated)
 
 func _resolve(value: String, depth: int) -> String:
@@ -81,7 +81,7 @@ func _add_template(source: String, target: String) -> void:
 	if placeholders.is_empty(): return
 	var target_tokens := tokens.search_all(target)
 	if placeholders.size() != target_tokens.size(): return
-	# Variable-first templates would match unrelated messages. These are composed at call sites.
+	# Modelos que começam com variável casariam mensagens sem relação. Estes são compostos onde são chamados.
 	if placeholders[0].get_start() == 0: return
 	var pattern := "^"
 	var previous := 0

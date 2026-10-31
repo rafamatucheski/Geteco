@@ -12,7 +12,7 @@ func part(parent: Node3D, point: Vector3, size: Vector3, color: Color) -> MeshIn
 	var piece := super.part(parent,point,size,color)
 	if size.y > .35 or size.z > size.y * 1.5:
 		piece.mesh = preload("res://assets/regions/source/guns/ammunation/AmmunationArt.gd").bevel_box(size)
-		# The old sphere used node scale for dimensions; the tailored mesh
-		# already carries them, so retaining that scale shrinks each part twice.
+		# A esfera antiga usava a escala do nó para as dimensões; a malha sob medida
+		# já as traz, então manter essa escala encolhe cada parte duas vezes.
 		piece.scale = Vector3.ONE
 	return piece

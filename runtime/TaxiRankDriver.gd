@@ -1,5 +1,5 @@
 extends "res://gameplay/urban_v1/UrbanRoutineActor.gd"
-## Native damage/collision contract, with a short sidewalk escape on threats.
+## Contrato nativo de dano/colisão, com uma fuga curta pela calçada diante de ameaças.
 func notice_threat(origin: Vector3, radius: float) -> void:
 	super.notice_threat(origin,radius)
 	if frightened and not dead: flee(origin)

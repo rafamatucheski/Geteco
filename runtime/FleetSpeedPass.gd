@@ -192,8 +192,8 @@ static func merge_parts(model: Node3D, id := "") -> void:
 		var expected := AABB()
 		var first_vertex := true
 		for part: MeshInstance3D in parts:
-			# Rotating an AABB includes empty corners. Compare the actual vertices
-			# with the merged mesh, in the same space, to detect geometry loss.
+			# Girar uma AABB inclui cantos vazios. Compara os vértices reais
+			# com a malha fundida, no mesmo espaço, para detectar perda de geometria.
 			var vertices: PackedVector3Array = MESH_ARRAYS.arrays_of(part.mesh, 0)[Mesh.ARRAY_VERTEX]
 			for vertex in vertices:
 				var point: Vector3 = part.transform * vertex

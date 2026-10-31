@@ -1,6 +1,6 @@
 extends Node
-## Owns the Vicente dossier modal without putting quest documents in the
-## droppable inventory grid. FullSession remains the modal/save authority.
+## Cuida do modal do dossiê do Vicente sem pôr documentos de missão na
+## grade de inventário que pode ser largada. O FullSession continua a autoridade de modal/save.
 
 const PANEL := preload("res://ui/SecretFilePanel.gd")
 var session
@@ -56,8 +56,8 @@ func _panel_requested_close() -> void:
 	if not _closing: close()
 
 func _audio_toggled(id: String, playing: bool) -> void:
-	# Audio records receive authored streams later. Keep the state honest: the
-	# UI never pretends a missing recording is playing.
+	# Registros de áudio recebem streams escritos depois. Mantém o estado honesto: a
+	# UI nunca finge que uma gravação ausente está tocando.
 	if playing:
 		ui.set_audio_playing(id,false)
 		session.show_message("A gravação está danificada.")

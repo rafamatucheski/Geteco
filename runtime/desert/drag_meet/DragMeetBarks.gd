@@ -52,6 +52,6 @@ func stop() -> void:
 	var actor := speaking.get_ref() as Node3D if speaking!=null else null
 	if is_instance_valid(actor):
 		var player := actor.get_node_or_null(VOICE.PLAYER_NAME)
-		# A modal dialogue may already have taken over this same voice player.
+		# Um diálogo modal pode já ter assumido este mesmo player de voz.
 		if is_instance_valid(player) and player.surface==null: player.silence()
 	speaking=null

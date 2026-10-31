@@ -1,6 +1,6 @@
 extends Node
-## A single train, a single passenger owner, and the production world's streaming.
-## Saves occur only on supported station platforms, never over a moving viaduct.
+## Um único trem, um único dono de passageiro e o streaming do mundo de produção.
+## Saves só acontecem em plataformas de estação apoiadas, nunca sobre um viaduto em movimento.
 const NETWORK := preload("res://world/railway/RailwayNetwork.gd")
 const MODEL := preload("res://world/railway/TrainModel.gd")
 const GATE := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
@@ -159,7 +159,7 @@ func close_station_menu() -> void:
 	station_menu_closed.emit()
 
 func _on_session_menu_closed() -> void:
-	# FullSession.close_menu may be called by rescue or another owning interface.
+	# FullSession.close_menu pode ser chamado pelo resgate ou por outra interface dona.
 	close_station_menu()
 
 func travel_to(target: String, instant := false) -> bool:
@@ -182,8 +182,8 @@ func travel_to(target: String, instant := false) -> bool:
 	_generation += 1
 	riding = true
 	landing = false
-	# Signal listeners may select a camera before the boarding fade has started.
-	# Record that choice without exposing the train's previous service position.
+	# Ouvintes de sinal podem escolher uma câmera antes de o fade de embarque começar.
+	# Registra essa escolha sem expor a posição de serviço anterior do trem.
 	_boarding = true
 	distance = 0.0
 	speed = 0.0
@@ -249,8 +249,8 @@ func _set_passenger_depth(active: bool) -> void:
 		camera.set_meta("uses_interior_depth", _saved.camera_depth)
 	else:
 		camera.remove_meta("uses_interior_depth")
-	# Reuse the existing interior-depth contract: only CityLook's own x-ray
-	# overlay yields. The real actor remains visible through coach windows.
+	# Reaproveita o contrato existente de profundidade de interior: só a sobreposição
+	# de raio-x do próprio CityLook cede. O ator real continua visível pelas janelas do vagão.
 	var city_look: Node = session.world.get_node_or_null("CityLook")
 	if city_look != null: city_look._refresh_silhouette()
 
@@ -268,7 +268,7 @@ func sample_route(at_distance: float) -> Vector3:
 	if at_distance <= 0: return route[0] + (route[1] - route[0]).normalized() * at_distance
 	if at_distance >= route_length:
 		return route[-1] + (route[-1] - route[-2]).normalized() * (at_distance - route_length)
-	# Binary search keeps per-frame work bounded even for long authored lines.
+	# A busca binária mantém o trabalho por quadro limitado mesmo em linhas escritas longas.
 	var low := 0
 	var high := _cumulative.size() - 1
 	while high - low > 1:
@@ -371,7 +371,7 @@ func _tick_ambient(delta: float) -> void:
 		if _ambient_returning:
 			next = "harbor_central"
 		else:
-			# Alternate the northern branches after the same campaign gate as roads.
+			# Alterna os ramais do norte depois da mesma trava de campanha das estradas.
 			var desert := NETWORK.get_station("desert_copper")
 			next = "desert_copper" if station_available(desert) and _next_desert else "mountain_pines"
 	_start_ambient_leg(arrived, next)
@@ -387,8 +387,8 @@ func _start_ambient_leg(from_id: String, to_id: String) -> void:
 	_parked_station = from_id
 	_place_train()
 	train.reset_physics_interpolation()
-	# Boarding is admitted by the station interaction, so an unattended train
-	# cannot depart with a walking actor that never entered the passenger state.
+	# O embarque é admitido pela interação da estação, para que um trem sem vigilância
+	# não parta com um ator a pé que nunca entrou no estado de passageiro.
 	train.set_doors_open(false)
 
 func _place_train() -> void:
@@ -416,12 +416,12 @@ func _update_camera(interpolated := false) -> void:
 	camera.size = 36.0
 	camera.global_position = pose * Vector3(21, 19, 27)
 	camera.look_at(pose * Vector3(0, 1.1, -4.0), Vector3.UP)
-	# The real actor remains present for external cameras and through the windows.
+	# O ator real continua presente para câmeras externas e pelas janelas.
 	session.world.player.visible = bool(_saved.visible)
 
 func set_camera_mode(_mode: Variant) -> void:
 	if not riding: return
-	# Older callers may still request an interior view; the ride now has one view.
+	# Chamadores antigos ainda podem pedir uma vista interna; a viagem agora tem uma vista só.
 	camera_mode = 1
 	if not _boarding: _update_camera()
 	trip_updated.emit(get_trip_state())
@@ -442,14 +442,14 @@ func handle_input(event: InputEvent) -> bool:
 		if event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel"):
 			close_station_menu()
 			return true
-		# UI receives pointer, navigation and accept; the session modal owns gameplay.
+		# A UI recebe ponteiro, navegação e confirmar; o modal da sessão é dono do jogo.
 		return false
 	if event.is_action_pressed("pause_game") or (get_tree().paused and event.is_action_pressed("ui_cancel")): return false
 	if get_tree().paused: return false
 	if event is InputEventJoypadMotion:
-		# Direction/aim sticks are owned by this ride, never by the actor.
+		# Os analógicos de direção/mira pertencem a esta viagem, nunca ao ator.
 		return true
-	# Buttons remain interactive; consume only gameplay events before other systems.
+	# Os botões continuam interativos; consome só eventos de jogo antes dos outros sistemas.
 	if event is InputEventMouseButton or event is InputEventMouseMotion or event is InputEventScreenTouch or event is InputEventScreenDrag: return false
 	if not landing:
 		if event.is_action_pressed("interact"): skip_trip()
@@ -470,8 +470,8 @@ func _arrive(target_id: String) -> void:
 	if is_instance_valid(_audio): _audio.stop()
 	var generation := _generation
 	trip_updated.emit(get_trip_state())
-	# The production controller's focus is held by FullSession.has_position_transition
-	# during admission, so it cannot unload the destination under this capsule probe.
+	# O foco do controlador de produção fica preso por FullSession.has_position_transition
+	# durante a admissão, então ele não pode descarregar o destino sob esta sonda de cápsula.
 	var region: Node3D = session.controller._mount_region(str(destination.region), destination.arrival)
 	if region == null:
 		landing = false
@@ -516,7 +516,7 @@ func _arrive(target_id: String) -> void:
 
 func _safe_arrival(station: Dictionary) -> Vector3:
 	var arrival: Vector3 = station.arrival
-	# All candidates stay on the authored platform, away from the track and stairs.
+	# Todos os candidatos ficam na plataforma escrita, longe do trilho e das escadas.
 	for offset in [Vector3.ZERO, Vector3(0, 0, 1.5), Vector3(0, 0, -1.5), Vector3(0, 0, 3), Vector3(0, 0, -3)]:
 		var candidate: Vector3 = arrival + offset
 		if session.position_clear(candidate): return candidate
@@ -553,8 +553,8 @@ func _restore_passenger() -> void:
 	_saved.clear()
 
 func cancel_for_transition() -> void:
-	# Death/arrest calls this for every transition, including unrelated doors.
-	# Only release state and the fade actually owned by an active railway flow.
+	# Morte/prisão chama isto para toda transição, incluindo portas sem relação.
+	# Só solta o estado e o fade de fato pertencentes a um fluxo ferroviário ativo.
 	if not busy() and _saved.is_empty(): return
 	var owns_fade := _boarding
 	_generation += 1
@@ -590,7 +590,7 @@ func _rolling_audio() -> AudioStreamWAV:
 	const SAMPLES := 16000
 	var data := PackedByteArray()
 	data.resize(SAMPLES * 2)
-	# Deterministic one-second loop, generated once; no DSP loop on the game frame.
+	# Loop determinístico de um segundo, gerado uma vez; sem laço de DSP no quadro do jogo.
 	for index in SAMPLES:
 		var t := float(index) / RATE
 		var motor := sin(TAU * 64.0 * t) * .30 + sin(TAU * 128.0 * t) * .12

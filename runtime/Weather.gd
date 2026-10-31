@@ -1,5 +1,5 @@
 extends Node
-## V1 time/weather IDs, rendered by shared native 3D lights and local particles.
+## IDs de hora/clima da V1, renderizados por luzes 3D nativas compartilhadas e partículas locais.
 const REGIONAL_ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
 const DESERT_MOON := preload("res://runtime/atmosphere/DesertMoonlight.gd")
 const PARTICLE_TEXTURES := preload("res://runtime/atmosphere/WeatherParticleTextures.gd")
@@ -9,7 +9,7 @@ const COASTAL_RAIN := preload("res://runtime/atmosphere/CoastalRainPresentation.
 const WIND_FIELD := preload("res://runtime/atmosphere/WindField.gd")
 const FOG_BANKS := preload("res://runtime/atmosphere/FogBanks.gd")
 const WIND_DEBRIS := preload("res://runtime/atmosphere/WindDebris.gd")
-# Productive V1 HarborGame and MountainPass both override the manager to 24 min.
+# O HarborGame e o MountainPass produtivos da V1 sobrescrevem o gerenciador para 24 min.
 const DAY_LENGTH_SECONDS := 1440.0
 var controller
 var time_of_day := .32
@@ -66,11 +66,11 @@ var _cloud_seconds := CLOUD_FORCED_SECONDS
 # 3 nublado. Com dia de 24 min isso dá ~4–7 trocas por dia em vez de 8–16.
 const STATE_SECONDS := {0: Vector2(300, 540), 1: Vector2(180, 300), 2: Vector2(120, 210), 3: Vector2(150, 300)}
 
-# Harbor V1 grades clear daylight almost neutrally and keeps blue shadow fill
-# (`profiles/harbor.tres`: sunlight 1.025/1.015/.985, shadow .91/.98/1.065).
-# These normalized 3D light colours preserve that authored relationship rather
-# than turning every pale urban material amber. Weather strength remains in the
-# shared light/environment; model materials are not rewritten here.
+# O Harbor da V1 ajusta a luz do dia limpo quase neutra e mantém preenchimento azul nas sombras
+# (`profiles/harbor.tres`: sol 1.025/1.015/.985, sombra .91/.98/1.065).
+# Estas cores de luz 3D normalizadas preservam essa relação escrita em vez
+# de deixar âmbar todo material urbano pálido. A força do clima fica na
+# luz/ambiente compartilhados; os materiais dos modelos não são reescritos aqui.
 const HARBOR_SUN_DAY := Color("fffdf5")
 const HARBOR_SUN_NIGHT := Color("afc0e8")
 const HARBOR_AMBIENT_DAY := Color("c0d0e2")
@@ -105,7 +105,7 @@ func _exit_tree() -> void:
 	if WIND_FIELD.current == wind: WIND_FIELD.current = null
 	PARTICLE_TEXTURES.release_cache()
 func _ready() -> void:
-	# Follow after the gameplay camera has applied its lead, zoom and orbit.
+	# Segue depois que a câmera do jogo aplicou antecipação, zoom e órbita.
 	process_priority = 100
 	_weather_rng.randomize()
 	time_of_day = float(controller.state.world_state.get("time",.32))
@@ -147,7 +147,7 @@ func _ready() -> void:
 	vehicle_rain.name = "VehicleRain"
 	vehicle_rain.weather = self
 	add_child(vehicle_rain)
-	# Separate hail keeps the original snow layer visible during the icy front.
+	# O granizo separado mantém a camada de neve original visível durante a frente gelada.
 	hail = GPUParticles3D.new()
 	hail.amount = 300
 	hail.lifetime = .55
@@ -165,8 +165,8 @@ func _ready() -> void:
 	hail.process_material = hail_process
 	hail.emitting = false
 	controller.world.add_child(hail)
-	# Independent rain/snow emitters crossfade geographically. Reusing one mesh
-	# used to turn all living raindrops into snow at the logical region seam.
+	# Emissores independentes de chuva/neve fazem crossfade geográfico. Reaproveitar uma malha
+	# transformava todas as gotas vivas em neve na costura lógica da região.
 	snow = GPUParticles3D.new()
 	snow.amount = 400
 	snow.lifetime = 2.2
@@ -183,7 +183,7 @@ func _ready() -> void:
 	snow.process_material = snow_process
 	snow.emitting = false
 	controller.world.add_child(snow)
-	# Configure rain only after snow/hail have their independent meshes.
+	# Configura a chuva só depois que neve/granizo têm as malhas independentes.
 	COASTAL_RAIN.configure(precipitation)
 	weather_audio = preload("res://audio/weather/WeatherAudioMixer.gd").new()
 	add_child(weather_audio)
@@ -219,8 +219,8 @@ func _process(delta: float) -> void:
 	_SYS_SPAN.finish_slow("sys.weather.process", span, 3000)
 
 func _process_traced(delta: float) -> void:
-	# Harbor moisture continues while visiting shelters/other regions; snow does
-	# not fill the coastal streets and entering a room cannot dry them instantly.
+	# A umidade do Harbor continua durante visitas a abrigos/outras regiões; a neve não
+	# cobre as ruas da costa e entrar numa sala não as seca na hora.
 	_sync_external_state()
 	var rain_target := _rain_target()
 	var rain_seconds := RAIN_RISE_SECONDS if rain_target > rain_level else RAIN_FALL_SECONDS
@@ -231,7 +231,7 @@ func _process_traced(delta: float) -> void:
 		# Virada da meia-noite conta um dia para a fase da lua (salvo no mundo).
 		if next_time < time_of_day: controller.state.world_state.moon_day = moon_day()+1
 		time_of_day = next_time
-	# Harbor keeps its own weather. Mountain reads the persisted thermal clock.
+	# O Harbor mantém o próprio clima. A montanha lê o relógio térmico persistido.
 	if controller.state.region_id != "mountain":
 		if not weather_locked: weather_timer -= delta
 		if weather_timer <= 0 and not weather_locked:
@@ -340,18 +340,18 @@ func _update() -> void:
 	controller.environment.environment.ambient_light_color = clear_ambient.lerp(HARBOR_OVERCAST_LIGHT,clouds*.46)
 	controller.environment.environment.ambient_light_energy = lerpf(lerpf(MOON_AMBIENT_NEW,MOON_AMBIENT_FULL,moon),.65,daylight)*lerpf(1.0,.82,clouds)
 	var clear_sky := HARBOR_SKY_NIGHT.lerp(HARBOR_SKY_FULL_MOON,moon).lerp(HARBOR_SKY_DAY,daylight)
-	# Isolated interiors are cutaway rooms, not floating platforms in the sky.
+	# Interiores isolados são salas recortadas, não plataformas flutuando no céu.
 	controller.environment.environment.background_color = Color("10151a") if inside else clear_sky.lerp(HARBOR_SKY_OVERCAST,clouds*.78)
-	# The persistent sea also covers the off-map room staging area. Use the
-	# same presentation boundary as the background, including save restoration.
-	# Embedded street buildings and rooftops retain their exterior sea view.
+	# O mar persistente também cobre a área de preparo de salas fora do mapa. Usa a
+	# mesma fronteira de apresentação do fundo, incluindo restauração de save.
+	# Prédios embutidos na rua e telhados mantêm a vista externa do mar.
 	if controller.world.production != null and is_instance_valid(controller.world.production.world_sea):
 		controller.world.production.world_sea.visible = not inside
 	atmosphere.apply(controller,time_of_day,local_clouds,front,inside,atmosphere_step)
 	if not inside:
 		DESERT_MOON.apply(controller.sun,controller.environment.environment,daylight,clouds,moon,REGIONAL_ATMOSPHERE.desert_weight(focus))
-	# A storm closes the distant sky without hiding nearby streets or actors.
-	# Reuse the existing depth fog and lighting, fading out toward Mountain.
+	# Uma tempestade fecha o céu distante sem esconder ruas ou atores próximos.
+	# Reaproveita a névoa de profundidade e a iluminação existentes, sumindo rumo à montanha.
 	if not inside and _visual_clouds > .72:
 		var storm_weight := rain_exposure*smoothstep(.72,1.0,_visual_clouds)
 		var env: Environment = controller.environment.environment
@@ -360,13 +360,13 @@ func _update() -> void:
 		env.fog_light_color = env.fog_light_color.lerp(storm_sky,storm_weight*.8)
 		env.fog_sky_affect = lerpf(env.fog_sky_affect,.92,storm_weight)
 		controller.sun.light_energy *= lerpf(1.0,.72,storm_weight)
-	# Release before the next sky owner snapshots the environment. Otherwise a
-	# coast -> drag strip -> coast -> interior trip can retain our own sky.
+	# Solta antes que o próximo dono do céu tire snapshot do ambiente. Senão uma
+	# viagem costa -> arrancadão -> costa -> interior pode reter o nosso céu.
 	if inside or rain_exposure <= .001:
 		coastal_look.release(controller.environment.environment)
 	drag_sky.apply(controller.environment.environment,focus,time_of_day,clouds,moon_illumination(),inside)
 	if drag_sky.installed:
-		# Preserve depth fog on terrain while keeping the cloud deck visible.
+		# Preserva a névoa de profundidade no terreno mantendo o deck de nuvens visível.
 		controller.environment.environment.fog_sky_affect = minf(controller.environment.environment.fog_sky_affect,.38)
 	coastal_look.apply(controller.environment.environment,controller.sun,daylight,local_clouds,coastal_wetness,rain_exposure,inside,time_of_day)
 	# One shared road material per Harbor geometry, independent of chunk count.
@@ -384,14 +384,14 @@ func _update() -> void:
 		if is_instance_valid(desert_region): desert_region.set_night_lights(night_lights)
 	var covered: bool = _inside_shelter() or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
 	_covered = covered
-	# Stopping emission leaves living particles visible for up to 2.2 seconds.
-	# Hide those particles in the same frame as entering a covered place.
+	# Parar a emissão deixa partículas vivas visíveis por até 2.2 segundos.
+	# Esconde essas partículas no mesmo quadro em que se entra num lugar coberto.
 	precipitation.visible = not covered and rain_exposure>.001
 	hail.visible = not covered and regional_weight > .001
 	snow.visible = not covered and regional_weight > .001
 	var storm_state: int = int(mountain_weather.get("state",0))
 	var rain_strength := rain_strength_at(focus)
-	# Preserve drizzle density; reserve the additional drops for heavy rain.
+	# Preserva a densidade da garoa; reserva as gotas adicionais para chuva forte.
 	precipitation.amount_ratio = rain_strength*lerpf(1000.0/COASTAL_RAIN.MAX_DROPS,1.0,smoothstep(.35,1.0,rain_strength))
 	precipitation.speed_scale = lerpf(.65,1.0,rain_strength)
 	_wind_storm = maxf(rain_strength,front*regional_weight)
@@ -460,15 +460,15 @@ func _wind_audible() -> bool:
 	if WIND_FIELD.enabled: return _wind_gain>.0001
 	return atmosphere.weights.get("mountain",0.0)>0.001
 
-## Regional precipitation also drives wheel spray and puddles. The saved Harbor
-## weather remains intact while the desert presents dry wind instead.
+## A precipitação regional também guia os respingos das rodas e as poças. O clima salvo do Harbor
+## fica intacto enquanto o deserto apresenta vento seco no lugar.
 func rain_strength_at(point: Vector3) -> float:
 	_sync_external_state()
 	return rain_level*(1.0-REGIONAL_ATMOSPHERE.weights_at(point).mountain)*(1.0-REGIONAL_ATMOSPHERE.desert_weight(point))
 
 func _harbor_overcast() -> float:
 	match weather_state:
-		1: return .72 # V1 drizzle: cool, readable and visibly distinct from clear day.
+		1: return .72 # Garoa da V1: fria, legível e visivelmente diferente do dia limpo.
 		2: return 1.0 # Heavy storm, natural or explicitly activated.
 		3: return .52
 		_: return 0.0
@@ -479,7 +479,7 @@ func get_coastal_wetness() -> float:
 func get_city_lighting_factor() -> float:
 	var daylight := REGIONAL_ATMOSPHERE.daylight_at(time_of_day)
 	var night := 1.0-smoothstep(.18,.62,daylight)
-	# Cloudy daylight B stays natural; rain C brings warm existing fittings on
-	# gradually, with the same six-source pool and no extra shadow casters.
+	# A luz do dia nublada B continua natural; a chuva C acende aos poucos as luminárias quentes
+	# existentes, com o mesmo pool de seis fontes e sem projetores de sombra extras.
 	var rain_light := smoothstep(.54,.80,maxf(_visual_clouds,0.0))*.52
 	return maxf(night,rain_light)

@@ -1,5 +1,5 @@
 extends RefCounted
-## Authored social islands shared by contact, crowd and sound placement.
+## Ilhas sociais escritas compartilhadas por contato, multidão e posicionamento de som.
 const LEADERS := {
 	"livia":Vector3(-828,0,-771),"raul":Vector3(-863,0,-768),
 	"jessica":Vector3(-775,0,-740),"nadir":Vector3(-827,0,-724),

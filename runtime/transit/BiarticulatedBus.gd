@@ -1,7 +1,7 @@
 extends "res://scripts/Vehicle.gd"
 const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
-## Three physical bodies joined by drawbars. All bodies must admit a step before
-## any moves; rear sections cannot tunnel through street furniture during turns.
+## Três corpos físicos unidos por barras de tração. Todos os corpos precisam admitir um passo antes
+## de qualquer um mover; seções traseiras não podem atravessar mobiliário urbano nas curvas.
 const MODEL := preload("res://runtime/transit/BiarticulatedModel.gd")
 const SECTION := preload("res://runtime/transit/TransitSection.gd")
 const LENGTHS := [7.8,6.8,6.8]
@@ -159,7 +159,7 @@ func admits(poses: Array[Transform3D], swept := true) -> bool:
 	return true
 
 func _apply_poses(poses: Array[Transform3D], swept := true) -> void:
-	# Trailers are top-level: moving the tractor never drags them through a wall.
+	# Os reboques ficam no nível de cima: mover o cavalo nunca os arrasta por uma parede.
 	for index in 3:
 		var body := sections[index]
 		if swept: body.move_and_collide(poses[index].origin-body.global_position)
@@ -180,7 +180,7 @@ func _apply_poses(poses: Array[Transform3D], swept := true) -> void:
 			rib_node.global_transform = Transform3D(from_basis.slerp(to_basis,fraction),a.lerp(b,fraction)+Vector3.UP*1.72)
 
 func _physics_process(delta: float) -> void:
-	if not (stolen or driver_shift) or not active: return # Service owns only the scheduled fleet.
+	if not (stolen or driver_shift) or not active: return # O serviço só é dono da frota programada.
 	if health<=0 or input_locked or engine_disabled or not (controlled or external_input):
 		speed = 0; horizontal_velocity = Vector3.ZERO; return
 	if not external_input:
@@ -295,7 +295,7 @@ func signal_gap() -> float:
 		if junction_tokens.has(item.key) and not JUNCTIONS.has_reservation(item.key, get_instance_id()):
 			junction_tokens.erase(item.key)
 		if junction_tokens.has(item.key):
-			# Keep the crossing occupied until the LAST section clears it.
+			# Mantém o cruzamento ocupado até a ÚLTIMA seção liberá-lo.
 			if ahead < -(TOTAL_LENGTH-half_length+JUNCTIONS.EXIT) and not JUNCTIONS.occupies(item.key, get_instance_id()):
 				JUNCTIONS.release(item.key,get_instance_id()); junction_tokens.erase(item.key)
 			continue

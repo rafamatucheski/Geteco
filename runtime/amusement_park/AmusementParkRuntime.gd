@@ -1,5 +1,5 @@
 extends Node
-## Local recreation; the session continues to own transitions and checkpoints.
+## Recreação local; a sessão continua dona das transições e checkpoints.
 const LAYOUT = preload("res://world/places/amusement_park/AmusementParkLayout.gd")
 const SITE = preload("res://world/places/amusement_park/ParkLume.gd")
 const REWARDS = preload("res://activities/amusement_park/AmusementParkRewards.gd")
@@ -48,8 +48,8 @@ func _ready() -> void:
 	add_child(life)
 	vending = VENDING.new()
 	vending.configure(session)
-	# Build outside the scene tree while the loading curtain is up. Collision,
-	# light and render instances are admitted only when the player approaches.
+	# Monta fora da árvore de cena enquanto a cortina de carregamento está erguida. Instâncias de colisão,
+	# luz e render só são admitidas quando o jogador se aproxima.
 	# Adiado para o próximo quadro (call_deferred ainda cairia no mesmo): dentro do _ready da sessão somava ~1 s ao quadro único de ~15 s do
 	# carregamento (16/10). _process só usa o modelo depois de `ready_for_play`.
 	_prepare_site()
@@ -159,7 +159,7 @@ func start_ride() -> bool:
 	if not session.state.economy.spend(RIDE_PRICE,"coaster:"+session._transaction()):
 		session.show_message("Entrada: $5. Dinheiro insuficiente.")
 		return false
-	# Persist the debit at a grounded checkpoint, before saves become ride-locked.
+	# Persiste o débito num checkpoint no chão, antes de os saves ficarem travados pelo brinquedo.
 	session.save_game()
 	_saved = {"point":world.player.global_position,"locked":world.player.input_locked,
 		"physics":world.player.is_physics_processing(),"layer":world.player.collision_layer,
@@ -252,8 +252,8 @@ func _begin_disembark() -> void:
 func _platform_clear(start: Vector3) -> bool:
 	var dock: Transform3D = site.sample_coaster(0)
 	var stand := Vector3(dock.origin.x+1.8,start.y,dock.origin.z+.35)
-	# Check the entire public walk, not just the final spawn. The opened gate
-	# is excluded; its swept volume is reserved while the rider is locked.
+	# Checa a caminhada pública inteira, não só o spawn final. O portão aberto
+	# fica excluído; o volume varrido dele fica reservado enquanto o passageiro está travado.
 	var query := PhysicsShapeQueryParameters3D.new()
 	var shape := CapsuleShape3D.new()
 	shape.radius = .32
@@ -273,7 +273,7 @@ func _ride_interrupted() -> bool:
 func leave() -> void:
 	if not active: return
 	var player = world.player
-	# Only our own ride state is restored. Death/rescue retains its input lock.
+	# Só o estado do nosso brinquedo é restaurado. Morte/resgate mantém a trava de entrada.
 	var owns: bool = session.transition_generation == int(_saved.generation) and session.state.region_id == str(_saved.region) and session.state.place_id.is_empty()
 	var destination: Vector3 = _saved.point
 	if owns and world.gameplay.health > 0 and not session.rescue_pending and not session.arrest_pending:
@@ -388,7 +388,7 @@ func _tick_house_view(delta: float) -> void:
 	if not session.modal and not get_tree().paused: _gamepad_look(delta)
 	if not session.modal and session.room.model.has_method("update_visitor"):
 		session.room.model.update_visitor(session.room.to_local(world.player.global_position),delta)
-	# Menus and pause keep their cursor; restore capture on return to exploration.
+	# Menus e pausa mantêm o cursor; restaura a captura ao voltar à exploração.
 	if session.modal or get_tree().paused: Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	elif Input.mouse_mode != Input.MOUSE_MODE_CAPTURED: Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -444,8 +444,8 @@ func handle_input(event: InputEvent) -> bool:
 		look_delta(event.relative*.002)
 		return true
 	if event is InputEventScreenDrag:
-		# The overlay owns the entire lifetime of fingers started on controls.
-		# Yield their drag even when FullSession receives input before the overlay.
+		# A camada é dona de todo o tempo de vida de dedos que começaram nos controles.
+		# Cede o arrasto deles mesmo quando o FullSession recebe a entrada antes da camada.
 		var touch: Node = world.find_child("AndroidControls",true,false)
 		if is_instance_valid(touch) and touch.fingers.has(event.index): return false
 		look_delta(event.relative*.003)
@@ -459,8 +459,8 @@ func _make_hint() -> void:
 	add_child(_ride_hint)
 	var controls = get_node_or_null("/root/GameInput")
 	if _touch_interface():
-		# Entering the ride locks the pedestrian. Refresh now, rather than after
-		# the overlay timer, to release sticks and enable native button emulation.
+		# Entrar no brinquedo trava o pedestre. Atualiza agora, em vez de depois do
+		# timer da camada, para soltar os analógicos e ligar a emulação nativa de botões.
 		var touch: Node = world.find_child("AndroidControls",true,false)
 		if is_instance_valid(touch): touch._refresh()
 		var button := Button.new()

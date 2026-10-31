@@ -1,6 +1,6 @@
 extends RefCounted
-## Baked presentation only. Physics/handling remain in the existing catalogs.
-## Lazy loading keeps the full roster out of startup memory.
+## Só apresentação bakeada. Física/dirigibilidade continuam nos catálogos existentes.
+## O carregamento preguiçoso mantém a frota inteira fora da memória de partida.
 static var enabled := true
 static var _scenes: Dictionary = {}
 const MESH_COUNTS := {

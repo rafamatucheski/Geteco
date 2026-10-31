@@ -1,5 +1,5 @@
 extends Node
-## Hail the actual street/rank car. PassengerTransport owns the physical journey.
+## Chama o carro real da rua/ponto. O PassengerTransport é dono da viagem física.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 var session
 var transport
@@ -149,13 +149,13 @@ func steal() -> void:
 	driving._begin_entry(vehicle,int(option.side))
 
 func driver_entry(vehicle) -> void:
-	# This also covers theft while wanted, when the passenger menu is unavailable.
+	# Isto também cobre roubo enquanto procurado, quando o menu de passageiro está indisponível.
 	var rank_car: bool = vehicle.get_meta("taxi_rank",false)
 	if rank_car:
 		session.world.gameplay.report_observed_crime(15,vehicle.global_position,"theft",vehicle)
 		vehicle.traffic = false
 	elif available(vehicle):
-		# The native Driving path ejects the seated driver and records the crime.
+		# O caminho nativo do Driving ejeta o motorista sentado e registra o crime.
 		vehicle.traffic = true
 	vehicle.set_meta("taxi_stolen",true); vehicle.remove_meta("passenger_transport")
 	light(vehicle,false); rank.depart(vehicle,true)

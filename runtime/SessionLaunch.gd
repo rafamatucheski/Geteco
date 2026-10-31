@@ -148,8 +148,8 @@ func _publish_recovery(path: String) -> Error:
 	return OK
 
 func _preserve_orphan_temporary(path: String) -> Error:
-	# Recheck at selection time; listing never moves files. A recoverable save
-	# or any primary/backup must not become a new-game destination.
+	# Rechecha na hora da escolha; listar nunca move arquivos. Um save recuperável
+	# ou qualquer primário/backup não pode virar destino de jogo novo.
 	var temporary := path+".tmp"
 	if FileAccess.file_exists(path) or FileAccess.file_exists(path+".bak") or not STORE.read_valid(temporary).is_empty(): return ERR_ALREADY_EXISTS
 	var stem := temporary+".corrupt."+str(Time.get_ticks_usec())
@@ -164,9 +164,9 @@ func _archive_temporary(source: String, destination: String) -> Error:
 	return DirAccess.rename_absolute(ProjectSettings.globalize_path(source),ProjectSettings.globalize_path(destination))
 
 func prepare_import_destination(id: String) -> Error:
-	# Import is intentionally split in two: this autoload reserves only an empty
-	# V2 destination. A future adapter may then publish an in-memory schema-3
-	# snapshot through SaveStore.publish_import_snapshot without touching V1.
+	# A importação é dividida em duas de propósito: este autoload só reserva um
+	# destino V2 vazio. Um adaptador futuro pode então publicar um snapshot de esquema 3
+	# em memória por SaveStore.publish_import_snapshot sem tocar na V1.
 	if id not in SLOT_IDS: return ERR_INVALID_PARAMETER
 	for row in list_slots():
 		if row.id != id: continue

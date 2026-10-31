@@ -1,5 +1,5 @@
 extends Node3D
-## Source braziers, streamed only near the actor. No Light3D or viewport added.
+## Braseiros-fonte, em streaming só perto do ator. Nenhum Light3D ou viewport adicionado.
 const SOURCES = preload("res://runtime/cold/OriginalHeatSources.gd")
 const CAMPFIRES := ["logging_camp","summit_camp","smuggler_camp","hermit_camp","mountain_refuge"]
 var visuals: Dictionary = {}
@@ -33,8 +33,8 @@ static func _key(id: String, existing: Node3D) -> String:
 func _build(id: String, existing: Node3D) -> Node3D:
 	var visual: Node3D
 	if existing != null:
-		# Borrow the streamed source without reparenting or freeing it.
-		# This owned wrapper contains only missing effects/collisions.
+		# Pega emprestada a fonte em streaming sem trocar o pai nem liberá-la.
+		# Este invólucro próprio contém só os efeitos/colisões que faltam.
 		visual = Node3D.new()
 		visual.set_meta("reuses_native_heat_source",true)
 		if not existing.get_meta("native_heat_has_effects",false):
@@ -118,8 +118,8 @@ func _discard(id: String) -> void:
 	if pool_enabled and is_instance_valid(visual) and visual.has_meta("heat_pool_key") and not _parked.has(str(visual.get_meta("heat_pool_key"))):
 		_park(visual, str(visual.get_meta("heat_pool_key")))
 	elif is_instance_valid(visual):
-		# Remove owned solids immediately before replacing the wrapper; deferred
-		# deletion must not leave overlapping old/new colliders in admission queries.
+		# Remove os sólidos próprios logo antes de substituir o invólucro; a exclusão
+		# adiada não pode deixar colisores antigos/novos sobrepostos nas consultas de admissão.
 		for body: CollisionObject3D in visual.find_children("*","CollisionObject3D",true,false):
 			body.collision_layer = 0
 			body.collision_mask = 0

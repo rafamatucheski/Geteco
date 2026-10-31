@@ -394,7 +394,7 @@ func _complete_rest() -> void:
 		session.close_menu()
 		return
 	if session.advance_residence_minutes(_rest_minutes): session.save_game()
-	# Animate getting up, then restore the exact approach and original camera.
+	# Anima o levantar e depois restaura a aproximação exata e a câmera original.
 	_rest_tween = create_tween()
 	_rest_tween.tween_method(presentation.rest_pose,1.0,0.0,.7).set_trans(Tween.TRANS_SINE)
 	_rest_tween.tween_callback(session.close_menu)

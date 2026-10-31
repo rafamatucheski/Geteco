@@ -1,6 +1,6 @@
 extends Node3D
-## Outdoor discoveries and their persistent contents. The region owns the ruins;
-## this coordinator owns only encounter lifetime and physical interaction rules.
+## Descobertas ao ar livre e o conteúdo persistente delas. A região é dona das ruínas;
+## este coordenador só cuida do tempo de vida dos encontros e das regras de interação física.
 const SITE := preload("res://world/desert/DesertAbandonedSite.gd")
 const SECRET := preload("res://runtime/desert/DesertSecretState.gd")
 const BANDITS := preload("res://runtime/desert/DesertBanditEncounter.gd")
@@ -81,8 +81,8 @@ func perform(action: Dictionary) -> bool:
 		session.show_message("Não foi possível recolher agora. Libere espaço na carteira.")
 		return true
 	_refresh_visuals()
-	# Capture the persistent receipt and flag before opening a dialogue. Ordinary
-	# save admission still decides whether to write now or queue the checkpoint.
+	# Captura o recibo persistente e a flag antes de abrir um diálogo. A admissão
+	# comum de save ainda decide se grava agora ou enfileira o checkpoint.
 	session.save_game()
 	if bool(result.get("reward_changed",false)):
 		session.show_message(String(TranslationServer.translate("R$ %d recolhidos."))%int(result.get("amount",0)))
@@ -125,7 +125,7 @@ func _site() -> Node3D:
 	if not is_instance_valid(_observed_site) or _observed_site!=site:
 		_observed_site=site
 		_physics_ready_frame=Engine.get_physics_frames()+1
-	# A newly streamed node exists before its shapes synchronize with physics.
+	# Um nó recém-carregado existe antes de as formas dele sincronizarem com a física.
 	return site if Engine.get_physics_frames()>=_physics_ready_frame else null
 
 func _refresh_visuals() -> void:

@@ -1,7 +1,7 @@
 extends RefCounted
-## Presentation of the existing local rain volume. Weather still owns emission,
-## regional exposure, shelter visibility, wind, coverage and particle lifetime.
-## Surface spray is bounded separately by RainGroundPresentation.
+## Apresentação do volume de chuva local existente. O Weather ainda é dono da emissão,
+## exposição regional, visibilidade em abrigo, vento, cobertura e tempo de vida das partículas.
+## Os respingos na superfície são limitados à parte pelo RainGroundPresentation.
 const MAX_DROPS := 1400
 const WIND := preload("res://runtime/atmosphere/WindField.gd")
 ## Queda média das gotas (velocidade inicial 12–18 m/s) e a gravidade autorada.
@@ -17,8 +17,8 @@ const DRIFT_SECONDS := .4
 
 static func configure(emitter: GPUParticles3D) -> void:
 	emitter.amount = MAX_DROPS
-	# Slightly longer than the old half-metre marks: the elevated gameplay camera
-	# should read falling rain without turning every drop into a thick white line.
+	# Um pouco mais longas que as antigas marcas de meio metro: a câmera elevada do jogo
+	# deve mostrar a chuva caindo sem transformar cada gota numa linha branca grossa.
 	(emitter.draw_pass_1 as QuadMesh).size = Vector2(.065, .72)
 	if WIND.enabled:
 		# Com vento a gota precisa deitar no sentido em que anda; o billboard da
@@ -31,13 +31,13 @@ static func apply(emitter: GPUParticles3D, strength: float, daylight: float, cam
 	var rain := clampf(strength, 0.0, 1.0)
 	var light := clampf(daylight, 0.0, 1.0)
 	var material := emitter.draw_pass_1.material as StandardMaterial3D
-	# Unshaded drops must not glow white at night. Keep a cool, subdued silver
-	# against both the dark road and the pale concrete, with storm density owned
-	# by Weather.amount_ratio (drizzle keeps its original active drop count).
+	# Gotas sem sombreamento não podem brilhar brancas à noite. Mantém um prateado frio e contido
+	# tanto contra a rua escura quanto contra o concreto claro, com a densidade da tempestade
+	# dada por Weather.amount_ratio (a garoa mantém a contagem original de gotas ativas).
 	var tint := Color("708692").lerp(Color("b0bfc5"), light)
 	tint.a = lerpf(.32, .66, rain) * lerpf(.72, 1.0, light)
 	material.albedo_color = tint
-	# The low race camera has its own wind/velocity alignment and drop scale.
+	# A câmera baixa da corrida tem alinhamento próprio de vento/velocidade e escala de gota.
 	if is_instance_valid(camera) and camera.get_meta("drag_precipitation", false) == true:
 		return
 	var size := Vector2(lerpf(.05, .072, rain), lerpf(.56, 1.12, rain))

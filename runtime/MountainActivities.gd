@@ -1,6 +1,6 @@
 extends Node3D
-## One integration point for the authored mountain quests and races.
-## Installed through the reviewed shared-file patch; no autoload or global input.
+## Um ponto de integração para as missões e corridas escritas da montanha.
+## Instalado pelo patch revisado de arquivo compartilhado; sem autoload nem entrada global.
 const STORY := preload("res://activities/mountain_story/MountainStory.gd")
 const DOWNHILL := preload("res://activities/mountain_downhill/MountainDownhill.gd")
 const JEEP := preload("res://activities/mountain_jeep/MountainJeepController.gd")
@@ -59,7 +59,7 @@ func save_block_reason() -> String:
 	return ""
 
 func nearest_action() -> Dictionary:
-	# An active race must keep its cancel action even near another quest prop.
+	# Uma corrida ativa precisa manter a ação de cancelar mesmo perto de outro objeto de missão.
 	for component in components.values():
 		if component.save_block_reason().is_empty(): continue
 		var active_action: Dictionary = component.nearest_action()

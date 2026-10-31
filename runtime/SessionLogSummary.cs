@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
-// Writer-thread only. Bounded histograms/caches; never retains every frame of a long session.
+// Só na thread do escritor. Histogramas/caches limitados; nunca retém todo quadro de uma sessão longa.
 internal sealed class SessionLogSummary
 {
     private sealed class Stats {

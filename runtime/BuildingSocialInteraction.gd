@@ -1,5 +1,5 @@
 extends Node
-## One live conversation at a time. It never pauses threats or moves either body.
+## Uma conversa viva por vez. Nunca pausa ameaças nem move nenhum dos corpos.
 const PANEL := preload("res://ui/BuildingSocialPanel.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const VOICE_BINDING := preload("res://audio/VoiceActorBinding.gd")
@@ -40,7 +40,7 @@ func nearest_action() -> Dictionary:
 	if not is_instance_valid(occupants): return {}
 	var nearest: Node3D
 	var best := TALK_DISTANCE * TALK_DISTANCE
-	# Only the current storey's owned residents; no global per-frame group scan.
+	# Só os moradores do andar atual; sem varredura global de grupo por quadro.
 	for resident: Node3D in occupants.residents:
 		if not _accessible(resident, TALK_DISTANCE): continue
 		var distance: float = session.world.player.global_position.distance_squared_to(resident.global_position)
@@ -59,7 +59,7 @@ func _accessible(resident: Node3D, distance: float) -> bool:
 	var offset: Vector3 = resident.global_position - player.global_position
 	if absf(offset.y) > MAX_HEIGHT or offset.length_squared() > distance * distance: return false
 	if not bool(resident.social_snapshot().get("can_interact", false)): return false
-	# The visible wall cutaway keeps its real collision: conversation cannot pass it.
+	# O recorte visível da parede mantém a colisão real: a conversa não passa por ele.
 	var query := PhysicsRayQueryParameters3D.create(player.global_position + Vector3.UP * 1.25, resident.global_position + Vector3.UP * 1.25, 1)
 	return player.get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 
@@ -101,7 +101,7 @@ func choose(action_id: String) -> void:
 	if not _still_owned() or not _accessible(target, KEEP_DISTANCE): close(); return
 	var speaker := target
 	var result: Dictionary = target.social_interact(action_id, session.world.player)
-	# Intimidation can emit threat_started synchronously and relinquish the UI.
+	# A intimidação pode emitir threat_started de forma síncrona e abrir mão da UI.
 	if not active:
 		_present_reply(speaker, str(result.get("line", "")), false)
 		return
@@ -125,7 +125,7 @@ func handle_input(event: InputEvent) -> bool:
 	if not active: return _release_guard and not event.is_action("pause_game") and not event.is_action("ui_cancel")
 	if event.is_action_pressed("pause_game") and not event.is_echo():
 		close()
-		return false # PauseInput receives the same event after relinquishing input.
+		return false # O PauseInput recebe o mesmo evento depois de abrir mão da entrada.
 	if event.is_action_pressed("ui_cancel") and not event.is_echo():
 		close()
 		return true
@@ -189,7 +189,7 @@ func _dismiss() -> void:
 		var source: Object = connection.source
 		if is_instance_valid(source) and source.is_connected(connection.signal_name, connection.callback): source.disconnect(connection.signal_name, connection.callback)
 	_connections.clear()
-	# Releasing a GUI button must not become an automatic shot in the same frame.
+	# Soltar um botão de GUI não pode virar um tiro automático no mesmo quadro.
 	_release_guard = Input.is_action_pressed("fire")
 	set_process(_release_guard)
 

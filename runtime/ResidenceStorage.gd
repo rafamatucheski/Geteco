@@ -1,9 +1,9 @@
 extends RefCounted
-## Optional backpack bridge. The backpack owns unlock, item identity and capacity.
-## Provider contract: is_backpack_unlocked(), storage_items() -> Dictionary
+## Ponte opcional para a mochila. A mochila é dona da liberação, identidade dos itens e capacidade.
+## Contrato do provedor: is_backpack_unlocked(), storage_items() -> Dictionary
 ## {id: {label: String, count: int}}, remove_storage_item(id,count) -> bool,
-## add_storage_item(id,count) -> bool. Failed mutations must leave inventory intact.
-## Bind through session.residence_services.storage.bind_inventory(provider).
+## add_storage_item(id,count) -> bool. Mutações falhas precisam deixar o inventário intacto.
+## Liga por session.residence_services.storage.bind_inventory(provider).
 const CAPACITY := 24
 const STACK_LIMIT := 99
 var provider: Object

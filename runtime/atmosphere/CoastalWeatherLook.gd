@@ -19,17 +19,17 @@ static func sample(daylight: float, clouds: float, wetness: float) -> Dictionary
 	var day := clampf(daylight,0.0,1.0)
 	var closed := smoothstep(.52,.72,clouds)
 	var marine := maxf(smoothstep(.05,.52,clouds)*(1.0-closed),wetness*(1.0-closed))
-	# Colour belongs to the light, not a warm overlay on the whole image: the
-	# same white body panel reads honey in direct sun and slate blue in shade.
+	# A cor pertence à luz, não a uma sobreposição quente na imagem inteira: o
+	# mesmo painel branco parece mel no sol direto e azul-ardósia na sombra.
 	var sun := Color(1.0,.90,.72).lerp(Color(1.0,.94,.79),marine).lerp(Color(.90,.96,1.0),closed)
 	var shadow := Color(1.025,1.025,1.015).lerp(Color(.89,1.065,1.015),marine).lerp(Color(.98,1.015,1.025),closed)
 	return {"sun":Color.WHITE.lerp(sun,day),"shadow":Color.WHITE.lerp(shadow,day),
 		"saturation":lerpf(1.025,.85,closed),"contrast":lerpf(1.015,.99,closed),
-		# Cloudy light is broad, but an extra strong fill washed out concrete
-		# and erased the separation between the blue facade and its pilasters.
+		# A luz nublada é ampla, mas um preenchimento extra forte lavava o concreto
+		# e apagava a separação entre a fachada azul e as pilastras.
 		"direct_energy":lerpf(.98,.77,closed),"bounce_energy":lerpf(.055,.065,closed)*day,
 		"shadow_opacity":lerpf(lerpf(.82,.72,marine),.42,closed),
-		# Modest PCF footprint: retain contact and avoid grain from wide kernels.
+		# Pegada de PCF modesta: mantém o contato e evita o granulado de kernels largos.
 		"shadow_blur":lerpf(lerpf(1.25,1.45,marine),1.65,closed),
 		"fog":Color("182432").lerp(Color("b1b8ae").lerp(Color("8eaaa9"),marine).lerp(Color("829199"),closed),day),
 		"top":Color("101b2b").lerp(Color("648da4").lerp(Color("6d95a4"),marine).lerp(Color("788790"),closed),day),
@@ -49,9 +49,9 @@ func apply(env: Environment, sun: DirectionalLight3D, daylight: float, clouds: f
 		_previous_shadow_opacity = sun.shadow_opacity
 		_previous_shadow_blur = sun.shadow_blur
 	current = sample(daylight,clouds,wetness)
-	# A is a golden late afternoon, while B keeps an ivory sun over marine
-	# bounce. Limit the extra warmth to the solar light and reflection horizon;
-	# the shaded road and blue-painted walls retain their own colours.
+	# A é um fim de tarde dourado, enquanto B mantém um sol marfim sobre o reflexo
+	# do mar. Limita o calor extra à luz solar e ao horizonte de reflexão;
+	# a rua na sombra e as paredes pintadas de azul mantêm as próprias cores.
 	var local_hour := fposmod(hour,1.0)
 	var afternoon := smoothstep(.60,.72,local_hour)*(1.0-smoothstep(.77,.85,local_hour))
 	var golden: float = afternoon*daylight*(1.0-current.rain_weight)*(1.0-current.marine_weight*.82)
@@ -63,9 +63,9 @@ func apply(env: Environment, sun: DirectionalLight3D, daylight: float, clouds: f
 	sun.light_energy *= lerpf(1.0,current.direct_energy,weight*daylight)
 	sun.shadow_opacity = lerpf(_previous_shadow_opacity,current.shadow_opacity,weight*daylight)
 	sun.shadow_blur = lerpf(_previous_shadow_blur,current.shadow_blur*_shadow_texel_scale(sun),weight*daylight)
-	# Afternoon light rakes across the forms as in the authored A/B studies.
-	# Keep the existing high lunar angle at night: a low moon creates huge
-	# shadow wedges across entire districts in the elevated gameplay camera.
+	# A luz da tarde corta as formas de lado como nos estudos A/B escritos.
+	# Mantém o ângulo lunar alto existente à noite: uma lua baixa cria cunhas
+	# de sombra enormes sobre bairros inteiros na câmera elevada do jogo.
 	var solar_elevation := maxf(35.0,70.0*maxf(0.0,sin((fposmod(hour,1.0)-.25)*TAU)))
 	sun.rotation_degrees.x = lerpf(sun.rotation_degrees.x,-solar_elevation,weight*smoothstep(.15,.55,daylight))
 	env.ambient_light_color *= Color.WHITE.lerp(current.shadow,weight)
@@ -86,15 +86,15 @@ func apply(env: Environment, sun: DirectionalLight3D, daylight: float, clouds: f
 		installed = true
 	env.sky = sky
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-	# Only refresh radiance when the slow climate gradient visibly changes.
+	# Só atualiza a radiância quando o gradiente lento do clima muda visivelmente.
 	# No TIME/LIGHT uniforms: moving headlights do not rebuild the cubemap.
 	for key in ["top","horizon","ground","cloud"]:
 		var color: Color = env.background_color.lerp(current[key],weight)
 		if not _last_colors.has(key) or _color_distance(color,_last_colors[key])>.008:
 			material.set_shader_parameter(key+"_color",color)
 			_last_colors[key] = color
-	# Broad cloud openings make glazing/curved paint read as reflective objects,
-	# with no screen-space copies or artificial reflections of nearby geometry.
+	# Aberturas largas nas nuvens fazem vidros/pintura curva parecerem objetos reflexivos,
+	# sem cópias em espaço de tela nem reflexos artificiais da geometria próxima.
 	var reflection_clouds := clampf(clouds,0.0,1.0)
 	if absf(reflection_clouds-_last_clouds)>.015:
 		material.set_shader_parameter("cloud_cover",reflection_clouds)
@@ -106,9 +106,9 @@ func apply(env: Environment, sun: DirectionalLight3D, daylight: float, clouds: f
 		_last_sun_direction = direction
 
 static func _shadow_texel_scale(sun: DirectionalLight3D) -> float:
-	# PCF offsets are measured in atlas texels. Keep the authored footprint
-	# comparable when the player's quality setting uses a larger atlas; do not
-	# change that setting or enable filtering on its intentionally hard tiers.
+	# Os offsets de PCF são medidos em texels do atlas. Mantém a pegada escrita
+	# comparável quando a qualidade do jogador usa um atlas maior; não
+	# muda essa configuração nem liga filtragem nos níveis duros de propósito.
 	if not sun.is_inside_tree(): return 1.0
 	var settings := sun.get_node_or_null("/root/V2Settings")
 	if settings == null: return 1.0

@@ -1,5 +1,5 @@
 extends RefCounted
-## Physical access belongs to this adapter; atomic receipts/capacity to Economy.
+## O acesso físico pertence a este adaptador; recibos atômicos/capacidade à Economy.
 const STOCK := ["apple", "water", "juice", "yogurt", "bread", "cereal_bar", "sandwich", "first_aid"]
 const GRID := preload("res://systems/inventory/GridInventory.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")

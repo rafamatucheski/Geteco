@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Independent, token-owned curtain. It cannot cancel the session's door tween.
+## Cortina independente, de posse por token. Não pode cancelar o tween de porta da sessão.
 var veil: ColorRect
 var amount := 0.0
 var material: ShaderMaterial

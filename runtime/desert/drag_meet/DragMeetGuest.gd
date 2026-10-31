@@ -1,6 +1,6 @@
 extends "res://scripts/Actor.gd"
-## Ordinary damageable civilian, owned by the authored encounter rather than the
-## ambient population cap. Short paths, threat retreat and return use real physics.
+## Civil comum que leva dano, pertencente ao encontro escrito e não ao
+## teto de população ambiente. Caminhos curtos, recuo diante de ameaça e retorno usam física real.
 var specification: Dictionary = {}
 var host: Node3D
 var person: Node3D
@@ -16,8 +16,8 @@ var _travelling := false
 var social_paused := false
 
 func _ready() -> void:
-	# Own the authored body's construction while retaining Actor's locomotion,
-	# damage and witness contract. Actor._ready would build a discarded body.
+	# Cuida da construção do corpo escrito mantendo a locomoção, o dano
+	# e o contrato de testemunha do Actor. O Actor._ready montaria um corpo descartado.
 	set_meta("gameplay_role","civilian")
 	add_to_group("police_witness")
 	collision_layer = 2
@@ -54,8 +54,8 @@ func _ready() -> void:
 	set_meta("authored_population_owner","desert_drag_meet")
 	set_meta("civilian_reaction_lod",true)
 	add_to_group("desert_drag_guest")
-	# Local threat control uses the productive Gameplay signals; this actor is
-	# never enrolled in world.people or independently trimmed by ambient density.
+	# O controle local de ameaça usa os sinais produtivos do Gameplay; este ator
+	# nunca entra em world.people nem é cortado de forma independente pela densidade ambiente.
 	controlled_automatically = true
 
 func _create_person() -> Node3D:
@@ -93,8 +93,8 @@ func _physics_process(delta: float) -> void:
 func alert(origin: Vector3) -> void:
 	if dead: return
 	_panic = 8.0+float(identity%5)
-	# Refuge stays inside the authored pocket. No blind flight through cars or
-	# across the strip; a threatened crowd recoils and returns after it settles.
+	# O refúgio fica dentro do bolsão escrito. Sem fuga às cegas entre carros nem
+	# atravessando a pista; uma multidão ameaçada recua e volta depois que assenta.
 	var away := _home-origin
 	away.y=0
 	if away.length_squared()<.01: away=Vector3.RIGHT

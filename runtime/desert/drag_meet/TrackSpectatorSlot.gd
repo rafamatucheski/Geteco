@@ -1,5 +1,5 @@
 extends Node3D
-## Chunk-owned slot survives corpse cleanup so recovery can restore the spectator.
+## A vaga do chunk sobrevive à limpeza de cadáveres para a recuperação restaurar o espectador.
 var specification: Dictionary = {}
 var actor: CharacterBody3D
 var gameplay: Node

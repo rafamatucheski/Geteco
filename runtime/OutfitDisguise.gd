@@ -1,5 +1,5 @@
 extends RefCounted
-## Player actions only: applying an appearance during load is not a disguise.
+## Só ações do jogador: aplicar uma aparência durante a carga não é disfarce.
 const POLICE_DISTANCE := 30.0
 
 static func equip(session, id: String, at_shop: bool = false) -> bool:
@@ -7,7 +7,7 @@ static func equip(session, id: String, at_shop: bool = false) -> bool:
 	if not session.state.economy.equip_outfit(id): return false
 	session.apply_outfit()
 	if previous == id: return true
-	# Ski rental overrides the equipped outfit, so no visible disguise occurred.
+	# O aluguel de esqui substitui a roupa equipada, então não houve disfarce visível.
 	if session.mountain_progression != null and session.mountain_progression.data.rental: return true
 	var gameplay = session.world.gameplay
 	if gameplay.stars <= 0: return true

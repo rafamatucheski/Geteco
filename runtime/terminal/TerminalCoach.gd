@@ -1,9 +1,9 @@
 extends "res://scripts/Vehicle.gd"
 const BOX_BATCH := preload("res://runtime/transit/StaticBoxBatch.gd")
 const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
-# Geometry only; material overrides, wheels, labels, doors and collision stay local.
+# Só geometria; substituições de material, rodas, rótulos, portas e colisão ficam locais.
 static var _body_batches: Array[Dictionary] = []
-## Conserved coach body: swept native collision for both forward and reverse travel.
+## Corpo de ônibus conservado: colisão nativa varrida tanto para frente quanto para trás.
 const ROUTES := preload("res://runtime/terminal/TerminalRoutes.gd")
 const MODEL_SCALE := Vector3(.94, .80, .67)
 const DOOR_Z := -5.05 * .67
@@ -62,7 +62,7 @@ func _stall_ready() -> void:
 	model.livery = [Color("247d88"),Color("a44937"),Color("426493"),Color("ae813e")][platform]
 	model.operator_name = ["COSTA SUL","VIAÇÃO SERRA","EXPRESSO AZUL","LITORAL"][platform]
 	model.fleet_number = str(2407+platform*131)
-	# Full passenger-coach proportions, within the existing bay and canopy.
+	# Proporções completas de ônibus de passageiros, dentro da baia e da cobertura existentes.
 	model.scale = MODEL_SCALE
 	# Legacy model nose is +Z; native traffic faces -Z.
 	model.rotation.y = PI
@@ -146,8 +146,8 @@ func drive(delta: float, clearance := INF) -> void:
 	direction.y = 0
 	var yaw := atan2(-direction.x,-direction.z)+(PI if reverse else 0.0)
 	var query := clearance_query
-	# Contact with the supporting floor is valid; use a slightly inset hull for
-	# clearance queries while the full chassis still handles actual collisions.
+	# O contato com o piso de apoio é válido; usa um casco levemente recuado para
+	# consultas de folga enquanto o chassi inteiro ainda cuida das colisões reais.
 	query.transform = Transform3D(Basis(Vector3.UP,yaw),global_position+Vector3.UP*shape.position.y)
 	query.motion = Vector3.ZERO
 	var contacts := get_world_3d().direct_space_state.intersect_shape(query,1)
@@ -157,7 +157,7 @@ func drive(delta: float, clearance := INF) -> void:
 	rotation.y = yaw
 	var motion := target-global_position
 	motion.y = 0
-	# Probe the complete hull ahead before applying movement; never run over a queue.
+	# Sonda o casco inteiro à frente antes de aplicar o movimento; nunca atropela uma fila.
 	query.motion = motion.normalized()*maxf(.15,motion.length())
 	var sweep := get_world_3d().direct_space_state.cast_motion(query)
 	if motion.length_squared() > .000001 and sweep[0] < .99:
@@ -191,8 +191,8 @@ func _stall_batch_body() -> void:
 			model.add_child(instance)
 		if reuse_began != 0: TRANSIT_WORK.finish("terminal.coach.batch.reuse",reuse_began,{"platform":platform,"batches":_body_batches.size()})
 		return
-	# Preserve the original authored model while merging its static material
-	# batches. Wheels and labels keep their independent transforms.
+	# Preserva o modelo escrito original enquanto funde os lotes de material
+	# estático. Rodas e rótulos mantêm as transformações independentes.
 	var batch_began := TRANSIT_WORK.begin()
 	var append_usec := 0
 	var append_max_usec := 0

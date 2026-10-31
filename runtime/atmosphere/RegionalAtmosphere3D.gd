@@ -1,5 +1,5 @@
 extends RefCounted
-## V1 art controls translated to native 3D, with no scene scans or new lights.
+## Controles de arte da V1 traduzidos para 3D nativo, sem varrer cenas nem criar luzes novas.
 const PALETTE := preload("res://runtime/atmosphere/AtmospherePalette.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const CEMETERY := preload("res://world/regions/OriginalCemetery3D.gd")
@@ -25,8 +25,8 @@ static func focus_position(controller) -> Vector3:
 		return driving.car.global_position
 	return controller.world.player.global_position
 
-# Original DayNightWeatherManager keyframes. Brightness and chroma are separated
-# for 3D lights, as V1 already did before its regional composition pass.
+# Keyframes originais do DayNightWeatherManager. Brilho e croma ficam separados
+# para as luzes 3D, como a V1 já fazia antes da passada de composição regional.
 const HOURS := [0.0,.19,.24,.30,.36,.68,.74,.79,.84,.88,1.0]
 const CLOCK_COLORS := [Color(.25,.29,.40),Color(.25,.29,.40),
 	Color(.61,.67,.73),Color(.91,.82,.74),Color.WHITE,Color.WHITE,
@@ -91,14 +91,14 @@ func apply(controller, hour: float, clouds: float, snow: float, inside: bool, de
 		controller.sun.light_energy *= 1.0-.16*bridge_day
 		env.ambient_light_energy *= 1.0-.08*bridge_day
 	env.ambient_light_color *= current.shadow_tint
-	# Outdoor bounce keeps shaded sidewalks and actors readable. Weather resets
-	# the base energy each update; isolated interiors return above unchanged.
+	# O reflexo externo mantém calçadas e atores na sombra legíveis. O Weather zera
+	# a energia base a cada atualização; interiores isolados retornam acima sem mudança.
 	env.ambient_light_energy += lerpf(.12,.16,daylight_at(hour))
 	env.adjustment_enabled = true
 	env.adjustment_saturation = current.saturation
 	env.adjustment_contrast = current.contrast
-	# Depth fog supported by Mobile: keep nearby obstacles clear and distant
-	# scenery softer. Shelter suppresses exterior mist, never the world clock.
+	# Névoa de profundidade suportada pelo Mobile: mantém obstáculos próximos nítidos e o cenário
+	# distante mais suave. O abrigo suprime a névoa externa, nunca o relógio do mundo.
 	env.fog_enabled = not SHELTER.sheltered(point) and not controller.world.player.get_meta("mountain_shelter",false)
 	env.fog_mode = Environment.FOG_MODE_DEPTH
 	env.fog_light_color = current.fog_color
@@ -119,6 +119,6 @@ func apply(controller, hour: float, clouds: float, snow: float, inside: bool, de
 	env.fog_depth_end = lerpf(75.0,1400.0,desert)
 	env.fog_depth_curve = 1.25
 	env.fog_sky_affect = current.distant_haze
-	# Higher moon removes the huge grazing-angle shadow wedges at night.
+	# Uma lua mais alta remove as enormes cunhas de sombra de ângulo rasante à noite.
 	var daylight := daylight_at(hour)
 	controller.sun.rotation_degrees.x = -lerpf(42.0,70.0,daylight)

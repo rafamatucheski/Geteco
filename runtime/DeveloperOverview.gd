@@ -1,5 +1,5 @@
 extends Node
-## Developer-only view residency. Keeps the regular streaming/build budget and actor admission.
+## Residência de vista só para desenvolvedor. Mantém o orçamento normal de streaming/montagem e a admissão de atores.
 var world: Node3D
 var _region: Node3D
 var _enabled := false
@@ -66,8 +66,8 @@ func _override_range(node: Node) -> void:
 	if not node is GeometryInstance3D or not world.is_ancestor_of(node): return
 	if node.visibility_range_end <= 0: return
 	_instances[node.get_instance_id()] = weakref(node)
-	# Override the rendering instance, never the authored properties: chunk merging
-	# must still copy the real ranges, and restoration must not change shared materials.
+	# Substitui a instância de renderização, nunca as propriedades escritas: a fusão de chunks
+	# ainda precisa copiar os alcances reais, e a restauração não pode mudar materiais compartilhados.
 	RenderingServer.instance_geometry_set_visibility_range(node.get_instance(), node.visibility_range_begin,
 		0.0, node.visibility_range_begin_margin, node.visibility_range_end_margin, node.visibility_range_fade_mode)
 
@@ -89,7 +89,7 @@ func _process(delta: float) -> void:
 		var total: int = _region.developer_view_cells.size()
 		_progress.text = "Carregando mapa inteiro · %d/%d trechos" % [total-waiting.size(), total]
 		_progress.visible = not waiting.is_empty()
-		# Do not retain weak-reference entries for chunks that were streamed away.
+		# Não guarda entradas de referência fraca para chunks que já saíram do streaming.
 		for id in _instances.keys():
 			if _instances[id].get_ref() == null: _instances.erase(id)
 

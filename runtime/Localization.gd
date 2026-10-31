@@ -1,6 +1,6 @@
 extends RefCounted
-## Installed once. Native Control translation notifications update existing UI.
-## Source strings and saved identifiers remain untouched; only presentation translates.
+## Instalado uma vez. As notificações nativas de tradução de Control atualizam a UI existente.
+## Strings de origem e identificadores salvos ficam intactos; só a apresentação é traduzida.
 static var _installed := false
 static var _resources: Array[Translation] = []
 

@@ -1,6 +1,6 @@
 extends RefCounted
-## Optional evidence, separate from the main-act flags. Reward receipts provide
-## durable idempotence if a save restores the economy before the world marker.
+## Evidência opcional, separada das flags do ato principal. Os recibos de recompensa dão
+## idempotência durável se um save restaurar a economia antes do marcador do mundo.
 const KEY := "desert_secrets"
 const HOUSE_ID := "desert_abandoned_house"
 const CABIN_ID := "desert_abandoned_cabin"

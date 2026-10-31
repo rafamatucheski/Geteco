@@ -1,6 +1,6 @@
 extends RefCounted
-## Nord-only offline finish pass, used by tools/fleet_fixups/bake_nord240.gd.
-## The game loads the baked scene: no texture generation, raycasts or merge at spawn.
+## Passada offline de acabamento só do Nord, usada por tools/fleet_fixups/bake_nord240.gd.
+## O jogo carrega a cena bakeada: sem gerar textura, raycasts nem fusão no spawn.
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 static var _materials: Dictionary = {}
 static var _textures: Dictionary = {}
@@ -84,7 +84,7 @@ static func _material(kind: String, source: StandardMaterial3D = null) -> Standa
 			mat.albedo_texture = _texture("lens")
 			mat.roughness = .26
 			mat.metallic = .18
-			# Equipment owns the on/off state and brightness of the real lamps.
+			# O equipamento é dono do estado ligado/desligado e do brilho das lâmpadas reais.
 			mat.emission_enabled = false
 			mat.emission = source.emission if source != null else mat.albedo_color
 			mat.emission_energy_multiplier = source.emission_energy_multiplier if source != null else .15
@@ -174,17 +174,17 @@ static func _add_panel_detail(model: Node3D, faces: PackedVector3Array) -> void:
 		var lower_a := _on_body(faces,Vector3(side*2.0,.455,-.95),Vector3(-side,0,0))
 		var lower_b := _on_body(faces,Vector3(side*2.0,.455,.93),Vector3(-side,0,0))
 		_line(model,"DoorSillGap",lower_a,lower_b,.005,"seam")
-		# Window seals and the lower polished strip give the glazing thickness.
+		# As vedações das janelas e a faixa polida de baixo dão espessura ao vidro.
 		_line(model,"WindowSeal",Vector3(side*.867,.949,-1.09),Vector3(side*.867,.949,2.30),.026,"trim")
 		_line(model,"RoofSeal",Vector3(side*.812,1.544,-.68),Vector3(side*.812,1.544,2.20),.023,"trim")
 		_line(model,"RoofGutter",Vector3(side*.817,1.574,-.65),Vector3(side*.817,1.574,2.19),.009,"satin_metal")
-		# Hood shut line projected onto the authored panel, with a small physical offset.
+		# Linha de fechamento do capô projetada no painel escrito, com um pequeno offset físico.
 		var previous := _on_body(faces,Vector3(side*.70,2.0,-2.30),Vector3.DOWN)
 		for z in [-2.05,-1.8,-1.55,-1.25]:
 			var current := _on_body(faces,Vector3(side*.70,2.0,z),Vector3.DOWN)
 			_line(model,"HoodGap",previous,current,.006,"seam")
 			previous = current
-		# Wipers sit just above the windshield and cast no noisy thin shadows.
+		# Os limpadores ficam logo acima do para-brisa e não projetam sombras finas ruidosas.
 		_line(model,"Wiper",Vector3(side*.42,.989,-1.111),Vector3(side*.24,1.079,-1.044),.014,"trim")
 		_line(model,"WiperBlade",Vector3(side*.24-.19,1.079,-1.049),Vector3(side*.24+.19,1.079,-1.049),.018,"trim")
 		_line(model,"HatchGap",Vector3(side*.716,.64,2.488),Vector3(side*.716,.911,2.488),.006,"seam")

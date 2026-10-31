@@ -1,6 +1,6 @@
 extends Node
-## Samples the interval before this early callback, including its physics ticks.
-## Inclusive timings overlap. Missing CPU/driver/GPU work is never assigned a cause.
+## Amostra o intervalo antes deste callback antecipado, incluindo os ticks de física.
+## Tempos inclusivos se sobrepõem. Trabalho de CPU/driver/GPU que falta nunca recebe uma causa.
 const WORK := preload("res://runtime/StallWorkTrace.gd")
 var _previous := 0
 var _window_start := 0
@@ -174,8 +174,8 @@ func _phases(now: int) -> Dictionary:
 	phases["render_sample_age_ms"] = float(now-_render_post_usec)/1000.0 if _render_post_usec > 0 else -1.0
 	return phases
 
-## Only retained synchronous spans, clipped to the interval; no double-counting parents.
-## The complement is unobserved time, not proof of engine/driver/GPU cost.
+## Só spans síncronos retidos, recortados ao intervalo; sem contar pais duas vezes.
+## O complemento é tempo não observado, não prova de custo do motor/driver/GPU.
 func _coverage(now: int, spans: Array) -> Dictionary:
 	var ranges: Array = []
 	for span in spans:
@@ -294,7 +294,7 @@ func _process(_delta: float) -> void:
 		_window_render_gpu += _render_gpu_ms
 		_window_render_samples += 1
 	_capture_history(now, frame_ms, work)
-	# Detailed work must survive even when the containing frame is below 33.3ms.
+	# O trabalho detalhado precisa sobreviver mesmo quando o quadro que o contém fica abaixo de 33.3ms.
 	if not work.slow_spans.is_empty():
 		_send({"type":"slow_operations", "start_usec":_previous, "end_usec":now,
 			"slow_spans":work.slow_spans, "dropped":work.dropped,
@@ -458,8 +458,8 @@ func _orphan_report(now: int) -> void:
 ## Donos das luzes visíveis: em 13/10, ao meio-dia, entraram +14 OmniLight com novos chunks e a GPU foi de
 ## ~3 para 10,8 ms. O inventário só contava a classe; agrupar pelo script mais próximo aponta quem acende.
 func _light_report(now: int) -> void:
-	# During exit_tree, visible children can already have left World3D. Retain
-	# the last complete inventory; the final timing/metrics flush still runs.
+	# Durante o exit_tree, filhos visíveis podem já ter saído do World3D. Mantém
+	# o último inventário completo; o descarte final de tempos/métricas ainda roda.
 	if _shutting_down: return
 	if now - _lights_at < LIGHT_REPORT_INTERVAL_USEC: return
 	_lights_at = now
@@ -501,7 +501,7 @@ func _flush(now: int) -> void:
 
 func _exit_tree() -> void:
 	_shutting_down = true
-	# Capture the last interval while the parent writer is still alive.
+	# Captura o último intervalo enquanto o escritor pai ainda está vivo.
 	_process(0.0)
 	# Na saída não há quadro seguinte: o que ficou adiado sai inteiro, enquanto o C# ainda escreve.
 	_drain_deferred(-1)

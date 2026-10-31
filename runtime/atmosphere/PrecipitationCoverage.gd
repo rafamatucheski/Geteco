@@ -1,6 +1,6 @@
 extends RefCounted
-## Fit the near weather volume to the actual view, including driving zoom/orbit.
-## Spawn volume follows the view; living drops remain in world space.
+## Ajusta o volume próximo de clima à vista real, incluindo zoom/órbita ao dirigir.
+## O volume de spawn segue a vista; as gotas vivas ficam no espaço do mundo.
 const MARGIN := 8.0
 
 static func configure(emitter: GPUParticles3D) -> void:
@@ -13,8 +13,8 @@ static func footprint(camera: Camera3D, focus: Vector3) -> AABB:
 	var bounds := AABB(focus-Vector3(16,0,16),Vector3(32,10,32))
 	if not is_instance_valid(camera): return bounds
 	var viewport_size := camera.get_viewport().get_visible_rect().size
-	# A low perspective camera sees the horizon. Limit this local volume to the
-	# foreground; projecting horizon rays to the ground would make it unbounded.
+	# Uma câmera de perspectiva baixa vê o horizonte. Limita este volume local ao
+	# primeiro plano; projetar raios do horizonte no chão o deixaria ilimitado.
 	if camera.projection != Camera3D.PROJECTION_ORTHOGONAL:
 		var center := camera.global_position-camera.global_basis.z*12.0
 		center.y = focus.y
@@ -37,5 +37,5 @@ static func follow(emitter: GPUParticles3D, camera: Camera3D, focus: Vector3) ->
 	var box := Vector3(extent.x,1,extent.z)
 	if not material.emission_box_extents.is_equal_approx(box):
 		material.emission_box_extents = box
-		# Includes the full fall and wind drift, rather than the old 36m box.
+		# Inclui a queda inteira e a deriva do vento, em vez da antiga caixa de 36m.
 		emitter.visibility_aabb = AABB(Vector3(-extent.x-8,-36,-extent.z-8),Vector3(extent.x*2+16,40,extent.z*2+16))

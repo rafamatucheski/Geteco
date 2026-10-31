@@ -82,7 +82,7 @@ func target_position() -> Vector3:
 	return step_definition(int(state.step)).get("point",Vector3.ZERO) if state.active else Vector3.ZERO
 
 func cancel_attempt() -> void:
-	# Durable cargo and installed parts survive death, streaming and fast travel.
+	# Carga durável e peças instaladas sobrevivem a morte, streaming e viagem rápida.
 	_clock=.4
 
 func save_block_reason() -> String:

@@ -262,8 +262,8 @@ func restore_snapshot(saved: Dictionary) -> bool:
 
 
 static func validate_snapshot(saved: Dictionary) -> bool:
-	# JSON round trips may decode whole numbers as float; equality still enforces
-	# the only supported schema version without rejecting a valid disk snapshot.
+	# Idas e voltas por JSON podem decodificar inteiros como float; a igualdade ainda impõe
+	# a única versão de esquema suportada sem recusar um snapshot válido do disco.
 	if not _has_exact_keys(saved, SNAPSHOT_KEYS) or typeof(saved.version) not in [TYPE_INT,TYPE_FLOAT] or saved.version != VERSION:
 		return false
 	for key in [

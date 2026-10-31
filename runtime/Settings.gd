@@ -74,7 +74,7 @@ var glow_strength := .75
 ## Ajuste de brilho do mundo: 1,0 é o original.
 var brightness := 1.0
 var show_fps := false
-## 0 original, 1 diagonal exterior framing inspired by the compact HUD concept.
+## 0 original, 1 enquadramento exterior diagonal inspirado no conceito de HUD compacto.
 var camera_view := 1
 
 const RESOLUTIONS := [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080), Vector2i(2560,1440),
@@ -180,14 +180,14 @@ func load_settings(path := "") -> Error:
 		for key in ["aa_mode","upscale_mode","shadow_distance","anisotropy","reflection_quality","detail_quality"]:
 			var maximum := 4 if key == "anisotropy" else (1 if key == "upscale_mode" else 2)
 			set(key,clampi(int(config.get_value("graphics",key,GRAPHICS.PRESETS[1][key])),0,maximum))
-		# Legacy TAA (3) maps to SMAA (2), FSR2 (2) to FSR1 (1); SSR is no longer loaded.
+		# TAA antigo (3) vira SMAA (2), FSR2 (2) vira FSR1 (1); o SSR não é mais carregado.
 		for key in ["ssao","volumetric_fog","glow"]:
 			set(key,bool(config.get_value("graphics",key,GRAPHICS.PRESETS[1][key])))
 		glow_strength = clampf(float(config.get_value("graphics","glow_strength",.75)),0.0,1.5)
 	return result
 
 func _exit_tree() -> void:
-	# Scripted translations must leave the server before script runtime teardown.
+	# Traduções por script precisam sair do servidor antes da desmontagem do runtime de script.
 	if name == "V2Settings": preload("res://runtime/Localization.gd").uninstall()
 
 ## Idempotente. Dialogue fica à direita dos destinos para o sidechain ler a fala

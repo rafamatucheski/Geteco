@@ -1,6 +1,6 @@
 extends "res://scripts/Vehicle.gd"
-## One admitted scheduled service. The transit owner advances the native driver;
-## seated occupants are actual 3D rigs sharing the world depth buffer.
+## Um serviço programado admitido. O dono do transporte avança o motorista nativo;
+## os ocupantes sentados são rigs 3D reais que dividem o buffer de profundidade do mundo.
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const PASSENGER_FOOT := Vector3(.70,.60,-1.65)
 const WINDOW_EYE := Vector3(.12,2.05,2.85)
@@ -34,7 +34,7 @@ func _ready() -> void:
 	equipment.input_enabled=false
 
 func _physics_process(_delta: float) -> void:
-	pass # RegionalCoachTransit is the sole physics scheduler.
+	pass # O RegionalCoachTransit é o único agendador de física.
 
 func set_service_route(value: Curve3D) -> void:
 	_release_junction()
@@ -51,8 +51,8 @@ func advance(delta: float) -> void:
 
 func arrived() -> bool:
 	if route==null or absf(speed)>=.35: return false
-	# The door/front reaches a berth before the chassis centre. A vehicle queued
-	# beyond the berth must not prevent docking once this coach is already there.
+	# A porta/frente chega a uma baia antes do centro do chassi. Um veículo na fila
+	# além da baia não pode impedir a atracação quando este ônibus já está lá.
 	var length := route.get_baked_length()
 	var docking_distance := half_length+1.5
 	if route_distance<length-docking_distance: return false

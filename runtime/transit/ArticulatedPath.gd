@@ -1,5 +1,5 @@
 extends RefCounted
-## Precomputed drawbar kinematics, shared by the fleet. No per-frame path baking.
+## Cinemática de barra de tração pré-calculada, compartilhada pela frota. Sem bake de caminho por quadro.
 const LENGTHS := [7.8,6.8,6.8]
 const GAP := .65
 var route: Curve3D
@@ -15,7 +15,7 @@ func configure(value: Curve3D) -> void:
 	for index in 3:
 		var pose := front(-index*7.8)
 		poses.append(pose)
-	# Warm up one complete lap so the seam has the same hitch state as every turn.
+	# Aquece uma volta completa para a costura ter o mesmo estado de engate de toda curva.
 	for step in range(count*2):
 		poses[0] = front(step*spacing)
 		for index in range(1,3):

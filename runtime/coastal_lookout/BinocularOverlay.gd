@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Only functional controls: the landscape carries the atmosphere and story.
+## Só controles funcionais: a paisagem carrega a atmosfera e a história.
 var controller: Node
 var readout: Label
 

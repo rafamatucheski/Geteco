@@ -1,6 +1,6 @@
 extends "res://runtime/desert/drag_meet/TrackParticipant.gd"
-## Damageable entourage on authored, floor-checked anchors. No per-frame physics;
-## the articulated rig owns idle/gesture LOD and the visit owns recovery.
+## Comitiva que leva dano, em âncoras escritas e checadas contra o chão. Sem física por quadro;
+## o rig articulado cuida do LOD de parado/gesto e a visita cuida da recuperação.
 const MODEL := preload("res://assets/CivilianModel.gd")
 const OUTFIT := preload("res://runtime/desert/drag_meet/DragMeetWardrobe.gd")
 var slot := 0

@@ -1,5 +1,5 @@
 extends RefCounted
-## Authored civilian additions; gameplay values use the same scale as the existing fleet.
+## Adições civis escritas; os valores de jogo usam a mesma escala da frota existente.
 const IDS := ["besouro_1300", "mare_microvan", "toco_minitruck"]
 const DATA := {
  "besouro_1300":{"label":"Besouro 1300","size":[1.90,1.58,4.23],"colors":["a7b78bff","d9cfafff","758d96ff","925647ff"],"speed":278.0,"mass":.9,"district":"residential","engine":"compact","door":{"zf":-.69,"zr":.57,"sill":.30,"belt":.89,"top":1.48,"x":.73,"seat_z":-.06}},

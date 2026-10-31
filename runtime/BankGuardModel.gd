@@ -1,5 +1,5 @@
 extends "res://gameplay/PoliceModel.gd"
-# Original BankGuard uniform applied to the same articulated native rig.
+# Uniforme original do BankGuard aplicado ao mesmo rig nativo articulado.
 const PART = preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
 var uses_shotgun := false
 var generation := 0
@@ -37,7 +37,7 @@ func _rebuild_uniform() -> void:
 	for side in [-1,1]:
 		eyes.append(PART.piece(head_node,Vector3(.035,.018,.02),Vector3(side*.065,.005,-.13),Color("22252b")))
 		PART.piece(head_node,Vector3(.045,.07,.05),Vector3(side*.145,-.025,0),skin,true)
-	# Solid crown covers the scalp; the brim is entirely above the face.
+	# A copa sólida cobre o couro cabeludo; a aba fica inteira acima do rosto.
 	var crown := PART.piece(head_node,Vector3.ONE,Vector3(0,.145,0),cloth)
 	var cap := CylinderMesh.new()
 	cap.top_radius=.17
@@ -53,7 +53,7 @@ func _rebuild_uniform() -> void:
 				var shape=BoxMesh.new()
 				shape.size=Vector3(.135,child.mesh.height,.15)
 				child.mesh=shape
-	# Keep the shared articulated arms, mesh arsenal and Dante combat poses.
+	# Mantém os braços articulados compartilhados, o arsenal de malhas e as poses de combate do Dante.
 	for limb in [left_upper_arm, right_upper_arm]:
 		for part in limb.get_children():
 			if part is MeshInstance3D:

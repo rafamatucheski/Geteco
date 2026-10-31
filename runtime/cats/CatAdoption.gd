@@ -1,5 +1,5 @@
 extends RefCounted
-## Persistent identities and supplies; the scene adapter owns physical access.
+## Identidades e suprimentos persistentes; o adaptador da cena é dono do acesso físico.
 const CAT_IDS: Array[String] = ["cat_01", "cat_02", "cat_03", "cat_04", "cat_05", "cat_06", "cat_07", "cat_08", "cat_09", "cat_10"]
 const FURNITURE := {
 	"bed": {"label":"Caminha", "price":120, "limit":10},

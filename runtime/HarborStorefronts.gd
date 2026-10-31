@@ -295,8 +295,8 @@ func _build_outfit_preview() -> Control:
 	environment.environment.ambient_light_energy = .45
 	preview_viewport.add_child(environment)
 	preview_actor = ACTOR.new()
-	# The container enters the tree after this builder returns. PROCESS_MODE_DISABLED
-	# survives _ready automatic callback enabling and the storefront ALWAYS parent.
+	# O contêiner entra na árvore depois que este montador retorna. PROCESS_MODE_DISABLED
+	# sobrevive à ativação automática de callbacks do _ready e ao pai ALWAYS da vitrine.
 	preview_actor.process_mode = Node.PROCESS_MODE_DISABLED
 	preview_actor.is_player = true
 	preview_actor.outfit_id = selected_outfit
@@ -308,7 +308,7 @@ func _build_outfit_preview() -> Control:
 	preview_viewport.add_child(preview_actor)
 	preview_actor.set_physics_process(false)
 	preview_actor.set_process(false)
-	# Frame the actual posed skeleton once, independent of the imported root origin.
+	# Enquadra o esqueleto posado real uma vez, independente da origem da raiz importada.
 	container.resized.connect(func(): _fit_outfit_camera.call_deferred(camera, container))
 	_fit_outfit_camera.call_deferred(camera, container)
 	return container
@@ -326,8 +326,8 @@ func _fit_outfit_camera(camera: Camera3D, container: SubViewportContainer) -> vo
 	if container.size.x < 1.0 or container.size.y < 1.0: return
 	var low := Vector3(INF, INF, INF)
 	var high := Vector3(-INF, -INF, -INF)
-	# Imported descendants do not necessarily have an owner in the runtime actor.
-	# Include their actual transformed mesh bounds, including outfit accessories.
+	# Descendentes importados não têm necessariamente dono no ator de runtime.
+	# Inclui os limites reais transformados das malhas, incluindo acessórios da roupa.
 	for child in preview_actor.find_children("*", "MeshInstance3D", true, false):
 		var mesh := child as MeshInstance3D
 		if mesh.mesh == null or not mesh.is_visible_in_tree(): continue

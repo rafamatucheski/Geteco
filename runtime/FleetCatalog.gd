@@ -9,7 +9,7 @@ static var _data: Dictionary = {}
 const MESHY_CITYCAR := "res://assets/fleet/meshy/citycar.scn"
 static var meshy_cars := OS.get_environment("GETECO_NO_MESHY_CARS").is_empty()
 static var _last_paint_index: Dictionary = {}
-# Civilian models whose exported catalog only contains the showroom color.
+# Modelos civis cujo catálogo exportado só tem a cor de vitrine.
 const SPAWN_PALETTES := {
 	"dune_buggy": ["ffffffff", "dba638ff", "c45638ff", "3d827fff", "405948ff"],
 	"monaliza": ["183b91ff", "722e30ff", "e6e4dfff", "171b20ff", "92979cff"],
@@ -45,8 +45,8 @@ static func all() -> Dictionary:
 			# O modelo do Meshy tem 3,04 m x 1,95 m: a colisão acompanha o desenho novo.
 			if meshy_cars and not REDESIGNED.contains("metro_hatch") and _data.has("metro_hatch") and ResourceLoader.exists(MESHY_CITYCAR):
 				_data["metro_hatch"].merge({"bounds_size": [1.95, 1.61, 3.04], "bounds_center": [0.0, 0.805, 0.0], "mesh_count": 5}, true)
-			# The authored fleet replaces presentation only. The requested Metro
-			# replacement uses its catalog body dimensions instead of the Meshy pilot.
+			# A frota escrita só substitui a apresentação. O substituto pedido do Metro
+			# usa as dimensões de carroceria do catálogo em vez do piloto Meshy.
 			for id: String in _data:
 				if REDESIGNED.contains(id):
 					_data[id].scene=REDESIGNED.scene_path(id)

@@ -29,7 +29,7 @@ static func valid(world: Dictionary, economy: Dictionary) -> bool:
 	if not INSTRUMENTS.validate_wallet(world,economy): return false
 	if world.has("desert_garage") and not GARAGE.valid(world.desert_garage,economy): return false
 	if world.has("desert_fleet"):
-		# Catalogue editions and the one honor prize share this persistent fleet.
+		# As edições do catálogo e o único prêmio de honra dividem esta frota persistente.
 		if not world.desert_fleet is Dictionary or world.desert_fleet.size()>preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS.size()+3: return false
 		var bought: Dictionary = GARAGE.data(world).purchased
 		for id in world.desert_fleet:

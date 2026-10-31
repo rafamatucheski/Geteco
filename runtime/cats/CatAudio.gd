@@ -1,6 +1,6 @@
 extends RefCounted
-## Original, locally synthesized feline calls and a soft adoption confirmation.
-## Streams are shared and created once; callers use positional AudioStreamPlayer3D.
+## Miados originais sintetizados localmente e uma confirmação suave de adoção.
+## Os streams são compartilhados e criados uma vez; quem chama usa AudioStreamPlayer3D posicional.
 
 const RATE := 22050
 static var _meows: Dictionary = {}

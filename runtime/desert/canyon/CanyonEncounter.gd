@@ -1,5 +1,5 @@
 extends Node3D
-## The scene owns static camp solids; this runtime owns eight finite defenders.
+## A cena é dona dos sólidos estáticos do acampamento; este runtime cuida de oito defensores finitos.
 signal cleared
 const STATE := preload("res://runtime/desert/canyon/CanyonState.gd")
 const GUARD := preload("res://runtime/desert/canyon/CanyonGuard.gd")
@@ -170,9 +170,9 @@ func _refresh_caches(mask: int) -> void:
 func _release() -> void:
 	_engaged=false; _paused=false
 	if actors.is_empty() and _loot.is_empty(): return
-	# A lethal round can enter here synchronously from Gameplay's round loop via
-	# player_died. Defer removal until that loop finishes; use captured RIDs so
-	# freeing bodies cannot invalidate ownership during the deferred cleanup.
+	# Um tiro letal pode entrar aqui de forma síncrona pelo laço de tiros do Gameplay via
+	# player_died. Adia a remoção até esse laço terminar; usa RIDs capturados para que
+	# liberar corpos não invalide a posse durante a limpeza adiada.
 	if is_instance_valid(session) and is_instance_valid(session.world):
 		var gameplay: Node3D=session.world.gameplay
 		var owned_rids: Array[RID]=[]

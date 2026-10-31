@@ -25,7 +25,7 @@ static func optimize(model: Node3D) -> void:
 		if not _can_merge(part):
 			continue
 		part.mesh = _simplify(part)
-		# Handles and mirrors must remain individually attachable to the opening door.
+		# Maçanetas e espelhos precisam continuar presos individualmente à porta que abre.
 		if part.get_meta("door_trim", false):
 			continue
 		var transform := _to_model(part, model)
@@ -107,11 +107,11 @@ static func _assembly(
 	part: MeshInstance3D, surface: int, role: String, transform: Transform3D
 ) -> Array:
 	if part.has_meta("wheel_center"):
-		# Non-spinning calipers remain in a separate steering assembly at each axle.
+		# As pinças que não giram ficam num conjunto de direção separado em cada eixo.
 		return ["wheel", _wheel_metadata(part)]
 	if role in ["headlight", "tail", "tail_light", "indicator"]:
 		var center := transform * ROLES.center(part, surface)
-		# Equipment locates lights from the center of each surface, not each triangle.
+		# O equipamento localiza as luzes pelo centro de cada superfície, não de cada triângulo.
 		return [role, signf(center.x), signf(center.z)]
 	var bounds: AABB = transform * part.get_aabb()
 	if bounds.position.y > 1.48 and bounds.size.y < 0.2:
@@ -164,8 +164,8 @@ static func _simplify(part: MeshInstance3D) -> Mesh:
 
 
 static func _rounded_tire(radius: float, width: float) -> ArrayMesh:
-	# Three shoulder/tread bands and two sidewalls: 256 triangles at 32 segments.
-	# Full radius and width are unchanged; only the sharp cylinder corners recede.
+	# Três faixas de ombro/banda de rodagem e duas laterais: 256 triângulos com 32 segmentos.
+	# O raio e a largura totais não mudam; só os cantos vivos do cilindro recuam.
 	var tool := SurfaceTool.new()
 	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var profile := [
@@ -259,8 +259,8 @@ static func _prepare(source: Mesh, surface: int, transform: Transform3D) -> Arra
 			tangents[offset + 2] = tangent.z
 			tangents[offset + 3] *= handedness
 		arrays[Mesh.ARRAY_TANGENT] = tangents
-	# append_from does not index unindexed input. Normalize every source first so
-	# mixing a primitive and an authored unindexed mesh cannot drop its triangles.
+	# append_from não indexa entrada sem índice. Normaliza toda fonte primeiro para
+	# que misturar um primitivo e uma malha escrita sem índice não perca triângulos.
 	var indices := PackedInt32Array()
 	if arrays[Mesh.ARRAY_INDEX] != null:
 		indices = arrays[Mesh.ARRAY_INDEX]

@@ -1,6 +1,6 @@
 extends Node
-## Sparse roadside activity: six physical cars, four walkers and one maneuver.
-## Decisions run at 1.5 Hz; parked Vehicle bodies use their existing resting path.
+## Atividade esparsa na beira da rua: seis carros físicos, quatro pedestres e uma manobra.
+## As decisões rodam a 1.5 Hz; corpos Vehicle estacionados usam o caminho de repouso existente.
 const LAYOUT := preload("res://world/roadside_parking/RoadsideParkingLayout.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const MANEUVER := preload("res://gameplay/roadside_parking/ParkingManeuver.gd")
@@ -158,8 +158,8 @@ func _spawn_parked(record: Dictionary) -> bool:
 		return false
 	var car: CharacterBody3D = controller.spawn_vehicle(record.profile.model, point, float(record.slot.yaw))
 	if car == null:
-		# The real Vehicle check remains authoritative if streaming/physics changes
-		# after preflight. Never repeatedly build a model against a blocked space.
+		# A checagem real do Vehicle continua oficial se streaming/física mudarem
+		# depois da pré-checagem. Nunca monta um modelo repetidamente contra um espaço bloqueado.
 		last_spawn_failure = {"reason":"controller_rejected","point":str(point),"model":record.profile.model}
 		_defer_spawn(record)
 		return false
@@ -182,8 +182,8 @@ func _spawn_space_clear(model: String, point: Vector3, yaw: float) -> bool:
 			return false
 		var bounds: Array = specification.bounds_size
 		var hull := BoxShape3D.new()
-		# Conservative envelope includes the supported Fleet variants (up to 10%
-		# wider/longer, 15% taller). No visual, paint, door or Vehicle is allocated.
+		# O envelope conservador inclui as variantes de Fleet suportadas (até 10%
+		# mais largas/longas, 15% mais altas). Nenhum visual, pintura, porta ou Vehicle é alocado.
 		hull.size = Vector3(maxf(.65,float(bounds[0])*1.10),clampf(float(bounds[1])*1.15,1.1,3.6),float(bounds[2])*1.10)
 		_spawn_shapes[model] = hull
 	var shape: BoxShape3D = _spawn_shapes[model]
@@ -224,7 +224,7 @@ func _try_arrival(record: Dictionary) -> bool:
 		_own(record, car)
 		_event("arrival", record)
 		record.original_route = car.route
-		# Reverse parking first advances on the same lane, then backs into the bay.
+		# A baliza de ré primeiro avança na mesma faixa e depois entra de ré na vaga.
 		record.phase = "passing" if record.profile.reverse else "arriving"
 		var destination := target + Vector3.UP * .10
 		if record.profile.reverse: destination = car.global_position + forward * (8.0 - along)
@@ -251,14 +251,14 @@ func _finish_maneuver(success: bool) -> void:
 		if record.car.health <= 0 or record.car.has_meta("crash_stun"):
 			_release(record, false)
 		elif record.phase == "recovering":
-			# A person/vehicle may block both directions. Wait visibly with collision;
-			# this is not a parked bay and must not acquire a parked theft lock.
+			# Uma pessoa/veículo pode bloquear os dois sentidos. Espera visivelmente com colisão;
+			# isto não é uma vaga estacionada e não pode ganhar trava de roubo de estacionado.
 			record.phase = "stalled"
 			record.due = seconds + 6
 			record.car.remove_meta("ambient_parked")
 			record.car.remove_meta("vehicle_locked")
 		else:
-			# Sweep back to the physical start, retaining collision and lane priority.
+			# Varre de volta ao início físico, mantendo colisão e prioridade de faixa.
 			record.recovery_phase = record.phase
 			record.recovery_target = previous_start
 			record.recovery_reverse = not previous_reverse
@@ -346,8 +346,8 @@ func _exit_point(record: Dictionary) -> Vector3:
 	return record.car.global_position + _outward(record) * (record.car.half_width + .75)
 
 func _exit_occupant(record: Dictionary) -> bool:
-	# Stolen cars release their owners to the ordinary crowd. Those actors keep
-	# walking visibly, but must still consume the shared population allowance.
+	# Carros roubados soltam os donos na multidão comum. Esses atores continuam
+	# andando visivelmente, mas ainda precisam consumir a cota de população compartilhada.
 	if _people_count() >= MAX_PEOPLE or world.people.size() >= controller._population_cap() + MAX_PEOPLE: return false
 	var point := _exit_point(record)
 	var forward: Vector3 = record.site.forward
@@ -362,8 +362,8 @@ func _exit_occupant(record: Dictionary) -> bool:
 	actor.speed = random.randf_range(1.05, 1.5)
 	actor.set_meta("region_id", record.site.region)
 	actor.set_meta("roadside_visitor", true)
-	# Walk along the outer shoulder, not a one-metre loop beside the door.
-	# Two-space bays send visitors toward the other end without entering a slot.
+	# Anda pelo acostamento externo, não num laço de um metro ao lado da porta.
+	# Vagas duplas mandam os visitantes para a outra ponta sem entrar numa vaga.
 	var along: float = (record.slot.position - record.site.position).dot(forward)
 	var walk_offset := -along if absf(along) > 1 else (2.0 if record.exit_count == 0 else -2.0)
 	var explore: Vector3 = record.site.explore_position + forward * walk_offset
@@ -405,9 +405,9 @@ static func blocks_departure(car: CharacterBody3D, other: CharacterBody3D, at: V
 	if absf(relative.y) > 2.0: return false
 	var forward := direction.normalized()
 	var lateral := absf(relative.dot(forward.cross(Vector3.UP)))
-	# A parked neighbour behind the pavement edge is not through traffic. Keep
-	# priority for any actual body occupying the merge corridor, including a
-	# stopped player/wreck; the maneuver still sweeps all physical obstacles.
+	# Um vizinho estacionado atrás da borda da calçada não é trânsito passando. Mantém
+	# prioridade para qualquer corpo real ocupando o corredor de entrada, incluindo um
+	# jogador/destroço parado; a manobra ainda varre todos os obstáculos físicos.
 	if lateral > car.half_width + other.half_width + .45: return false
 	var reach: float = maxf(17.0,absf(other.speed)*2.0) + other.half_length
 	return absf(relative.dot(forward)) < reach
@@ -499,7 +499,7 @@ func _event(kind: String, record: Dictionary) -> void:
 	events.append({"event":kind,"slot":record.slot.id,"time":snappedf(seconds,.01)})
 	if events.size() > 48: events.pop_front()
 
-## Called while the loading curtain is still present; never pops into live play.
+## Chamado enquanto a cortina de carregamento ainda está presente; nunca surge no jogo vivo.
 func initialize_nearby() -> void:
 	if not enabled: return
 	_discover_regions()

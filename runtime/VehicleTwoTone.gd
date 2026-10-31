@@ -1,5 +1,5 @@
 extends RefCounted
-## Curated roof/body combinations. The body color is the persisted source of truth.
+## Combinações curadas de teto/carroceria. A cor da carroceria é a fonte de verdade persistida.
 const MODELS := ["union_sedan","sedan_classic","metro_hatch"]
 const PALETTES := ["e6e4dfff","92979cff","40464cff","171b20ff","354552ff","722e30ff"]
 static func roof_color(body: Color) -> Color:

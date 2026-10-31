@@ -1,7 +1,7 @@
 extends Node3D
 const NECO_MODEL := preload("res://world/places/NecoModel.gd")
 const COBRA_AGENT := preload("res://gameplay/CobraAgent.gd")
-## Successful live operations only; restoring/cancelling cargo is silent.
+## Só operações vivas bem-sucedidas; restaurar/cancelar carga é silencioso.
 signal tow_event(kind: String)
 const UNIT := 1.0/16.0
 const CENTER := Vector3(7700,0,1700)*UNIT
@@ -42,7 +42,7 @@ func _ready() -> void:
 
 func begin(id: String) -> bool:
 	if not session.state.campaign.available_missions().has(id): return false
-	# The restart checkpoint precedes acceptance and any mission-owned vehicle.
+	# O checkpoint de reinício vem antes da aceitação e de qualquer veículo da missão.
 	if not session.save_game(true): return false
 	if id == "cobra_contact":
 		if session.state.region_id != "harbor":
@@ -61,7 +61,7 @@ func begin(id: String) -> bool:
 		return false
 	if not session.state.campaign.begin(id): return false
 	_clear_encounter()
-	# Retry replaces only the dead mission contact, never unrelated residents.
+	# A nova tentativa substitui só o contato morto da missão, nunca moradores sem relação.
 	var contact: String = "ferrugem" if id == "cobra_contact" else ("ashbend_resident" if id == "cobra_collection" else "")
 	if actors.has(contact) and is_instance_valid(actors[contact]) and actors[contact].dead:
 		actors[contact].queue_free()
@@ -92,8 +92,8 @@ func cancel_attempt(reason := "cancelled") -> bool:
 	aftermath_open = false
 	if session.state.campaign.active_id.is_empty(): return false
 	if tow_job.get("story",false) and not cancel_tow_job():
-		# Keep ownership and physical cargo until a collision-safe release exists.
-		# A suspended attempt cannot advance or pay rewards, including after load.
+		# Mantém a posse e a carga física até existir uma liberação segura contra colisão.
+		# Uma tentativa suspensa não pode avançar nem pagar recompensas, inclusive depois de carregar.
 		session.state.campaign.suspend_attempt(reason)
 		return false
 	return session.state.campaign.cancel(reason)
@@ -123,8 +123,8 @@ func _update_aftermath() -> void:
 	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.gameplay.stars > 0: return
 	if not session.state.campaign.aftermath_pending() or not enemies.is_empty() or not session.state.campaign.active_id.is_empty(): return
 	aftermath_open = true
-	# Reuse the session's dialogue ownership/close path. No camera, teleport,
-	# extra reward or access unlock is manufactured by this local epilogue.
+	# Reaproveita o caminho de posse/fechamento de diálogo da sessão. Nenhuma câmera, teleporte,
+	# recompensa extra ou liberação de acesso é fabricada por este epílogo local.
 	session.show_dialogue([
 		{"speaker":"Dante","message":_text("A lista da casa de Takeshi tem o Vicente como responsável pelas corridas do deserto.","The list in Takeshi's house names Vicente as the desert races' organizer.")},
 		{"speaker":"Maciota · telefone","message":_text("Então é pra lá que vamos. Vou te passar um contato e um lugar pra ficar. Não chega apostando o que é teu.","Then that's where we're headed. I'll give you a contact and a place to stay. Don't arrive betting what belongs to you.")},
@@ -270,8 +270,8 @@ func _event(event: String, target: String, extras := {}) -> bool:
 	if not result.ok:
 		session.show_message("Objetivo pendente: "+str(result.get("reason","requisitos")))
 		return false
-	# apply_event checks the same physical precondition; no await or signal occurs
-	# between acceptance and release, so progress and ownership are saved together.
+	# apply_event checa a mesma pré-condição física; nenhum await ou sinal acontece
+	# entre aceitação e liberação, então progresso e posse são salvos juntos.
 	if event == "neco_repair_received": finish_tow_job()
 	var completed_id: String = str(result.get("completed",""))
 	if completed_id == "primeiro_giro" and session.personal_car != null:
@@ -444,8 +444,8 @@ func _start_encounter(id: String, center: Vector3) -> void:
 		enemies.append(enemy)
 	if enemies.is_empty(): session.show_message("Área do encontro ocupada. Afaste-se para liberar a passagem."); encounter_id=""
 
-## Fixed loadouts make variants discoverable through play. Every drop is the
-## actual gun carried by its owner; no extra actors or random rare rerolls.
+## Conjuntos fixos tornam as variantes descobríveis jogando. Todo drop é a
+## arma real carregada pelo dono; sem atores extras nem sorteios raros aleatórios.
 static func encounter_weapon(id: String, index: int) -> String:
 	var loadout: Array = {
 		"resident_encounter":["pistol", "smg_compact"],
@@ -468,8 +468,8 @@ func begin_tow_job(job: Dictionary) -> bool:
 	if is_instance_valid(truck) and truck.health <= 0: return false
 	if not tow_job.is_empty(): return identity == _tow_identity(tow_job) and is_instance_valid(truck) and is_instance_valid(cargo)
 	if loaded: return false
-	# All pickup coordinates belong to Harbor. Restores may retry from another
-	# region, but must wait instead of spawning into that active world.
+	# Todas as coordenadas de itens pertencem ao Harbor. Restaurações podem tentar de novo a partir
+	# de outra região, mas precisam esperar em vez de criar o item nesse mundo ativo.
 	if session.state.region_id != "harbor": return false
 	unloaded_at_bay = false
 	if not is_instance_valid(truck):
@@ -488,8 +488,8 @@ func begin_tow_job(job: Dictionary) -> bool:
 			model = debt.model
 			point = debt.pickup
 			yaw = float(debt.yaw)
-		# A cancelled service leaves its car in the world. Reclaim only that
-		# service's nearby, matching body; never delete an unrelated obstruction.
+		# Um serviço cancelado deixa o carro no mundo. Recupera só o corpo próximo
+		# e correspondente desse serviço; nunca apaga uma obstrução sem relação.
 		cargo = _reusable_tow_cargo(model,point)
 		if cargo == null:
 			cargo = _spawn_tow_vehicle(model,point+Vector3.UP*.12,yaw)
@@ -511,8 +511,8 @@ func _reusable_tow_cargo(model: String, point: Vector3) -> CharacterBody3D:
 	return null
 
 func _spawn_tow_vehicle(model: String, point: Vector3, yaw: float) -> CharacterBody3D:
-	# Bounded local parking alternatives, checked with the production footprint
-	# and ground queries before publishing ownership. Never move an existing car.
+	# Alternativas locais e limitadas de estacionamento, checadas com a pegada de produção
+	# e consultas de chão antes de publicar a posse. Nunca move um carro existente.
 	for offset in [Vector3.ZERO,Vector3(6,0,0),Vector3(-6,0,0),Vector3(0,0,8),Vector3(0,0,-8)]:
 		var candidate: Vector3 = point+Basis(Vector3.UP,yaw)*offset
 		var car = session.controller.spawn_vehicle(model,candidate,yaw)
@@ -521,7 +521,7 @@ func _spawn_tow_vehicle(model: String, point: Vector3, yaw: float) -> CharacterB
 		if point.distance_to(session.world.player.position) > 75:
 			_reserve_tow_vehicle(car,true)
 			return car
-		# Only this fresh, unowned candidate is discarded, never the blocking body.
+		# Só este candidato novo e sem dono é descartado, nunca o corpo que bloqueia.
 		car.collision_layer = 0
 		car.collision_mask = 0
 		session.controller.vehicles.erase(car)
@@ -529,8 +529,8 @@ func _spawn_tow_vehicle(model: String, point: Vector3, yaw: float) -> CharacterB
 	return null
 
 func _reserve_tow_vehicle(car: CharacterBody3D, alternatives: bool) -> void:
-	# This is ownership of a future pickup, not an admitted physical vehicle.
-	# ProductionWorld must not wake it via its generic awaiting_ground branch.
+	# Isto é a posse de uma coleta futura, não um veículo físico admitido.
+	# O ProductionWorld não pode acordá-lo pelo ramo genérico awaiting_ground.
 	car.remove_meta("awaiting_ground")
 	car.set_meta("tow_pending",true)
 	car.set_meta("tow_pending_alternatives",alternatives)
@@ -564,7 +564,7 @@ func _tow_repair_safe(car: CharacterBody3D) -> bool:
 	if not is_instance_valid(emergency): return true
 	for fire in emergency.fires:
 		if not is_instance_valid(fire) or fire.is_queued_for_deletion() or fire.intensity <= 0: continue
-		# Fire's damage sphere is 1.4m; include the complete vehicle footprint.
+		# A esfera de dano do fogo tem 1.4m; inclui a pegada completa do veículo.
 		var local: Vector3 = car.to_local(fire.global_position)
 		if absf(local.x) <= car.half_width+1.4 and absf(local.z) <= car.half_length+1.4 and absf(local.y) < 3:
 			session.show_message("Espere o incêndio ser apagado antes de recuperar o veículo.")
@@ -578,7 +578,7 @@ func _recover_tow_truck() -> bool:
 	if truck.has_meta("tow_pending"): return false
 	if session.world.player.position.distance_to(truck.position) >= 5 or truck.horizontal_velocity.length() > .3: return false
 	if not _tow_repair_safe(truck): return false
-	# Reuse the existing body and cargo transform; never move it through obstacles.
+	# Reaproveita a transformação existente do corpo e da carga; nunca o move através de obstáculos.
 	truck.repair()
 	truck.engine_disabled = false
 	session.save_game()
@@ -656,7 +656,7 @@ func finish_tow_job() -> bool:
 
 func cancel_tow_job() -> bool:
 	if is_instance_valid(cargo) and cargo.has_meta("tow_pending"):
-		# Only an unmaterialized reservation is removed; physical cars remain.
+		# Só uma reserva não materializada é removida; carros físicos ficam.
 		session.controller.vehicles.erase(cargo)
 		cargo.queue_free()
 		cargo = null
@@ -775,7 +775,7 @@ func _restore_tow_vehicle(data: Dictionary, id: String, carried: bool):
 	var point := Vector3(data.position[0],data.position[1],data.position[2])
 	var car
 	if carried or data.get("pending",false):
-		# Cargo on the flatbed deliberately overlaps the truck, without a solid collider.
+		# A carga na plataforma se sobrepõe de propósito ao caminhão, sem colisor sólido.
 		car = preload("res://scripts/Vehicle.gd").new()
 		car.archetype = data.archetype
 		car.position = point
@@ -800,7 +800,7 @@ func _restore_tow_vehicle(data: Dictionary, id: String, carried: bool):
 	car.paint_color = Color.html(data.paint)
 	car.restore_glass(data.get("broken_glass",[]))
 	if data.get("pending",false) or car.has_meta("awaiting_ground"):
-		# Old saves defer at the exact saved position; only never-materialized
-		# reservations may select an alternative pickup slot.
+		# Saves antigos adiam na posição salva exata; só reservas nunca materializadas
+		# podem escolher uma vaga de coleta alternativa.
 		_reserve_tow_vehicle(car,bool(data.get("pending_alternatives",false)))
 	return car

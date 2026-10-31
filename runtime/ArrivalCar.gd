@@ -1,5 +1,5 @@
 extends "res://scripts/Vehicle.gd"
-## Original native M8 geometry with inherited swept driving and full hull.
+## Geometria nativa original do M8 com direção varrida herdada e casco inteiro.
 var model: Node3D
 var _last_distance := 0.0
 var _progress_anchor := Vector3.INF
@@ -54,10 +54,10 @@ func _drive_traffic(delta: float) -> void:
 		return
 	super._drive_traffic(delta)
 	if route == null: return
-	# The front sensor can alternate clear/blocked at braking distance. Its
-	# blocked_time then resets every few frames although the car never moves.
-	# Measure real displacement instead, while preserving signal waits and the
-	# intentional stop at the workshop.
+	# O sensor da frente pode alternar livre/bloqueado na distância de frenagem. O
+	# blocked_time então zera a cada poucos quadros embora o carro nunca se mova.
+	# Mede o deslocamento real em vez disso, preservando esperas de sinal e a
+	# parada intencional na oficina.
 	if not _progress_anchor.is_finite() or global_position.distance_to(_progress_anchor) > 1.5 or route_distance >= route.get_baked_length()-1.5:
 		_progress_anchor = global_position
 		_no_progress_seconds = 0.0
@@ -156,8 +156,8 @@ func _follow_recovery(delta: float) -> void:
 func _try_bypass() -> bool:
 	if not super._try_bypass(): return false
 	if absf(speed) < .3 and _rear_clear():
-		# Braking can leave the long M8 too close to turn its full hull.
-		# Make room physically, only with a clear rear corridor.
+		# A frenagem pode deixar o M8 comprido perto demais para virar o casco inteiro.
+		# Abre espaço fisicamente, só com corredor traseiro livre.
 		backoff_time = 2.4
 	return true
 
@@ -193,9 +193,9 @@ func _ready() -> void:
 	shape.position = bounds.get_center()
 	half_width = maxf(absf(bounds.position.x), absf(bounds.end.x))
 	half_length = maxf(absf(bounds.position.z), absf(bounds.end.z))
-	# Match the native vehicle's floor clearance: the full visual hull includes
-	# the tyres touching the road. Using it for horizontal clearance queries
-	# reports the supporting pavement as an obstacle in every adjacent lane.
+	# Acompanha a altura livre do veículo nativo: o casco visual inteiro inclui
+	# os pneus tocando a rua. Usá-lo para consultas de folga horizontal
+	# acusa o pavimento de apoio como obstáculo em toda faixa vizinha.
 	rotation_shape.size = bounds.size - Vector3(0, .15, 0)
 	sensor_shape.size = Vector3(bounds.size.x + .07, 1.2, 1)
 	external_input = true

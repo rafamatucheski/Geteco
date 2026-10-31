@@ -1,7 +1,7 @@
 extends Node
-## Furniture interactions use the real room and the original dressed player.
-## The physical body stays at its validated approach point; only the explicit
-## bed interaction moves the visual onto the mattress. No preview actor is made.
+## Interações com móveis usam a sala real e o jogador original vestido.
+## O corpo físico fica no ponto de aproximação validado; só a interação explícita
+## da cama move o visual para o colchão. Nenhum ator de prévia é criado.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const WEAPON_MODEL := preload("res://gameplay/ArsenalWeapon3D.gd")
 const CUSTOM := preload("res://gameplay/WeaponCustomization.gd")
@@ -58,7 +58,7 @@ func begin(id: String) -> bool:
 	_ground_standing_pose()
 	_visual_global = _player.visual.global_transform
 	_quality_viewport = get_viewport()
-	# Close-up cameras inherit the player's graphics policy, including low presets and temporal AA.
+	# As câmeras de close herdam a política gráfica do jogador, incluindo presets baixos e TAA.
 	# No transient quality override means exiting cannot restore stale menu preferences.
 	quality_state.clear()
 	station = id
@@ -92,7 +92,7 @@ func begin(id: String) -> bool:
 			framing = 3.7
 		"food":
 			focus = _model.to_global(_model.presentation_points.food)
-			# Look past the player's shoulder and the left-hinged open door.
+			# Olha por cima do ombro do jogador e da porta aberta com dobradiça à esquerda.
 			eye = focus + Vector3(1.7, .85, 3.4)
 			framing = 2.45
 			_set_fridge_open(true)
@@ -114,10 +114,10 @@ func begin(id: String) -> bool:
 	_camera_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	_camera_tween.tween_property(camera, "global_transform", destination, .55)
 	_camera_tween.tween_property(camera, "size", framing, .55)
-	# Orthographic shadow precision follows the camera's far plane. Keep the
-	# whole house, rather than allocating the shadow atlas across the city.
+	# A precisão da sombra ortográfica segue o plano distante da câmera. Mantém a
+	# casa inteira, em vez de distribuir o atlas de sombra pela cidade.
 	_camera_tween.tween_property(camera, "far", 18.0, .55)
-	# The compact controls occupy the right side of the viewport.
+	# Os controles compactos ocupam o lado direito da viewport.
 	_camera_tween.tween_property(camera, "h_offset", framing * .31, .55)
 	set_process(true)
 	return true
@@ -128,9 +128,9 @@ func refresh_outfit() -> void:
 		_update_sole_contacts()
 
 func _update_sole_contacts() -> void:
-	# Mobile rendering lacks ambient contact occlusion. These small, soft sole
-	# contacts complement the full directional shadow without changing its
-	# bias or lowering the physically grounded boots into the floor.
+	# A renderização Mobile não tem oclusão de contato ambiente. Estes pequenos contatos
+	# suaves de sola complementam a sombra direcional inteira sem mudar o
+	# bias nem afundar no chão as botas fisicamente apoiadas.
 	if is_instance_valid(_sole_contacts): _sole_contacts.free()
 	_sole_contacts = Node3D.new()
 	_sole_contacts.name = "SoleContactOcclusion"
@@ -159,9 +159,9 @@ func _update_sole_contacts() -> void:
 		if direction.length_squared() > .0001: contact.global_basis = Basis.looking_at(direction.normalized())
 
 func _ground_standing_pose() -> void:
-	# Walking's blended ankle rotations leave the idle boots on their toes.
-	# Use authored flat soles and solve the legs against that support, then
-	# align the real skinned sole vertices to the visible oak floor once.
+	# As rotações de tornozelo mescladas da caminhada deixam as botas paradas na ponta dos pés.
+	# Usa solas planas escritas e resolve as pernas contra esse apoio, depois
+	# alinha uma vez os vértices reais da sola com pele ao piso de carvalho visível.
 	var skeleton: Skeleton3D = _player.skeleton
 	if not is_instance_valid(skeleton): return
 	skeleton.set_bone_pose_position(_player.hips,_player.hip_rest)
@@ -209,8 +209,8 @@ func preview_weapon(id: String, force := false, custom_state: Variant = null) ->
 	_model.add_child(weapon_preview)
 	var muzzle := WEAPON_MODEL.build_cached(weapon_preview, id)
 	CUSTOM.fit(weapon_preview,id,session.world.gameplay.customization if custom_state == null else custom_state,muzzle)
-	# Guns are authored pointing -Z. Lay the original side profile flat on the
-	# bench and centre the geometry from its actual bounds, including long arms.
+	# As armas são escritas apontando para -Z. Deita o perfil lateral original na
+	# bancada e centra a geometria pelos limites reais, incluindo armas longas.
 	weapon_preview.basis = Basis(Vector3.UP, PI * .5) * Basis(Vector3.FORWARD, PI * .5)
 	var bounds := AABB()
 	var first := true
@@ -238,7 +238,7 @@ func set_rest_amount(value: float) -> void:
 	var bed: Vector3 = _model.presentation_points.time
 	var lying := Transform3D(Basis(Vector3.RIGHT, -PI * .5) * Basis(Vector3.UP, PI), _model.to_global(bed + Vector3(0, .95, .97)))
 	_player.visual.global_transform = _visual_global.interpolate_with(lying, smoothstep(0.0, 1.0, amount))
-	# Lift over the mattress during the deliberate lay-down/get-up motion.
+	# Eleva sobre o colchão durante o movimento deliberado de deitar/levantar.
 	_player.visual.global_position.y += sin(amount * PI) * .4
 
 func rest_pose(value: float) -> void:
@@ -269,9 +269,9 @@ func _start_mirror() -> void:
 	reflection.projection = Camera3D.PROJECTION_ORTHOGONAL
 	reflection.keep_aspect = Camera3D.KEEP_HEIGHT
 	reflection.size = 2.05
-	# Orthographic specular still uses eye distance. Put the reflected eye
-	# behind the glass, clipping the wardrobe at its front face, so nearby
-	# hair and cloth retain their normal highlights instead of blowing out.
+	# O especular ortográfico ainda usa a distância do olho. Põe o olho refletido
+	# atrás do vidro, recortando o guarda-roupa na face da frente, para que cabelo e
+	# tecido próximos mantenham os brilhos normais em vez de estourar.
 	reflection.near = 3.09
 	reflection.far = 19.07
 	mirror_viewport.add_child(reflection)

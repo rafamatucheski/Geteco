@@ -1,6 +1,6 @@
 extends Node3D
-## Presentation-only counterpart of V1 HarborAutoService.
-## Services.gd remains the sole owner of eligibility, money, repair and wanted state.
+## Contraparte só de apresentação do HarborAutoService da V1.
+## O Services.gd continua o único dono de elegibilidade, dinheiro, reparo e estado de procurado.
 
 const EFFECT_RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
 const SHUTTER_CLOSED_Y := 1.72
@@ -106,7 +106,7 @@ func cancel_service() -> void:
 	set_shutter_open(true)
 
 func _service_stream() -> AudioStreamWAV:
-	# Same bounded looping friction bed used by V1's ProceduralAudio fallback.
+	# O mesmo fundo de atrito em loop limitado usado pelo recurso ProceduralAudio da V1.
 	var sample_rate := 22050
 	var samples := int(sample_rate * .8)
 	var data := PackedByteArray()

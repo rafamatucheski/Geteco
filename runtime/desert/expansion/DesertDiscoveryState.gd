@@ -1,6 +1,6 @@
 extends RefCounted
-## Optional caches have their own save key and never advance story flags.
-## The economy receipt is authoritative when a save restores the wallet first.
+## Esconderijos opcionais têm chave de save própria e nunca avançam flags da história.
+## O recibo da economia é o oficial quando um save restaura a carteira primeiro.
 const KEY := "desert_discoveries"
 const REWARDS := {"desert_relic_station":950,"desert_relic_mine":1650,"desert_relic_wagon":1250,"desert_relic_wreck":700}
 

@@ -1,5 +1,5 @@
 extends "res://assets/CivilianModel.gd"
-## One shared human rig, with continuous hands and breathing in the active room.
+## Um rig humano compartilhado, com mãos e respiração contínuas na sala ativa.
 var home_activity := "read"
 
 func _pose(delta: float) -> void:
@@ -8,8 +8,8 @@ func _pose(delta: float) -> void:
 		head_node.rotation=Vector3(.30+sin(clock*.6)*.018,sin(clock*.45)*.035,0)
 		return
 	if home_activity!="sleep": return
-	# The whole native rig lies on its back; the head rests on the authored
-	# pillow while the trunk and straight legs remain supported by the mattress.
+	# O rig nativo inteiro deita de costas; a cabeça descansa no travesseiro
+	# escrito enquanto o tronco e as pernas esticadas ficam apoiados no colchão.
 	pelvis.position=Vector3(0,PELVIS_Y,0)
 	pelvis.rotation=Vector3.ZERO
 	spine.rotation=Vector3(sin(clock*1.35)*.006,0,0)

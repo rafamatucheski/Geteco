@@ -1,5 +1,5 @@
 extends RefCounted
-## Cosmetic history derived from the persisted identity. No health changes or frame work.
+## Histórico cosmético derivado da identidade persistida. Sem mudar vida nem trabalho por quadro.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const CIVILIAN := ["besouro_1300", "mare_microvan", "toco_minitruck", "union_sedan", "sedan_classic", "metro_hatch", "station_wagon", "nordic_estate", "courier_van", "polar_van", "ranch_single", "ranch_pickup", "lumber_pickup_4x4", "atlas_crew_pickup", "sertao_trail_pickup", "sport_estate", "summit_suv", "vale_crossover"]
 # Bed interior: floor height, center Z, usable width, usable length (model coordinates).
@@ -14,7 +14,7 @@ static var _textures: Dictionary = {}
 static var _loads: Dictionary = {}
 static var _cargo_material: StandardMaterial3D
 static var _open_beds: Dictionary = {}
-static var enabled := true # Process-local A/B control for the rendered measurement harness.
+static var enabled := true # Controle A/B local ao processo para o harness de medição renderizada.
 
 static func profile(id: String, identity: String) -> Vector2i:
 	if id not in CIVILIAN or identity.is_empty(): return Vector2i.ZERO
@@ -81,7 +81,7 @@ static func _texture(level: int) -> ImageTexture:
 				dust = Color("70412c").lerp(Color("a3734e"), rng.randf() * .6)
 				dust.a = smoothstep(.50, .65, n) * .86
 			image.set_pixel(x, y, dust)
-	# Short, irregular scuffs; most of the factory paint stays exposed.
+	# Arranhões curtos e irregulares; a maior parte da pintura de fábrica fica exposta.
 	for scratch in (14 if level == 1 else 30):
 		var start := Vector2i(rng.randi_range(2, 110), rng.randi_range(2, 125))
 		for step in rng.randi_range(3, 15):
@@ -139,7 +139,7 @@ static func _load_mesh(kind: int) -> ArrayMesh:
 				for x in [-.52, .41]: _box(tool, Vector3(x, .14, z), Vector3(.025, .28, .055), Color("343d38"))
 		3:
 			_crate(tool, Vector3(-.38, .20, -.25), Vector3(.52, .40, .58))
-			# Closed metal toolbox with lid, latches and handle.
+			# Caixa de ferramentas de metal fechada, com tampa, travas e alça.
 			_box(tool, Vector3(.30, .16, .20), Vector3(.66, .32, .43), Color("435c62"))
 			_box(tool, Vector3(.30, .33, .20), Vector3(.69, .04, .46), Color("617778"))
 			for x in [.08, .52]: _box(tool, Vector3(x, .25, .433), Vector3(.06, .12, .025), Color("b5aea0"))
@@ -153,8 +153,8 @@ static func _load_mesh(kind: int) -> ArrayMesh:
 static func _open_bed(model: Node3D, id: String) -> void:
 	if model.has_meta("usage_open_bed"): return
 	model.set_meta("usage_open_bed", true)
-	# These exports include a solid body cap above the authored liner. Open only
-	# its rear upward faces, keeping the separate bed walls, tailgate and cabin.
+	# Estes exports incluem uma tampa sólida de carroceria acima do forro escrito. Abre só
+	# as faces traseiras voltadas para cima, mantendo separadas as paredes da caçamba, a tampa traseira e a cabine.
 	var body := model.get_child(0) as MeshInstance3D
 	if body == null or not body.mesh is ArrayMesh: return
 	if _open_beds.has(id):

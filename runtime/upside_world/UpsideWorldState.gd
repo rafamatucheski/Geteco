@@ -1,5 +1,5 @@
 extends RefCounted
-## Ephemeral, entry-driven state. The hallucination is never a save location.
+## Estado efêmero, guiado pela entrada. A alucinação nunca é um local de save.
 const PLACE := "harbor_haunted_house"
 const EXTREME := 90.0
 const MIN_DURATION := 10.0
@@ -33,7 +33,7 @@ func tick(delta: float, paused := false) -> bool:
 	return elapsed>=duration
 
 func cancel() -> void:
-	# Clearing the pending entry does not permit the same already-consumed entry.
+	# Limpar a entrada pendente não libera a mesma entrada já consumida.
 	pending_entry=0
 	active=false
 	elapsed=0.0

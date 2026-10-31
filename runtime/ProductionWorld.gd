@@ -71,7 +71,7 @@ const DENSITY_STARS := 4
 const DENSITY_STARS_SCALE := 0.6
 const DENSITY_TRIM_MIN_DISTANCE := 30.0
 var density_scale := 1.0
-# Independent authored street demand; emergency and area ceilings do not compound.
+# Demanda de rua escrita e independente; os tetos de emergência e de área não se somam.
 var area_density_scale := Vector2.ONE
 # Como em GTA: gente e trânsito ambiente nascem e somem num anel em volta do jogador,
 # sempre fora do quadro da câmera, para nada aparecer ou desaparecer na tela.
@@ -169,7 +169,7 @@ func build() -> void:
 		var result: Dictionary = store.load_into(state)
 		if result.get("invalid",false): block_saving("o save escolhido não passou na validação")
 		loaded_save = result.get("ok",false)
-	# The menu may read a journey, but must never persist preview-time changes.
+	# O menu pode ler uma jornada, mas nunca pode persistir mudanças feitas na prévia.
 	if world.has_meta("menu_preview"): no_save = true
 	# "Jogar aqui" do editor de mundo: Dante nasce no ponto pedido, sem gravar nada.
 	play_at_request = _play_at_argument()
@@ -229,8 +229,8 @@ func build() -> void:
 	world.maciota_place.interior_origin = Vector3(0,0,-2000)
 	SESSION_OPS.attach(world, world.maciota_place, self, diagnostic_build)
 	await get_tree().process_frame
-	# Select the saved/player-requested cell before _ready builds any geometry.
-	# Previously we built the region's default spawn first, then threw it away.
+	# Escolhe a célula salva/pedida pelo jogador antes de o _ready montar qualquer geometria.
+	# Antes montávamos primeiro o spawn padrão da região e depois o jogávamos fora.
 	var first_focus := Vector3.INF if _eager_preparation_for_benchmark() else _startup_focus_hint()
 	var initial_region := _build_region(state.region_id,first_focus)
 	if not await _prepare_geography(initial_region): return
@@ -318,10 +318,10 @@ func build() -> void:
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	curtain.set_stage(.84, "Acendendo a cidade…")
 	var road_point := nearest_road(world.player.position)
-	# The prototype coupe previously used the nearest travelling lane. After
-	# the workshop relocation that put a fresh default car across both guided
-	# arrivals. Saved vehicles keep their own restoration below; only the
-	# unsaved default gets a supported off-road parking pose in the freight yard.
+	# O cupê protótipo antes usava a faixa de circulação mais próxima. Depois
+	# da mudança da oficina isso punha um carro padrão novo atravessado nas duas
+	# chegadas guiadas. Veículos salvos mantêm a própria restauração abaixo; só o
+	# padrão não salvo ganha uma pose de estacionamento apoiada fora da rua no pátio de carga.
 	var default_car_parked := false
 	if saved_vehicle.is_empty() and state.region_id == "harbor":
 		for offset in [Vector3(-18.5,.12,6.3),Vector3(-20,.12,7.0),Vector3(-18.5,.12,4.9)]:
@@ -332,19 +332,19 @@ func build() -> void:
 			break
 	if not default_car_parked: world.driving.car.place(road_point+Vector3.UP*.12,road_yaw(road_point))
 	_restore_player_vehicle()
-	# A remote on-foot checkpoint may select a road outside the initial chunks
-	# (e.g. the highway above the quarry). The unsaved starter car must request
-	# its floor before physics starts, just like restored distant vehicles do.
+	# Um checkpoint a pé remoto pode escolher uma rua fora dos chunks iniciais
+	# (por exemplo, a rodovia acima da pedreira). O carro inicial não salvo precisa pedir
+	# o chão antes de a física começar, como fazem os veículos distantes restaurados.
 	if saved_vehicle.is_empty() and not vehicle_position_clear(world.driving.car,world.driving.car.position,world.driving.car.rotation.y):
 		world.driving.car.set_meta("awaiting_ground",true)
 		world.driving.car.set_physics_process(false)
-	# Weather must exist before the world is marked ready_for_play: the
-	# environment/sun start out at the raw defaults set in build() above
-	# (a flat pale sky colour), and Weather._ready() is what grades them into
-	# the saved time-of-day/season. Creating it after ready_for_play left a
-	# frame window where the player already saw and could move through the
-	# world under that raw default look, reading as an icy, washed-out scene
-	# until Weather caught up.
+	# O clima precisa existir antes de o mundo ser marcado ready_for_play: o
+	# ambiente/sol começam nos padrões crus definidos em build() acima
+	# (uma cor de céu pálida e chapada), e é o Weather._ready() que os ajusta para
+	# a hora do dia/estação salva. Criá-lo depois de ready_for_play deixava uma
+	# janela de quadros em que o jogador já via e podia andar pelo
+	# mundo com esse visual padrão cru, que parecia uma cena gelada e lavada
+	# até o Weather alcançar.
 	var weather = SESSION_OPS.instantiate(preload("res://runtime/Weather.gd"), self)
 	weather.controller = self
 	SESSION_OPS.attach(world, weather, self, diagnostic_build)
@@ -423,9 +423,9 @@ func build() -> void:
 	SESSION_OPS.attach(world, world_audio, self, diagnostic_build)
 	_update_chairlift_schedule()
 	curtain.set_stage(.97, "Finalizando…")
-	# GarageRewards admits a saved driver asynchronously from restore_location.
-	# Its body animation owns input until completion; gating the session early
-	# would make Driving cancel that restoration on the next physics frame.
+	# O GarageRewards admite um motorista salvo de forma assíncrona a partir de restore_location.
+	# A animação de corpo dele é dona da entrada até terminar; travar a sessão cedo
+	# faria o Driving cancelar essa restauração no próximo quadro de física.
 	while _startup_driver_pending():
 		await get_tree().physics_frame
 	var restored_session_ready: bool = session.ready_for_play
@@ -446,8 +446,8 @@ func build() -> void:
 	_prewarm_route_jit()
 	# O jogador já está no ponto salvo: estações próximas na árvore ainda sob a cortina (só recolocadas).
 	if is_instance_valid(urban_transit): urban_transit.refresh(true)
-	# First C# route resolution must finish while the startup curtain owns input.
-	# Reuse the real terminal curve later; keep its cost in the loading trace.
+	# A primeira resolução de rota em C# precisa terminar enquanto a cortina de partida é dona da entrada.
+	# Reaproveita a curva real do terminal depois; mantém o custo no trace de carregamento.
 	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.terminal_operations):
 		urban_transit.terminal_operations.prepare_startup_route()
 		await urban_transit.terminal_operations.prepare_startup_passenger_meshes()
@@ -480,8 +480,8 @@ func build() -> void:
 	if is_instance_valid(world.traffic_yield): world.traffic_yield.set_physics_process(true)
 	if is_instance_valid(background_preparation): background_preparation.set_process(true)
 
-## Prepare resident gameplay and route data under the curtain. Distant native
-## worlds no longer build disposable geometry; resource I/O is queued after play.
+## Prepara o jogo residente e os dados de rota sob a cortina. Mundos nativos
+## distantes não montam mais geometria descartável; o I/O de recurso entra na fila depois de jogável.
 func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	var incremental := true
 	var phase_traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
@@ -513,8 +513,8 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	PIPELINE_PROBE.stage("fleet_shaders")
 	var stage_traced := phase_traced
-	# The existing carbonized textures cost ~4.5 ms on first use. Build their
-	# shared cache under the loading curtain, without creating fires or wrecks.
+	# As texturas carbonizadas existentes custam ~4.5 ms no primeiro uso. Monta o
+	# cache compartilhado delas sob a cortina de carregamento, sem criar fogos nem destroços.
 	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._char(false)
 	# O primeiro tiro que muda o desgaste também precisa destes recursos.
 	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._scratches(0)
@@ -532,8 +532,8 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	if is_instance_valid(mark_primer): mark_primer.queue_free()
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	stage_traced = _prewarm_mark("damage_marks", stage_traced)
-	# Explosion takes and immutable fire presentation were built at detonation.
-	# Keep their bounded resources ready, without spawning a live incident.
+	# Os takes de explosão e a apresentação imutável de fogo eram montados na detonação.
+	# Mantém esses recursos limitados prontos, sem criar um incidente vivo.
 	if curtain != null:
 		curtain.set_stage(.44,"Carregando áudio…")
 		await get_tree().process_frame
@@ -611,9 +611,9 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 		world.add_child(detached)
 		_trace_cost("startup:distant_prepare:"+id,phase_traced)
 		phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
-		# Desert's prewarm prepares shared terrain/material data only. Native
-		# worlds used to build/discard all cells here. Those procedural builders
-		# remain in proximity streaming, never in the background resource queue.
+		# O pré-aquecimento do deserto prepara só dados compartilhados de terreno/material. Os mundos
+		# nativos montavam/descartavam todas as células aqui. Esses montadores procedurais
+		# continuam no streaming por proximidade, nunca na fila de recursos em segundo plano.
 		if id == "desert" or _eager_preparation_for_benchmark():
 			if incremental: await detached.prewarm_incremental()
 			else: detached.prewarm()
@@ -698,8 +698,8 @@ func _hold_fleet_scenes() -> void:
 			var scene := load(definition.scene)
 			if scene != null: _fleet_scenes.append(scene)
 
-## Populate the existing per-model merge plans before the first dispatch.
-## Raw PackedScene shader warm-up does not run FleetCatalog decorators.
+## Preenche os planos de fusão por modelo existentes antes do primeiro despacho.
+## O aquecimento de shader de PackedScene cru não roda os decoradores do FleetCatalog.
 func _prewarm_dispatch_models() -> void:
 	var fleet := preload("res://runtime/FleetCatalog.gd")
 	var rules := preload("res://gameplay/dispatch/DispatchRules.gd")
@@ -776,8 +776,8 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> 
 	await _prewarm_dispatch_models()
 	var fleet := preload("res://runtime/FleetCatalog.gd")
 	var effects := preload("res://gameplay/emergency/EffectsPrewarm.gd")
-	# Warm the decorated production models as well as their retained source scenes.
-	# A spare, non-current camera at the origin never exercised their GPU passes.
+	# Aquece os modelos de produção decorados e também as cenas-fonte retidas.
+	# Uma câmera reserva, não atual, na origem nunca exercitava as passadas de GPU deles.
 	# Sob a cortina (runtime/LoadingTurbo.gd) vão 4 modelos por vez, numa grade 2x2 bem dentro do
 	# quadro (10 e 13 m à frente, ±2,2 m de lado): as mesmas duas passagens de desenho para cada um,
 	# um quarto dos quadros. Era 2,9 s de "Compilando shaders do tráfego" no release de 21/10, um
@@ -833,7 +833,7 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> 
 					var side := 0.0 if batch.size() == 1 else (-2.2 if slot % 2 == 0 else 2.2)
 					copy.global_position = camera.global_position - camera.global_basis.z * (9.0 + row * 4.0) + camera.global_basis.x * side
 					dim_copies.append(copy)
-			# Two actual draws, with a finite wait when the window is minimized.
+			# Dois desenhos reais, com espera finita quando a janela está minimizada.
 			var draws: Array[int] = [0]
 			var count_draw := func() -> void: draws[0] += 1
 			RenderingServer.frame_post_draw.connect(count_draw)
@@ -972,16 +972,16 @@ func _request_fleet_scenes_early() -> void:
 		if ResourceLoader.load_threaded_request(path) == OK: _early_fleet_paths[path] = true
 
 func _retain_fleet_paths(paths: Array[String], retained: Array[Resource]) -> void:
-	# The headless dummy renderer cannot concurrently allocate these mesh RIDs.
-	# It still loads/retains the real resources, sequentially, for contract tests.
+	# O renderizador dummy headless não consegue alocar esses RIDs de malha em paralelo.
+	# Ele ainda carrega/retém os recursos reais, em sequência, para os testes de contrato.
 	if DisplayServer.get_name() == "headless":
 		for path in paths:
 			var resource := load(path)
 			if resource != null: retained.append(resource)
 			await get_tree().process_frame
 		return
-	# Bound resource allocation/upload pressure instead of flooding the worker
-	# pool with every vehicle at once. Keep a frame between completed requests.
+	# Limita a pressão de alocação/envio de recursos em vez de inundar o pool de
+	# workers com todos os veículos de uma vez. Mantém um quadro entre pedidos concluídos.
 	var requested: Array[String] = []
 	for path in paths:
 		requested.append(path)
@@ -1010,8 +1010,8 @@ func _startup_driver_pending() -> bool:
 	return false
 
 func _settle_startup() -> bool:
-	# Finish destination streaming and first audio/physics updates before fading.
-	# Admission can legitimately leave distant work pending; keep the wait bounded.
+	# Termina o streaming do destino e as primeiras atualizações de áudio/física antes do fade.
+	# A admissão pode legitimamente deixar trabalho distante pendente; mantém a espera limitada.
 	var stable_frames := 0
 	for frame in 240:
 		await get_tree().process_frame
@@ -1024,9 +1024,9 @@ func _settle_startup() -> bool:
 
 func _prepare_geography(candidate: Node3D) -> bool:
 	if candidate == null: return false
-	# One worker owns one off-tree region. No scene-tree mutation or gameplay
-	# consumer may access its mutable dictionaries until the task has been joined.
-	# Dummy rendering retains the sequential contract-test path.
+	# Um worker é dono de uma região fora da árvore. Nenhuma mutação na árvore de cena nem
+	# consumidor do jogo pode acessar os dicionários mutáveis dela até a tarefa ter sido unida.
+	# A renderização dummy mantém o caminho sequencial dos testes de contrato.
 	if DisplayServer.get_name() == "headless":
 		candidate.prepare_data()
 		return true
@@ -1130,9 +1130,9 @@ func _startup_focus_hint() -> Vector3:
 
 func _startup_position() -> Vector3:
 	if not play_at_request.is_empty(): _resolve_play_at()
-	# Mount and frame the saved destination from the first rendered frame.  The
-	# previous Maciota-first staging exposed unloaded pale terrain/building chunks
-	# for several seconds before restore_location teleported Dante to the save.
+	# Monta e enquadra o destino salvo desde o primeiro quadro renderizado. A
+	# encenação antiga com o Maciota primeiro expunha chunks pálidos de terreno/prédio não carregados
+	# por vários segundos antes de restore_location teletransportar o Dante para o save.
 	var fallback: Vector3 = world.maciota_place.exterior_return+Vector3(0,.08,2) if state.region_id == "harbor" else region.spawn_position+Vector3.UP*.08
 	if not state.place_id.is_empty(): return fallback
 	var saved_vehicle := starting_vehicle()
@@ -1338,21 +1338,21 @@ func _persistent_vehicle_support() -> Dictionary:
 			if not support.has(bus_region): continue
 			for index in bus.sections.size():
 				support[bus_region].append({"position":bus.sections[index].global_position,"radius":bus.LENGTHS[index]*.5+1.0})
-			# Retain the admitted look-ahead cell as well as the current hull.
-			# Otherwise streaming can evict it before the next physics step.
+			# Retém a célula de antecipação admitida e também o casco atual.
+			# Senão o streaming pode despejá-la antes do próximo passo de física.
 			support[bus_region].append({"position":bus.global_position-bus.global_basis.z*8,"radius":2.0})
 	for car in vehicles:
 		if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.visible: continue
-		# A body suspended by streaming still owns its floor request. Excluding
-		# it here would evict the chunk before the ground check can resume it.
+		# Um corpo suspenso pelo streaming ainda é dono do pedido de chão. Excluí-lo
+		# aqui despejaria o chunk antes de a checagem de chão poder retomá-lo.
 		if not car.is_physics_processing() and not car.has_meta("awaiting_ground") and not car.has_meta("desert_drag_physics") and not car.get_meta("armored_transport",false): continue
 		if _is_ambient_traffic(car) and car != world.driving.car and not car.get_meta("gang_hostile",false): continue
 		var persistent: bool = _is_persistent_vehicle(car)
 		if not persistent:
 			if car.traffic: continue
 			if car.global_position.distance_to(world.player.global_position) > 145:
-				# Retire before releasing its floor, not at the population tick up
-				# to .25 s later. Save owners must never see a falling parked car.
+				# Aposenta antes de soltar o chão, não no tick de população até
+				# .25 s depois. Donos de save nunca podem ver um carro estacionado caindo.
 				car.set_meta("distance_despawn", true)
 				car.set_physics_process(false)
 				car.queue_free()
@@ -1362,8 +1362,8 @@ func _persistent_vehicle_support() -> Dictionary:
 		var radius: float = Vector2(car.half_width,car.half_length).length()+0.5
 		support[id].append({"position":car.global_position,"radius":radius})
 		if car.get_meta("port_work_vehicle",false) or car.get_meta("race_owned",false) or car.get_meta("armored_transport",false):
-			# PortLogistics admits this same point before moving. Keep its chunk
-			# until the request moves on; the hull radius alone does not cover it.
+			# O PortLogistics admite este mesmo ponto antes de mover. Mantém o chunk
+			# até o pedido seguir adiante; só o raio do casco não o cobre.
 			support[id].append({"position":car.global_position-car.global_basis.z*(car.half_length+3),"radius":0.0})
 	return support
 
@@ -1409,11 +1409,11 @@ func _active_dispatch_support() -> Dictionary:
 		var ahead := car.global_position-car.global_basis.z*12.0
 		for point: Vector3 in [car.global_position,ahead]:
 			var source_owner := WORLD_CONNECTION.logical_region(point)
-			# This request retains cells only in an already resident owner. It must
-			# not mount distant regions or change the player's residency policy.
+			# Este pedido só retém células num dono já residente. Não pode
+			# montar regiões distantes nem mudar a política de residência do jogador.
 			if not regions.has(source_owner) or not is_instance_valid(regions[source_owner]): continue
 			support[source_owner].append({"position":point,"radius":radius if point == car.global_position else 0.0})
-	# Recomputed from live units: suspension, completion and removal release it.
+	# Recalculado a partir das unidades vivas: suspensão, conclusão e remoção o soltam.
 	return support
 
 func _update_physical_residency(point: Vector3) -> void:
@@ -1527,8 +1527,8 @@ func _commit_logical_region(next_region: String) -> void:
 	state.set_location(next_region)
 	region = regions[next_region]
 	world.street = region
-	# Player-owned and passenger-occupied vehicles retain the same instances,
-	# velocity, occupants and attachments; only their logical routing context changes.
+	# Veículos do jogador e com passageiro mantêm as mesmas instâncias,
+	# velocidade, ocupantes e acessórios; só o contexto lógico de rota muda.
 	if world.driving.occupied and is_instance_valid(world.driving.car): world.driving.car.set_meta("region_id",next_region)
 	if session != null and is_instance_valid(session.passenger_transport) and session.passenger_transport.riding and is_instance_valid(session.passenger_transport.car):
 		session.passenger_transport.car.set_meta("region_id",next_region)
@@ -1595,9 +1595,9 @@ func _restore_player_vehicle() -> void:
 	elif vehicle_position_clear(car,point,float(saved.yaw)):
 		car.place(point,float(saved.yaw))
 	else:
-		# The initial nearest-road pose may be the same obstructed saved pose.
-		# Admit the body before its first physics step; never let recovery push
-		# a loaded car through a solid or below the road.
+		# A pose inicial na rua mais próxima pode ser a mesma pose salva obstruída.
+		# Admite o corpo antes do primeiro passo de física; nunca deixa a recuperação empurrar
+		# um carro carregado através de um sólido ou para baixo da rua.
 		var admitted := false
 		for distance in [6.0,12.0,24.0,48.0]:
 			for direction in [Vector3.FORWARD,Vector3.BACK,Vector3.LEFT,Vector3.RIGHT]:
@@ -1631,8 +1631,8 @@ func capture_player_vehicle() -> void:
 func release_player_vehicle() -> void:
 	if not is_instance_valid(world.driving.car): return
 	var car: CharacterBody3D = world.driving.car
-	# queue_free during play is a deliberate removal, not a streamed/saved car.
-	# Keep unrelated garage/story snapshots and avoid reviving this body on load.
+	# queue_free durante o jogo é remoção deliberada, não um carro em streaming/salvo.
+	# Mantém snapshots sem relação de garagem/história e evita reviver este corpo ao carregar.
 	if car.is_queued_for_deletion() and not world.is_queued_for_deletion():
 		if starting_vehicle().get("vehicle_id", "") == car.vehicle_id:
 			state.world_state.vehicles = []
@@ -1680,8 +1680,8 @@ func _process_traced(delta: float) -> void:
 	_drain_pending_unmount()
 	_update_chairlift_schedule()
 	if travel_busy: return
-	# Admission routines own focus while awaiting collision synchronization.
-	# Following the old player position here would unload their destination.
+	# As rotinas de admissão são donas do foco enquanto esperam a sincronia de colisão.
+	# Seguir a posição antiga do jogador aqui descarregaria o destino dele.
 	if session == null or not session.ready_for_play or session.has_position_transition(): return
 	if not _p1_count_started and "--p1-count" in OS.get_cmdline_user_args():
 		_p1_count_started = true
@@ -1714,9 +1714,9 @@ func _process_traced(delta: float) -> void:
 		elif actor.position.distance_to(world.player.position) > POPULATION_DESPAWN and not _on_screen(actor.global_position,1.0):
 			world.people.remove_at(index)
 			actor.queue_free()
-	# Replenishment and equipment creation used to accumulate in this same
-	# quarter-second tick. Each may instantiate meshes/materials; admit one job
-	# per later frame, preserving population targets and all vehicle equipment.
+	# Reposição e criação de equipamento se acumulavam neste mesmo
+	# tick de quarto de segundo. Cada uma pode instanciar malhas/materiais; admite um trabalho
+	# por quadro seguinte, preservando as metas de população e todo equipamento de veículo.
 	_trim_density()
 	if _population_jobs.is_empty(): _population_jobs.assign(["citizen","traffic","equipment","equipment"])
 	footbridge_crossers.update(world, world.player.position, state.region_id, _population_cap())
@@ -1761,8 +1761,8 @@ func _process_traced(delta: float) -> void:
 				car.set_physics_process(true)
 		elif not car.traffic and car != world.driving.car and car.vehicle_id not in ["story_tow_vehicle","neco_tow_truck"] and not car.get_meta("residence_vehicle",false) and not car.get_meta("garage_reward",false) and not car.get_meta("port_work_vehicle",false) and not car.get_meta("secret_discovery_vehicle",false) and not car.get_meta("race_owned",false) and not car.get_meta("armored_transport",false) and car.position.distance_to(world.player.position) > 145:
 			vehicles.remove_at(index)
-			# Owners of a parked snapshot can distinguish streaming cleanup from
-			# an explicit removal without keeping a distant physical body alive.
+			# Donos de um snapshot estacionado conseguem distinguir a limpeza do streaming de
+			# uma remoção explícita sem manter vivo um corpo físico distante.
 			car.set_meta("distance_despawn", true)
 			STALL_WORK.finish("marker.vehicle_despawn", STALL_WORK.begin())
 			car.queue_free()
@@ -1879,8 +1879,8 @@ func _update_density() -> void:
 	# Chamado a cada 0,25 s: 1,0 -> 0,4 em ~1,5 s; volta em ~7,5 s (sem pisca-pisca com
 	# viaturas entrando e saindo).
 	density_scale = move_toward(density_scale,target,.1 if target < density_scale else .02)
-	# Area changes settle gradually too; removal still requires distance and being
-	# outside the camera, so existing visible traffic never vanishes at a border.
+	# Mudanças de área também assentam aos poucos; a remoção ainda exige distância e estar
+	# fora da câmera, então o trânsito visível existente nunca some numa fronteira.
 	area_density_scale.x = move_toward(area_density_scale.x,area_target.x,.02)
 	area_density_scale.y = move_toward(area_density_scale.y,area_target.y,.02)
 
@@ -1889,8 +1889,8 @@ func _population_cap() -> int:
 	return ceili(float(target)*minf(density_scale,area_density_scale.x)-.00001)
 
 func _traffic_cap() -> int:
-	# Vector2 components are float32; ignore their sub-entity rounding error at
-	# authored integer ceilings (for example 40 * .8 must remain 32, not 33).
+	# Os componentes de Vector2 são float32; ignora o erro de arredondamento abaixo de uma entidade nos
+	# tetos inteiros escritos (por exemplo, 40 * .8 precisa continuar 32, não 33).
 	return ceili(float(VC_TRAFFIC_TARGET if population_vc_enabled else TRAFFIC_TARGET)*minf(density_scale,area_density_scale.y)-.00001)
 
 ## Tira no máximo um pedestre e um carro civil por chamada, o mais longe do jogador e fora
@@ -1955,7 +1955,7 @@ func vehicle_position_clear(car: CharacterBody3D, point: Vector3, yaw: float) ->
 					if space.intersect_ray(PhysicsRayQueryParameters3D.create(support+Vector3.UP*.6,support-Vector3.UP*.5,1)).is_empty(): return false
 		return car.admits(poses,false)
 	var basis := Basis(Vector3.UP,yaw)
-	# Distant saved cars wait for their terrain before requesting streamed props.
+	# Carros salvos distantes esperam o terreno antes de pedir objetos em streaming.
 	for x in [-car.half_width*.8,car.half_width*.8]:
 		for z in [-car.half_length*.8,car.half_length*.8]:
 			var support: Vector3 = point+basis*Vector3(x,0,z)
@@ -2243,7 +2243,7 @@ func _draw_prewarm_step(step: String, curtain: CanvasLayer) -> void:
 		# quadros de 588-646 ms no desenho no release de 17/10. Depois dos GLBs do Meshy, já carregados acima.
 		"spawn_visuals": await preload("res://gameplay/emergency/SpawnVisualPrewarm.gd").run(world, curtain)
 		"street_fx": await preload("res://gameplay/street_physics/StreetEffectsPrewarm.gd").run(world, curtain)
-		# Warm after CityLook enables the final Mobile framebuffer (including glow).
+		# Aquece depois que o CityLook liga o framebuffer Mobile final (incluindo glow).
 		"reaction_visuals": await preload("res://gameplay/emergency/ReactionVisualPrewarm.gd").run(world, curtain)
 		"vehicle_interior": await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
 		# Tiros, impactos, explosão e armas na mão desenhados diante da câmera (cache de pipeline frio).
@@ -2286,8 +2286,8 @@ func _create_citizen() -> void:
 	var offset: Vector3 = point-center
 	var start: Vector3 = center-along*minf(margin,center.distance_to(segment.a)*.8)+offset
 	var finish: Vector3 = center+along*minf(margin,center.distance_to(segment.b)*.8)+offset
-	# Sidewalks sit above the road centreline; admit on their actual floor,
-	# rather than rejecting a clear sidewalk as a capsule inside the paving.
+	# As calçadas ficam acima da linha central da rua; admite no piso real delas,
+	# em vez de recusar uma calçada livre como cápsula dentro do calçamento.
 	var grounded: Array[Vector3] = []
 	for candidate in [point,start,finish]:
 		var ground: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(candidate+Vector3.UP*1.0,candidate-Vector3.UP*1.0,1))
@@ -2308,9 +2308,9 @@ func _create_citizen() -> void:
 	world.add_child(actor)
 	world.people.append(actor)
 
-## Keep the original walk where it is clear. At a junction or an obstruction,
-## use the supported part around the spawn instead of rejecting that whole
-## sidewalk. The same <=2 m admission samples and full lane capsule still apply.
+## Mantém a caminhada original onde está livre. Num cruzamento ou obstrução,
+## usa a parte apoiada em volta do spawn em vez de recusar a calçada
+## inteira. As mesmas amostras de admissão de <=2 m e a cápsula inteira da faixa continuam valendo.
 func _clip_citizen_route(point: Vector3, start: Vector3, finish: Vector3) -> PackedVector3Array:
 	if _on_carriageway(point) or CANAL_TUNNEL.reserves(Vector2(point.x,point.z),.5) or PORT_POLICY.contains_private_area(point): return PackedVector3Array()
 	if not session.position_clear(point+Vector3.UP*.06): return PackedVector3Array()
@@ -2340,8 +2340,8 @@ func _create_desert_citizen() -> void:
 		var slot: Dictionary = _desert_social_slots[slot_id]
 		var point: Vector3 = slot.point
 		var distance := point.distance_to(world.player.global_position)
-		# Small social spaces fit inside the city's 45 m exclusion ring. Admit
-		# their residents closer, still outside the camera and never on top of us.
+		# Espaços sociais pequenos cabem dentro do anel de exclusão de 45 m da cidade. Admite
+		# os moradores deles mais perto, ainda fora da câmera e nunca em cima de nós.
 		if distance < 12.0 or distance > POPULATION_SPAWN_MAX or _on_screen(point,1.0): continue
 		if not desert_social_route_clear(slot.route): continue
 		var actor = DESERT_SOCIAL_ACTOR.new()
@@ -2358,7 +2358,7 @@ func _create_desert_citizen() -> void:
 		return
 
 func desert_social_route_clear(route: PackedVector3Array) -> bool:
-	# Authoring may move buildings: reject the whole route, never just the spawn.
+	# A autoria pode mover prédios: recusa a rota inteira, nunca só o spawn.
 	var a := route[0]
 	var b := route[-1]
 	var steps := maxi(1,ceili(a.distance_to(b)/2.0))
@@ -2372,7 +2372,7 @@ func _pedestrian_route_sweep_clear(route: PackedVector3Array) -> bool:
 	var b := route[-1]
 	var query := PhysicsShapeQueryParameters3D.new()
 	var capsule := CapsuleShape3D.new()
-	# Include Actor's small walking-lane offset in the swept clearance.
+	# Inclui o pequeno desvio de faixa de caminhada do Actor na folga varrida.
 	capsule.radius = .72 if a.distance_squared_to(b) > .01 else .32
 	capsule.height = 1.7
 	query.shape = capsule
@@ -2401,7 +2401,7 @@ func _create_traffic_vehicle() -> void:
 		point = route.sample_baked(offset,true)
 		if not _spawn_point_allowed(point,3.0) or (not traffic_holds.is_empty() and in_traffic_hold(point)): continue
 		var ahead := route.sample_baked(minf(offset+.5,route.get_baked_length()),true)-route.sample_baked(maxf(offset-.5,0),true)
-		# The admitted road owns the context, including when two regions are resident.
+		# A rua admitida é dona do contexto, inclusive quando duas regiões estão residentes.
 		var spawn_region := str(slot.road.get("region", WORLD_CONNECTION.logical_region(point)))
 		var id: String = TRAFFIC_ROSTER.select(spawn_region, str(slot.road.id))
 		if spawn_region != "desert" and randi_range(0,9)==0: id=TRAFFIC_MOTORCYCLE_TYPES.pick_random()
@@ -2437,7 +2437,7 @@ func travel(region_id: String,destination_override := Vector3.INF) -> bool:
 	if session.passenger_transport.riding or world.gameplay.health <= 0: return false
 	travel_busy = true
 	_travel_checked(region_id,destination_override)
-	return true # Request admitted; completion owns the save after physical admission.
+	return true # Pedido admitido; a conclusão é dona do save depois da admissão física.
 
 func _travel_checked(region_id: String,destination_override := Vector3.INF) -> void:
 	var was_paused := get_tree().paused
@@ -2448,10 +2448,10 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 	var was_resident := regions.has(region_id) and is_instance_valid(regions[region_id])
 	var next_region: Node3D = _mount_region(region_id,destination_override)
 	var destination: Vector3 = (destination_override if destination_override.is_finite() else next_region.spawn_position)+Vector3.UP*.12
-	# Fast travel pauses normal streaming; finish the destination cell under the transition.
+	# A viagem rápida pausa o streaming normal; termina a célula de destino sob a transição.
 	next_region.set_focus(destination,true)
 	prepare_connection_at(destination)
-	# Keep the source region intact until the destination has synchronized collision.
+	# Mantém a região de origem intacta até o destino ter sincronizado a colisão.
 	for i in 3: await get_tree().physics_frame
 	if not session.position_clear(destination):
 		if not was_resident: _unmount_region(region_id)
@@ -2465,8 +2465,8 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 	session._cancel_for(&"travel")
 	world.gameplay.on_region_changed()
 	world.gameplay.emergency.reset_region()
-	# Fast travel unloads the population. Logical city/mountain seam crossings do
-	# not call this, so an active reaction survives an ordinary region_id change.
+	# A viagem rápida descarrega a população. Travessias lógicas de costura cidade/montanha
+	# não chamam isto, então uma reação ativa sobrevive a uma troca comum de region_id.
 	if is_instance_valid(civilian_reactions): civilian_reactions.reset_population()
 	if is_instance_valid(roadside_parking): roadside_parking.reset()
 	for citizen in world.people:

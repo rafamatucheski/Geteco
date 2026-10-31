@@ -87,8 +87,8 @@ func reconcile() -> void:
 		if session.desert.drag.active: heat_phase=str(session.desert.drag.phase)
 		elif is_instance_valid(session.desert.drag.open_meet): heat_phase=session.desert.drag.open_meet.phase
 	barks.update(session,point,suppressed or session.world.gameplay.stars>0,_elapsed)
-	# Activity ownership freezes people but is not a dialogue/music mute. Keep
-	# local spectator sound around the start while the score follows the race.
+	# A posse pela atividade congela as pessoas mas não é um mudo de diálogo/música. Mantém
+	# o som local dos espectadores em volta da largada enquanto a trilha segue a corrida.
 	var audio_suppressed: bool = session.modal or session.dialogue_open or session.world.gameplay.health<=0 or session.is_transition_blocked()
 	ambience.update(point,audio_suppressed,_elapsed,workshop_active,heat_phase,barks.is_speaking())
 	var admitted := false
@@ -181,8 +181,8 @@ func _explosion(origin: Vector3, radius: float, _source: Node) -> void: alert_cr
 func _clear() -> void:
 	if is_instance_valid(score) and (not is_instance_valid(gameplay) or gameplay.health<=0): score.stop()
 	barks.stop()
-	# Streaming the crowd out during a pass is still the same visit. Do not
-	# replay everyone's greeting after each of the night's four returns.
+	# Tirar a multidão do streaming durante uma passada ainda é a mesma visita. Não
+	# repete o cumprimento de todo mundo depois de cada um dos quatro retornos da noite.
 	var same_visit: bool = is_instance_valid(score) and score.mode in ["staging","racing","braking","results"]
 	if not same_visit:
 		barks.heard.clear()

@@ -1,5 +1,5 @@
 extends Node
-## A temporary input/time owner. Inventory remains owned by the field inventory.
+## Dono temporário de entrada/tempo. O inventário continua com o inventário de campo.
 const VIEW := preload("res://ui/hud/EquipmentWheelView.gd")
 const CATALOG := preload("res://gameplay/WeaponCatalog.gd")
 const GRID := preload("res://systems/inventory/GridInventory.gd")
@@ -70,7 +70,7 @@ func _context_valid() -> bool:
 
 func open() -> bool:
 	if active or not _context_valid() or session.world.player.input_locked: return false
-	# RAGE restores its own baseline before we acquire the global clock.
+	# A RAGE restaura a própria base antes de pegarmos o relógio global.
 	if is_instance_valid(session.world.gameplay.rage): session.world.gameplay.rage.cancel("equipment_wheel")
 	if session.world.camera.mouse_orbit_active(): session.world.camera._end_mouse_orbit()
 	_previous_scale = Engine.time_scale
@@ -130,7 +130,7 @@ func _process(delta: float) -> void:
 	if not _context_valid() or session.world.gameplay.health < _opened_health:
 		cancel()
 		return
-	# Inventory may change through a mission while the world is still running.
+	# O inventário pode mudar por uma missão enquanto o mundo ainda roda.
 	_refresh_seconds += delta / maxf(Engine.time_scale, 0.001)
 	if _refresh_seconds >= 0.25:
 		_refresh_seconds = 0.0
@@ -146,8 +146,8 @@ func handle_input(event: InputEvent) -> bool:
 	if event.is_action_released("weapon_wheel"):
 		close(true)
 	elif event.is_action_pressed("weapon_wheel"):
-		# The controller hold button also navigates older menus. Repeated presses
-		# must not cycle the weapon while this component owns that button.
+		# O botão de segurar do controle também navega menus antigos. Toques repetidos
+		# não podem trocar a arma enquanto este componente é dono desse botão.
 		pass
 	elif event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel"):
 		cancel()
@@ -218,8 +218,8 @@ func _rebuild() -> void:
 			elif not _carried_source(id, data).is_empty(): available.append(id)
 		_groups.append(available)
 		var key := "%d:%d" % [page, i]
-		# Remember identity, not array position: a pickup or removal must not
-		# silently change a still-carried choice during the periodic refresh.
+		# Lembra a identidade, não a posição no array: pegar ou remover um item não pode
+		# trocar em silêncio uma escolha ainda carregada durante a atualização periódica.
 		var preferred := str(_choices.get(key, session.state.equipped_weapon if page == 0 else ""))
 		var cursor := maxi(0, available.find(preferred))
 		var id: String = available[cursor] if not available.is_empty() else definitions[i][0]
@@ -258,7 +258,7 @@ func _rebuild() -> void:
 		if available.is_empty(): detail = _text("Não está com você", "Not carried")
 		elif available.size() > 1: count_label += ("  " if not count_label.is_empty() else "") + "%d/%d" % [cursor + 1, available.size()]
 		var slot_label: String = String(TranslationServer.translate(str(CATALOG.WEAPONS[id].short_label))) if page == 0 else label
-		# "Punho" also names a weapon attachment in the translation table.
+		# "Punho" também nomeia um acessório de arma na tabela de tradução.
 		if page == 0 and id == "fists": slot_label = _text("PUNHO", "FISTS")
 		entries.append({"id": id, "label": label, "slot_label": slot_label, "detail": detail, "role": role, "stats": stats, "variant_index": cursor, "variant_count": available.size(), "icon": ICONS.get_icon(icon_id), "enabled": enabled, "count_label": count_label})
 	var controls := GameInput

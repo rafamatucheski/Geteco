@@ -1,6 +1,6 @@
 extends RefCounted
-## Build-time circulation reservation, in the room's local floor plane.
-## The runtime still checks real support and body sweeps before actor admission.
+## Reserva de circulação na hora da montagem, no plano local do piso da sala.
+## O runtime ainda checa o apoio real e varreduras de corpo antes de admitir atores.
 const STEP := .45
 const RADIUS := .36
 const DIRECTIONS: Array[Vector2i] = [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
@@ -8,8 +8,8 @@ const DIRECTIONS: Array[Vector2i] = [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP,
 static func protected_paths(room) -> Array[Vector3]:
 	var best := {"points":[], "unreachable":["spawn"]}
 	var first := true
-	# A .45 m grid can miss an existing narrow passage between two furnishings.
-	# Shift its origin before declaring it disconnected; clearance stays intact.
+	# Uma grade de .45 m pode perder uma passagem estreita existente entre dois móveis.
+	# Desloca a origem antes de declará-la desconectada; a folga fica intacta.
 	for phase in [Vector2.ZERO, Vector2(STEP * .5, 0), Vector2(0, STEP * .5), Vector2.ONE * STEP * .5]:
 		var candidate := _paths_on_grid(room, phase)
 		if first or candidate.unreachable.size() < best.unreachable.size():
@@ -49,8 +49,8 @@ static func _paths_on_grid(room, phase: Vector2) -> Dictionary:
 		if not goals[label] is Vector3: continue
 		var target: Vector3 = room.to_local(goals[label])
 		var nearest := _nearest_cell(cells, target)
-		# Stations permit E within .95 m. Keep the closest traversable cell;
-		# an unreachable or distant goal must never silently lose protection.
+		# As estações permitem E a até .95 m. Mantém a célula atravessável mais próxima;
+		# um objetivo inalcançável ou distante nunca pode perder a proteção em silêncio.
 		if not parents.has(nearest) or Vector2(target.x, target.z).distance_to(Vector2(cells[nearest].x, cells[nearest].z)) > .8:
 			unreachable.append(str(label))
 			continue
@@ -65,8 +65,8 @@ static func _paths_on_grid(room, phase: Vector2) -> Dictionary:
 				var endpoint: Vector3 = room.to_global(cells[nearest].lerp(target, float(i) / steps))
 				if not protected.has(endpoint): protected.append(endpoint)
 	if not unreachable.is_empty():
-		# Existing disconnected circulation is not permission to make it worse.
-		# Reserve the entire reachable component until the room can be inspected.
+		# Uma circulação já desconectada não é permissão para piorá-la.
+		# Reserva o componente alcançável inteiro até a sala poder ser inspecionada.
 		for cell in parents: reserved[cell] = true
 	for cell in reserved:
 		var point: Vector3 = room.to_global(cells[cell])

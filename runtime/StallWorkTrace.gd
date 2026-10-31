@@ -84,8 +84,8 @@ static func _aggregate(label: String, elapsed_usec: int) -> void:
 	row.max_usec = maxi(int(row.max_usec),elapsed_usec)
 
 static func begin() -> int:
-	# The profiler's containers are consumed by the main thread. Off-tree data
-	# preparation must not resize these dictionaries concurrently with take().
+	# Os contêineres do profiler são consumidos pela thread principal. A preparação de dados
+	# fora da árvore não pode redimensionar esses dicionários junto com take().
 	if not Thread.is_main_thread(): return 0
 	return Time.get_ticks_usec() if enabled or aggregate_enabled or session_enabled else 0
 
@@ -106,7 +106,7 @@ static func finish_slow(label: String, began: int, minimum_usec: int = 10000, so
 	if began == 0 or (not enabled and not aggregate_enabled and not session_enabled): return
 	var ended := Time.get_ticks_usec()
 	if session_enabled: _session(label, began, ended, source)
-	# Aggregate even fast calls; the threshold applies only to detailed events.
+	# Agrega até chamadas rápidas; o limiar só vale para eventos detalhados.
 	if aggregate_enabled: _aggregate(label,ended-began)
 	if not enabled: return
 	if ended - began < minimum_usec: return

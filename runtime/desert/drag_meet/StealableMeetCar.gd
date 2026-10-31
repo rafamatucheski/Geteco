@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## Dormant display body. Full vehicle physics/audio are created only on interaction.
+## Corpo de exibição dormente. A física/áudio completos do veículo só são criados na interação.
 var archetype := ""
 var paint := Color.WHITE
 var health := 100.0
@@ -42,8 +42,8 @@ func materialize_vehicle() -> CharacterBody3D:
 	if not is_instance_valid(world) or not is_instance_valid(world.production): return null
 	var old_layer := collision_layer
 	collision_layer = 0
-	# The parking surface is slightly above the map origin. A display hull has
-	# authored clearance; the live vehicle's hull starts exactly at its origin.
+	# A superfície do estacionamento fica um pouco acima da origem do mapa. Um casco de exibição tem
+	# altura livre escrita; o casco do veículo vivo começa exatamente na origem.
 	var point := global_position
 	for across in [-half_width*.8,half_width*.8]:
 		for along in [-half_length*.8,half_length*.8]:
@@ -64,7 +64,7 @@ func materialize_vehicle() -> CharacterBody3D:
 
 func receive_damage(amount: float, source: Node = null) -> void:
 	if not is_finite(amount) or amount <= 0: return
-	# Damage can be delivered during a physics-query callback; admission is deferred.
+	# O dano pode chegar durante um callback de consulta de física; a admissão é adiada.
 	_apply_damage.call_deferred(amount,source)
 
 func _apply_damage(amount: float, source: Node) -> void:

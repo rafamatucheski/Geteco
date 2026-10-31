@@ -126,8 +126,8 @@ static func _hook() -> void:
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree == null: return
 	tree.process_frame.connect(Callable(load("res://runtime/GpuReleaseQueue.gd"), "_tick"))
-	# Detached GPU leaves have no SceneTree owner. Drain them before the
-	# renderer shuts down, even if the last retirement is younger than DELAY_MSEC.
+	# Folhas de GPU soltas não têm dono na SceneTree. Esvazia antes que o
+	# renderizador desligue, mesmo se a última aposentadoria for mais nova que DELAY_MSEC.
 	tree.root.tree_exiting.connect(Callable(load("res://runtime/GpuReleaseQueue.gd"), "_shutdown"), CONNECT_ONE_SHOT)
 	_hooked = true
 

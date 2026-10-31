@@ -1,14 +1,14 @@
 extends RefCounted
-## Authored encounter identities opt into the same imported bodies as the city.
-## Select before adding the model: no disposable procedural or imported rig.
+## Identidades escritas do encontro optam pelos mesmos corpos importados da cidade.
+## Escolhe antes de adicionar o modelo: sem rig procedural ou importado descartável.
 const CATALOG := preload("res://assets/civilians/CivilianBodyCatalog.gd")
 const MODEL := preload("res://assets/CivilianModel.gd")
 
 static func set_animation_active(model: Node3D, active: bool) -> void:
 	if not is_instance_valid(model): return
-	# Stopping CivilianModel alone leaves MeshyBodyRig's child PoseDriver
-	# polling the unchanged joints. Keep the visible rig, suspend both writers.
-	# Impact/fall owns pose independently and must never be frozen by distance.
+	# Parar só o CivilianModel deixa o PoseDriver filho do MeshyBodyRig
+	# consultando as juntas inalteradas. Mantém o rig visível e suspende os dois escritores.
+	# Impacto/queda é dono da pose de forma independente e nunca pode ser congelado pela distância.
 	var reaction: bool = model.has_method("_pose_strictly_live") and model._pose_strictly_live()
 	var actor: Node = model.get("_owner_actor")
 	var dead: bool = is_instance_valid(actor) and actor.get("dead") == true
@@ -33,7 +33,7 @@ static func apply(model: Node3D) -> bool:
 	var variant := absi(int(model.appearance_variant))
 	var entry: Dictionary = candidates[variant%candidates.size()]
 	model.body_source = CATALOG.FOLDER+str(entry.file)
-	# Clothing and skin share an atlas: brightness only, never a team-color hue.
+	# Roupa e pele dividem um atlas: só brilho, nunca um matiz de cor de equipe.
 	model.body_tint = {"hue":0.0,"brightness":.94+float(variant%5)*.03}
 	model.body_accessories = []
 	if int(wardrobe.get("hat",0))>0:

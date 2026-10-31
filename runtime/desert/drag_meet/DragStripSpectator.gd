@@ -52,8 +52,8 @@ func _explosion(origin: Vector3, radius: float, _source: Node) -> void:
 func alert(origin: Vector3) -> void:
 	super.alert(origin)
 	if is_instance_valid(person): person.activity = ""
-	# Keep retreat behind the authored safety barrier even if the source is
-	# behind the spectators. Sideways displacement alone cannot cross the strip.
+	# Mantém o recuo atrás da barreira de segurança escrita mesmo se a fonte estiver
+	# atrás dos espectadores. Só o deslocamento lateral não atravessa a pista.
 	var side := signf(_home.z + 1320.0)
 	_refuge.z = _home.z + side * .6
 	_refuge.x = clampf(_refuge.x, _home.x - 1.0, _home.x + 1.0)

@@ -167,8 +167,8 @@ func is_transition_blocked() -> bool:
 func has_position_transition() -> bool:
 	if regional_coach != null and (regional_coach.landing or regional_coach._boarding): return true
 	if railway != null and railway.landing: return true
-	# A guided passenger ride locks input but still needs real floor, traffic
-	# and streaming. Only admission/recovery owns an independent focus point.
+	# Uma carona guiada de passageiro trava a entrada mas ainda precisa de chão, trânsito
+	# e streaming reais. Só a admissão/recuperação tem um ponto de foco independente.
 	return not transition_kind.is_empty() or vehicle_transition_busy or rescue_pending or arrest_pending or respawn_busy or (controller != null and controller.travel_busy) or (arrival != null and arrival.controls_locked and not arrival.riding) or (arrival != null and arrival.phase == "opening")
 
 func blocks_driving_change() -> bool:
@@ -326,8 +326,8 @@ func _begin_transition(kind: String, _vehicle := false) -> int:
 	if not _cancel_for(&"transition"): return -1
 	transition_generation += 1
 	transition_kind = kind
-	# Legacy consumers already treat this public flag as the session transition
-	# gate. Keep it asserted for every generation, not only vehicle transfers.
+	# Consumidores antigos já tratam esta flag pública como a trava de transição
+	# da sessão. Mantém ela ligada em toda geração, não só nas transferências de veículo.
 	vehicle_transition_busy = true
 	return transition_generation
 
@@ -378,8 +378,8 @@ func _vehicle_transition_snapshot(car: CharacterBody3D) -> Dictionary:
 
 func _restore_vehicle_transition_snapshot(snapshot: Dictionary, car: CharacterBody3D) -> void:
 	if int(snapshot.generation) != transition_generation: return
-	# Death/arrest owns the actor now. Release only our provisional car lock;
-	# restoring old occupancy, collision or camera would revive a stale state.
+	# Morte/prisão agora é dona do ator. Solta só a nossa trava provisória do carro;
+	# restaurar ocupação, colisão ou câmera antigas reviveria um estado velho.
 	if world.gameplay.health <= 0 or rescue_pending or arrest_pending:
 		if is_instance_valid(car) and not car.controlled: car.input_locked = bool(snapshot.car_locked)
 		return
@@ -518,7 +518,7 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 	car.set_meta("region_id",state.region_id)
 	car.place(destination,yaw)
 	world.player.teleport(destination)
-	# Actor.teleport releases the seated pose; this transfer keeps the same driver.
+	# Actor.teleport solta a pose sentada; esta transferência mantém o mesmo motorista.
 	if car.has_method("shows_seated_driver") and car.shows_seated_driver():
 		preload("res://gameplay/VehicleInterior.gd").attach(car)
 		preload("res://gameplay/VehicleInterior.gd").seat_driver(world.player,car,0.0)
@@ -579,7 +579,7 @@ func restore_garage_driver(car: CharacterBody3D) -> bool:
 	capsule.height = 1.7
 	for side in [-1,1]:
 		var point := car.to_global(Vector3(side*(car.half_width+.65),.05,.15))
-		# Long cabins sit beyond the reach of the generic car-side anchor.
+		# Cabines longas ficam além do alcance da âncora genérica ao lado do carro.
 		if car.boarding_class() in ["truck", "bus"]:
 			point = car.driver_door_anchor(side) + car.global_basis.x * float(side) * .11 + Vector3.UP * .01
 		if not position_clear(point): continue
@@ -613,16 +613,16 @@ func restore_garage_driver(car: CharacterBody3D) -> bool:
 		if not reachable: continue
 		world.player.teleport(point)
 		var entry: Dictionary = world.driving._entry_option(true)
-		# Driving.car still names the previous controlled vehicle until the entry
-		# actually begins. Validate the physically selected candidate instead.
+		# Driving.car ainda nomeia o veículo controlado anterior até a entrada
+		# começar de fato. Valida o candidato escolhido fisicamente em vez disso.
 		if entry.get("car") == car and world.driving.interact(true):
 			world.camera.target = car if place.is_empty() else anchor
 			world.camera.locked = not place.is_empty()
 			state.set_location(state.region_id,place)
 			_sync_location_presentation()
-			# Release only the session gate while the existing body/door presentation
-			# owns input. Otherwise Driving sees our gate as an interruption and aborts
-			# the entry on its first frame.
+			# Solta só a trava da sessão enquanto a apresentação existente de corpo/porta
+			# é dona da entrada. Senão o Driving vê a nossa trava como interrupção e aborta
+			# a entrada no primeiro quadro.
 			_finish_transition(token)
 			for frame in 180:
 				if not world.driving.is_body_transition_active(): break
@@ -758,7 +758,7 @@ func _ready() -> void:
 	thermal_status.hide()
 	prompt = _label(Vector2(26,590),20)
 	notice = _label(Vector2(26,550),18)
-	# Message source only; ContextualHUDManager owns the visible notification.
+	# Só a origem da mensagem; o ContextualHUDManager cuida da notificação visível.
 	notice.hide()
 	marker = preload("res://ui/DoorAccessMarker.gd").new()
 	await _startup_frame()
@@ -767,8 +767,8 @@ func _ready() -> void:
 	arrow.text = "▲"
 	arrow.modulate = Color("f39a38")
 	arrow.pivot_offset = Vector2(12,20)
-	# World-anchored HUD must follow the final camera every rendered frame,
-	# not the 10 Hz text refresh (which made the orange marker jump).
+	# O HUD ancorado no mundo precisa seguir a câmera final em todo quadro renderizado,
+	# não a atualização de texto de 10 Hz (que fazia o marcador laranja pular).
 	marker.update_position = _update_world_indicator
 	panel = PanelContainer.new()
 	panel.position = Vector2(330,110)
@@ -1222,7 +1222,7 @@ func _saved_garage_driver() -> Dictionary:
 	return {}
 
 func _restore_outdoor_driver() -> void:
-	# A seated save resumes at the saved car, not at a remote pedestrian checkpoint.
+	# Um save sentado retoma no carro salvo, não num checkpoint de pedestre distante.
 	if not state.place_id.is_empty() or world.gameplay.health <= 0: return
 	var saved: Dictionary = controller.starting_vehicle()
 	if saved.is_empty() or not saved.get("was_driven",false) or saved.region != state.region_id: return
@@ -1245,8 +1245,8 @@ func _restore_outdoor_driver() -> void:
 			door = car.driver_door_anchor(side) + car.global_basis.x * float(side) * .11 + Vector3.UP * .01
 		if not position_clear(door): continue
 		world.player.teleport(door)
-		# The saved driver is admitted before ready_for_play. Keep normal input
-		# gated, but allow its already-owned body animation to finish under the curtain.
+		# O motorista salvo é admitido antes de ready_for_play. Mantém a entrada normal
+		# travada, mas deixa a animação de corpo que ele já tem terminar sob a cortina.
 		_restoring_saved_driver = true
 		var restored := await restore_garage_driver(car)
 		_restoring_saved_driver = false
@@ -1256,9 +1256,9 @@ func _restore_outdoor_driver() -> void:
 	controller.region.set_focus(checkpoint)
 
 func _restore_saved_driver_on_foot(saved: Dictionary) -> bool:
-	# A blocked hull/door must not send a seated save to a distant checkpoint.
-	# Probe the actual capsule and floor around the saved pose, including legacy
-	# saves without a pedestrian record. Keep normal boarding admission intact.
+	# Um casco/porta bloqueado não pode mandar um save sentado para um checkpoint distante.
+	# Sonda a cápsula real e o chão em volta da pose salva, incluindo saves antigos
+	# sem registro de pedestre. Mantém intacta a admissão normal de embarque.
 	var size: Array = preload("res://runtime/FleetCatalog.gd").spec(saved.archetype).bounds_size
 	var half_width := maxf(.65,float(size[0]))*.5
 	var half_length := maxf(1.0,float(size[2]))*.5
@@ -1453,8 +1453,8 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	return true
 
 func complete_upside_return(provider: Node, illusion_token: int) -> bool:
-	# The illusion owns its curtain and transition; this adapter owns real-world
-	# admission and reuses the ordinary room/NPC/camera departure transaction.
+	# A ilusão é dona da cortina e da transição; este adaptador cuida da admissão no
+	# mundo real e reaproveita a transação comum de saída de sala/NPC/câmera.
 	if provider != upside_world or not provider.owns(illusion_token) or state.place_id != "harbor_haunted_house": return false
 	var original_return := return_point
 	var trace := {"result":"searching","attempts":[]}
@@ -1489,22 +1489,22 @@ func complete_upside_return(provider: Node, illusion_token: int) -> bool:
 			close_menu()
 			save_game()
 			return true
-		# A pedestrian or newly streamed solid may occupy the chosen pavement
-		# during the normal door fade. Keep our curtain and try another candidate;
-		# aborting here used to strand the living visitor drunk inside Umbra.
+		# Um pedestre ou sólido recém-carregado pode ocupar a calçada escolhida
+		# durante o fade normal da porta. Mantém a nossa cortina e tenta outro candidato;
+		# abortar aqui deixava o visitante vivo preso bêbado dentro do Umbra.
 		if not provider.owns(illusion_token) or state.place_id != "harbor_haunted_house" or world.gameplay.health <= 0 or rescue_pending or arrest_pending or not transition_kind.is_empty(): return false
 		world.player.input_locked = true
 	trace.result = "all_candidates_blocked"
 	return_point = original_return
 	controller.region.set_focus(original_return)
-	# A refused departure already returned our transition token. Release only
-	# our own remaining input lock before the runtime cancels on the safe room.
+	# Uma saída recusada já devolveu o nosso token de transição. Solta só
+	# a nossa trava de entrada restante antes que o runtime cancele na sala segura.
 	if provider._released and provider.owns(illusion_token) and transition_kind.is_empty(): close_menu()
 	return false
 
 func _upside_landing_clear(point: Vector3) -> bool:
-	# Authored public pavements only, full capsule, a flat supporting surface,
-	# and a margin against nearby or approaching live vehicles.
+	# Só calçadas públicas escritas, cápsula inteira, superfície de apoio plana
+	# e uma margem contra veículos vivos próximos ou se aproximando.
 	if not position_clear(point): return false
 	var query := PhysicsRayQueryParameters3D.create(point + Vector3.UP * .25, point - Vector3.UP * .45, 1)
 	var ground: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(query)
@@ -1531,7 +1531,7 @@ func leave_place() -> bool:
 		if is_instance_valid(sewer_hatch):
 			world.player.input_locked = true
 	var continuous_departure: bool = building_entrance != null and building_entrance.handles_place(state.place_id) and building_entrance.walking_departure
-	# Rebuild exterior support before admitting an actor from a remote room.
+	# Reconstrói o apoio exterior antes de admitir um ator vindo de uma sala remota.
 	if not continuous_departure:
 		world.player.input_locked = true
 		controller.region.prepare_collision_at(return_point)
@@ -1649,12 +1649,12 @@ func _close_sewer_hatch_after_exit(hatch: Node3D) -> void:
 
 func _clear_return_point(place_id: String, desired: Vector3) -> Vector3:
 	if upside_world != null and upside_world.busy() and upside_world._released and place_id == "harbor_haunted_house":
-		# The return belongs to a different facade. Revalidate its exact authored
-		# pavement, including live vehicles, instead of offsetting from Umbra.
+		# O retorno pertence a outra fachada. Revalida a calçada escrita exata dela,
+		# incluindo veículos vivos, em vez de deslocar a partir do Umbra.
 		return desired if _upside_landing_clear(desired + Vector3.UP * .08) else Vector3.INF
-	# Keep the authored V1 return first. A streamed pedestrian or a facade edge
-	# must not trap the player inside forever, so test a few small points farther
-	# along the same exterior approach before refusing the transition.
+	# Mantém o retorno escrito da V1 primeiro. Um pedestre em streaming ou uma borda de fachada
+	# não pode prender o jogador lá dentro para sempre, então testa alguns pontos pequenos mais adiante
+	# na mesma aproximação exterior antes de recusar a transição.
 	if position_clear(desired + Vector3.UP * .08): return desired
 	var outward := Vector3.FORWARD
 	var definition: Dictionary = {}
@@ -1683,7 +1683,7 @@ func sync_dispatch_location() -> void:
 
 func _install_service_npc() -> void:
 	if preload("res://runtime/ShopSafety.gd").peaceful(state.place_id): room.set_meta("invulnerable", true)
-	# Vance is authored into the room's 3D art, rather than the NPC catalog.
+	# O Vance está escrito na arte 3D da sala, e não no catálogo de NPCs.
 	static_service_actor = room.find_child("VanceMilitaryGunsmith", true, false) as Node3D
 	if is_instance_valid(static_service_actor): _install_workplace_reaction(static_service_actor, static_service_actor)
 	var residents: Array = room.definition.get("npcs",[])
@@ -1741,7 +1741,7 @@ func _service_threatened(npc_id := "") -> bool:
 		if not is_instance_valid(actor) or not actor.is_visible_in_tree(): continue
 		if not npc_id.is_empty() and str(actor.get_meta("interior_npc_id", "")) != npc_id: continue
 		if actor.get_meta("workplace_threatened", false): return true
-	# Robberies replace the generic bank/fuel resident with their physical actors.
+	# Assaltos substituem o morador genérico de banco/posto pelos atores físicos deles.
 	if npc_id.is_empty() and robberies != null:
 		for actor in robberies._actors:
 			if is_instance_valid(actor) and not actor.guard and actor.get_meta("workplace_threatened", false): return true
@@ -2021,8 +2021,8 @@ func _input(event: InputEvent) -> void:
 		equipment_wheel.handle_input(event)
 		get_viewport().set_input_as_handled()
 		return
-	# The opening owns input while the world is paused. Leave clicks and Esc
-	# available to its skip button/dialog and _unhandled_input handler.
+	# A abertura é dona da entrada enquanto o mundo está pausado. Deixa cliques e Esc
+	# disponíveis para o botão/diálogo de pular e o handler _unhandled_input.
 	if arrival != null and arrival.phase == "opening" and is_instance_valid(arrival.presentation): return
 	if upside_world != null and upside_world.busy():
 		if upside_world.handle_input(event): get_viewport().set_input_as_handled()
@@ -2096,19 +2096,19 @@ func _input(event: InputEvent) -> void:
 		if storefronts != null and storefronts.is_open() and storefronts.handle_input(event):
 			get_viewport().set_input_as_handled()
 			return
-		# Focused Buttons own ui_accept. Consuming it here prevented Enter and the
-		# controller accept button from reaching shops, journals and death rescue.
+		# Botões focados são donos de ui_accept. Consumi-lo aqui impedia o Enter e o
+		# botão de confirmar do controle de chegarem a lojas, diários e resgate na morte.
 		if dialogue_open and (event.is_action_pressed("interact") or event.is_action_pressed("ui_accept")):
 			_advance_dialogue()
 			get_viewport().set_input_as_handled()
 		elif (event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel")) and not rescue_pending:
-			# This guided conversation owns the arrival callback. Dismissing only
-			# its surface would strand the encounter and leave Arrival.voice playing.
+			# Esta conversa guiada é dona do callback de chegada. Dispensar só
+			# a superfície largaria o encontro e deixaria Arrival.voice tocando.
 			if dialogue_open and arrival != null and arrival.active and arrival.dialogue_in_progress():
 				get_viewport().set_input_as_handled()
 				return
-			# Tuning owns its pending draft. Its close signal releases this modal
-			# only after the player applies or discards those temporary changes.
+			# O tuning é dono do rascunho pendente. O sinal de fechar solta este modal
+			# só depois que o jogador aplica ou descarta essas mudanças temporárias.
 			for tuning in get_tree().get_nodes_in_group("vehicle_tuning_panels"):
 				var tuning_panel := tuning as CanvasLayer
 				if tuning_panel != null and world.is_ancestor_of(tuning_panel) and tuning_panel.visible:
@@ -2132,12 +2132,12 @@ func _input(event: InputEvent) -> void:
 	if passenger_transport != null and passenger_transport.riding:
 		if event.is_action_pressed("interact") or event.is_action_pressed("exit_vehicle") or event.is_action_pressed("vehicle_interact"):
 			passenger_transport.request_exit()
-		# Leave pause available, but consume gameplay/menu/quick-save input in transit.
+		# Deixa a pausa disponível, mas consome entrada de jogo/menu/save rápido em trânsito.
 		if not event.is_action_pressed("pause_game"): get_viewport().set_input_as_handled()
 		return
 	if motocross != null and motocross.mounted:
-		# The touch overlay turns raw fingers into game actions. Consuming the
-		# fingers here prevented its pedals and wheelie button from receiving them.
+		# A camada de toque transforma dedos crus em ações de jogo. Consumir os
+		# dedos aqui impedia os pedais e o botão de empinar de recebê-los.
 		if event is InputEventScreenTouch or event is InputEventScreenDrag: return
 		if event.is_action_pressed("interact") or event.is_action_pressed("exit_vehicle"):
 			motocross.perform("quit" if motocross.active else "dismount")
@@ -2156,7 +2156,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("interact") or event.is_action_pressed("vehicle_interact"):
 		wants_interact = event.is_action_pressed(interaction_input_action(nearest()))
-	# Handle before GUI focus consumes V/R3, after modal/vehicle guards.
+	# Trata antes que o foco de GUI consuma V/R3, depois das guardas de modal/veículo.
 	if event.is_action_pressed("rage") and not event.is_echo() and not world.driving.occupied:
 		if world.gameplay.request_rage(): get_viewport().set_input_as_handled()
 		return
@@ -2189,7 +2189,7 @@ func _input(event: InputEvent) -> void:
 		if event.physical_keycode == KEY_F5: save_game(true)
 		elif event.physical_keycode == KEY_F9: load_game()
 
-## One command synchronizes the belt and the usable weapon attachment.
+## Um comando sincroniza o cinto e o acessório de arma utilizável.
 func _toggle_weapon_flashlight() -> void:
 	if world.driving.occupied: return
 	if world.gameplay.toggle_personal_lights(): return
@@ -2242,10 +2242,10 @@ func _process_traced(delta: float) -> void:
 		var controls = GameInput
 		if controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx():
 			aim = controls.aim_target_3d(world.player,world.camera,delta)
-			# Robbery intimidation and every non-shot aim consumer read the same
-			# authoritative world point as firearm presentation. Previously only the
-			# local fire target followed a controller/touch stick, so the fuel clerk
-			# could be aimed at visually but never surrender without a mouse cursor.
+			# A intimidação no assalto e todo consumidor de mira sem tiro leem o mesmo
+			# ponto oficial do mundo que a apresentação da arma de fogo. Antes só o
+			# alvo de tiro local seguia um analógico de controle/toque, então o frentista
+			# podia ser mirado visualmente mas nunca se render sem cursor de mouse.
 			world.gameplay.aim_point = aim
 		var data: Dictionary = WEAPONS.WEAPONS.get(state.equipped_weapon,{})
 		if Input.is_action_pressed("fire") and (data.get("automatic",false) or Input.is_action_just_pressed("fire")): world.gameplay.fire_at(aim)
@@ -2263,8 +2263,8 @@ func _process_traced(delta: float) -> void:
 	var ammo: Dictionary = state.get_ammo(state.equipped_weapon)
 	if cold != null:
 		var thermal: Dictionary = cold.status()
-		# The contextual HUD owns cold status once it is active.  The legacy label
-		# otherwise reappears between its sync ticks and overlaps the new panel.
+		# O HUD contextual é dono do status de frio quando está ativo. O rótulo antigo
+		# senão reaparece entre os ticks de sincronia e se sobrepõe ao painel novo.
 		thermal_status.visible = thermal.visible and not modal and not is_instance_valid(world.hud)
 		thermal_status.text = String(TranslationServer.translate("Calor corporal %d%% · %s"))%[roundi(thermal.temperature),thermal.text]
 	stats.text = String(TranslationServer.translate("R$ %d   Vida %d   Colete %d\n%s   %s   %s")) % [state.economy.balance,roundi(world.gameplay.health),roundi(world.gameplay.armor),str(WEAPONS.WEAPONS.get(state.equipped_weapon,{}).get("label",state.equipped_weapon)),"—" if int(ammo.magazine)<0 else "%d / %d"%[ammo.magazine,ammo.reserve],"★".repeat(world.gameplay.stars)]
@@ -2401,7 +2401,7 @@ func _show_customization() -> void: _menus._show_customization()
 func _show_saber_customization() -> void: _menus._show_saber_customization()
 func _transaction() -> String: return _menus._transaction()
 func apply_outfit() -> void:
-	# Palette integration is applied by the original Dante outfit shader adapter.
+	# A integração de paleta é aplicada pelo adaptador original de shader da roupa do Dante.
 	var outfit: String = state.economy.outfit
 	if mountain_progression != null and mountain_progression.data.rental: outfit = mountain_progression.suit_outfit()
 	if world.player.has_method("set_outfit"): world.player.set_outfit(outfit)

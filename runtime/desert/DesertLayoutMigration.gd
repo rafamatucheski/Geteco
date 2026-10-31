@@ -1,6 +1,6 @@
 extends RefCounted
-## Read compatibility only: preserve IDs, inventory, receipts and progression.
-## Validation still runs on the private migrated snapshot before live state changes.
+## Só compatibilidade de leitura: preserva IDs, inventário, recibos e progressão.
+## A validação ainda roda no snapshot migrado privado antes de o estado vivo mudar.
 const COMPACT := preload("res://world/desert/DesertCompactLayout.gd")
 const HEIST := preload("res://gameplay/desert_heist/DesertHeistState.gd")
 const KEY := "desert_layout_version"
@@ -63,8 +63,8 @@ static func _cargo(world: Dictionary) -> void:
             if not guard is Dictionary or not guard.has("position"): continue
             var guard_point := _point(guard.position)
             if guard_point.is_finite(): guard.position = _array(moved+guard_point-old)
-    # The same stolen truck can also be owned by the ordinary fleet. Both copies
-    # must restore the same body pose after shortening its authored road.
+    # O mesmo caminhão roubado também pode pertencer à frota comum. As duas cópias
+    # precisam restaurar a mesma pose do corpo depois de encurtar a estrada escrita.
     var identity := "desert_cargo_%d_%d"%[int(saved.get("day",0)),int(saved.get("slot",0))]
     var vehicles: Variant = world.get("vehicles",[])
     if vehicles is Array:

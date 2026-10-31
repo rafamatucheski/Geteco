@@ -1,6 +1,6 @@
 extends RefCounted
-## Shared static fire geometry. Materials/meshes are cached across streamed
-## sources; only the existing five flame tongues and seven wisps animate.
+## Geometria de fogo estática compartilhada. Materiais/malhas ficam em cache entre fontes
+## em streaming; só as cinco línguas de chama e as sete volutas existentes animam.
 const SURFACES := preload("res://world/places/ShopInteriorMaterials.gd")
 static var _fuel: ArrayMesh
 static var _ring: ArrayMesh

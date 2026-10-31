@@ -22,7 +22,7 @@ func refresh() -> void:
 	award_first_backpack()
 	var garage = session.garage_rewards
 	if garage == null or garage.data.vehicles.has(ID): return
-	# Keep the pre-existing player_coupe and its save. This is the earned personal car.
+	# Mantém o player_coupe pré-existente e o save dele. Este é o carro pessoal conquistado.
 	garage.data.vehicles[ID] = garage._initial_record("monaliza",Vector3(0,.04,0),-PI,"maciota")
 	garage.on_location_changed()
 	session.show_message(String(TranslationServer.translate("Monaliza liberada: teu carro fica na baia da oficina. Porta-malas guarda a maleta; a bancada conserta.")))
@@ -67,9 +67,9 @@ func nearest_action() -> Dictionary:
 	if POLICE_TRUNK.nearest(session) != null:
 		return {"id":"personal_car","target":"trunk","label":"Abrir porta-malas da viatura"}
 	if not _available() or session.modal or session.world.driving.occupied or session.world.gameplay.health<=0: return {}
-	# In the compact V1 garage the parked rear can overlap the workbench radius.
-	# The authored service point owns that interaction while Dante is inside;
-	# otherwise the trunk swallowed the repair/recovery menu entirely.
+	# Na garagem compacta da V1 a traseira estacionada pode invadir o raio da bancada.
+	# O ponto de serviço escrito é dono dessa interação enquanto o Dante está dentro;
+	# senão o porta-malas engolia o menu de reparo/recuperação inteiro.
 	if _near_service(): return {"id":"personal_car","target":"service","label":"Cuidar da Monaliza"}
 	if _near_trunk(): return {"id":"personal_car","target":"trunk","label":"Abrir porta-malas · retirar mala" if travel_bag_available() else "Abrir porta-malas"}
 	return {}
@@ -99,8 +99,8 @@ func award_first_backpack() -> bool:
 	if not session.state.campaign.snapshot().completed.has("primeiro_giro"): return false
 	var economy = session.state.economy
 	if not economy.grid_enabled() or BACKPACK_CLAIM in economy._data.grid_inventory.claimed: return false
-	# Retain the old receipt so saved/dropped backpacks cannot earn a duplicate.
-	# Existing bag owners keep their bag and all contents during migration.
+	# Mantém o recibo antigo para mochilas salvas/largadas não renderem uma duplicata.
+	# Quem já tem bolsa mantém a bolsa e todo o conteúdo durante a migração.
 	var candidate: Dictionary = economy.grid_snapshot()
 	if candidate.bag.is_empty() and not candidate.ground.any(func(row): return row.bag == "backpack"):
 		candidate.bag = "backpack"
@@ -112,8 +112,8 @@ func award_first_backpack() -> bool:
 
 func travel_bag_available() -> bool:
 	if not _available() or not session.state.economy.grid_enabled(): return false
-	# Actual victory, never an active attempt or a skipped legacy mission; or the ten
-	# Vicente letters (VicenteLetters, 20/10/2026), whichever comes first.
+	# Vitória de verdade, nunca uma tentativa ativa ou uma missão antiga pulada; ou as dez
+	# cartas do Vicente (VicenteLetters, 20/10/2026), o que vier primeiro.
 	var earned: bool = "cobra_race" in session.state.campaign._data.completed or preload("res://data/catalogs/VicenteLetters.gd").complete(session.state.economy._data.collectibles)
 	return earned and TRAVEL_BAG_CLAIM not in session.state.economy._data.grid_inventory.claimed
 
@@ -131,15 +131,15 @@ func claim_travel_bag() -> bool:
 			field._feedback("Libere espaço no chão ao seu lado para deixar a mochila.")
 			return false
 		candidate.serial += 1
-		# Contents retain their cells in the larger bag. Only the empty backpack
-		# is left on free ground; no inventory item is removed or recreated.
+		# O conteúdo mantém as células na bolsa maior. Só a mochila vazia
+		# é deixada em chão livre; nenhum item de inventário é removido ou recriado.
 		candidate.ground.append({"uid":candidate.serial,"bag":"backpack","region":session.state.region_id,"place":session.state.place_id,"position":[point.x,point.y,point.z],"entries":[]})
 	candidate.bag = "handbag"
 	candidate.claimed.append(TRAVEL_BAG_CLAIM)
 	if not preload("res://systems/inventory/GridInventory.gd").validate(candidate):
 		field._feedback("Não foi possível guardar a troca. Recolha uma bagagem do chão e tente novamente.")
 		return false
-	# Publish bag, drop and receipt together, after all physical/capacity checks.
+	# Publica bolsa, drop e recibo juntos, depois de todas as checagens físicas/de capacidade.
 	economy._data.grid_inventory = candidate
 	if session.state.equipped_weapon in preload("res://systems/inventory/GridInventory.gd").LONG:
 		session.state.equip_weapon("fists")

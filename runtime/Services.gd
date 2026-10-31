@@ -74,7 +74,7 @@ func _report_precinct_threat(minimum_stars: int) -> void:
 	if session == null or not session.ready_for_play or session.state.place_id != "harbor_police": return
 	var gameplay = session.world.gameplay
 	if gameplay.health <= 0 or not session.world.player.visible: return
-	# Use the real entrance for responders; room coordinates belong to a separate space.
+	# Usa a entrada real para os atendentes; as coordenadas da sala pertencem a um espaço separado.
 	var point: Vector3 = session.return_point
 	var missing := maxi(0, int(gameplay.STAR_THRESHOLDS[minimum_stars]) - int(gameplay.crime_points))
 	if missing > 0: gameplay.register_crime(missing,point)
@@ -123,8 +123,8 @@ func _is_room_resident(id: String) -> bool:
 	return false
 
 func perform(service: String) -> bool:
-	# The production-compatible Monaliza service lives at the physical workbench;
-	# FullSession deliberately has no generic remote-repair fallback.
+	# O serviço do Monaliza compatível com a produção fica na bancada física;
+	# o FullSession de propósito não tem recurso genérico de reparo remoto.
 	if service == "garage":
 		if session == null or session.state.place_id != "maciota" or session.world.driving.occupied: return false
 		session.show_message("Use a bancada para cuidar da Monaliza.")
@@ -175,7 +175,7 @@ func _bound_lines(service: String) -> Array:
 func _auto_eligible(car) -> bool:
 	if not is_instance_valid(car) or not session.state.place_id.is_empty() or session.state.region_id != "harbor": return false
 	if not session.world.driving.occupied or session.world.driving.car != car or session.world.gameplay.health<=0 or car.health<=0: return false
-	# Boarding owns temporary input locks; service starts only after the driver is seated.
+	# O embarque é dono das travas temporárias de entrada; o serviço só começa depois que o motorista senta.
 	if session.world.driving.is_body_transition_active() or not car.controlled or car.input_locked: return false
 	var relative: Vector3 = car.global_position-AUTO_ORIGIN
 	return absf(car.speed)<.15 and car.horizontal_velocity.length()<.2 and AUTO_BAY.has_point(Vector2(relative.x,relative.z))
@@ -251,8 +251,8 @@ func _auto_still_valid(current) -> bool:
 func _tick_active_auto(delta: float) -> void:
 	var remaining := delta
 	while remaining > 0.0 and is_instance_valid(_car):
-		# AUTO_SECONDS remains the productive admission-to-result contract; the
-		# shutter close is part of that interval, while reopening releases controls.
+		# AUTO_SECONDS continua o contrato produtivo da admissão ao resultado; o
+		# fechamento da porta de enrolar faz parte desse intervalo, e reabrir solta os controles.
 		var duration := .35 if _auto_phase in ["closing","opening"] else AUTO_SECONDS-.35
 		var step := minf(remaining,maxf(0.0,duration-_phase_elapsed))
 		_phase_elapsed += step

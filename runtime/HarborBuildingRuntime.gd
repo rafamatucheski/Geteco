@@ -1,6 +1,6 @@
 extends Node
-## Prepares one nearby building in the street's actual world, then admits a
-## walking player across its threshold without a door action or scene jump.
+## Prepara um prédio próximo no mundo real da rua e depois admite o
+## jogador a pé pela soleira sem ação de porta nem salto de cena.
 const CATALOG := preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
 const PLACE := preload("res://world/places/harbor_buildings/HarborBuildingPlace.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
@@ -60,7 +60,7 @@ func prepare_room(id: String, new_entry: bool) -> Node3D:
 	var region: String = session.state.region_id
 	_release_staged()
 	var lookup_started := STALL_WORK.begin()
-	# This controller only handles the indexed Harbor building catalog.
+	# Este controlador só cuida do catálogo indexado de prédios do Harbor.
 	var definition: Dictionary = CATALOG.find(id)
 	if lookup_started != 0:
 		STALL_WORK.finish("building.prepare.lookup", lookup_started, {"place":id})
@@ -265,8 +265,8 @@ func _begin_fall() -> void:
 	falling = true
 	fall_room = session.room
 	fall_peak = session.world.player.global_position.y
-	# Keep the real roof in place until the actor has landed. The actor is now
-	# outdoors, so rescue, dispatch and camera use the falling world position.
+	# Mantém o telhado real no lugar até o ator pousar. O ator agora está
+	# do lado de fora, então resgate, despacho e câmera usam a posição de queda no mundo.
 	session._clear_service_npcs()
 	session.room = null
 	session.state.set_location(session.state.region_id)

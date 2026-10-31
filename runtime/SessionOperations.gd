@@ -1,6 +1,6 @@
 extends RefCounted
-## Low-frequency lifecycle diagnostics. Wall durations include awaits and children.
-## Never infer success from a returned callback; callers can report explicit status.
+## Diagnóstico de ciclo de vida de baixa frequência. As durações de relógio incluem awaits e filhos.
+## Nunca deduz sucesso de um callback que retornou; quem chama pode relatar status explícito.
 static func logger() -> Node:
 	if OS.get_environment("HARBOR_SESSION_PROFILE") != "1": return null
 	var tree := Engine.get_main_loop() as SceneTree
@@ -33,8 +33,8 @@ static func completed(source: Node, system: String, operation: String, began_use
 static func _source_path(source: Node) -> String:
 	return str(source.get_script().resource_path) if is_instance_valid(source) and source.get_script() != null else ""
 
-## Synchronous boundaries. An error before finish deliberately leaves a pending stage.
-## No catch/rollback: the original engine error and gameplay behavior remain intact.
+## Fronteiras síncronas. Um erro antes do finish deixa de propósito uma etapa pendente.
+## Sem catch/rollback: o erro original do motor e o comportamento do jogo ficam intactos.
 static func attach(parent: Node, child: Node, source: Node, parent_token: int = 0) -> void:
 	var token := begin(source, "scene", "add_child_ready", {"node":str(child.name), "class":child.get_class(), "script":_source_path(child)}, parent_token)
 	parent.add_child(child)

@@ -1,9 +1,9 @@
 extends Node3D
-## Four curbside bays east of the coach terminal; no interior or extra light rig.
-# The north edge of Market Street is around z=74.2. Keep the parked
-# bodies and bay markings outside the travelling lane, including wide vans.
-# Reserve the corner's turning envelope too; a clear parked body alone is not
-# enough. Keep regular spacing between the four bays.
+## Quatro vagas no meio-fio a leste do terminal rodoviário; sem interior nem rig de luz extra.
+# A borda norte da Market Street fica por volta de z=74.2. Mantém os corpos
+# estacionados e as marcações das vagas fora da faixa de circulação, incluindo vans largas.
+# Reserva também o envelope de curva da esquina; só um corpo estacionado livre não
+# basta. Mantém espaçamento regular entre as quatro vagas.
 const SLOTS := [Vector3(147,.16,73),Vector3(156,.16,73),Vector3(164,.16,73),Vector3(172,.16,73)]
 const CENTER := Vector3(161,0,72)
 const FLEET := preload("res://runtime/FleetCatalog.gd")
@@ -36,10 +36,10 @@ func _process(delta: float) -> void:
 		for vehicle in session.controller.vehicles:
 			if is_instance_valid(vehicle) and vehicle.vehicle_id == id: existing = true
 		if existing: continue
-		# Used bays stay empty during this visit, avoiding replacement in front of the player.
+		# Vagas usadas ficam vazias durante esta visita, evitando reposição na frente do jogador.
 		if service.used_bays.has(index): continue
-		# Reject an occupied bay before constructing the complete car/model. The
-		# normal spawn still checks support and final clearance; retry stays .5 s.
+		# Recusa uma vaga ocupada antes de construir o carro/modelo completo. O
+		# spawn normal ainda checa apoio e folga final; a nova tentativa continua em .5 s.
 		if _slot_occupied(SLOTS[index]): continue
 		var vehicle = session.controller.spawn_vehicle("taxi_yellow",SLOTS[index],PI/2)
 		if vehicle == null: continue
@@ -62,12 +62,12 @@ func _slot_occupied(point: Vector3) -> bool:
 	if not is_inside_tree(): return false
 	if _admission_query == null:
 		var dimensions: Variant = FLEET.spec("taxi_yellow").get("bounds_size")
-		# Unknown bounds leave the authoritative spawn path in charge.
+		# Limites desconhecidos deixam o caminho de spawn oficial no comando.
 		if not dimensions is Array or dimensions.size() != 3: return false
 		for value in dimensions:
 			if not (value is float or value is int) or not is_finite(float(value)) or float(value) <= 0: return false
 		var hull := BoxShape3D.new()
-		# Vehicle._ready uses these clamps; taxi_yellow has variant_scale ONE.
+		# Vehicle._ready usa estes limites; taxi_yellow tem variant_scale ONE.
 		hull.size = Vector3(maxf(.65,float(dimensions[0])),clampf(float(dimensions[1]),1.1,3.6),float(dimensions[2]))
 		_admission_query = PhysicsShapeQueryParameters3D.new()
 		_admission_query.shape = hull

@@ -1,6 +1,6 @@
 extends Node
-## V1 TaxiService/TaxiDestinations and UrbanTransit/UrbanPlayerRide adapters.
-## One requested vehicle; physical road travel, no in-flight save or fare invented.
+## Adaptadores de TaxiService/TaxiDestinations e UrbanTransit/UrbanPlayerRide da V1.
+## Um veículo pedido; viagem física pela rua, sem save em trânsito nem tarifa inventada.
 const PRESENTATION := preload("res://runtime/UrbanTransitPresentation.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const ROUTER := preload("res://gameplay/dispatch/DispatchRoadRouter.gd")
@@ -245,7 +245,7 @@ func _physics_process(delta: float) -> void:
 	if session.rescue_pending or session.modal: return
 	session.world.player.position = car.position
 	if car.health <= 0: _brake()
-	# Measure progress per simulated second, independent of the frame rate.
+	# Mede o progresso por segundo simulado, independente da taxa de quadros.
 	var travelled := Vector2(car.position.x-_before.x,car.position.z-_before.z).length()
 	if travelled < .1*delta and not stopping and _dwell <= 0: _stalled += delta
 	else: _stalled = 0
@@ -275,7 +275,7 @@ func _physics_process(delta: float) -> void:
 			if _notice_clock <= 0: session.show_message("Saída ocupada. Aguardando passagem livre."); _notice_clock = 4
 
 func _leave() -> bool:
-	# Reuse the production door capsule and swept exit check without changing ownership.
+	# Reaproveita a cápsula de porta da produção e a checagem varrida de saída sem mudar a posse.
 	var driving = session.world.driving
 	var previous = driving.car
 	driving.car = car
@@ -314,7 +314,7 @@ func cancel_for_transition() -> void:
 	_restore_actor()
 	riding = false
 	stopping = false
-	# Caller is unloading the scene/region or performing a checked rescue.
+	# Quem chama está descarregando a cena/região ou fazendo um resgate checado.
 	_retire()
 
 func _retire() -> void:
@@ -330,7 +330,7 @@ func _retire() -> void:
 func _dismiss() -> void:
 	session.close_menu()
 	if riding or not is_instance_valid(car): return
-	# Leave the physical parked vehicle for normal distance-based cleanup.
+	# Deixa o veículo físico estacionado para a limpeza normal por distância.
 	_retire()
 
 func _urban_service():
@@ -342,7 +342,7 @@ func _board_urban(bus) -> bool:
 	var urban = _urban_service()
 	if urban.boardable_bus() != bus: return false
 	var actor = session.world.player
-	# A clear segment to the open gate is mandatory even inside the action radius.
+	# Um trecho livre até o portão aberto é obrigatório mesmo dentro do raio de ação.
 	var target: Vector3 = bus.door_point()
 	var query := PhysicsRayQueryParameters3D.create(actor.global_position+Vector3.UP*.9,target+Vector3.UP*.9,1,[actor.get_rid()])
 	if not session.world.get_world_3d().direct_space_state.intersect_ray(query).is_empty(): return false

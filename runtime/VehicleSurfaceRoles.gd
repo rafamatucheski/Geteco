@@ -1,5 +1,5 @@
 extends RefCounted
-## Semantic access for both flattened legacy parts and multi-surface exports.
+## Acesso semântico tanto para peças antigas achatadas quanto para exports com várias superfícies.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var _centers: Dictionary = {}
 

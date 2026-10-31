@@ -62,8 +62,8 @@ func _physics_process(delta: float) -> void:
 
 func _shoot(target: Node3D) -> void:
 	if not gameplay.state.weapons_allowed() or gameplay._police_rounds.size()>=128: return
-	# Share the production moving rounds, body-to-muzzle cover check and damage
-	# protection without inheriting the police-only surrender ceasefire.
+	# Compartilha os tiros em movimento da produção, a checagem de cobertura corpo-boca e a
+	# proteção de dano sem herdar o cessar-fogo de rendição exclusivo da polícia.
 	var origin: Vector3=visual.muzzle_position()
 	var direction := origin.direction_to(target.global_position+Vector3.UP).rotated(Vector3.UP,gameplay._rng.randf_range(-.085,.085))
 	var data: Dictionary=CATALOG.get_weapon(weapon_id)

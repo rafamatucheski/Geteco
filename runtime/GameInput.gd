@@ -124,8 +124,8 @@ const UI_PAD := {
 	"ui_up": JOY_BUTTON_DPAD_UP, "ui_down": JOY_BUTTON_DPAD_DOWN,
 	"ui_left": JOY_BUTTON_DPAD_LEFT, "ui_right": JOY_BUTTON_DPAD_RIGHT,
 }
-## Only pairs whose consumers are mutually exclusive may intentionally share a binding.
-## Keep this list narrow: `interact` and `vehicle_interact` can both be live on foot.
+## Só pares cujos consumidores são mutuamente exclusivos podem compartilhar uma ligação de propósito.
+## Mantém esta lista curta: `interact` e `vehicle_interact` podem estar vivas ao mesmo tempo a pé.
 const CONTEXTUAL_BINDING_PAIRS := [
 	["jump", "handbrake"],
 	["jump", "skate_ollie"],
@@ -142,8 +142,8 @@ const CONTEXTUAL_BINDING_PAIRS := [
 	["bus_doors", "interact"], ["bus_doors", "reload"],
 	["weapon_next", "radio_next"],
 	["weapon_previous", "radio_previous"],
-	# On foot the wheel consumes L1/LB before immediate cycling. In menus,
-	# vehicles and mounted activities it declines input, preserving navigation.
+	# A pé a roda consome L1/LB antes da troca imediata. Em menus,
+	# veículos e atividades montadas ela recusa a entrada, preservando a navegação.
 	["weapon_wheel", "weapon_previous"],
 	["weapon_wheel", "radio_previous"],
 	["weapon_wheel", "skate_shove"],
@@ -255,9 +255,9 @@ func export_bindings() -> Dictionary:
 	return saved
 
 func import_bindings(saved: Dictionary) -> void:
-	# Old settings put Q on the immediate next-weapon action. Move only that
-	# binding to the new hold action; retain scrolling and custom alternatives.
-	# An explicit wheel binding (including an empty one) is already migrated.
+	# Configurações antigas punham Q na ação imediata de próxima arma. Move só essa
+	# ligação para a nova ação de segurar; mantém a rolagem e alternativas personalizadas.
+	# Uma ligação explícita da roda (inclusive vazia) já está migrada.
 	if not saved.has("weapon_wheel"):
 		var migrated := saved.duplicate(true)
 		var custom_q := false
@@ -267,8 +267,8 @@ func import_bindings(saved: Dictionary) -> void:
 			for binding in saved[action]:
 				if binding is Dictionary and binding.get("key", 0) == KEY_Q: custom_q = true
 		if custom_q:
-			# A player may already have reassigned Q to an on-foot action. Do not
-			# shadow that action with the new default; the wheel stays remappable.
+			# O jogador pode já ter reatribuído Q a uma ação a pé. Não
+			# esconde essa ação com o novo padrão; a roda continua remapeável.
 			migrated.weapon_wheel = []
 			saved = migrated
 		elif saved.get("weapon_next") is Array:
@@ -338,17 +338,17 @@ func export_gamepad_bindings() -> Dictionary:
 func import_gamepad_bindings(saved: Dictionary, version := GAMEPAD_BINDINGS_VERSION) -> void:
 	var migrated := saved.duplicate(true)
 	if version < 2:
-		# Old exports recorded empty arrays for commands which had no pad default.
-		# Only migrate those old defaults; a current explicit clear stays empty.
+		# Exports antigos gravavam arrays vazios para comandos que não tinham padrão no controle.
+		# Só migra esses padrões antigos; uma limpeza explícita atual continua vazia.
 		for action in ["camera_left", "camera_right", "surrender", "radio_toggle"]:
 			if not migrated.has(action) or migrated[action] == []:
 				migrated[action] = _legacy_default(action, saved)
 		if migrated.get("weapon_flashlight",[]) == [{"button":JOY_BUTTON_MISC1}]:
 			migrated.weapon_flashlight = _legacy_default("weapon_flashlight", saved)
 	if version < 3 and (not migrated.has("weapon_wheel") or migrated.weapon_wheel == []):
-		# Version 2 exported an empty wheel binding by default. Add the shared
-		# shoulder only while previous-weapon is still the historical default;
-		# do not reinterpret an explicitly customized controller layout.
+		# A versão 2 exportava uma ligação vazia da roda por padrão. Adiciona o
+		# ombro compartilhado só enquanto a arma anterior ainda é o padrão histórico;
+		# não reinterpreta um layout de controle personalizado explicitamente.
 		if not migrated.has("weapon_previous") or migrated.weapon_previous == [{"button":JOY_BUTTON_LEFT_SHOULDER}]:
 			migrated.weapon_wheel = _legacy_default("weapon_wheel", migrated)
 		else:
@@ -530,7 +530,7 @@ func hint(action: String,keyboard_only := false) -> String:
 	for e in keyboard_events(action): labels.append(event_label(e))
 	return " / ".join(labels) if not labels.is_empty() else "—"
 
-## One prompt for the active device; bindings/settings still show all alternatives.
+## Uma dica para o dispositivo ativo; ligações/configurações ainda mostram todas as alternativas.
 func prompt(action: String) -> String:
 	if get_meta("touch_controls_active", false):
 		if action == "ui_accept": return "Confirmar"
@@ -546,7 +546,7 @@ func vehicle_input() -> Vector2:
 	if not using_gamepad: return Vector2(move.x,clampf(-move.y+Input.get_action_strength("accelerate")-Input.get_action_strength("brake"),-1.0,1.0))
 	return Vector2(Input.get_axis("move_left","move_right"),Input.get_action_strength("accelerate")-Input.get_action_strength("brake"))
 
-## Read the pedals separately: opposite actions cancel in vehicle_input().
+## Lê os pedais separadamente: ações opostas se cancelam em vehicle_input().
 func vehicle_burnout_throttle() -> float:
 	var accelerator := Input.get_action_strength("accelerate")
 	var brake := Input.get_action_strength("brake")
@@ -567,7 +567,7 @@ func reset_sprint_toggle() -> void:
 func _clear_camera_motion() -> void:
 	_camera_motion = Vector2.ZERO
 
-## Axis events are tracked separately from buttons/keys, which rotate in steps.
+## Eventos de eixo são acompanhados à parte de botões/teclas, que giram em passos.
 func camera_rotation() -> float:
 	return _camera_motion.y - _camera_motion.x if using_gamepad and not remapping else 0.0
 
@@ -604,7 +604,7 @@ func aim_target_3d(actor: Node3D, camera: Camera3D, delta: float, follow_movemen
 	down.y = 0
 	var world_direction := (right.normalized()*direction.x+down.normalized()*direction.y).normalized()
 	var settings := get_node_or_null("/root/V2Settings")
-	# Assistance is opt-in and needs active stick input; releasing the stick never tracks a target.
+	# A assistência é opcional e precisa de analógico ativo; soltar o analógico nunca segue um alvo.
 	if using_gamepad and settings != null and settings.controller_aim_assist and _read_aim_stick().length() > AIM_STICK_DEADZONE:
 		var best := .10
 		var correction := 0.0
@@ -646,8 +646,8 @@ func _mouse_gesture_active() -> bool:
 			if binding is InputEventMouseButton and Input.is_mouse_button_pressed(binding.button_index): return true
 	return false
 
-## Input sinks call this before consuming an event: Godot dispatches descendants
-## before the autoload, including mounted activities and modal UI.
+## Quem consome entrada chama isto antes de consumir um evento: o Godot despacha os descendentes
+## antes do autoload, incluindo atividades montadas e UI modal.
 func observe_event(event: InputEvent) -> void:
 	var old := using_gamepad
 	var old_joypad := active_joypad

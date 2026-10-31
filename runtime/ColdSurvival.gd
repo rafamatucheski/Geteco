@@ -68,7 +68,7 @@ func _cold_zone_active() -> bool:
 	if not session.state.place_id.is_empty(): return true
 	var point: Vector3 = session.world.driving.car.global_position if session.world.driving.occupied else session.world.player.global_position
 	var weight := CONNECTION.mountain_weight(point)
-	# Both thresholds are on land. Walking back and forth at entry cannot flicker the HUD.
+	# Os dois limiares ficam em terra. Andar para lá e para cá na entrada não faz o HUD piscar.
 	_in_cold_zone = weight > (0.10 if _in_cold_zone else 0.25)
 	return _in_cold_zone
 func status() -> Dictionary:
@@ -93,11 +93,11 @@ func recover_after_rescue() -> void:
 	temperature_changed.emit(100,100)
 
 func prepare_collision_at(point: Vector3) -> bool:
-	# Admission is only allowed after the physics server has seen newly spawned solids.
+	# A admissão só é permitida depois que o servidor de física viu os sólidos recém-criados.
 	if not is_instance_valid(session) or session.state.region_id!="mountain": return true
 	if not point.is_finite() or not is_instance_valid(presentation) or not presentation.is_inside_tree(): return false
-	# Reconcile providers synchronously: a streamed source may have appeared or
-	# disappeared since the last quarter-second presentation update.
+	# Reconcilia os provedores de forma síncrona: uma fonte em streaming pode ter aparecido ou
+	# sumido desde a última atualização de apresentação de quarto de segundo.
 	presentation.elapsed = 1
 	presentation.update_sources(1,point,true,true,8.0)
 	var local_ready := true

@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## Maciota deliberately has no health, receive_damage or death entrypoint.
+## O Maciota de propósito não tem vida, receive_damage nem ponto de entrada de morte.
 var visual: Node3D
 var gait := 0.0
 func _ready() -> void:

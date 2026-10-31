@@ -88,14 +88,14 @@ func bank_departed() -> void:
 	var amount: int = data.bank_pending
 	if session.state.economy.grant_reward("bank_haul:%d:%d"%[int(data.bank_cycle),mask],amount):
 		data.bank_pending=0
-		# A successful robbery also needs an authored investigation/reopening
-		# cycle. Preserve the haul receipt; a later visit cannot pay it again.
+		# Um assalto bem-sucedido também precisa de um ciclo escrito de investigação/reabertura.
+		# Preserva o recibo do roubo; uma visita posterior não pode pagá-lo de novo.
 		if "campaign" in session.state and session.state.campaign.active_id == "jessica_bank":
 			data.bank_restock_requested = true
 			data.aftermath = "pending"
 			data.elapsed_days = 0.0
-		# Settle wallet achievements with the haul, rather than delaying their
-		# bonus until the next damage/death event changes the gameplay HUD.
+		# Resolve as conquistas da carteira junto com o roubo, em vez de atrasar o
+		# bônus até o próximo evento de dano/morte mudar o HUD do jogo.
 		if "activities" in session and session.activities!=null: session.activities.refresh_achievements()
 		preload("res://gameplay/RewardAudio.gd").play(self,"cash")
 		session.show_message(String(TranslationServer.translate("Saque guardado: + R$ %d.000"))%floori(float(amount)/1000.0))
@@ -254,7 +254,7 @@ func _dispatch(bank: bool) -> void:
 	if data[key]: return
 	data[key]=true
 	var entrance: Vector3 = preload("res://world/places/PlaceCatalog.gd").get_definition("harbor_bank" if bank else "harbor_fuel").entry_position
-	# Existing Wanted owns response. No claim of the V1 vehicle perimeter/blockade.
+	# O Wanted existente é dono da resposta. Nada do perímetro/bloqueio de veículos da V1.
 	session.world.gameplay.register_crime(35 if bank else 15,entrance)
 	_session_save()
 
@@ -400,8 +400,8 @@ func restore_snapshot(saved: Dictionary) -> bool:
 		data.bank_pending=0 # Previous versions already paid collected piles.
 		data.bank_deaths=0
 	if int(data.version) == 1:
-		# Legacy closure happened on every exit, without proof of player death.
-		# Keep earned loot and deaths, but do not preserve that premature lockout.
+		# O fechamento antigo acontecia em toda saída, sem prova de morte do jogador.
+		# Mantém o saque ganho e as mortes, mas não preserva esse bloqueio prematuro.
 		data.bank_failed = false
 		data.aftermath = ""
 		data.elapsed_days = 0.0

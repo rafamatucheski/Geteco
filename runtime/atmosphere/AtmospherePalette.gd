@@ -18,20 +18,20 @@ static func summit_weight(local_point: Vector2) -> float:
 	return 1.0 - smoothstep(-1700.0, 250.0, local_point.y)
 
 static func resort_weight(local_point: Vector2) -> float:
-	# Authored promenade/lodge precinct; fades before wilderness and ski slopes.
+	# Área escrita do calçadão/pousada; some antes da mata e das pistas de esqui.
 	var distance := ((local_point - Vector2(7190, -2730)) / Vector2(470, 290)).length()
 	return 1.0 - smoothstep(0.55, 1.5, distance)
 
 static func resort_sample(outdoor: Dictionary, weight: float) -> Dictionary:
 	var occupied := outdoor.duplicate()
-	# Keep cold shadows and storm visibility; warm highlights from occupied areas.
+	# Mantém sombras frias e a visibilidade da tempestade; realces quentes vindos de áreas ocupadas.
 	occupied.sunlight_tint *= Color(1.07, 1.015, 0.94)
 	occupied.saturation = minf(1.0, outdoor.saturation + 0.07)
 	occupied.contrast = lerpf(outdoor.contrast, 1.025, 0.5)
 	return blend(outdoor, occupied, weight)
 
 static func cemetery_weight(local_point: Vector2, lot_size: Vector2) -> float:
-	# Use the actual lot, including its transform, rather than city coordinates.
+	# Usa o lote real, incluindo a transformação dele, em vez de coordenadas da cidade.
 	var normalized := local_point.abs() / (lot_size * 0.5).max(Vector2.ONE)
 	return 1.0 - smoothstep(0.65, 1.35, maxf(normalized.x, normalized.y))
 
@@ -42,7 +42,7 @@ static func cemetery_sample(outdoor: Dictionary, weight: float) -> Dictionary:
 	quiet.fog_color *= Color(0.92, 0.98, 1.025)
 	quiet.haze = minf(0.22, outdoor.haze + 0.035)
 	quiet.wind *= 0.55
-	# Lamps keep their warm highlights; night fog inherits the dark outdoor air.
+	# Os postes mantêm os realces quentes; a névoa noturna herda o ar escuro de fora.
 	return blend(outdoor, quiet, weight)
 
 static func sample(biome: int, hour: float, cloud: float, mountain: float, summit: float, snow: float) -> Dictionary:

@@ -1,5 +1,5 @@
 extends Node3D
-## Bounded local hail impacts. Ground mist is disabled in every region.
+## Impactos locais e limitados de granizo. A névoa no chão está desligada em toda região.
 const SHARD_COUNT := 120
 const SHARD_LIFETIME := 0.28 # Original V1 IceStormManager lifetime.
 var mist: GPUParticles3D
@@ -20,7 +20,7 @@ var _shards_alive := false
 func _ready() -> void:
 	_rng.randomize()
 	name = "WeatherSurfaceEffects"
-	# Ballistic fragments are animated at render cadence, not physics cadence.
+	# Os fragmentos balísticos são animados na cadência do render, não na da física.
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	shards = MultiMeshInstance3D.new()
 	shards.multimesh = MultiMesh.new()
@@ -57,14 +57,14 @@ func set_conditions(focus: Vector3, hail_strength: float, _haze: float, _tint: C
 	_hail_strength = 0.0 if covered else clampf(hail_strength,0,1)
 	set_physics_process(_hail_strength>.001)
 	follow_focus(focus)
-	# Distant fog belongs to RegionalAtmosphere3D; rain/snow have separate emitters.
+	# A névoa distante pertence ao RegionalAtmosphere3D; chuva/neve têm emissores separados.
 	mist.visible = false
 	mist.emitting = false
 	shards.visible = not covered
 	set_process(_shards_alive)
 
 func follow_focus(focus: Vector3) -> void:
-	# Called at render cadence: the old 5Hz relocation left dust behind cars.
+	# Chamado na cadência do render: a antiga realocação a 5Hz deixava poeira atrás dos carros.
 	mist.position = focus+Vector3.UP*lerpf(1.8,1.1,_desert)
 
 func _clear_shards() -> void:
@@ -78,14 +78,14 @@ func _physics_process(delta: float) -> void:
 	_tick += delta
 	if _hail_strength<=.001 or _tick<.1: return
 	_tick = 0.0
-	# At most four short ground rays per 100 ms, only during local hail.
+	# No máximo quatro raios curtos ao chão a cada 100 ms, só durante granizo local.
 	var space := get_world_3d().direct_space_state
 	for j in ceili(_hail_strength*4.0):
 		var point := _focus+Vector3(_rng.randf_range(-12,12),0,_rng.randf_range(-12,12))
 		var query := PhysicsRayQueryParameters3D.create(point+Vector3.UP*5,point+Vector3.DOWN*8,1)
 		var hit := space.intersect_ray(query)
 		if hit.is_empty() or hit.normal.y<.65: continue
-		# Reject roofs above the local ground; impacts remain on actual solids.
+		# Recusa telhados acima do chão local; os impactos ficam em sólidos reais.
 		if hit.position.y>_focus.y+1.0: continue
 		impact_count += 1
 		_shards_alive = true

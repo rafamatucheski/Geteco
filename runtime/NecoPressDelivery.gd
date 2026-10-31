@@ -1,5 +1,5 @@
 extends Node
-## Owns only the temporary presentation. GarageRewards owns the transaction.
+## Cuida só da apresentação temporária. O GarageRewards é dono da transação.
 signal finished(completed: bool)
 var press: Node3D
 var car: Node3D
@@ -18,7 +18,7 @@ func begin(vehicle: Node3D) -> bool:
 	proxy=Node3D.new()
 	_copy_meshes(vehicle.visual,vehicle.global_transform.affine_inverse(),proxy)
 	if proxy.get_child_count()==0: proxy.free(); proxy=null; return false
-	# Flatten only meshes: no scripts, collision bodies, lights or equipment are copied.
+	# Achata só malhas: nenhum script, corpo de colisão, luz ou equipamento é copiado.
 	var bounds := AABB()
 	var first := true
 	for mesh in proxy.get_children():
@@ -34,7 +34,7 @@ func begin(vehicle: Node3D) -> bool:
 	proxy.global_transform=press.get_reception_transform()*Transform3D(Basis(Vector3.UP,PI),Vector3.ZERO)
 	car=vehicle
 	saved={"visible":car.visible,"physics":car.is_physics_processing(),"drivable":car.is_in_group("drivable")}
-	# Keep the real hull reserving its original place, so cancellation can restore safely.
+	# Mantém o casco real reservando o lugar original, para o cancelamento restaurar com segurança.
 	car.hide()
 	car.set_physics_process(false)
 	car.remove_from_group("drivable")

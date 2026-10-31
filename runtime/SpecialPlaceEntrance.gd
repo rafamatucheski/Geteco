@@ -1,5 +1,5 @@
 extends Node
-## Walk into the ship hold or cave; the sewer uses explicit interaction.
+## Entra andando no porão do navio ou na caverna; o esgoto usa interação explícita.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
 const UNDER := preload("res://world/desert/underground/DesertUnderground.gd")

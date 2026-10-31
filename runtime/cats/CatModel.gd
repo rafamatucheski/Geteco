@@ -1,6 +1,6 @@
 extends Node3D
-## Small native 3D cat. The owning actor controls distance, lifetime and animation.
-## Forward is -Z; feet rest at y=0. No physics, timers, lights or per-cat viewport.
+## Gato 3D nativo pequeno. O ator dono controla distância, tempo de vida e animação.
+## A frente é -Z; os pés ficam em y=0. Sem física, timers, luzes nem viewport por gato.
 
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const COATS := [
@@ -105,7 +105,7 @@ func _pose(blend: float, speed: float) -> void:
 	_head.position = _head.position.lerp(head, blend)
 	_head.rotation.x = lerp_angle(_head.rotation.x, head_pitch, blend)
 	_head.rotation.y = lerp_angle(_head.rotation.y, 0.42 if sleep else sin(_clock * 0.64) * 0.16, blend)
-	# Closed eyes for naps and an occasional natural blink; eye geometry shares the head.
+	# Olhos fechados para cochilos e uma piscada natural de vez em quando; a geometria dos olhos divide a cabeça.
 	var blinking := fmod(_clock, 4.7) > 4.55
 	_eyes.scale.y = lerpf(_eyes.scale.y, 0.07 if sleep or blinking else 1.0, blend)
 	for n in range(4):

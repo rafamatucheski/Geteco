@@ -1,6 +1,6 @@
 extends Node
-## Only the occupied Santa Lua home owns an active resident. Empty rooms do
-## not retain rigs, physics or animation; the saved world clock owns occupancy.
+## Só a casa ocupada de Santa Lua tem um morador ativo. Salas vazias não
+## retêm rigs, física nem animação; o relógio salvo do mundo é dono da ocupação.
 const HOMES := preload("res://world/desert/village/DesertVillageHomes.gd")
 const RESIDENT := preload("res://runtime/desert/DesertVillageResident.gd")
 var session
@@ -35,8 +35,8 @@ func reconcile() -> void:
 		_clear(); return
 	if session.is_transition_blocked():
 		_clear(); return
-	# Corpse cleanup must not turn into resurrection in the occupied room.
-	# Leaving or daylight ends this visit; no shared save schema is involved.
+	# A limpeza de cadáveres não pode virar ressurreição na sala ocupada.
+	# Sair ou amanhecer encerra esta visita; nenhum esquema de save compartilhado está envolvido.
 	if _suppressed_home==id and _suppressed_room!=null and _suppressed_room.get_ref()==room: return
 	if active_room==room and active_home==id and is_instance_valid(resident): return
 	_clear()

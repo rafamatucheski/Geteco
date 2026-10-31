@@ -1,6 +1,6 @@
 extends Node3D
-## Three bounded voices on the existing Ambient bus. Original PCM is baked
-## offline; no synthesis, world scans or resource loads in the frame loop.
+## Três vozes limitadas no bus Ambient existente. O PCM original é bakeado
+## offline; sem síntese, varredura do mundo nem carga de recurso no laço do quadro.
 const L := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const REMAINS := preload("res://world/desert/canyon/ScavengerRemains.gd")
 const TERRAIN := preload("res://world/desert/canyon/DesertSmugglerTerrain.gd")
@@ -122,8 +122,8 @@ func _play_detail(weight: float) -> void:
 		detail.global_position=closest
 		detail.volume_db=-5.0+linear_to_db(maxf(weight,.0001))
 	else:
-		# The stressed member is beside the crossing, not at an arbitrary urban
-		# sound anchor. Slight position variation preserves the exposed span.
+		# A peça sob tensão fica ao lado da travessia, não numa âncora sonora urbana
+		# arbitrária. Uma leve variação de posição preserva o vão exposto.
 		detail.global_position=Vector3(L.CENTER.x+(-1.8 if variant==0 else 1.8),.4,clampf(at.z+_rng.randf_range(-5,5),L.BRIDGE_START.z-21.0,L.BRIDGE_END.z+8.0))
 		detail.volume_db=-12.0+linear_to_db(maxf(weight,.0001))
 	detail.stream=BANK[kind][variant]

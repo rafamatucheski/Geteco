@@ -1,6 +1,6 @@
 extends Node3D
-## Three authored actors, admitted incrementally and never replenished on a kill.
-## Combat uses Gameplay's moving projectile, cover, damage protection and loot.
+## Três atores escritos, admitidos aos poucos e nunca repostos depois de uma morte.
+## O combate usa o projétil em movimento, a cobertura, a proteção de dano e o saque do Gameplay.
 signal cleared
 const CAMP := preload("res://world/desert/DesertBanditCamp.gd")
 const MAX_BANDITS := 3
@@ -67,8 +67,8 @@ func _process(delta: float) -> void:
 		if not _state_error_reported: push_error("Invalid desert_bandits state; encounter suspended"); _state_error_reported=true
 		_release(); return
 	if int(saved.defeated_mask)!=_known_mask:
-		# A restored save changes encounter ownership, never revives a corpse in
-		# place or leaves an actor alive whose persistent slot is defeated.
+		# Um save restaurado muda a posse do encontro, nunca revive um cadáver no
+		# lugar nem deixa vivo um ator cuja vaga persistente foi derrotada.
 		_release()
 		_known_mask=int(saved.defeated_mask)
 		_admission_wait=.5
@@ -90,7 +90,7 @@ func _process(delta: float) -> void:
 		region.prepare_collision_at(CAMP.CENTER)
 		camp=CAMP.build()
 		add_child(camp)
-		# Physics synchronizes the shelter before capsule admission next tick.
+		# A física sincroniza o abrigo antes da admissão de cápsula no próximo tick.
 		return
 	var mask := int(saved.defeated_mask)
 	for index in MAX_BANDITS:
@@ -213,7 +213,7 @@ class Bandit extends "res://gameplay/CobraAgent.gd":
 				destination=target.global_position
 			else: destination=global_position
 		else:
-			# A short walk inside the clear front apron; never pathfind on city roads.
+			# Uma caminhada curta dentro do pátio da frente livre; nunca busca caminho nas ruas da cidade.
 			destination=home+Vector3(sin(patrol_clock*.18+float(slot))*1.5,0,0)
 		var move := destination-global_position; move.y=0
 		move=Vector3.ZERO if move.length()<.2 else _steering.steer(self,move.normalized(),delta)*(1.8 if engaged else .55)
@@ -228,8 +228,8 @@ class Bandit extends "res://gameplay/CobraAgent.gd":
 			_shoot(target)
 
 	func _shoot(_target: Node3D) -> void:
-		# Production moving rounds raycast each advance; cover and god mode are
-		# resolved by Gameplay, including the bridge from body to muzzle.
+		# Os projéteis em movimento da produção fazem raycast a cada avanço; cobertura e god mode são
+		# resolvidos pelo Gameplay, incluindo a ponte do corpo até a boca do cano.
 		if gameplay.civilian_shoot(self,visual.muzzle_position(),8.0):
 			visual.attack()
 			shots_fired+=1

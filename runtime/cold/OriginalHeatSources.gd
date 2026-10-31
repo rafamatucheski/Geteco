@@ -1,5 +1,5 @@
 extends RefCounted
-## All positions are MountainPass-local V1 pixels, not projected interior coordinates.
+## Todas as posições são pixels da V1 locais ao MountainPass, não coordenadas de interior projetadas.
 const OFFSET := Vector2(4300,-4960)
 const RADIUS := 220.0/16.0 # Actual controller radius; ignores larger/smaller Area2D art radii.
 const SOURCES := [
@@ -36,7 +36,7 @@ static func nearest(point: Vector3) -> Dictionary:
 static func sheltered(point: Vector3) -> bool:
 	if point.y < -.5 or point.y > 3: return false
 	var original := Vector2(point.x,point.z)*16.0-OFFSET
-	# MountainPass configures the original tunnel to850x150.
+	# O MountainPass configura o túnel original como 850x150.
 	if Rect2(4950,325,850,150).has_point(original): return true
 	# Original aircraft interior floor bounds, already authored in metres.
 	var plane := to_world(Vector2(5450,-1150))

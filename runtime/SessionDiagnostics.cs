@@ -12,7 +12,7 @@ using System.Threading;
 public partial class SessionDiagnostics : Node
 {
     private SessionLogSink sink;
-    // Essential session/errors logging is always available; profiling is opt-in in every build.
+    // O log essencial de sessão/erros está sempre disponível; o profiling é opcional em todo build.
     public bool DetailedEnabled { get; private set; }
     private readonly System.Collections.Generic.List<double> frames = new(512);
     private long previous, window;
@@ -157,7 +157,7 @@ public partial class SessionDiagnostics : Node
         }
         catch (Exception e)
         {
-            // Report once; lack of writable storage must not stop the game.
+            // Avisa uma vez; falta de armazenamento gravável não pode parar o jogo.
             GD.PrintErr("SessionDiagnostics indisponível: " + e.Message);
             SetProcess(false);
         }
@@ -176,7 +176,7 @@ public partial class SessionDiagnostics : Node
         catch (Exception e) { sink.Record(new { type = "telemetry_error", error = e.ToString() }); }
     }
 
-    // JSON is parsed on the writer thread, never serializing Godot objects there.
+    // O JSON é interpretado na thread do escritor, sem nunca serializar objetos do Godot lá.
     public void RecordProfile(string json) { if (DetailedEnabled) sink?.Profile(json); }
 
     public long BeginOperation(string system, string operation, string source, string detailsJson)
@@ -193,7 +193,7 @@ public partial class SessionDiagnostics : Node
     {
         if (sink == null) return;
         long now = Stopwatch.GetTimestamp();
-        // Retain only the cheap heartbeat for hung-game reporting in essential mode.
+        // No modo essencial, mantém só o heartbeat barato para relatar jogo travado.
         sink.Touch(now);
         if (!DetailedEnabled) return;
         var state = (GetTree().CurrentScene?.SceneFilePath ?? "", GetTree().Paused, DisplayServer.WindowIsFocused(), Engine.MaxFps, GetTree().Root.Size, DisplayServer.WindowGetVsyncMode());
@@ -260,7 +260,7 @@ public partial class SessionDiagnostics : Node
             long now = Stopwatch.GetTimestamp();
             double cpu = current.TotalProcessorTime.TotalMilliseconds;
             double elapsed = Math.Max(1e-3, (now - previousCpuAt) * 1000.0 / Stopwatch.Frequency);
-            // Process CPU normalized to the whole machine, not Godot's TIME_PROCESS monitor.
+            // CPU do processo normalizada para a máquina inteira, não o monitor TIME_PROCESS do Godot.
             processSample = new ProcessSample((cpu - previousCpu) / elapsed / System.Environment.ProcessorCount * 100,
                 current.WorkingSet64, current.PrivateMemorySize64, now);
             previousCpu = cpu;
@@ -286,7 +286,7 @@ public partial class SessionDiagnostics : Node
     }
 }
 
-// Only immutable CLR data crosses to the writer. No Godot API calls on its thread.
+// Só dados CLR imutáveis passam para o escritor. Nenhuma chamada de API do Godot na thread dele.
 public partial class SessionLogSink : Logger
 {
     private readonly BlockingCollection<object> queue = new(8192);
@@ -353,7 +353,7 @@ public partial class SessionLogSink : Logger
     {
         Folder = Path.Combine(root, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff") + "-" + System.Environment.ProcessId + "-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(Folder);
-        // Opening before registration allows storage failures to be reported outside Logger callbacks.
+        // Abrir antes do registro permite relatar falhas de armazenamento fora dos callbacks do Logger.
         var stream = OpenPart(0);
         lastFrame = start;
         writer = new Thread(() => WriteLoop(stream)) { IsBackground = true, Name = "Harbor session log" };
@@ -548,7 +548,7 @@ public partial class SessionLogSink : Logger
         catch (Exception e)
         {
             failure = e.ToString();
-            // No recursive Godot logging from the writer.
+            // Sem log recursivo do Godot a partir do escritor.
             System.Console.Error.WriteLine("Harbor session log stopped: " + failure);
         }
         finally {

@@ -1,5 +1,5 @@
 extends Node
-## Session boundary for the mine: ordinary vehicles and the standard place transition.
+## Fronteira de sessão da mina: veículos comuns e a transição padrão de lugar.
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const OPERATION := preload("res://gameplay/mining/MiningOperation.gd")
 var session

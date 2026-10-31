@@ -1,5 +1,5 @@
 extends Resource
-## Art controls are independent of gameplay weather and the shared world clock.
+## Os controles de arte independem do clima do jogo e do relógio compartilhado do mundo.
 @export var label := ""
 @export var shadow_tint := Color.WHITE
 @export var sunlight_tint := Color.WHITE

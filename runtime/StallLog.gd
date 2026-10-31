@@ -1,5 +1,5 @@
 extends Node
-## Optional in-memory consumer. The logger remains the sole owner of take().
+## Consumidor opcional em memória. O logger continua o único dono de take().
 ## No signal emission or extra record construction without a connected probe.
 signal interval_observed(now_usec: int, work: Array, removed_count: int, removed_roots: Array)
 var observe_intervals := false

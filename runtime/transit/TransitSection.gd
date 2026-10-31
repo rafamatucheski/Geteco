@@ -1,7 +1,7 @@
 extends CharacterBody3D
 var bus: CharacterBody3D
-## Emergency drivers query each collision body, including the articulated tail.
-## Filled from this section's hull when the bus constructs it.
+## Motoristas de emergência consultam cada corpo de colisão, incluindo a cauda articulada.
+## Preenchido a partir do casco desta seção quando o ônibus a constrói.
 var half_length := 0.0
 var half_width := 0.0
 var traffic: bool:

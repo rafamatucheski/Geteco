@@ -1,5 +1,5 @@
 extends Node3D
-## Outdoor discoveries use the existing contextual action and durable economy.
+## Descobertas ao ar livre usam a ação contextual existente e a economia durável.
 const SITES := preload("res://world/desert/expansion/DesertRelics.gd")
 const STATE := preload("res://runtime/desert/expansion/DesertDiscoveryState.gd")
 const PREFIX := "discovery:"
@@ -35,7 +35,7 @@ func nearest_action() -> Dictionary:
 	return {}
 
 func _line_clear(point: Vector3,target: Vector3) -> bool:
-	# The query stops short of the target chest; walls between player and cache block use.
+	# A consulta para antes do baú alvo; paredes entre o jogador e o esconderijo bloqueiam o uso.
 	var eye:=point+Vector3.UP*1.1
 	var destination:=target+Vector3.UP*.2
 	var direction:=destination-eye
