@@ -12,7 +12,14 @@ Teste: `tests/test_pilot_tapes.gd`.
   duas vezes. Ordem livre.
 - Modelo: a mesma `BoxMesh` + `StandardMaterial3D` do achado de papel, só com outra cor e tamanho
   (cassete escura, 20 x 13 cm). Nenhum shader ou material de tipo novo.
-- Ao pegar: aviso comum "Fitas X/10". Na décima: recibo `pilot_tapes_hideout` (uma vez só, sem dinheiro),
+- Ao pegar: aviso comum "Fitas X/10. Próxima: \"<dica>\"" com a dica (tabela abaixo) da fita que
+  falta mais perto na mesma região; sem nenhuma na região, a primeira que falta. O diário (J →
+  Informações) lista "Fitas do piloto X/10" e as dicas das que faltam, a partir da primeira fita.
+- Portão (31/10/2026, parte 2): a porta de enrolar física do Digo (`world/desert/DigoVehicleGate.gd`,
+  sem arte nova) fica em `HIDEOUT_POINT`, montada uma vez na primeira passagem por Harbor e
+  estacionada fora dele (escondida, colisão aberta). Trancada: ação "Abrir portão" →
+  "Fechado. Algo aqui espera dez fitas.". Com o recibo `pilot_tapes_hideout` ela sobe e para de bloquear.
+- Na décima: recibo `pilot_tapes_hideout` (uma vez só, sem dinheiro),
   aviso de que o galpão abriu, save, e o marcador "Galpão do piloto" aparece no mapa de Harbor.
 
 ## Os dez lugares
@@ -51,9 +58,12 @@ Galpão: **Pátio dos Armazéns** (Harbor, (124, 59.5); `ActivityDefinitions.del
 ## Pendências
 
 1. **Passada a pé no mundo real** (acima). Teste novo com sessão real, nos moldes de `test_vicente_letters.gd`.
-2. **Galpão como lugar:** hoje "liberar" é o recibo + marcador no mapa + aviso. Não existe porta/interior
-   novo; o pátio já é acessível. Falta: portão do galpão do pátio que só abre com o recibo, interior com a
-   exposição das 10 fitas e o troféu (arte nova, seguir padrões de interior e pré-aquecimento).
+2. **Galpão como lugar:** o portão existe (parte 2), mas está solto no ponto do pátio, sem parede de
+   galpão em volta nem interior atrás. **Não conferido no mundo:** (124, 59.5) é também o centro do drift
+   "harbor_cold_storage"; o portão fechado pode atrapalhar o drift e pode cruzar prédio/caixa. Rever o
+   ponto e a direção (yaw 0) numa passada a pé, encostá-lo numa fachada de armazém real, e o material
+   "steel" do deserto entrar no pré-aquecimento de Harbor se o perfil acusar compilação. Falta o interior
+   com a exposição das 10 fitas e o troféu.
 3. **Carro exclusivo:** a frota não tem esportivo com faróis escamoteáveis (o mais próximo é o comentário
    de farol "deitado no capô" em `tools/fleet_fixups/detail_fleet_lamps_20261029.gd`, sem mecanismo de
    abrir/fechar). O nitro existe só nos carros do deserto (`DesertTuning` slot "nitro", `DesertDrivetrain`).
@@ -61,5 +71,5 @@ Galpão: **Pátio dos Armazéns** (Harbor, (124, 59.5); `ActivityDefinitions.del
    com faróis animados (malha pré-aquecida), entregue no galpão com `nitro_street`, pelo mesmo padrão do
    Coyote do Vicente (`DesertWilds`: recibo + registro na garagem).
 4. **Pista de saltos:** exige geometria nova (rampas, colisão, desafio de tempo). Não iniciada.
-5. **Pistas visuais entre fitas:** o plano pede que cada fita aponte a próxima pela aparência; hoje a dica
-   da tabela só está neste documento.
+5. **Pistas visuais entre fitas:** a dica em texto já aparece no jogo (aviso e diário); falta a pista pela
+   aparência que o plano pede.

@@ -31,6 +31,19 @@ func _initialize() -> void:
 	var ids := DEFINITIONS.collectibles().map(func(entry): return entry.id)
 	for id in TAPES.IDS: check(ids.count(id) == 1, "%s entra uma vez nos pickups" % id)
 
+	# Dicas (parte 2): uma por fita, aviso aponta a mais perto que falta, diário lista as que faltam.
+	for id in TAPES.IDS: check(str(TAPES.HINTS.get(id, "")).length() > 4, "%s com dica" % id)
+	check(TAPES.journal_lines([]).is_empty(), "diário calado antes da primeira fita")
+	var near_04: Vector3 = points.filter(func(entry): return entry.id == "pilot_tape_04")[0].point
+	check(TAPES.next_missing(["pilot_tape_01"], "harbor", near_04).id == "pilot_tape_04", "próxima é a mais perto na região")
+	check(TAPES.found_message(["pilot_tape_01"], "harbor", near_04) == "Fitas 1/10. Próxima: \"%s\"" % TAPES.HINTS.pilot_tape_04, "aviso traz a dica da próxima")
+	check(TAPES.next_missing(["pilot_tape_01", "pilot_tape_02", "pilot_tape_03", "pilot_tape_04"], "harbor", near_04).id == "pilot_tape_05", "sem fita na região, a primeira que falta")
+	var journal := TAPES.journal_lines(["pilot_tape_03", "pilot_tape_07"])
+	check(journal.size() == 9 and journal[0] == "Fitas do piloto 2/10", "diário conta e lista oito dicas")
+	check(not journal.has("· " + TAPES.HINTS.pilot_tape_03) and journal.has("· " + TAPES.HINTS.pilot_tape_10), "diário só lista as que faltam")
+	check(TAPES.next_missing(TAPES.IDS.duplicate(), "harbor", Vector3.ZERO).is_empty(), "sem próxima com as dez")
+	check(TAPES.LOCKED_MESSAGE == "Fechado. Algo aqui espera dez fitas.", "texto do portão trancado")
+
 	var economy := Economy.new()
 	var order := [7, 2, 9, 0, 5, 3, 8, 1, 6, 4]
 	for step in 5:
@@ -53,6 +66,7 @@ func _initialize() -> void:
 	check(not TAPES.try_unlock(restored) and restored.balance == after, "galpão abre uma vez só")
 	var reloaded := Economy.new()
 	check(reloaded.restore_snapshot(JSON.parse_string(JSON.stringify(restored.snapshot()))) and TAPES.hideout_open(reloaded), "galpão aberto sobrevive ao save")
+	check(TAPES.journal_lines(reloaded.snapshot().collectibles)[0] == "Fitas do piloto 10/10", "diário com as dez depois do load")
 	check(not LETTERS.complete(reloaded.snapshot().collectibles), "fitas não contam como cartas de Vicente")
 	print("PILOT_TAPES failures=%s" % [failures])
 	quit(0 if failures.is_empty() else 1)

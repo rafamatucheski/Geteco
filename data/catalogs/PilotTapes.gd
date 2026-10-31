@@ -18,6 +18,16 @@ const PLACES := {
 	"pilot_tape_05": "Cume Branco", "pilot_tape_06": "Cabana do Cavaleiro", "pilot_tape_07": "Abrigo dos Lenhadores",
 	"pilot_tape_08": "Torre de rádio", "pilot_tape_09": "Ferro-velho do Nonato", "pilot_tape_10": "Salinas Estrada do Sal"}
 
+## Dica curta de cada fita (tabela de docs/fitas-piloto-20261031.md). Aparece no aviso ao pegar
+## uma fita (a da próxima mais perto) e no diário (as que faltam).
+const HINTS := {
+	"pilot_tape_01": "Onde o chefe guarda o que não é dele.", "pilot_tape_02": "Sirene vermelha, portão grande.",
+	"pilot_tape_03": "A casa do jardim, no extremo oeste.", "pilot_tape_04": "Embaixo da cidade tem outra cidade.",
+	"pilot_tape_05": "Lá em cima, onde se aluga esqui.", "pilot_tape_06": "A cabana que ninguém marca no mapa.",
+	"pilot_tape_07": "Cheiro de serragem.", "pilot_tape_08": "Quem sobe vê tudo.",
+	"pilot_tape_09": "Entre carcaças, uma fita inteira.", "pilot_tape_10": "Branco que não é neve."}
+const LOCKED_MESSAGE := "Fechado. Algo aqui espera dez fitas."
+
 static func is_tape(id: String) -> bool:
 	return id in IDS
 
@@ -37,6 +47,41 @@ static func hideout_open(economy) -> bool:
 static func try_unlock(economy) -> bool:
 	if economy == null or hideout_open(economy) or not complete(economy._data.get("collectibles", [])): return false
 	return economy.grant_reward(HIDEOUT_RECEIPT, 0, HIDEOUT_NAME)
+
+## Próxima fita que falta: a mais perto de `position` na mesma região; sem nenhuma ali, a primeira
+## que falta na ordem. {} quando as dez já foram achadas.
+static func next_missing(collectibles: Array, region: String, position: Vector3) -> Dictionary:
+	var best := {}
+	var best_distance := INF
+	var fallback := {}
+	for entry in points():
+		if collectibles.has(entry.id): continue
+		if fallback.is_empty() or IDS.find(entry.id) < IDS.find(fallback.id): fallback = entry
+		if entry.region != region: continue
+		var distance := Vector2(position.x, position.z).distance_to(Vector2(entry.point.x, entry.point.z))
+		if distance < best_distance:
+			best_distance = distance
+			best = entry
+	return best if not best.is_empty() else fallback
+
+## Aviso depois de pegar uma fita: contador e a dica da próxima.
+static func found_message(collectibles: Array, region: String, position: Vector3) -> String:
+	var text := "Fitas %d/10" % found(collectibles)
+	var next := next_missing(collectibles, region, position)
+	if not next.is_empty(): text += ". Próxima: \"%s\"" % HINTS[next.id]
+	return text
+
+## Linhas do diário: contador e as dicas das que faltam. Vazio antes da primeira fita (não estraga
+## a descoberta de que a coleção existe).
+static func journal_lines(collectibles: Array) -> Array[String]:
+	var result: Array[String] = []
+	var count := found(collectibles)
+	if count == 0: return result
+	result.append("Fitas do piloto %d/10" % count)
+	for id in IDS:
+		if not collectibles.has(id): result.append("· " + str(HINTS[id]))
+	if count == IDS.size(): result.append("· O galpão do piloto, no Pátio dos Armazéns, está aberto.")
+	return result
 
 ## Pontos das fitas (ActivityDefinitions.collectibles). Harbor e serra: ponto de retorno de um lugar
 ## existente (PlaceCatalog: área que o jogo já garante livre ao sair) deslocado 1,5 m de lado, preso
