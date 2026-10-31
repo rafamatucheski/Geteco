@@ -32,6 +32,7 @@ func run() -> void:
 	STATE.pause(world)
 	check(STATE.data(world).delivered.size()==1 and STATE.data(world).status=="paused","Cancel/death keeps accepted work")
 	check(not STATE.deliver(world,1,JOB.DESTINATION+Vector3.UP*.58,Vector3.ZERO),"Paused work cannot count")
+	check(not STATE.claim(world,wallet).ok and not STATE.ready_to_claim(world),"Paused partial work cannot pay")
 	check(STATE.begin(world),"Resume")
 	for id in [1,2]: check(STATE.deliver(world,id,JOB.DESTINATION+Vector3(float(id-1)*2,.58,0),Vector3.ZERO),"Complete delivery "+str(id))
 	var restored: Dictionary=JSON.parse_string(JSON.stringify(world))
@@ -130,7 +131,7 @@ func uneven_ground_contract() -> void:
 	stage.queue_free()
 
 ## Fluxo do card "Limpeza da cava" com save/load de verdade (mundo e carteira em JSON):
-## pausar com as três pedras entregues, salvar, carregar, retomar, receber e recarregar.
+## pausar com as três pedras entregues, salvar, carregar, receber direto (sem retomar) e recarregar.
 ## Sem isto, o pagamento só era provado na memória, nunca depois de restaurar a carteira.
 func save_load_contract() -> void:
 	var world:={}
@@ -144,13 +145,17 @@ func save_load_contract() -> void:
 	check(loaded.restore_snapshot(saved_wallet),"save/load: wallet restores")
 	check(STATE.validate_wallet(saved_world,loaded.snapshot()),"save/load: paused full job validates")
 	check(STATE.data(saved_world).status=="paused" and STATE.data(saved_world).delivered.size()==STATE.COUNT,"save/load: paused job keeps all three deliveries")
-	check(not STATE.claim(saved_world,loaded).ok,"save/load: paused job does not pay before resuming")
-	check(STATE.begin(saved_world),"save/load: resume after load")
-	check(STATE.claim(saved_world,loaded).ok and loaded.balance==STATE.REWARD,"save/load: pays R$ 1.800 once")
+	check(STATE.ready_to_claim(saved_world),"save/load: paused full job offers Receber directly")
+	var full:=ECONOMY.new()
+	full.grant_reward("fill_test_wallet",ECONOMY.LIMIT)
+	check(not STATE.claim(saved_world,full).ok and STATE.data(saved_world).status=="paused","save/load: full wallet keeps paused turn-in pending")
+	check(STATE.claim(saved_world,loaded).ok and loaded.balance==STATE.REWARD,"save/load: paused job pays R$ 1.800 once without resuming")
+	check(not STATE.claim(saved_world,loaded).ok and loaded.balance==STATE.REWARD,"save/load: paused claim replay does not pay twice")
 	check(STATE.data(saved_world).status=="complete","save/load: job completes")
 	var final_world: Dictionary=JSON.parse_string(JSON.stringify(saved_world))
 	var final_wallet:=ECONOMY.new()
 	check(final_wallet.restore_snapshot(JSON.parse_string(JSON.stringify(loaded.snapshot()))),"save/load: paid wallet restores")
 	check(STATE.validate_wallet(final_world,final_wallet.snapshot()),"save/load: receipt serra_bruta_clearance survives reload")
 	check(not STATE.RECEIPTS.lookup(final_wallet.snapshot(),"reward",STATE.RECEIPT).is_empty(),"save/load: receipt present")
+	check(not STATE.ready_to_claim(final_world),"save/load: completed job no longer offers Receber")
 	check(not STATE.begin(final_world) and not STATE.claim(final_world,final_wallet).ok and final_wallet.balance==STATE.REWARD,"save/load: completed job cannot restart or pay twice after reload")

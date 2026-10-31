@@ -51,6 +51,10 @@ static func begin(world: Dictionary) -> bool:
 	world[KEY]=state
 	return true
 
+static func ready_to_claim(world: Dictionary) -> bool:
+	var state:=data(world)
+	return valid(state) and state.status in ["active","paused"] and state.delivered.size()==COUNT
+
 static func pause(world: Dictionary) -> void:
 	var state:=data(world)
 	if state.status!="active": return
@@ -67,7 +71,9 @@ static func deliver(world: Dictionary, id: int, point: Vector3, rotation: Vector
 
 static func claim(world: Dictionary, wallet: RefCounted) -> Dictionary:
 	var state:=data(world)
-	if not valid(state) or state.status!="active" or state.delivered.size()!=COUNT: return {"ok":false}
+	# Pausado com as três pedras entregues também recebe: não há mais nada a fazer na cava,
+	# e exigir "Retomar" antes de "Receber" só escondia o pagamento do jogador.
+	if not ready_to_claim(world): return {"ok":false}
 	var result: Dictionary=wallet.grant_world_reward({"id":RECEIPT,"kind":"cash","amount":REWARD})
 	if not result.get("ok",false): return result
 	state.status="complete"

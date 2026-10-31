@@ -48,10 +48,11 @@ func perform(action: Dictionary) -> bool:
 	if action.is_empty() or action!=nearest_action(): return false
 	var state:=STATE.data(session.state.world_state)
 	session._menu("Serra Bruta")
-	if state.status in ["idle","paused"]:
-		session._button("Aceitar limpeza da cava · R$ 1.800" if state.status=="idle" else "Retomar limpeza da cava",_begin)
-	elif state.delivered.size()==STATE.COUNT:
+	# Entregas completas valem antes do estado pausado: o operário paga direto.
+	if STATE.ready_to_claim(session.state.world_state):
 		session._button("Receber R$ 1.800",_claim)
+	elif state.status in ["idle","paused"]:
+		session._button("Aceitar limpeza da cava · R$ 1.800" if state.status=="idle" else "Retomar limpeza da cava",_begin)
 	else:
 		session._button("Pausar serviço · manter entregas",_pause)
 	session._button("Voltar",session.close_menu)
@@ -98,6 +99,8 @@ func save_block_reason() -> String:
 func objective() -> String:
 	if not enabled(): return ""
 	var state:=STATE.data(session.state.world_state)
+	# Pausado fica fora do HUD de propósito: "pausar" é como o jogador troca o acompanhamento
+	# (Água para Santa Lua, história) e este objetivo venceria o da comunidade na lista.
 	if state.status!="active": return ""
 	if state.delivered.size()==STATE.COUNT: return "Limpeza da cava: volte ao operário para receber R$ 1.800."
 	return String(TranslationServer.translate("Limpeza da cava: use a pá e solte as pedras na baia branca (%d/3).")) % state.delivered.size()
