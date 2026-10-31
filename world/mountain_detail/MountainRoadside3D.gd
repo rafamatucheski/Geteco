@@ -139,7 +139,7 @@ func _build(region) -> void:
 	preload("res://world/regions/MountainGroundFinish.gd").apply_ground(path_material)
 	_paths.material_override = path_material
 	_paths.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# Native terrain now blends this shoulder into the same opaque ground surface.
+	# O terreno nativo agora mistura este acostamento na mesma superfície de chão opaca.
 	_paths.visible = region.terrain == null
 	add_child(_paths)
 	_build_lamps()
@@ -154,8 +154,8 @@ func _build_traffic_signs(region) -> void:
 	signs.configure(region, _lamp_points)
 	signs.build(_traffic_signs)
 
-## The splash-art rhythm comes from low passive amber panels between existing
-## lamps. Markers sit beyond the 1.65 m walking band; branches remain open.
+## O ritmo da arte de abertura vem de painéis âmbar passivos baixos entre os postes
+## existentes. Os marcadores ficam além da faixa de caminhada de 1.65 m; os ramais ficam abertos.
 func _build_delineators(region) -> void:
 	var poses: Array[Transform3D] = []
 	for road: Dictionary in region.roads:
@@ -170,8 +170,8 @@ func _build_delineators(region) -> void:
 			if length < 0.01: continue
 			var direction := a.direction_to(b)
 			var normal := Vector3(direction.z, 0, -direction.x).normalized()
-			# Main-route samples are only ~4 m apart: use continuous road phase,
-			# rather than trimming both ends of each tiny geometry segment.
+			# As amostras da rota principal ficam só a ~4 m uma da outra: usa a fase contínua da estrada,
+			# em vez de aparar as duas pontas de cada segmento minúsculo de geometria.
 			var step := fposmod(12.0 - travelled, 24.0)
 			while step < length - 0.001:
 				for side: float in [-1.0, 1.0]:
@@ -374,8 +374,8 @@ func _append_clipped_triangle(a: Vector3, b: Vector3, c: Vector3, uv_a: Vector2,
 	if absf(determinant) < .000001: return
 	var shape := PackedVector2Array([origin,origin+axis_b,origin+axis_c])
 	if Geometry2D.is_polygon_clockwise(shape): shape.reverse()
-	# Cut the actual polygons, including the main road shoulder at each branch.
-	# No fragment overlay or raised curb remains across the carriageway.
+	# Corta os polígonos reais, incluindo o acostamento da estrada principal em cada ramal.
+	# Nenhum fragmento sobreposto ou meio-fio elevado fica atravessando a pista.
 	for piece in _region.route_geometry.outside_roads(shape):
 		for index in Geometry2D.triangulate_polygon(piece):
 			var point: Vector2 = piece[index]

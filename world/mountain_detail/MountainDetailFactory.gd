@@ -1,10 +1,10 @@
 extends RefCounted
 class_name MountainDetailFactory
 
-## Independent central factory for Mountain Detail 3D presentation in Geteco V2.
-## Manages the exterior presentation of the Sawmill (Logging Camp) and Mountain Transit Village.
-## Preserves original geography at 16 px/metre, integrates shared materials,
-## and enforces layer 1 StaticBody3D collision and unblocked access contracts.
+## Fábrica central independente da apresentação 3D do Mountain Detail na Geteco V2.
+## Gerencia a apresentação externa da Serraria (acampamento madeireiro) e do Mountain Transit Village.
+## Preserva a geografia original em 16 px/metro, integra materiais compartilhados
+## e impõe colisão StaticBody3D na camada 1 e os contratos de acesso desbloqueado.
 
 const PLACE_CATALOG_PATH := "res://world/places/PlaceCatalog.gd"
 const ENVIRONMENTAL_PARITY := preload("res://world/environmental_parity/EnvironmentalParityFactory.gd")
@@ -13,11 +13,11 @@ const ENVIRONMENTAL_PARITY := preload("res://world/environmental_parity/Environm
 const SAWMILL_LOCAL_COORDS := Vector2(6350.0, 560.0)
 const VILLAGE_LOCAL_COORDS := Vector2(7560.0, -1650.0)
 
-## Computes the world 3D position for a mountain-local point using PlaceCatalog.
+## Calcula a posição 3D no mundo de um ponto local da montanha usando PlaceCatalog.
 static func get_mountain_world_point(local_pt: Vector2) -> Vector3:
 	return preload("res://world/places/PlaceCatalog.gd")._at(local_pt,"mountain")
 
-## Instantiates and builds the Sawmill Yard 3D compound.
+## Instancia e monta o complexo 3D do pátio da serraria.
 static func build_sawmill(world_pos: Vector3 = Vector3.ZERO) -> SawmillYard3D:
 	var yard := SawmillYard3D.new()
 	yard.name = "SawmillYard3D"
@@ -31,7 +31,7 @@ static func build_sawmill(world_pos: Vector3 = Vector3.ZERO) -> SawmillYard3D:
 	)
 	return yard
 
-## Instantiates and builds the Mountain Transit Village 3D compound.
+## Instancia e monta o complexo 3D do Mountain Transit Village.
 static func build_village(world_pos: Vector3 = Vector3.ZERO) -> MountainVillage3D:
 	var village := MountainVillage3D.new()
 	village.use_original_sections = true
@@ -43,7 +43,7 @@ static func build_village(world_pos: Vector3 = Vector3.ZERO) -> MountainVillage3
 	village.ready.connect(func(): finalize_mountain_detail(village))
 	return village
 
-## Synchronously mounts the Sawmill Yard into a streaming chunk node and finalizes it.
+## Monta de forma síncrona o pátio da serraria num nó de chunk em streaming e o finaliza.
 static func populate_sawmill_chunk(chunk: Node3D, data: Dictionary = {}) -> SawmillYard3D:
 	var world_pos: Vector3 = data.get("position", Vector3.ZERO)
 	var yard := build_sawmill(world_pos)
@@ -51,7 +51,7 @@ static func populate_sawmill_chunk(chunk: Node3D, data: Dictionary = {}) -> Sawm
 	finalize_mountain_detail(yard)
 	return yard
 
-## Synchronously mounts the Mountain Village into a streaming chunk node and finalizes it.
+## Monta de forma síncrona o vilarejo da montanha num nó de chunk em streaming e o finaliza.
 static func populate_village_chunk(chunk: Node3D, data: Dictionary = {}) -> MountainVillage3D:
 	var world_pos: Vector3 = data.get("position", Vector3.ZERO)
 	var village := build_village(world_pos)
@@ -59,8 +59,8 @@ static func populate_village_chunk(chunk: Node3D, data: Dictionary = {}) -> Moun
 	finalize_mountain_detail(village)
 	return village
 
-## V1 mechanisms that need their own streaming records rather than being tied
-## to a place facade. NativeRegion owns registration and chunk residency.
+## Mecanismos da V1 que precisam de registros de streaming próprios em vez de ficarem presos
+## a uma fachada de lugar. O NativeRegion é dono do registro e da residência dos chunks.
 static func get_environmental_records() -> Array[Dictionary]:
 	return ENVIRONMENTAL_PARITY.mountain_records()
 

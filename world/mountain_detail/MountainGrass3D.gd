@@ -17,7 +17,7 @@ const TILE := 16.0
 const RADIUS := 44.0
 const SPACING := 0.85
 const TILES_PER_FRAME := 2
-const FOOTPRINT := 0.65 # Includes the tallest tuft's lean and wind displacement.
+const FOOTPRINT := 0.65 # Inclui a inclinação e o deslocamento de vento do tufo mais alto.
 const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 ## Estoque de blocos (16/10): cada bloco novo criava um MultiMesh e o bloco que saía destruía o dele, o
 ## que na emenda da ponte vira criação/destruição de buffers de vídeo a cada passo (o driver segura a
@@ -86,7 +86,7 @@ func _physics_process_traced(delta: float) -> void:
 	if region != _region:
 		_clear()
 		_region = region
-	# Drop vegetation with its supporting chunk, including unload/reload of the same cell.
+	# Descarta a vegetação junto com o chunk de apoio, incluindo descarga/recarga da mesma célula.
 	for key in _tiles.keys():
 		var chunk: Node3D = _support_chunk(key)
 		if not is_instance_valid(chunk) or chunk.get_instance_id() != int(_tiles[key].get_meta("support_chunk", 0)):
@@ -108,8 +108,8 @@ func _physics_process_traced(delta: float) -> void:
 	_clock += delta
 	if _clock < 0.3: return
 	_clock = 0.0
-	# Interiors move the player to a separate part of the world. NativeRegion
-	# keeps the exterior focus there, so preserve its tiles for the return trip.
+	# Interiores levam o jogador para uma parte separada do mundo. O NativeRegion
+	# mantém ali o foco externo, então preserva os ladrilhos para a volta.
 	var focus: Vector3 = region.focus
 	var center := Vector2i(floori(focus.x / TILE), floori(focus.z / TILE))
 	var reach := ceili(RADIUS / TILE)
@@ -135,7 +135,7 @@ func _support_chunk(key: Vector2i) -> Node3D:
 	if not _region._mountain_owns_terrain(cell): return null
 	var chunk: Node3D = _region.chunks.get(cell)
 	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion(): return null
-	# Wait for authored buildings and their physics bodies, not only the ground stage.
+	# Espera os prédios autorados e os corpos físicos deles, não só a etapa do chão.
 	if int(chunk.get_meta("vegetation_ready_frame", Engine.get_physics_frames())) >= Engine.get_physics_frames(): return null
 	return chunk
 
@@ -204,15 +204,15 @@ func _sample_tile(job: Dictionary, began: int, budget_usec: float) -> bool:
 		var iz := int(job.next) % steps
 		job.next = int(job.next) + 1
 		var at := corner + (Vector2(ix, iz) + Vector2(rng.randf(), rng.randf())) * SPACING
-		# Shared spatial reservations cover complete road segments, water and rooms,
-		# even before their meshes exist. A nearby road vertex is not sufficient.
+		# Reservas espaciais compartilhadas cobrem segmentos de estrada inteiros, água e cômodos,
+		# mesmo antes de as malhas existirem. Um vértice de estrada próximo não basta.
 		if terrain.is_reserved(at, FOOTPRINT): continue
 		var y: float = terrain.surface_height_at(at)
 		# Rampa da bacia de lago: capim até perto da água (linha d'água em -0,2);
 		# só a beira molhada fica sem.
 		if y < -0.1: continue
 		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(at.x, y + 6.0, at.y), Vector3(at.x, y - 1.0, at.y), 1))
-		# Fail closed: empty space, pavement, furniture and walls are never soil.
+		# Falha fechada: espaço vazio, pavimento, móveis e paredes nunca são solo.
 		if hit.is_empty() or not hit.collider.get_meta("mountain_terrain", false): continue
 		if absf(float(hit.position.y) - y) > 0.08 or hit.normal.y < 0.8: continue
 		var s := rng.randf_range(0.7, 1.35)

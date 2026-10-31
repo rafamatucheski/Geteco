@@ -1,10 +1,10 @@
 extends Node3D
 class_name MountainChalet3D
 
-## High-detail 3D Alpine Chalet model for the Mountain Pass village residences.
-## Features stone foundation plinths, rustic horizontal cedar log walls, gabled snow roof with dormers,
-## fieldstone chimney with snow cap, entrance porch steps, and firewood storage.
-## Native StaticBody3D collision on layer 1, mask 0.
+## Modelo 3D detalhado de chalé alpino para as residências do vilarejo do Mountain Pass.
+## Tem plintos de fundação de pedra, paredes rústicas de toras horizontais de cedro, telhado de duas águas com neve e águas-furtadas,
+## chaminé de pedra bruta com neve no topo, degraus da varanda de entrada e depósito de lenha.
+## Colisão StaticBody3D nativa na camada 1, máscara 0.
 
 @export var variant_index: int = 0
 @export var chalet_size: Vector2 = Vector2(6.5, 4.2) # ~104 x 62 px
@@ -94,7 +94,7 @@ func build() -> void:
 			var sx: float = wx + s * 0.68
 			_add_box("Shutter", Vector3(sx, wy, half_d + 0.05), Vector3(0.28, 1.05, 0.06), wall_mat)
 	
-	# 4. Pitched Gable Roof with Overhangs and Snow Accumulation
+	# 4. Telhado de duas águas com beirais e acúmulo de neve
 	var roof_pitch := 0.45 # ~26 degrees
 	var roof_overhang_w := chalet_size.x + 0.8
 	var roof_overhang_d := chalet_size.y + 0.8

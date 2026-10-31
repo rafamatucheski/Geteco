@@ -1,6 +1,6 @@
 extends RefCounted
-## Passive rural signs, derived from the resident road geometry. No frame work,
-## lights, speed limits or changes to traffic priority. Front faces use local +Z.
+## Placas rurais passivas, derivadas da geometria de estrada residente. Sem trabalho por quadro,
+## luzes, limites de velocidade ou mudança de preferência no trânsito. As faces da frente usam +Z local.
 const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const JEEP := preload("res://world/mountain_jeep/MountainJeepCourse.gd")
 const HEIGHT := 2.85
@@ -41,7 +41,7 @@ func configure(region, lamps: Array[Vector3] = []) -> void:
 					if _add(curve.sample_baked(d)+right*(half+CLEARANCE),-forward,"curve_right" if right_turn else "curve_left",road.id):
 						last_warning = travelled
 				if travelled-last_chevron > 28:
-					# The outside of a right bend lies to the driver's left.
+					# O lado de fora de uma curva à direita fica à esquerda do motorista.
 					for shift: float in [-5, 3, 11]:
 						var d := offset+shift*sense
 						var forward := _direction(curve,d,sense)
@@ -221,7 +221,7 @@ func _prepare_meshes() -> void:
 		var warning: bool = kind.begins_with("curve")
 		var outline := PackedVector2Array([Vector2(-.64,0),Vector2(0,.64),Vector2(.64,0),Vector2(0,-.64)]) if warning else PackedVector2Array([Vector2(-.4,-.5),Vector2(.4,-.5),Vector2(.4,.5),Vector2(-.4,.5)])
 		if kind == "destination": outline = PackedVector2Array([Vector2(-1.25,-.36),Vector2(1.25,-.36),Vector2(1.25,.36),Vector2(-1.25,.36)])
-		# Metal back and front paint are opaque surfaces; no alpha or viewport.
+		# O fundo de metal e a pintura da frente são superfícies opacas; sem alpha nem viewport.
 		_polygon(mesh,outline,-.025,metal,true)
 		_polygon(mesh,outline,0,black if kind != "destination" else _material("e3e8dc"))
 		var inset := outline.duplicate()
@@ -244,7 +244,7 @@ func _polygon(mesh: ArrayMesh, polygon: PackedVector2Array, depth: float, materi
 	var normals := PackedVector3Array()
 	for triangle in range(0,indices.size(),3):
 		var corners := [indices[triangle],indices[triangle+1],indices[triangle+2]]
-		# Godot front faces use clockwise winding when viewed from the front.
+		# Faces da frente no Godot usam sentido horário vistas de frente.
 		var a := polygon[corners[0]]
 		var b := polygon[corners[1]]
 		var c := polygon[corners[2]]

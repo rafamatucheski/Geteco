@@ -1,5 +1,5 @@
 extends RefCounted
-## All public coordinates are MOUNTAIN-LOCAL, before the region streaming offset.
+## Todas as coordenadas públicas são LOCAIS DA MONTANHA, antes do deslocamento de streaming da região.
 const ORIGIN := Vector2(7560, -1650)
 const RESERVATION_BOUNDS := Rect2(7310, -2010, 690, 720)
 const BERTH := Vector2(7500, -1760)

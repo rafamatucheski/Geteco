@@ -1,12 +1,12 @@
 extends Node3D
 class_name MountainVillage3D
 
-## Complete 3D exterior settlement presentation of the Mountain Transit Village.
-## Located at mountain-local coordinates ORIGIN = (7560, -1650), matching V1 geography at 16 px/metre.
+## Apresentação 3D externa completa do povoado Mountain Transit Village.
+## Fica nas coordenadas locais da montanha ORIGIN = (7560, -1650), batendo com a geografia da V1 em 16 px/metro.
 ## Assembles the passenger terminal, coach berth 01, outfitters shop ("Casacos da Vila"),
-## 4 alpine chalets, central plaza with community brazier, street lamps, wood stores,
-## plowed walkways, and rustic post-and-rail fences.
-## All doors, pedestrian walkways, and bus approaches remain 100% open and unblocked.
+## 4 chalés alpinos, praça central com braseiro comunitário, postes de rua, depósitos de lenha,
+## caminhos limpos de neve e cercas rústicas de poste e trilho.
+## Todas as portas, caminhos de pedestres e aproximações de ônibus ficam 100% abertos e desbloqueados.
 
 const SCALE := 1.0 / 16.0
 const ORIGIN := Vector2(7560.0, -1650.0)
@@ -57,7 +57,7 @@ func _at_local(mountain_pt: Vector2) -> Vector3:
 	return Vector3(delta.x * SCALE, 0.0, delta.y * SCALE)
 
 func _build_pathways() -> void:
-	# Network of plowed stone and packed snow paths connecting key points
+	# Rede de caminhos de pedra limpos e neve compactada ligando os pontos principais
 	var paving_mat := MountainMaterials.stone_paving()
 	var stone_mat := MountainMaterials.stone_river()
 	
@@ -202,7 +202,7 @@ func _build_amenities() -> void:
 		var w_pos := _at_local(wood_store_points[idx])
 		_build_wood_store(w_pos, idx)
 	
-	# 3. Wooden Plaza Benches at original points (7646, -1508) and (7678, -1560)
+	# 3. Bancos de madeira da praça nos pontos originais (7646, -1508) e (7678, -1560)
 	for b_pt in [Vector2(7646, -1508), Vector2(7678, -1560)]:
 		var b_pos := _at_local(b_pt)
 		_build_plaza_bench(b_pos)
@@ -297,8 +297,8 @@ func _build_fences() -> void:
 	fences.name = "VillageFences"
 	add_child(fences)
 	
-	# Perimeter fences along the slopes and clearing boundaries (derived from clearing outline):
-	# (7315,-1510) -> (7340,-1720) [West slope]
+	# Cercas de perímetro ao longo das encostas e dos limites da clareira (derivadas do contorno da clareira):
+	# (7315,-1510) -> (7340,-1720) [encosta oeste]
 	_add_fence_seg(Vector2(7315, -1510), Vector2(7340, -1720))
 	# (7360,-1385) -> (7315,-1510) [Southwest boundary]
 	_add_fence_seg(Vector2(7360, -1385), Vector2(7315, -1510))

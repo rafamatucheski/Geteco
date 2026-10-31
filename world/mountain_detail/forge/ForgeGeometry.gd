@@ -1,5 +1,5 @@
 extends RefCounted
-## Shared low-poly primitives, grouped by shape/material into MultiMeshes.
+## Primitivas low-poly compartilhadas, agrupadas por forma/material em MultiMeshes.
 ## Veio do zoológico da serra (ZooGeometry); as cores de chão usam o shader de cascalho.
 const GROUND_COLORS := ["9e937a","8d8a5a","ae9870","6f6a5c"]
 var groups: Dictionary = {}

@@ -1,11 +1,11 @@
 extends Node3D
 class_name SawmillShed3D
 
-## Open-sided timber cutting shed for the Mountain Pass sawmill.
-## Features heavy round log posts, king-post timber roof trusses, circular saw table with steel blade,
-## log roller conveyor track, carpentry workbenches, and authentic logging tool racks.
-## Maintains clear, unblocked pedestrian/material passageways through the central work corridor.
-## Native StaticBody3D collision on layer 1, mask 0.
+## Galpão de corte de madeira com lados abertos para a serraria do Mountain Pass.
+## Tem postes grossos de tora redonda, tesouras de telhado de pendural, mesa de serra circular com lâmina de aço,
+## trilho de transporte de toras com roletes, bancadas de carpintaria e suportes autênticos de ferramentas de corte.
+## Mantém passagens livres e desbloqueadas para pedestres/material pelo corredor central de trabalho.
+## Colisão StaticBody3D nativa na camada 1, máscara 0.
 
 @export var shed_width: float = 7.2
 @export var shed_depth: float = 5.4
@@ -31,7 +31,7 @@ func build() -> void:
 	var half_d := shed_depth * 0.5
 	var post_h := 3.2
 	
-	# Solid StaticBody3D for structural posts and equipment
+	# StaticBody3D sólido para os postes estruturais e os equipamentos
 	var body := StaticBody3D.new()
 	body.name = "SawmillShedCollision"
 	body.collision_layer = 1
@@ -65,7 +65,7 @@ func build() -> void:
 		# King-post roof truss
 		_build_roof_truss(x, header_y, shed_depth - 0.70, beam_mat)
 	
-	# 3. Pitched Gable Roof with Wood Shakes and Thick Snow Layer
+	# 3. Telhado de duas águas com telhas de madeira e camada grossa de neve
 	var ridge_h := 1.25
 	var ridge_y := header_y + ridge_h
 	var roof_overhang_w := shed_width + 0.8
@@ -136,7 +136,7 @@ func build() -> void:
 	for bz in [-half_d * 0.45 - bench_len * 0.4, -half_d * 0.45 + bench_len * 0.4]:
 		_add_box("WorkBenchLeg", Vector3(bench_x, (bench_h - 0.10) * 0.5, bz), Vector3(0.72, bench_h - 0.10, 0.12), beam_mat)
 	
-	# Cast iron bench vise on edge of workbench
+	# Morsa de bancada de ferro fundido na borda da bancada
 	_add_box("BenchVise", Vector3(bench_x - 0.38, bench_h + 0.10, -half_d * 0.45 - 0.6), Vector3(0.18, 0.22, 0.25), iron_mat)
 	
 	# Two-man crosscut saw (traçadeira) hanging on rear cross beam
@@ -156,7 +156,7 @@ func _build_roof_truss(x: float, y: float, depth: float, mat: Material) -> void:
 
 	# King post in center
 	_add_box("KingPost", Vector3(x, y + 0.60, 0), Vector3(0.14, 1.20, 0.14), mat)
-	# Rafters from center apex to eaves
+	# Caibros do vértice central até os beirais
 	for side in [-1.0, 1.0]:
 		var rafter_z: float = side * half_d * 0.5
 		var rafter := _add_box("Rafter", Vector3(x, y + 0.60, rafter_z), Vector3(0.12, 0.14, half_d * 1.15), mat)

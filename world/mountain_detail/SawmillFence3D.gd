@@ -48,7 +48,7 @@ func build_segment(start_pt: Vector3, end_pt: Vector3) -> void:
 	# End post
 	_add_post(seg_root, Vector3(0, post_height * 0.5, length * 0.5), pole_mat, snow_mat)
 	
-	# If segment is long (> 3.5m), place an intermediate post
+	# Se o segmento for longo (> 3.5m), põe um poste intermediário
 	if length > 3.5:
 		_add_post(seg_root, Vector3(0, post_height * 0.5, 0), pole_mat, snow_mat)
 	
@@ -77,7 +77,7 @@ func _add_box(parent: Node3D, node_name: String, pos: Vector3, size: Vector3, ma
 	parent.add_child(mi)
 	return mi
 
-## Static helper to build a connected fence line from an array of Vector3 points with optional gaps.
+## Auxiliar estático para montar uma linha de cerca conectada a partir de um array de pontos Vector3 com vãos opcionais.
 static func create_fence_line(points: PackedVector3Array) -> MountainFence3D:
 	var fence := MountainFence3D.new()
 	fence.name = "FenceLine"
