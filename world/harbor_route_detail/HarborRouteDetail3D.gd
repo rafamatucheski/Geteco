@@ -1,21 +1,21 @@
 extends Node3D
 class_name HarborRouteDetail3D
 
-## Visual & physical streetscape component for the core Harbor route:
+## Componente visual e físico de paisagem de rua para a rota principal do Harbor:
 ## Rodoviária (Coach Terminal) → Delegacia (Police Precinct) → Garagem do Maciota.
 ##
-## Modular Zone Architecture:
-## - ZONE_RODOVIARIA: Transit benches, planters and bike rack on the district pavement.
-## - ZONE_CONNECTING_STREETS: Pedestrian markings, municipal lighting and hydrants.
-## - ZONE_DELEGACIA: Anti-ram security bollards and civic globe lamps on a flush forecourt.
-## - ZONE_MACIOTA: Workshop frontage furniture on the shared native ground.
-## Legacy slab/curb/ramp coordinates below are retained as empty editor anchors;
-## former dimensions explain their original slots, not current raised geometry.
+## Arquitetura modular por zona:
+## - ZONE_RODOVIARIA: bancos de trânsito, canteiros e bicicletário no calçamento do distrito.
+## - ZONE_CONNECTING_STREETS: marcações de pedestre, iluminação municipal e hidrantes.
+## - ZONE_DELEGACIA: frades de segurança anti-impacto e luminárias cívicas de globo num pátio rente.
+## - ZONE_MACIOTA: mobiliário de frente da oficina no chão nativo compartilhado.
+## As coordenadas legadas de laje/meio-fio/rampa abaixo ficam como âncoras vazias do editor;
+## as dimensões antigas explicam os slots originais, não a geometria elevada atual.
 ##
-## ARCHITECTURAL CONSTRAINTS & GUARANTEES:
-## - Independent lifecycle per zone: mount_zone(), unmount_zone(), has_zone(), get_zone().
-## - Zero duplication of buildings, facades, NPCs, or vehicles.
-## - Zero descriptive/decorative text (AGENTS.md).
+## RESTRIÇÕES E GARANTIAS DE ARQUITETURA:
+## - Ciclo de vida independente por zona: mount_zone(), unmount_zone(), has_zone(), get_zone().
+## - Zero duplicação de prédios, fachadas, NPCs ou veículos.
+## - Zero texto descritivo/decorativo (AGENTS.md).
 ## - Flush level crossing at Rodoviária disembark corridor (Y ≈ 0.01m), matching Arrival.gd and HarborTerminalModel3D.
 ## - Exterior support belongs to NativeRegion; route furniture adds no second paving layer.
 
@@ -36,9 +36,9 @@ const ALL_ZONES := [
 # Dictionary tracking mounted zone instances: zone_id -> Node3D
 var _mounted_zones: Dictionary = {}
 
-## If true and no zones have been mounted prior to entering the tree,
-## mounts all zones on _ready(). Defaults to false so mounting a single zone
-## or using chunk streaming never inadvertently triggers mount_all().
+## Se verdadeiro e nenhuma zona tiver sido montada antes de entrar na árvore,
+## monta todas as zonas no _ready(). O padrão é falso para que montar uma zona só
+## ou usar streaming de chunks nunca dispare mount_all() sem querer.
 @export var auto_mount_all: bool = false
 
 func _ready() -> void:
@@ -49,8 +49,8 @@ func _ready() -> void:
 # Zone Lifecycle API (Public)
 # ==============================================================================
 
-## Builds and returns an unparented Node3D containing all props and geometry for a specific zone.
-## The returned node is not attached to any parent.
+## Monta e devolve um Node3D sem pai contendo todos os props e a geometria de uma zona específica.
+## O nó devolvido não está anexado a nenhum pai.
 static func build_zone(zone_id: String) -> Node3D:
 	var zone_node: Node3D = null
 	match zone_id:
@@ -115,17 +115,17 @@ static func cancel_zone(job: Dictionary) -> void:
 	job.clear()
 
 
-## Retired paving keeps its child slot so saved piece/route/<zone>/<index>
-## edits still address the same furniture. No mesh or collider is allocated:
-## district paving and the road generator own the continuous, flush floor.
+## Pavimento aposentado mantém o slot de filho para que edições salvas em piece/route/<zone>/<index>
+## ainda apontem para o mesmo mobiliário. Nenhuma malha ou colisor é alocado:
+## o calçamento do distrito e o gerador de ruas são donos do piso contínuo e rente.
 static func _ground_anchor(label: String) -> Node3D:
 	var anchor := Node3D.new()
 	anchor.name = label
 	anchor.set_meta("district_ground_owned",true)
 	return anchor
 
-## Mounts a specific zone by ID as a child of this HarborRouteDetail3D instance.
-## Returns the mounted zone Node3D, or the existing one if already mounted.
+## Monta uma zona específica por ID como filha desta instância de HarborRouteDetail3D.
+## Devolve o Node3D da zona montada, ou o existente se já estiver montada.
 func mount_zone(zone_id: String) -> Node3D:
 	if _mounted_zones.has(zone_id) and is_instance_valid(_mounted_zones[zone_id]):
 		return _mounted_zones[zone_id]
@@ -137,7 +137,7 @@ func mount_zone(zone_id: String) -> Node3D:
 	
 	return zone_node
 
-## Unmounts and frees a specific zone by ID from this HarborRouteDetail3D instance.
+## Desmonta e libera uma zona específica por ID desta instância de HarborRouteDetail3D.
 func unmount_zone(zone_id: String) -> void:
 	if not _mounted_zones.has(zone_id):
 		return
@@ -146,27 +146,27 @@ func unmount_zone(zone_id: String) -> void:
 	if is_instance_valid(node):
 		node.queue_free()
 
-## Returns true if the designated zone is currently mounted on this instance.
+## Devolve verdadeiro se a zona indicada estiver montada nesta instância.
 func has_zone(zone_id: String) -> bool:
 	return _mounted_zones.has(zone_id) and is_instance_valid(_mounted_zones[zone_id])
 
-## Returns the root Node3D of the mounted zone, or null if not mounted.
+## Devolve o Node3D raiz da zona montada, ou null se não estiver montada.
 func get_zone(zone_id: String) -> Node3D:
 	if has_zone(zone_id):
 		return _mounted_zones[zone_id]
 	return null
 
-## Mounts all zones into this HarborRouteDetail3D instance.
+## Monta todas as zonas nesta instância de HarborRouteDetail3D.
 func mount_all() -> void:
 	for zone_id in ALL_ZONES:
 		mount_zone(zone_id)
 
-## Unmounts and frees all mounted zones from this HarborRouteDetail3D instance.
+## Desmonta e libera todas as zonas montadas desta instância de HarborRouteDetail3D.
 func unmount_all() -> void:
 	for zone_id in ALL_ZONES:
 		unmount_zone(zone_id)
 
-## Returns the approximate spatial AABB of a zone in global coordinates.
+## Devolve o AABB espacial aproximado de uma zona em coordenadas globais.
 static func get_zone_bounds(zone_id: String) -> AABB:
 	match zone_id:
 		ZONE_RODOVIARIA:
@@ -205,9 +205,9 @@ static func get_transition_point(point_id: String) -> Vector3:
 static func _build_rodoviaria_zone(selected_piece := -1) -> Node3D:
 	var zone := Node3D.new()
 	
-	# Sidewalk promenade is partitioned into West Wing (X: 92.0 to 103.5) and East Wing (X: 110.5 to 122.0).
-	# The central transit corridor (X: 103.5 to 110.5, span 7.0m) is a flush pedestrian level crossing
-	# at grade Y = 0.05m, matching Market Street's roadway surface and Arrival.gd disembark trajectory!
+	# O passeio da calçada é dividido em Ala Oeste (X: 92.0 a 103.5) e Ala Leste (X: 110.5 a 122.0).
+	# O corredor central de trânsito (X: 103.5 a 110.5, vão de 7.0m) é uma travessia de pedestres rente
+	# no nível Y = 0.05m, batendo com a superfície da pista da Market Street e a trajetória de desembarque do Arrival.gd!
 	
 	# 1. West Wing Slab (11.5m x 4.2m at Y = 0.12m)
 	if selected_piece < 0 or selected_piece == 0:
@@ -222,8 +222,8 @@ static func _build_rodoviaria_zone(selected_piece := -1) -> Node3D:
 		curb_w.position = Vector3(97.75, 0.0, 74.55)
 		zone.add_child(curb_w)
 	
-	# Preserve the intercity exit lane centred at X=121.875. The former wing,
-	# bike rack and lamp occupied its swept coach hull and blocked the V1 route.
+	# Preserva a faixa de saída intermunicipal centrada em X=121.875. A antiga ala,
+	# o bicicletário e o poste ocupavam a carcaça varrida do ônibus e bloqueavam a rota da V1.
 	if selected_piece < 0 or selected_piece == 2:
 		var slab_e := _ground_anchor("SidewalkSlab")
 		slab_e.position = Vector3(114.75, 0.0, 72.4)
@@ -236,16 +236,16 @@ static func _build_rodoviaria_zone(selected_piece := -1) -> Node3D:
 		curb_e.position = Vector3(114.75, 0.0, 74.55)
 		zone.add_child(curb_e)
 	
-	# 3. Central Passenger Disembarking Level Crossing (X: 103.5 to 110.5, Z: 70.3 to 75.0)
-	# Level paving (height = 0.05m, top at Y = 0.05m) matching Market St roadway box exactly.
-	# Dante walks from bus door (X ≈ 108.56, Z ≈ 76.31) to ARRIVAL (X = 106.25, Z = 70.625)
-	# with > 1.29m clearance to side_ramp_e and zero vertical steps or curb stones.
+	# 3. Travessia rente central de desembarque de passageiros (X: 103.5 a 110.5, Z: 70.3 a 75.0)
+	# Calçamento nivelado (altura = 0.05m, topo em Y = 0.05m) batendo exatamente com a caixa da pista da Market St.
+	# O Dante anda da porta do ônibus (X ≈ 108.56, Z ≈ 76.31) até ARRIVAL (X = 106.25, Z = 70.625)
+	# com folga > 1.29m até side_ramp_e e zero degraus verticais ou pedras de meio-fio.
 	if selected_piece < 0 or selected_piece == 4:
 		var level_crossing := _ground_anchor("SidewalkSlab")
 		level_crossing.position = Vector3(107.0, 0.0, 72.65)
 		zone.add_child(level_crossing)
 	
-	# Tactile yellow edge line marking the pedestrian boundary at Z = 74.55
+	# Linha tátil amarela de borda marcando o limite de pedestres em Z = 74.55
 	if selected_piece < 0 or selected_piece == 5:
 		var edge_marker := MeshInstance3D.new()
 		edge_marker.name = "BusBayEdgeMarker"
@@ -270,8 +270,8 @@ static func _build_rodoviaria_zone(selected_piece := -1) -> Node3D:
 		side_ramp_e.position = Vector3(110.5, 0.0, 72.4)
 		zone.add_child(side_ramp_e)
 	
-	# 4. Amenities placed exclusively in the flanking wings:
-	# West Wing Amenities (X ≤ 101.5):
+	# 4. Comodidades postas só nas alas laterais:
+	# Comodidades da Ala Oeste (X ≤ 101.5):
 	if selected_piece < 0 or selected_piece == 8:
 		var bench_w := HarborRouteProps.create_bench(2.2)
 		bench_w.position = Vector3(98.5, 0.008, 71.0)
@@ -333,7 +333,7 @@ static func _build_rodoviaria_zone(selected_piece := -1) -> Node3D:
 static func _build_connecting_streets(selected_piece := -1) -> Node3D:
 	var zone := Node3D.new()
 	
-	# 1. Northern sidewalk of Market St towards Union Ave (X: 85.6 to 92.0, Z: 72.5 to 74.5)
+	# 1. Calçada norte da Market St rumo à Union Ave (X: 85.6 a 92.0, Z: 72.5 a 74.5)
 	# Começa em 85.6, alinhada à calçada leste da Union Ave: a Union Ave ocupa X 77.2–85.3
 	# e a versão anterior (X 83.0) avançava 2.3 m sobre a pista, bloqueando carros no cruzamento.
 	if selected_piece < 0 or selected_piece == 0:
@@ -341,15 +341,15 @@ static func _build_connecting_streets(selected_piece := -1) -> Node3D:
 		slab_market.position = Vector3(88.8, 0.0, 73.5)
 		zone.add_child(slab_market)
 	
-	# Curb along Market St edge, trimmed to start past the pedestrian curb ramp at X = 87.8 (X: 87.8 to 92.0, span 4.2m)
-	# Eliminates collider overlap between the vertical curb and the beveled ramp wedge (X: 85.6 to 87.8)
+	# Meio-fio na borda da Market St, aparado para começar depois da rampa de pedestres em X = 87.8 (X: 87.8 a 92.0, vão de 4.2m)
+	# Elimina a sobreposição de colisores entre o meio-fio vertical e a cunha chanfrada da rampa (X: 85.6 a 87.8)
 	if selected_piece < 0 or selected_piece == 1:
 		var curb_market := _ground_anchor("CurbSegment")
 		curb_market.rotation_degrees = Vector3(0, 90, 0)
 		curb_market.position = Vector3(89.9, 0.0, 74.55)
 		zone.add_child(curb_market)
 	
-	# Pedestrian curb cut ramp at Market/Union intersection corner (X: 85.6 to 87.8, span 2.2m)
+	# Rampa de rebaixo de meio-fio na esquina do cruzamento Market/Union (X: 85.6 a 87.8, vão de 2.2m)
 	if selected_piece < 0 or selected_piece == 2:
 		var ramp_market := _ground_anchor("CurbRamp")
 		ramp_market.position = Vector3(86.7, 0.0, 74.55)
@@ -361,7 +361,7 @@ static func _build_connecting_streets(selected_piece := -1) -> Node3D:
 		crosswalk_market.position = Vector3(82.5, 0.0, 78.125)
 		zone.add_child(crosswalk_market)
 	
-	# 3. Eastern sidewalk along Union Avenue (runs North-South from Z: 82.0 to 128.0 at X: 86.8)
+	# 3. Calçada leste ao longo da Union Avenue (corre de norte a sul de Z: 82.0 a 128.0 em X: 86.8)
 	if selected_piece < 0 or selected_piece == 4:
 		var slab_union_n := _ground_anchor("SidewalkSlab")
 		slab_union_n.position = Vector3(86.8, 0.0, 94.0)
@@ -378,7 +378,7 @@ static func _build_connecting_streets(selected_piece := -1) -> Node3D:
 			curb.position = Vector3(85.5, 0.0, (span.x+span.y)*.5)
 			zone.add_child(curb)
 
-		# Curbs facing the Union Ave roadway (at X = 85.5)
+		# Meios-fios virados para a pista da Union Ave (em X = 85.5)
 	if selected_piece < 0 or selected_piece == 6:
 		var curb_union_n := _ground_anchor("CurbSegment")
 		curb_union_n.position = Vector3(85.5, 0.0, 94.0)
@@ -421,9 +421,9 @@ static func _build_connecting_streets(selected_piece := -1) -> Node3D:
 static func _build_delegacia_zone(selected_piece := -1) -> Node3D:
 	var zone := Node3D.new()
 	
-	# Dock Street is now 14 m wide: its north asphalt edge is Z = 130.5.
-	# Keep every raised part behind that edge; the sewer opening remains in the road.
-	# Four paving panels preserve the editor's existing child IDs (crosswalk = 17).
+	# A Dock Street agora tem 14 m de largura: a borda norte do asfalto é Z = 130.5.
+	# Mantém toda parte elevada atrás dessa borda; a abertura do esgoto continua na rua.
+	# Quatro painéis de calçamento preservam os IDs de filho existentes do editor (faixa de pedestres = 17).
 	var paving := [
 		Rect2(56.0, 125.0, 10.0, 2.35),
 		Rect2(56.0, 127.35, 10.0, 2.35),
@@ -438,7 +438,7 @@ static func _build_delegacia_zone(selected_piece := -1) -> Node3D:
 		slab.position = Vector3(piece.get_center().x, 0.0, piece.get_center().y)
 		zone.add_child(slab)
 
-	# Curbs flank the central accessible approach, entirely on the sidewalk.
+	# Os meios-fios ladeiam o acesso central acessível, inteiramente na calçada.
 	if selected_piece < 0 or selected_piece == 4:
 		var curb_w := _ground_anchor("CurbSegment")
 		curb_w.rotation_degrees = Vector3(0, 90, 0)
@@ -451,7 +451,7 @@ static func _build_delegacia_zone(selected_piece := -1) -> Node3D:
 		curb_e.position = Vector3(72.5, 0.0, 129.85)
 		zone.add_child(curb_e)
 	
-	# Former six-metre ramp slot: approach and forecourt are now flush.
+	# Antigo slot da rampa de seis metros: acesso e pátio agora são rentes.
 	if selected_piece < 0 or selected_piece == 6:
 		var p_ramp := _ground_anchor("CurbRamp")
 		p_ramp.position = Vector3(66.0, 0.0, 130.1)
@@ -468,8 +468,8 @@ static func _build_delegacia_zone(selected_piece := -1) -> Node3D:
 		p_light_e.position = Vector3(75.0, 0.008, 128.8)
 		zone.add_child(p_light_e)
 	
-	# Anti-ram security bollards with police navy finish and reflective bands
-	# Flank the entrance, keeping the central six-metre ramp unobstructed.
+	# Frades de segurança anti-impacto com acabamento azul-marinho da polícia e faixas refletivas
+	# Ladeiam a entrada, mantendo desobstruída a rampa central de seis metros.
 	var bollard_xs := [57.5, 59.0, 60.5, 71.5, 74.5]
 	for index in range(bollard_xs.size()):
 		if selected_piece >= 0 and selected_piece != 9 + index: continue
@@ -477,7 +477,7 @@ static func _build_delegacia_zone(selected_piece := -1) -> Node3D:
 		bollard.position = Vector3(bollard_xs[index], 0.008, 129.1)
 		zone.add_child(bollard)
 
-	# Public civic bench on the quiet west side of the forecourt
+	# Banco cívico público no lado oeste tranquilo do pátio
 	if selected_piece < 0 or selected_piece == 14:
 		var bench := HarborRouteProps.create_bench(2.0)
 		bench.position = Vector3(58.0, 0.008, 126.8)
@@ -490,9 +490,9 @@ static func _build_delegacia_zone(selected_piece := -1) -> Node3D:
 		bin.position = Vector3(74.0, 0.008, 127.5)
 		zone.add_child(bin)
 	
-	# Keep the manhole beside the forecourt clear for the lid and ladder access.
+	# Mantém o bueiro ao lado do pátio livre para a tampa e o acesso pela escada.
 	
-	# Storm drain grate in street gutter beside the west curb wing (clear of pedestrian ramp)
+	# Grade de boca de lobo na sarjeta ao lado da ala oeste do meio-fio (longe da rampa de pedestres)
 	if selected_piece < 0 or selected_piece == 16:
 		var drain := HarborRouteProps.create_drain_grate()
 		drain.position = Vector3(62.0, 0.0, 130.35)
@@ -515,46 +515,46 @@ static func _build_maciota_zone(selected_piece := -1) -> Node3D:
 	# Existing apron props follow the workshop's new industrial anchor.
 	zone.position = Vector3(2696.0/16-790.0/16,0,1624.0/16-1495.0/16)
 	
-	# Sidewalk frontage running in front of the workshop (X: 39.5 to 57.0, Z: 101.25 to 104.6).
-	# No separate slab mesh here: any raised or differently-colored box reads as a second
-	# sidewalk stacked on the district's own flat paving underneath it, no matter how thin
-	# or how closely its color is matched. The flat HarborUrbanSurface3D paving (already
-	# exposed here, see HarborUrbanSurface3D._RAISED_APRON_HOLES) is the sidewalk; this zone
-	# only adds curb/ramp/props on top of it.
+	# Frente de calçada passando diante da oficina (X: 39.5 a 57.0, Z: 101.25 a 104.6).
+	# Sem malha de laje separada aqui: qualquer caixa elevada ou de cor diferente parece uma segunda
+	# calçada empilhada sobre o calçamento plano do próprio distrito embaixo, por mais fina
+	# ou mais parecida que seja a cor. O calçamento plano do HarborUrbanSurface3D (já
+	# exposto aqui, veja HarborUrbanSurface3D._RAISED_APRON_HOLES) é a calçada; esta zona
+	# só acrescenta meio-fio/rampa/props por cima.
 
-	# The freight-yard frontage has continuous native paving at road level.
-	# The old 3 cm wedge joined a raised apron at the previous garage; here it
-	# connected no height change and its vertical side obstructed westbound
-	# vehicles. The native floor remains the supported, full-width access.
+	# A frente do pátio de cargas tem calçamento nativo contínuo no nível da rua.
+	# A antiga cunha de 3 cm ligava um pátio elevado na garagem anterior; aqui ela
+	# não ligava nenhuma mudança de altura e o lado vertical obstruía veículos
+	# sentido oeste. O piso nativo continua sendo o acesso apoiado de largura total.
 
-	# Granite curb on the east pedestrian sidewalk flank (X: 50.8 to 57.0)
+	# Meio-fio de granito no flanco leste da calçada de pedestres (X: 50.8 a 57.0)
 	if selected_piece < 0 or selected_piece == 0:
 		var curb_e := _ground_anchor("CurbSegment")
 		curb_e.rotation_degrees = Vector3(0, 90, 0)
 		curb_e.position = Vector3(55.375, 0.0, 91.9375)
 		zone.add_child(curb_e)
 
-	# High-visibility yellow safety bollard placed on the east curb corner (X = 51.2, clear of vehicle bay)
-	# Note: West bollard at X = 42.5 was removed to clear Arrival.gd's tour car arrival stop at (42.5, 0, 104.55).
+	# Frade amarelo de segurança de alta visibilidade na esquina leste do meio-fio (X = 51.2, longe da baia de veículos)
+	# Nota: o frade oeste em X = 42.5 foi removido para liberar a parada de chegada do carro do passeio do Arrival.gd em (42.5, 0, 104.55).
 	if selected_piece < 0 or selected_piece == 1:
 		var bollard_e := HarborRouteProps.create_bollard("hazard")
 		bollard_e.position = Vector3(54.575, 0.03, 91.7375)
 		zone.add_child(bollard_e)
 
-	# The utility corner lights the court from the east. Its pole stays outside
-	# the full turning hull and the car's forward obstacle sensor.
+	# A esquina de serviço ilumina a quadra pelo leste. O poste fica fora
+	# da carcaça de manobra inteira e do sensor de obstáculo dianteiro do carro.
 	if selected_piece < 0 or selected_piece == 2:
 		var ind_light := HarborRouteProps.create_streetlight(5.2, 1.1, "industrial", deg_to_rad(45.0))
 		ind_light.position = Vector3(55.675, 0.03, 90.9375)
 		zone.add_child(ind_light)
 
-	# Fire hydrant on the far east sidewalk corner (X = 56.2)
+	# Hidrante na esquina mais a leste da calçada (X = 56.2)
 	if selected_piece < 0 or selected_piece == 3:
 		var hydrant := HarborRouteProps.create_fire_hydrant()
 		hydrant.position = Vector3(55.675, 0.03, 93.0375)
 		zone.add_child(hydrant)
 
-	# Heavy scrap metal / oil drum hopper on the east apron
+	# Caçamba pesada de sucata / tambores de óleo no pátio leste
 	if selected_piece < 0 or selected_piece == 4:
 		var drum := MeshInstance3D.new()
 		drum.name = "ScrapOilDrum"
@@ -581,7 +581,7 @@ static func _build_maciota_zone(selected_piece := -1) -> Node3D:
 		drum_body.add_child(d_col)
 		zone.add_child(drum_body)
 	
-	# Storm drain grate in street gutter outside the driveway
+	# Grade de boca de lobo na sarjeta em frente à entrada de garagem
 	if selected_piece < 0 or selected_piece == 6:
 		var drain := HarborRouteProps.create_drain_grate()
 		drain.position = Vector3(55.375, 0.0, 102.6875)

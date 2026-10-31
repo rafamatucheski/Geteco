@@ -1,12 +1,12 @@
 extends RefCounted
 class_name HarborRouteProps
 
-## Factory library for modular, native 3D urban street furniture, sidewalks, and curbs.
-## Strictly adheres to Geteco V2 physics and performance contracts:
-## - All solids have exact StaticBody3D volumes on collision_layer 1 (mask 0).
-## - Shared materials from HarborRouteMaterials.
-## - Zero descriptive/decorative signage.
-## - Safe for pedestrian and vehicular navigation without accidental traps.
+## Biblioteca fábrica de mobiliário urbano 3D nativo e modular, calçadas e meios-fios.
+## Segue à risca os contratos de física e desempenho da Geteco V2:
+## - Todos os sólidos têm volumes StaticBody3D exatos em collision_layer 1 (mask 0).
+## - Materiais compartilhados de HarborRouteMaterials.
+## - Zero sinalização descritiva/decorativa.
+## - Seguro para navegação de pedestres e veículos sem armadilhas acidentais.
 
 # ==============================================================================
 # Sidewalks & Curbs
@@ -79,9 +79,9 @@ static func create_curb_segment(length: float, width: float = 0.30, height: floa
 	
 	return root
 
-## Creates a beveled curb cut / pedestrian & vehicle ramp for smooth level transitions.
-## Slopes smoothly from road level (Y = 0.0) at the front edge (+Z) to curb height (Y = max_height) at the rear edge (-Z).
-## Angle of inclination: atan2(max_height, depth_z) ≈ 8° to 12°, well within CharacterBody3D floor_max_angle.
+## Cria um rebaixo chanfrado de meio-fio / rampa de pedestres e veículos para transições de nível suaves.
+## Inclina suavemente do nível da rua (Y = 0.0) na borda da frente (+Z) até a altura do meio-fio (Y = max_height) na borda de trás (-Z).
+## Ângulo de inclinação: atan2(max_height, depth_z) ≈ 8° a 12°, bem dentro do floor_max_angle do CharacterBody3D.
 static func create_curb_ramp(span_x: float, depth_z: float = 0.70, max_height: float = 0.14, mat: StandardMaterial3D = null) -> Node3D:
 	var root := Node3D.new()
 	root.name = "CurbRamp"
@@ -92,9 +92,9 @@ static func create_curb_ramp(span_x: float, depth_z: float = 0.70, max_height: f
 	var hx := span_x * 0.5
 	var hz := depth_z * 0.5
 	
-	# Six vertices of the right-triangular wedge:
-	# - Rear face at -hz has height = max_height
-	# - Front face at +hz has height = 0.0
+	# Seis vértices da cunha de triângulo retângulo:
+	# - A face de trás em -hz tem altura = max_height
+	# - A face da frente em +hz tem altura = 0.0
 	var v_rear_top_l := Vector3(-hx, max_height, -hz)
 	var v_rear_top_r := Vector3(hx, max_height, -hz)
 	var v_rear_bot_l := Vector3(-hx, 0.0, -hz)
@@ -177,11 +177,11 @@ static func create_curb_ramp(span_x: float, depth_z: float = 0.70, max_height: f
 # Street Lighting
 # ==============================================================================
 
-## Creates a municipal street light.
-## Styles:
-## - "standard": Tall steel pole with arched mast arm and cobra-head luminaire.
-## - "police": Civic cast-iron dual globe lamp post with navy blue base.
-## - "industrial": Robust goose-neck lamp mounted on heavy square base for workshop aprons.
+## Cria um poste de iluminação municipal.
+## Estilos:
+## - "standard": poste alto de aço com braço em arco e luminária cobra-head.
+## - "police": poste cívico de ferro fundido com dois globos e base azul-marinho.
+## - "industrial": luminária pescoço de ganso robusta sobre base quadrada pesada para pátios de oficina.
 static func create_streetlight(pole_height: float = 5.4, arm_length: float = 1.35, style: String = "standard", rotate_y: float = 0.0) -> Node3D:
 	var root := Node3D.new()
 	root.name = "StreetLight_%s" % style
@@ -216,7 +216,7 @@ static func create_streetlight(pole_height: float = 5.4, arm_length: float = 1.3
 		pole.position = Vector3(0.0, 0.55 + pole_mesh.height * 0.5, 0.0)
 		root.add_child(pole)
 	
-		# 3. Mast arm and luminaire head depending on style
+		# 3. Braço do mastro e cabeça da luminária conforme o estilo
 		match style:
 			"police":
 				# Civic cross-arm with 2 frosted globes
@@ -329,11 +329,11 @@ static func create_streetlight(pole_height: float = 5.4, arm_length: float = 1.3
 # Security & Protection Bollards
 # ==============================================================================
 
-## Creates a sidewalk protection / anti-ram security bollard.
-## Styles:
-## - "civic": Fluted dark cast-iron with rounded dome cap.
-## - "police": Institutional security post in navy blue with white reflective band.
-## - "hazard": High-visibility industrial warning post in safety yellow for corners.
+## Cria um frade de proteção de calçada / segurança anti-impacto.
+## Estilos:
+## - "civic": ferro fundido escuro canelado com tampa em cúpula arredondada.
+## - "police": poste de segurança institucional azul-marinho com faixa refletiva branca.
+## - "hazard": poste de alerta industrial de alta visibilidade em amarelo de segurança para esquinas.
 static func create_bollard(style: String = "civic", height: float = 0.88, radius: float = 0.11) -> Node3D:
 	var root := Node3D.new()
 	root.name = "Bollard_%s" % style
@@ -418,7 +418,7 @@ static func create_bollard(style: String = "civic", height: float = 0.88, radius
 # Pedestrian Amenities (Benches, Trash Bins, Bike Racks)
 # ==============================================================================
 
-## Creates a wooden slat public bench with cast iron legs and backrest.
+## Cria um banco público de ripas de madeira com pés e encosto de ferro fundido.
 static func create_bench(length: float = 2.0) -> Node3D:
 	var root := Node3D.new()
 	root.name = "PublicBench"
@@ -608,7 +608,7 @@ static func create_bike_rack(loops: int = 3, loop_spacing: float = 0.90) -> Node
 # Municipal Infrastructure (Hydrants, Drains, Planters)
 # ==============================================================================
 
-## Creates an authentic fire hydrant with brass caps and pentagonal top nut.
+## Cria um hidrante autêntico com tampas de latão e porca pentagonal no topo.
 static func create_fire_hydrant() -> Node3D:
 	var root := Node3D.new()
 	root.name = "FireHydrant"
@@ -687,7 +687,7 @@ static func create_fire_hydrant() -> Node3D:
 	
 	return root
 
-## Creates a cast-iron street storm drain grate set flush with asphalt along the curb line.
+## Cria uma grade de boca de lobo de ferro fundido rente ao asfalto ao longo da linha do meio-fio.
 static func create_drain_grate(size: Vector2 = Vector2(0.85, 0.45)) -> Node3D:
 	var root := Node3D.new()
 	root.name = "DrainGrate"

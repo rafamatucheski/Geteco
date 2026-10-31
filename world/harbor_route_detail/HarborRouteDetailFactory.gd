@@ -1,8 +1,8 @@
 extends RefCounted
 class_name HarborRouteDetailFactory
 
-## Factory class for creating and mounting the Harbor Route Detail component and its modular zones.
-## Integrates seamlessly into the NativeRegion chunk streaming and regional loading lifecycle.
+## Classe fábrica que cria e monta o componente Harbor Route Detail e as zonas modulares.
+## Integra-se sem emendas ao streaming de chunks do NativeRegion e ao ciclo de carregamento regional.
 
 ## Instantiates a new HarborRouteDetail3D composite node containing all zones.
 static func create_route_detail() -> HarborRouteDetail3D:
@@ -11,7 +11,7 @@ static func create_route_detail() -> HarborRouteDetail3D:
 	route.mount_all()
 	return route
 
-## Instantiates and mounts HarborRouteDetail3D into the designated parent node with all zones active.
+## Instancia e monta HarborRouteDetail3D no nó pai indicado com todas as zonas ativas.
 static func mount_route_detail(parent: Node3D) -> HarborRouteDetail3D:
 	if parent == null:
 		push_error("HarborRouteDetailFactory: Cannot mount into null parent.")
@@ -34,8 +34,8 @@ static func step_zone(job: Dictionary, budget_usec: float = 1500.0) -> bool:
 static func cancel_zone(job: Dictionary) -> void:
 	HarborRouteDetail3D.cancel_zone(job)
 
-## Mounts an isolated single zone directly into the designated parent (e.g. a streaming chunk).
-## Returns the mounted zone Node3D, which is now a direct child of parent.
+## Monta uma zona isolada direto no pai indicado (por exemplo, um chunk em streaming).
+## Devolve o Node3D da zona montada, que agora é filho direto de parent.
 static func mount_zone(parent: Node3D, zone_id: String) -> Node3D:
 	if parent == null:
 		push_error("HarborRouteDetailFactory: Cannot mount zone into null parent.")
@@ -45,7 +45,7 @@ static func mount_zone(parent: Node3D, zone_id: String) -> Node3D:
 		parent.add_child(zone)
 	return zone
 
-## Returns zone spatial definitions for NativeRegion streaming registration in _prepare().
+## Devolve as definições espaciais das zonas para o registro de streaming do NativeRegion em _prepare().
 static func get_zone_records() -> Array[Dictionary]:
 	return [
 		{"kind": "harbor_route_zone", "zone_id": HarborRouteDetail3D.ZONE_RODOVIARIA, "position": Vector3(106.25, 0.0, 70.625)},
