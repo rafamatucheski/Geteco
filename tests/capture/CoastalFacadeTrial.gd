@@ -1,7 +1,7 @@
 extends RefCounted
-## Capture-only material/architecture study. Call once after the Police chunk
-## has loaded. No production hook, shared-material mutation, collision or light.
-## Removing CoastalFacadeTrial restores the original opaque concrete facade.
+## Estudo de material/arquitetura só para captura. Chame uma vez depois que o chunk da Police
+## tiver carregado. Sem gancho de produção, mutação de material compartilhado, colisão ou luz.
+## Remover o CoastalFacadeTrial restaura a fachada de concreto opaca original.
 
 static func apply(world: Node) -> Dictionary:
 	var result := {"buildings": 0, "panes": 0, "draw_meshes": 0}
@@ -23,12 +23,12 @@ static func apply(world: Node) -> Dictionary:
 		glass.metallic = .75
 		glass.metallic_specular = .8
 		glass.clearcoat_enabled = false
-		# Diagnostic coated-glass response, intentionally stronger than the first
-		# trial. Keep the plane normals unchanged to isolate reflection response:
-		# from the elevated camera, a vertical facade reflects the lower hemisphere
-		# (street/opposing buildings); a uniform sky-ground stays uniform here.
-		# Opaque glazing is intentional: the original building has no upper-floor
-		# room geometry behind this study; never expose its solid collision shell.
+		# Resposta de diagnóstico de vidro com película, de propósito mais forte que o primeiro
+		# teste. Mantém as normais do plano inalteradas para isolar a resposta de reflexo:
+		# da câmera elevada, uma fachada vertical reflete o hemisfério inferior
+		# (rua/prédios em frente); um céu-chão uniforme continua uniforme aqui.
+		# O vidro opaco é intencional: o prédio original não tem geometria de sala nos andares
+		# de cima atrás deste estudo; nunca exponha a casca sólida de colisão dele.
 		var frame := StandardMaterial3D.new()
 		frame.albedo_color = Color("354650")
 		frame.roughness = .62
@@ -37,8 +37,8 @@ static func apply(world: Node) -> Dictionary:
 		var joints := SurfaceTool.new()
 		panes.begin(Mesh.PRIMITIVE_TRIANGLES)
 		joints.begin(Mesh.PRIMITIVE_TRIANGLES)
-		# Match the EXISTING concrete pilasters in PoliceStationDressing._facade.
-		# Their structure, parapet, rear and side elevations remain untouched.
+		# Segue as pilastras de concreto EXISTENTES em PoliceStationDressing._facade.
+		# A estrutura, a platibanda e as elevações dos fundos e laterais ficam intocadas.
 		var count := maxi(1, int(building.building_size.x / 2.2))
 		var span := (building.building_size.x - .3) / float(count)
 		var first := -building.building_size.x * .5 + .15

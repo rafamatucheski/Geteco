@@ -1,5 +1,5 @@
 extends RefCounted
-## Independent controls, not cumulative: camera distance, visual culling, then caster culling.
+## Controles independentes, não cumulativos: distância da câmera, culling visual e depois culling de projetores de sombra.
 static func capture_existing(tree: SceneTree,main: Node3D,folder: String) -> Dictionary:
 	var terrain := main.find_child("DesertCanyonTerrain",true,false)
 	var camera := main.get_viewport().get_camera_3d()
@@ -43,7 +43,7 @@ static func capture_existing(tree: SceneTree,main: Node3D,folder: String) -> Dic
 	tree.paused=true
 	camera.set_process(false)
 	states.append(await _photo(tree,camera,folder,"frustum-baseline"))
-	# Same view direction, size and ortho projection: pure translation along the optical axis.
+	# Mesma direção de visão, tamanho e projeção ortogonal: pura translação ao longo do eixo óptico.
 	camera.global_position=focus+(old_pose.origin-focus)*2.0
 	states.append(await _photo(tree,camera,folder,"frustum-distance-2x"))
 	camera.global_transform=old_pose

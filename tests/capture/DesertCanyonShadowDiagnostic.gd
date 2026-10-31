@@ -14,7 +14,7 @@ static func capture_existing(tree: SceneTree,main: Node3D,folder: String) -> Dic
 		originals[child]=material
 		meshes.append({"path":str(child.get_path()),"material_id":material.get_instance_id(),"shader_sha256":material.shader.code.sha256_text(),"cast_shadow":child.cast_shadow})
 	if originals.is_empty(): return {"error":"No canyon mesh materials"}
-	# Build candidates before pausing. Every clone retains the existing albedo and uniforms.
+	# Monta os candidatos antes de pausar. Todo clone mantém o albedo e os uniforms existentes.
 	var variants: Array[Dictionary]=[]
 	for candidate in [{"id":"shadow-face-normal","tail":"NORMAL = canyon_diagnostic_face;"},{"id":"shadow-light-vertex-002","tail":"LIGHT_VERTEX = VERTEX + canyon_diagnostic_face * 0.02;"},{"id":"shadow-light-vertex-006","tail":"LIGHT_VERTEX = VERTEX + canyon_diagnostic_face * 0.06;"}]:
 		var replacements: Dictionary={}

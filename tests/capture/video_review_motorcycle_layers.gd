@@ -1,5 +1,5 @@
 extends "res://tests/capture/video_review_silhouette.gd"
-## Isolate player and motorcycle overlays on the same rendered fixture.
+## Isola as sobreposições do jogador e da moto na mesma fixture renderizada.
 var sampled_mount := false
 
 func run() -> void:
@@ -132,8 +132,8 @@ func mounted_building_control() -> void:
 	if not world.session.position_clear(point):
 		failures.append("mounted visual control player anchor unavailable")
 		return
-	# Same real facade as the on-foot positive control. The vehicle fixture is
-	# fixed; this checks rendering only, not clearance or driving at this pose.
+	# Mesma fachada real do controle positivo a pé. A fixture do veículo é
+	# fixa; isto confere só a renderização, não a folga nem a direção nesta pose.
 	bike.global_position = Vector3(point.x, saved_transform.origin.y, point.z)
 	await frames(4)
 	world.camera.initialized = false

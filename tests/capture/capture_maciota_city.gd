@@ -1,5 +1,5 @@
 extends SceneTree
-## Real Main.tscn capture at the authored Maciota entrance. No save writes.
+## Captura real do Main.tscn na entrada autoral do Maciota. Sem gravar save.
 
 func _initialize() -> void:
 	call_deferred("run")

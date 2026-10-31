@@ -1,10 +1,10 @@
 extends RefCounted
-## EXPERIMENT ONLY. No runtime caller, save mutation or productive material edit.
-## Install after teleport/streaming, then await capture_static(world, probe).
-## Recapture explicitly after the weather/light transition has settled.
+## SÓ EXPERIMENTO. Sem chamador em tempo de execução, mutação de save ou edição de material produtivo.
+## Instale depois do teleporte/streaming e então espere capture_static(world, probe).
+## Recaptura explicitamente depois que a transição de clima/luz assentar.
 ## https://docs.godotengine.org/en/stable/classes/class_reflectionprobe.html
-## A single box-projected cubemap approximates geometry from one origin. It is
-## not a planar mirror: parallax, silhouettes and off-origin occlusion differ.
+## Um único cubemap com projeção em caixa aproxima a geometria a partir de uma origem. Não
+## é um espelho planar: paralaxe, silhuetas e oclusão fora da origem diferem.
 
 const POSITION := Vector3(58.0,2.0,135.0)
 const BOX_CENTER := Vector3(58.0,17.0,135.0)
@@ -27,17 +27,17 @@ static func install(world: Node) -> ReflectionProbe:
 	probe.enable_shadows = true
 	probe.intensity = 1.0
 	probe.max_distance = 60.0
-	# A below-ground box bottom distorted the projected reflection. Keep it
-	# only .5m below the pavement, with a short blend so pavement remains fully
-	# inside the influence (an 8m blend would mostly fade it out at floor level).
+	# Um fundo de caixa abaixo do chão distorcia o reflexo projetado. Mantém-no
+	# só .5m abaixo do calçamento, com uma transição curta para o calçamento ficar inteiro
+	# dentro da influência (uma transição de 8m o apagaria quase todo no nível do piso).
 	probe.blend_distance = .35
 	probe.mesh_lod_threshold = 2.0
 	probe.update_mode = ReflectionProbe.UPDATE_ONCE
 	probe.cull_mask = 0
 	probe.reflection_mask = 1
 	world.add_child(probe)
-	# Edited police footprint: centre (66,120),18x10m,height13.375m.
-	# This origin is on the street south-west of it, outside the building.
+	# Área editada da polícia: centro (66,120),18x10m,altura13.375m.
+	# Esta origem fica na rua a sudoeste dela, fora do prédio.
 	probe.global_position = BOX_CENTER
 	return probe
 
@@ -45,8 +45,8 @@ static func capture_static(world: Node, probe: ReflectionProbe) -> Dictionary:
 	if not is_instance_valid(probe) or not world.is_inside_tree(): return {"ok":false,"reason":"Missing scene/probe"}
 	if probe.get_meta("trial_capture_running",false): return {"ok":false,"reason":"Capture already running"}
 	probe.set_meta("trial_capture_running",true)
-	# Reserve a currently unused render bit in this temporary scene. Retaining
-	# each mesh's original bits preserves its normal camera/light visibility.
+	# Reserva um bit de render hoje sem uso nesta cena temporária. Manter
+	# os bits originais de cada malha preserva a visibilidade normal para câmera/luz.
 	var used := 0
 	var visuals: Array[Node] = [world]
 	while not visuals.is_empty():
@@ -68,14 +68,14 @@ static func capture_static(world: Node, probe: ReflectionProbe) -> Dictionary:
 	var excluded_effect_roots: Array[String] = []
 	while not pending.is_empty():
 		var node: Node = pending.pop_back()
-		# Ground light pools are authored emissive quads, not facade geometry.
-		# Capturing them produced floating bright sprites in the reflection.
-		# Animated puddles/water also must not bake a frozen reflection into it.
+		# As poças de luz no chão são quads emissivos autorais, não geometria de fachada.
+		# Capturá-las gerava sprites claros flutuando no reflexo.
+		# Poças/água animadas também não podem assar um reflexo congelado nele.
 		if node.name in EXCLUDED_CAPTURE_NODES:
 			excluded_effect_roots.append(str(node.get_path()))
 			continue
-		# Both productive vehicles and actors derive from CharacterBody3D.
-		# Prune their entire trees, plus physical debris and particle effects.
+		# Tanto veículos quanto atores produtivos derivam de CharacterBody3D.
+		# Poda as árvores inteiras deles, mais destroços físicos e efeitos de partícula.
 		if node is CharacterBody3D or node is RigidBody3D or node is GPUParticles3D or node is CPUParticles3D or node.is_in_group("drivable"):
 			excluded_dynamic_roots += 1
 			continue
@@ -90,15 +90,15 @@ static func capture_static(world: Node, probe: ReflectionProbe) -> Dictionary:
 	probe.visible = true
 	var sequence := int(probe.get_meta("trial_capture_sequence",0))+1
 	probe.set_meta("trial_capture_sequence",sequence)
-	# UPDATE_ONCE is dirtied by transform changes, not by changing weather.
-	# Alternate 2mm instead of switching to expensive UPDATE_ALWAYS.
+	# UPDATE_ONCE é sujado por mudanças de transformação, não por mudança de clima.
+	# Alterna 2mm em vez de trocar para o caro UPDATE_ALWAYS.
 	probe.global_position = BOX_CENTER+Vector3(.002 if sequence%2 else 0.0,0,0)
 	var began := Time.get_ticks_usec()
 	for index in CAPTURE_FRAMES:
 		await world.get_tree().process_frame
 		await RenderingServer.frame_post_draw
-	# Captured cubemap stays resident. Restore temporary scene render layers;
-	# do not move this probe again until the next explicit capture_static call.
+	# O cubemap capturado fica residente. Restaura as camadas de render temporárias da cena;
+	# não move esta sonda de novo até a próxima chamada explícita de capture_static.
 	for entry in changed:
 		var mesh = entry.node.get_ref()
 		if is_instance_valid(mesh): mesh.layers = entry.layers
@@ -106,8 +106,8 @@ static func capture_static(world: Node, probe: ReflectionProbe) -> Dictionary:
 	return {"ok":true,"static_meshes":changed.size(),"excluded_dynamic_roots":excluded_dynamic_roots,"excluded_effect_roots":excluded_effect_roots,"capture_layer_bit":capture_bit,"settle_frames":CAPTURE_FRAMES,"settle_wall_ms":(Time.get_ticks_usec()-began)/1000.0,"position":str(probe.global_position),"capture_origin":str(probe.global_position+probe.origin_offset),"size":str(probe.size),"note":"Settle wall time is not GPU probe cost; compare frame samples separately. Static CharacterBody/RigidBody actors excluded; animated meshes outside those trees may remain."}
 
 static func set_experimental_wet_road(world: Node, enabled: bool) -> int:
-	# Optional visibility experiment only, explicitly separate from the actual
-	# .56-roughness road. Call false for the standard-material comparison.
+	# Só experimento opcional de visibilidade, explicitamente separado da rua real
+	# com rugosidade .56. Chame com false para a comparação com material padrão.
 	if not enabled:
 		var saved: Array = world.get_meta(OVERRIDE_META,[])
 		for entry in saved:

@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Rendered native desert_digo room, actual player/NPC rigs and paired masks.
-## This is depth evidence, never a substitute for Main lifecycle or FPS samples.
+## Sala nativa desert_digo renderizada, rigs reais de jogador/NPC e máscaras pareadas.
+## Isto é evidência de profundidade, nunca substituto de amostras de ciclo de vida do Main ou de FPS.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const ROOM_OFFSET := Vector3(0,18,15)
 var destination := "res://artifacts/digo-workshop-refresh-20261019/depth-props-control"
@@ -81,8 +81,8 @@ func run() -> void:
 		{"id":"desk-behind","point":Vector3(7.65,.04,-1.25),"partial":true},
 		{"id":"shelf-front","point":Vector3(5,.04,-6.9),"partial":false},
 		{"id":"shelf-side","point":Vector3(3.65,.04,-7.65),"partial":false},
-		# The .44m central gap behind this rack cannot hold the .60m capsule.
-		# Use its accessible rear edge; never put an actor inside a reserved solid.
+		# O vão central de .44m atrás desta prateleira não comporta a cápsula de .60m.
+		# Usa a borda traseira acessível; nunca põe um ator dentro de um sólido reservado.
 		{"id":"shelf-behind-edge","point":Vector3(3.785,.04,-8.42),"partial":false},
 	]
 	for player in [true,false]:
@@ -97,8 +97,8 @@ func run() -> void:
 		for frame in 20: await process_frame
 		actor.process_mode = Node.PROCESS_MODE_DISABLED
 		var who := "player" if player else "npc"
-		# Real materials before the diagnostic override, using the unchanged room
-		# camera. These photos are explicitly an isolated native-room fixture.
+		# Materiais reais antes da sobrescrita de diagnóstico, usando a câmera da sala
+		# inalterada. Estas fotos são explicitamente uma fixture de sala nativa isolada.
 		for setup in probes:
 			if not str(setup.id).ends_with("front"): continue
 			actor.position = setup.point
@@ -133,15 +133,15 @@ func _depth_pair(actor: CharacterBody3D, id: String, partial: bool, clear: bool,
 	var body_area := _projected_area(actor.global_position,AABB(Vector3(-.68,-.04,-.45),Vector3(1.36,2.12,.90)))
 	var furniture := _room.model.get_node("DigoFurnitureDetails") as MeshInstance3D
 	var actual := await capture()
-	# Isolate furniture depth without removing the roof, walls, lights or floor.
-	# The same intentional truss occlusion therefore exists in both images.
+	# Isola a profundidade da mobília sem remover telhado, paredes, luzes nem piso.
+	# A mesma oclusão intencional da treliça existe portanto nas duas imagens.
 	furniture.hide()
 	var control := await capture()
 	furniture.show()
 	var head := _head_region(actor,control,body_area)
 	var head_area: Rect2i = head.area
-	# Separate diagnostic only: retain all furniture, remove just the two roof
-	# trusses to quantify their contribution. This never changes the product.
+	# Só diagnóstico separado: mantém toda a mobília e remove apenas as duas treliças
+	# do telhado para quantificar a contribuição delas. Isto nunca muda o produto.
 	var trusses: Array[Node] = _room.model.find_children("RoofTruss*","MeshInstance3D",true,false)
 	for truss: MeshInstance3D in trusses: truss.hide()
 	var truss_diagnostic := await capture()
@@ -178,9 +178,9 @@ func _head_region(actor: CharacterBody3D, control: Image, body_area: Rect2i) -> 
 		return _head_rect(point,"Skeleton3D:"+str(skeleton.get_bone_name(bone)))
 	var head_node := visual.find_child("Head",true,false) as Node3D
 	if head_node != null: return _head_rect(head_node.global_position+Vector3.UP*.10,"authored Head joint")
-	# Imported civilian bodies may omit a semantic head joint. A neutral static
-	# actor's upper silhouette is then the independent positive-control region;
-	# keep only the top 22%, rather than the former ROI that included shoulders.
+	# Corpos civis importados podem não ter uma junta semântica de cabeça. A silhueta
+	# superior de um ator estático neutro passa a ser a região independente de controle positivo;
+	# mantém só os 22% de cima, em vez da ROI antiga que incluía os ombros.
 	var bounds := Rect2i()
 	var found := false
 	for y in range(body_area.position.y,body_area.end.y):

@@ -1,5 +1,5 @@
 extends SceneTree
-## Component visual review only; this is NOT a Main performance benchmark.
+## Só revisão visual do componente; isto NÃO é benchmark de desempenho do Main.
 func _initialize() -> void: run.call_deferred()
 func shot(label: String) -> void:
 	await RenderingServer.frame_post_draw

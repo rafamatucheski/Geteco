@@ -1,5 +1,5 @@
 extends SceneTree
-## Continuous native Main frames, for visual inspection only (not a benchmark).
+## Quadros nativos contínuos do Main, só para inspeção visual (não é benchmark).
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const PLACE = preload("res://world/places/arcade/ArcadePlace.gd")
 var world

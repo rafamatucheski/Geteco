@@ -34,7 +34,7 @@ func run() -> void:
 			for light in lighting.lights: print("LAMP ",light.global_position," energy=",light.light_energy," visible=",light.visible," fade=",light.distance_fade_enabled)
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(folder+site.id+".png")
-	# Stable camera, same actor and furniture: front, behind and beside the bench.
+	# Câmera estável, mesmo ator e mobília: na frente, atrás e ao lado do banco.
 	world.camera.size=12
 	world.camera.global_position=Vector3(240,14,210)
 	world.camera.look_at(Vector3(233,0,200))

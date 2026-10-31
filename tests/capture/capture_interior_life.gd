@@ -44,7 +44,7 @@ func run() -> void:
 		root.get_texture().get_image().save_png(OUT+label+"-"+id+".png")
 		room.queue_free()
 		await process_frame
-	# Compare the production tree meshes at the same transform in this fixture.
+	# Compara as malhas de árvore de produção na mesma transformação nesta fixture.
 	for modern in [false,true]:
 		var tree := MeshInstance3D.new()
 		tree.mesh = preload("res://world/places/ResidentialTreeVisual.gd").mesh() if modern else preload("res://world/city_look/CityPropKit.gd").mesh("street_tree")

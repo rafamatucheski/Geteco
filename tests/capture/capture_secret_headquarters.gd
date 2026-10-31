@@ -1,5 +1,5 @@
 extends SceneTree
-## Visual review harness for the optional Vicente route. Requires --no-save.
+## Arnês de revisão visual para a rota opcional do Vicente. Exige --no-save.
 
 const DEFAULT_OUTPUT := "user://secret-headquarters-20260928"
 
@@ -166,8 +166,8 @@ func run() -> void:
 	quit(0)
 
 func walk_route() -> bool:
-	# Only the initial placement is a teleport. Actor.gd owns every subsequent
-	# movement, floor snap, gravity and collision in the actual production world.
+	# Só o posicionamento inicial é teleporte. O Actor.gd cuida de todo movimento seguinte,
+	# encaixe no piso, gravidade e colisão no mundo de produção real.
 	world.player.speed = 3.5
 	world.player.teleport(passage.home.to_global(Vector3(.65,.04,-3.1)))
 	await settle(30)
@@ -209,8 +209,8 @@ func walk_route() -> bool:
 	world.player.automatic_direction = Vector3.ZERO
 	await shot("06-travessia-completa")
 	print("SECRET_HQ_WALK PASS house-cellar-tunnel-headquarters")
-	# Return along the same physical stairs also checks camera ownership; no
-	# interior exit action or transfer is used in either direction.
+	# Voltar pela mesma escada física também confere a posse da câmera; nenhuma
+	# ação de saída de interior nem transferência é usada em nenhum sentido.
 	var reverse_route := route.duplicate()
 	reverse_route.reverse()
 	reverse_route.append(passage.home.to_global(Vector3(.65,.04,-3.1)))

@@ -1,6 +1,6 @@
 extends "res://tests/capture/capture_drag_start_camera.gd"
-## Real gameplay/movie capture at --fixed-fps 30. Capture-only weather/startup
-## overrides live in memory; no production source or save is edited.
+## Captura real de jogo/filme a --fixed-fps 30. As sobrescritas de clima/início só da captura
+## ficam em memória; nenhum código de produção nem save é editado.
 var movie_start := 0
 var movie_end := 0
 var recording := false
@@ -15,8 +15,8 @@ var original_world_hash := ""
 func _initialize() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--storm-out="): requested_output = argument.trim_prefix("--storm-out=")
-	# Load before Main creates Weather. Keep all production particles, audio,
-	# flash envelopes and sky code; override only regional rain suppression.
+	# Carrega antes de o Main criar o Weather. Mantém todo o código de partículas, áudio,
+	# envelopes de relâmpago e céu da produção; sobrescreve só a supressão regional de chuva.
 	var weather_script := load("res://runtime/Weather.gd") as GDScript
 	var original := weather_script.source_code
 	original_weather_hash = original.sha256_text()
@@ -26,16 +26,16 @@ func _initialize() -> void:
 		return
 	var coastal_call := "coastal_look.apply(controller.environment.environment,controller.sun,daylight,local_clouds,coastal_wetness,rain_exposure,inside,time_of_day)"
 	if original.count(coastal_call) != 1: push_error("Inspect storm preview sky ownership"); quit(2); return
-	# A coastal reflection sky must not take ownership from the native race sky
-	# merely because this fixture bypasses the desert's rain suppression.
+	# Um céu de reflexo costeiro não pode tomar a posse do céu nativo da corrida
+	# só porque esta fixture contorna a supressão de chuva do deserto.
 	weather_script.source_code = original.replace("REGIONAL_ATMOSPHERE.desert_weight(focus)","0.0").replace("REGIONAL_ATMOSPHERE.desert_weight(point)","0.0").replace(coastal_call,coastal_call.replace(",rain_exposure,",",0.0,"))
 	if weather_script.reload() != OK:
 		push_error("Storm preview: process-local weather compilation failed")
 		quit(2)
 		return
-	# Preparing cached models for unvisited Harbor/Mountain took over five
-	# minutes in MovieWriter. Their data and the entire active desert remain;
-	# only offscreen model-cache warm-up is omitted in this isolated capture.
+	# Preparar modelos em cache para Harbor/Mountain não visitados levava mais de cinco
+	# minutos no MovieWriter. Os dados deles e todo o deserto ativo ficam;
+	# só o aquecimento fora da tela do cache de modelos é omitido nesta captura isolada.
 	var production_script := load("res://runtime/ProductionWorld.gd") as GDScript
 	var production_source := production_script.source_code
 	original_world_hash = production_source.sha256_text()

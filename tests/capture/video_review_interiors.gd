@@ -89,8 +89,8 @@ func motorcycle_theft() -> void:
 	original.set_physics_process(false)
 	original.collision_layer = 0
 	original.remove_from_group("drivable")
-	# Reuse an already admitted ground pose; this fixture validates rider/pose,
-	# not the bike's driving, collision or streaming behaviour.
+	# Reaproveita uma pose de chão já admitida; esta fixture valida piloto/pose,
+	# não a direção, a colisão nem o streaming da moto.
 	var bike = preload("res://scripts/Vehicle.gd").new()
 	bike.archetype = "bike_urban"
 	bike.vehicle_id = "video_capture_bike"

@@ -164,7 +164,7 @@ func validate_life() -> void:
 	print("COBRA_LIFE failures=",failures.size())
 
 func capture_motion() -> void:
-	# The completed-story fixture can open the real aftermath phone call.
+	# A fixture de história concluída pode abrir o telefonema real do desfecho.
 	while world.session.dialogue_open: world.session._advance_dialogue()
 	world.player.teleport(Vector3(476,.1,102))
 	await create_timer(2).timeout

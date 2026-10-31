@@ -1,10 +1,10 @@
 extends "res://tests/capture/capture_sport_coupe_redesign.gd"
-## Continuous rendered evidence for one fleet archetype in the real Main scene.
+## Evidência renderizada contínua de um arquétipo da frota na cena real do Main.
 ## Godot .NET --script res://tests/capture/capture_fleet_redesign_temporal.gd --
 ## --no-save --skip-arrival --population=24 --id=police_cruiser --label=after
-## Run alone, after the independent benchmark. Encode with
-## tools/build_sport_coupe_review_video.py <the resulting folder>.
-## Every rendered frame is recorded; readback cadence is NOT gameplay performance.
+## Rode sozinho, depois do benchmark independente. Codifique com
+## tools/build_sport_coupe_review_video.py <a pasta resultante>.
+## Todo quadro renderizado é gravado; a cadência de leitura NÃO é desempenho de jogo.
 
 const VEHICLE_SCENE := preload("res://scripts/Vehicle.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
@@ -62,9 +62,9 @@ func run() -> void:
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
 	world.session.weather.set_process(false)
-	# The fixture uses the production Vehicle class and FleetCatalog model factory.
-	# Freeze it above the starting area only during road admission, avoiding overlap
-	# with the untouched starter. From admission onward, normal physics stays active.
+	# A fixture usa a classe Vehicle de produção e a fábrica de modelos do FleetCatalog.
+	# Congela-o acima da área de partida só durante a admissão na rua, evitando sobreposição
+	# com o carro inicial intocado. Da admissão em diante, a física normal fica ativa.
 	car = VEHICLE_SCENE.new()
 	car.archetype = target_id
 	car.vehicle_id = "fleet_temporal_" + target_id
@@ -144,8 +144,8 @@ func run() -> void:
 	while absf(car.speed) > .2 and Time.get_ticks_msec() < deadline and failures.is_empty(): await physics_frame
 	if not record_check(absf(car.speed) <= .2, "real service brake stops the target vehicle"):
 		await finish(); return
-	# The brake axis becomes reverse after stopping. Release it at zero speed and
-	# hold the real handbrake, matching normal controls and the reference capture.
+	# O eixo do freio vira ré depois de parar. Solta-o na velocidade zero e
+	# segura o freio de mão real, como nos controles normais e na captura de referência.
 	release_inputs()
 	Input.action_press("handbrake")
 	await hold(1.5)
@@ -178,8 +178,8 @@ func run() -> void:
 	await finish()
 
 func shot(snapshot_name: String) -> void:
-	# Select an actual continuous frame; export its PNG after recording. Synchronous
-	# PNG compression during the drive hid the brief service-brake transient.
+	# Seleciona um quadro contínuo real; exporta o PNG dele depois da gravação. A compressão
+	# PNG síncrona durante a direção escondia o breve transiente do freio de serviço.
 	await RenderingServer.frame_post_draw
 	if not rows.is_empty(): snapshot_sources[snapshot_name] = rows[-1].file
 

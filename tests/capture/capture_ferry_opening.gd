@@ -222,8 +222,8 @@ func _measure_activity() -> void:
 	for i in activity.fishers.size(): _track_motion("fishing_rod_%d"%i,activity.fishers[i].rod.to_global(Vector3(0,1.1,2)))
 
 func _check_work_routes() -> bool:
-	# Keep the real authored solids available to queries while their scripts and
-	# gameplay managers are suspended. Test support separately from obstruction.
+	# Mantém os sólidos autorais reais disponíveis para consultas enquanto os scripts e
+	# gerenciadores de jogo deles ficam suspensos. Testa o apoio separado da obstrução.
 	var modes: Dictionary = {}
 	for body in world.find_children("*","StaticBody3D",true,false):
 		modes[body] = body.disable_mode
@@ -328,7 +328,7 @@ func _check_route() -> bool:
 	return hits_by_time.is_empty()
 
 func _validate_motion() -> void:
-	# Detect the reported flips and circling across all 2,190 authored frames.
+	# Detecta as viradas e os giros relatados nos 2,190 quadros autorais.
 	var rotations: Array[Quaternion] = []
 	for name in ["RightArm","RightForeArm","RightHand"]:
 		var bone: int = director.dante.skeleton.find_bone(name)

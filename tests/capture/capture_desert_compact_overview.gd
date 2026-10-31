@@ -1,5 +1,5 @@
 extends SceneTree
-## Finite production-geometry overview. This inspection does not measure gameplay FPS.
+## Visão geral finita da geometria de produção. Esta inspeção não mede FPS de jogo.
 const REGION := preload("res://world/editing/EditableDesertRegion.gd")
 const L := preload("res://world/desert/DesertLayout.gd")
 var region: Node3D
@@ -32,8 +32,8 @@ func run() -> void:
 	region.initial_focus = Vector3(L.BOUNDS.get_center().x,0,L.BOUNDS.get_center().y)
 	stage.add_child(region)
 	region.set_developer_view(L.BOUNDS, true, true)
-	# Finite inspection admission of production geometry, yielding per cell;
-	# this full-map photo is separate from normal streaming and FPS tests.
+	# Admissão finita de inspeção da geometria de produção, cedendo a cada célula;
+	# esta foto do mapa inteiro é separada dos testes normais de streaming e FPS.
 	region.set_process(false)
 	var admitted := 0
 	for key in region.developer_view_cells:

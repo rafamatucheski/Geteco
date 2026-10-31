@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_motocross.gd"
-## Thirty seconds of consecutive rendered frames in Main, with timestamp manifest.
-## Capture overhead is intentionally excluded from the separate FPS benchmark.
+## Trinta segundos de quadros renderizados consecutivos no Main, com manifesto de timestamps.
+## O custo da captura fica de propósito fora do benchmark de FPS separado.
 func _process(_delta: float) -> bool: return false
 
 func run() -> void:

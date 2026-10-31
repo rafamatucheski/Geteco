@@ -1,6 +1,6 @@
 extends "res://tests/test_vertice_depth.gd"
-## Native furniture, real player and supplied Digo mesh. Paired masks use
-## unchanged camera/pose; hiding only the shop is the positive control.
+## Mobília nativa, jogador real e malha do Digo fornecida. As máscaras pareadas usam
+## câmera/pose inalteradas; esconder só a loja é o controle positivo.
 const SHOP := preload("res://world/desert/drag_meet/DesertDigoWorkshop.gd")
 const WORKER := preload("res://runtime/desert/DesertDigoWorker.gd")
 const CAMERA := preload("res://scripts/CameraRig.gd")
@@ -68,8 +68,8 @@ func run() -> void:
 		actor.position=WORKER.REPAIR_POINT
 		actor.rotation.y=PI*.5
 		for frame in 20: await process_frame
-		# Natural work/wardrobe views keep their real materials before applying
-		# the mask. This isolated capture is not a Main gameplay screenshot.
+		# As vistas naturais de trabalho/armário mantêm os materiais reais antes de aplicar
+		# a máscara. Esta captura isolada não é uma captura de jogo do Main.
 		for activity in ["repair","tools"]:
 			actor.position=WORKER.REPAIR_POINT if activity=="repair" else WORKER.BENCH_POINT
 			actor.rotation.y=PI*.5 if activity=="repair" else 0.0
@@ -98,8 +98,8 @@ func run() -> void:
 			var id: String=str(who)+"-"+str(setup.id)
 			check(not actor.test_move(actor.global_transform,Vector3.UP*.002),id+" whole capsule is outside furniture")
 			await _depth_pair(shop,actor,camera,id,str(setup.expected),false)
-		# Also test each actual routine point through the default camera. The
-		# open bay must preserve the worker's head, including under the awning.
+		# Testa também cada ponto real da rotina pela câmera padrão. A
+		# baia aberta precisa preservar a cabeça do trabalhador, inclusive sob o toldo.
 		for activity in ["repair","tools"]:
 			actor.position=WORKER.REPAIR_POINT if activity=="repair" else WORKER.BENCH_POINT
 			actor.rotation.y=PI*.5 if activity=="repair" else 0.0

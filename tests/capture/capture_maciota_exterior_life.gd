@@ -1,6 +1,6 @@
 extends SceneTree
-## Isolated facade review while the shared V2 world is under concurrent edits.
-## This fixture checks the structural collision contract and captures real pixels.
+## Revisão isolada de fachada enquanto o mundo V2 compartilhado sofre edições concorrentes.
+## Esta fixture confere o contrato estrutural de colisão e captura pixels reais.
 
 func _initialize() -> void:
 	call_deferred("run")

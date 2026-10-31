@@ -1,5 +1,5 @@
 extends SceneTree
-## Paired no-save render of the same native road maneuver with effects disabled/enabled.
+## Render pareado sem save da mesma manobra nativa na rua com efeitos desligados/ligados.
 
 var world: Node3D
 var effects_enabled := true

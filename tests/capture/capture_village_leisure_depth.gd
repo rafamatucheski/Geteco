@@ -1,6 +1,6 @@
 extends "res://tests/test_urban_operations.gd"
-## Main-scene visual evidence only; physical fitting is logged separately.
-## Run rendered with --no-save. No personal save may be loaded or overwritten.
+## Só evidência visual na cena do Main; o encaixe físico é registrado à parte.
+## Rode renderizado com --no-save. Nenhum save pessoal pode ser lido ou sobrescrito.
 const ART := preload("res://gameplay/urban_v1/TruckersVillageLeisureArt.gd")
 const LEISURE := preload("res://gameplay/urban_v1/TruckersVillageLeisure.gd")
 const FOLDER := "res://evidence/village-leisure-20260929/depth"
@@ -70,7 +70,7 @@ func run() -> void:
 	review.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	review.near = .10
 	review.far = 200.0
-	# Keep the productive exterior layers and the same environment/profile.
+	# Mantém as camadas externas produtivas e o mesmo ambiente/perfil.
 	review.cull_mask = world.camera.cull_mask
 	review.environment = world.camera.environment
 	review.attributes = world.camera.attributes
@@ -115,9 +115,9 @@ func _position_camera(center: Vector3,offset: Vector3,size: float) -> void:
 	review.make_current()
 
 func _place_pair(player_at: Vector3,npc_at: Vector3) -> bool:
-	# First vacate the NPC's former pose, let the physics server publish it,
-	# then move the player. Swapping occupied poses directly can create support
-	# contacts and make the character appear to stand on the other actor.
+	# Primeiro desocupa a pose anterior do NPC, deixa o servidor de física publicá-la
+	# e então move o jogador. Trocar poses ocupadas direto pode criar contatos de apoio
+	# e fazer o personagem parecer em pé sobre o outro ator.
 	for point in [NPC_STAGING,PLAYER_STAGING,player_at,npc_at]:
 		world.production.region.prepare_collision_at(point)
 	npc.set_physics_process(false)
@@ -143,8 +143,8 @@ func _capsule_fits(actor: CharacterBody3D,point: Vector3) -> bool:
 	if collider==null: return false
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = collider.shape
-	# Raise the clearance query a few millimetres above the real resting contact
-	# so the support terrain is not mistaken for penetration into an obstacle.
+	# Ergue a consulta de folga alguns milímetros acima do contato real de repouso
+	# para que o terreno de apoio não seja confundido com penetração num obstáculo.
 	query.transform = Transform3D(actor.global_basis,point+Vector3.UP*.015)*collider.transform
 	query.collision_mask = 1
 	query.exclude = [actor.get_rid()]

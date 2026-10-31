@@ -71,7 +71,7 @@ func run() -> void:
 				if not baseline and not reload_phase and (not record or elapsed < 9.0):
 					game.police_shoot(officer, 6.0, officer.weapon_id)
 				elif baseline and game.police_can_see(officer):
-					# Exact original police_shoot path, retained only for sequential A/B.
+					# Caminho police_shoot original exato, mantido só para o A/B sequencial.
 					var origin: Vector3 = officer.global_position + Vector3.UP * 1.1
 					game._trace(origin, world.player.global_position + Vector3.UP, 0.08, 0.012)
 					game._sound(officer.weapon_id, origin)

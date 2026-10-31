@@ -1,5 +1,5 @@
 extends "res://tests/test_desert_drag_runtime.gd"
-## Real Main with production rain, existing storm clock/audio and side-camera framing.
+## Main real com a chuva de produção, o relógio/áudio de tempestade existentes e enquadramento de câmera lateral.
 func begin_temporal(race) -> bool:
 	var weather = world.session.weather
 	_weather_was_processing=weather.is_processing()

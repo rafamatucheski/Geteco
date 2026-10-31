@@ -50,7 +50,7 @@ func run() -> void:
 	car.stop_boarding_motion()
 	await create_timer(2.0).timeout
 	await capture_case(car, -1, "window", true)
-	# Alarm uses scene time and owns its Timer. Observe actual expiry, not a mock signal.
+	# O alarme usa o tempo da cena e é dono do próprio Timer. Observa a expiração real, não um sinal simulado.
 	var alarm_deadline := Time.get_ticks_msec() + 10000
 	while car.has_node("EntryAlarm") and Time.get_ticks_msec() < alarm_deadline:
 		await process_frame
@@ -60,8 +60,8 @@ func run() -> void:
 	world.driving.cancel_transition("capture_next_variant")
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
-	# The first car now has a genuinely opened interior and broken pane. A fresh
-	# locked car is required to observe the tool variant's intact glass fairly.
+	# O primeiro carro agora tem o interior aberto de verdade e o vidro quebrado. Um carro
+	# trancado novo é necessário para observar com justiça o vidro intacto da variante com ferramenta.
 	var fresh: CharacterBody3D = load("res://scripts/Vehicle.gd").new()
 	fresh.archetype = car.archetype
 	fresh.paint_color = car.paint_color
@@ -147,8 +147,8 @@ func capture_debris_drive(car: CharacterBody3D) -> void:
 		"min_above_floor":minimum_above_floor,"max_above_floor":maximum_above_floor,
 		"ground_samples":elevations,"car_displacement":displacement,"vertices_under_car_during_drive":covered.size(),
 		"route_obstructed":obstructed,"physics_driven":true,"camera_fixed":true}
-	# Road asphalt is a visual overlay up to .030 above the physical support.
-	# Shards must clear it while staying within four centimetres of the ground.
+	# O asfalto da rua é uma sobreposição visual até .030 acima do apoio físico.
+	# Os cacos precisam ficar acima dela sem passar de quatro centímetros do chão.
 	failed = failed or vertices.is_empty() or unsupported > 0 or maximum_above_floor > .04 or minimum_above_floor < .030 or displacement < 1.0 or covered.is_empty()
 	print("THEFT_DEBRIS_DRIVE ", JSON.stringify(debris_drive))
 
@@ -160,8 +160,8 @@ func capture_case(car: CharacterBody3D, side: int, method: String, alarm: bool) 
 	car.remove_meta("entry_alarm_triggered")
 	world.player.input_locked = false
 	world.player.teleport(car.driver_door_anchor(side))
-	# The hand is on the rear side of the torso now that Dante faces the actual
-	# closed pane. Observe from that quarter rather than through his jacket.
+	# A mão fica do lado de trás do tronco agora que o Dante encara o vidro
+	# fechado real. Observa daquele quadrante em vez de através da jaqueta dele.
 	camera.global_position = car.to_global(Vector3(float(side) * 5.0, 2.6, 3.2))
 	camera.look_at(car.to_global(Vector3(float(side) * .55, .85, .3)), Vector3.UP)
 	await process_frame
@@ -192,8 +192,8 @@ func capture_case(car: CharacterBody3D, side: int, method: String, alarm: bool) 
 	await snapshot(method + "_seated", car)
 
 func snapshot(label: String, car: CharacterBody3D) -> void:
-	# The threaded renderer may still have the previous camera/skeleton queued.
-	# Two complete submissions keep the PNG paired with this snapshot's state.
+	# O renderizador em thread ainda pode ter a câmera/esqueleto anteriores na fila.
+	# Duas submissões completas mantêm o PNG pareado com o estado deste snapshot.
 	for frame in 2:
 		await process_frame
 		await RenderingServer.frame_post_draw

@@ -1,6 +1,6 @@
 extends "res://tests/test_mining_session.gd"
-## Focused real-Main visual regression capture after cutting the persistent
-## desert backdrop. Physics support and visible composition are recorded apart.
+## Captura focada de regressão visual no Main real depois de cortar o fundo
+## persistente do deserto. Apoio físico e composição visível são registrados à parte.
 func _initialize() -> void:
 	create_timer(180).timeout.connect(func(): push_error("MINING_REPAIR timeout"); finish(3))
 	run.call_deferred()
@@ -55,8 +55,8 @@ func run() -> void:
 		await photo(setup.id)
 	world.session.weather.time_of_day=.45
 	world.session.weather._update()
-	# Full-site diagnostic framing exceeds normal gameplay streaming and the
-	# 180 m gameplay far plane; admit that explicit composition before capture.
+	# O enquadramento de diagnóstico do local inteiro passa do streaming normal de jogo e do
+	# plano distante de 180 m do jogo; admite essa composição explícita antes da captura.
 	world.production.region.set_retention_radius(2)
 	for x in range(floori(LAYOUT.BOUNDS.position.x/96),ceili(LAYOUT.BOUNDS.end.x/96)):
 		for z in range(floori(LAYOUT.BOUNDS.position.y/96),ceili(LAYOUT.BOUNDS.end.y/96)):

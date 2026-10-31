@@ -1,6 +1,6 @@
 extends SceneTree
-## Close diagnostic atlas for the production V2 rig. Same camera/layout as the
-## V1 reference script at tests/visual/capture_pistol_reference.gd.
+## Atlas de diagnóstico de perto para o rig de produção da V2. Mesma câmera/layout do
+## script de referência da V1 em tests/visual/capture_pistol_reference.gd.
 const SIZE := Vector2i(512, 512)
 const LABELS := ["idle", "aim", "fire", "reload", "move_aim"]
 

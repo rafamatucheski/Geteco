@@ -104,7 +104,7 @@ func run() -> void:
 	var old: Dictionary = saved.duplicate(true)
 	old.erase("truckers_village_leisure")
 	check(urban.validate_snapshot(old),"Existing saves remain compatible without leisure entry")
-	# Night screenshot retains the actual village lighting and weather.
+	# A captura noturna mantém a iluminação e o clima reais da vila.
 	session.weather.time_of_day = .9
 	session.weather.weather_state = 1
 	session.weather._update()

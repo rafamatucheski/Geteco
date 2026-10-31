@@ -7,7 +7,7 @@ func _initialize() -> void:
 func measure(id: String) -> void:
 	var measured: Dictionary={}
 	if "--measure" in OS.get_cmdline_user_args():
-		# Measure for 30s without readbacks/encoding before recording any frames.
+		# Mede por 30s sem leituras/codificação antes de gravar qualquer quadro.
 		Engine.max_fps=0
 		await super.measure(id)
 		measured=reports.pop_back()

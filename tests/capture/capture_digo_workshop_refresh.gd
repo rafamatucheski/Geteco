@@ -1,6 +1,6 @@
 extends SceneTree
-## Isolated rendered native-room preview: production room, Coyote, panel and
-## service camera. This does not boot Main, exercise admission or measure FPS.
+## Prévia renderizada isolada de sala nativa: sala de produção, Coyote, painel e
+## câmera de serviço. Não sobe o Main, não exercita admissão nem mede FPS.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const ADAPTER := preload("res://gameplay/desert_cars/DesertCarAdapter.gd")

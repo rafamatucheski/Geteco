@@ -1,6 +1,6 @@
 extends SceneTree
-## Presentation fixture only: real Sede facade at the two exterior CameraRig
-## angles. This does not certify streaming, navigation or performance.
+## Só fixture de apresentação: fachada real da Sede nos dois ângulos externos
+## do CameraRig. Isto não certifica streaming, navegação nem desempenho.
 const RIG := preload("res://scripts/CameraRig.gd")
 const DEST := "res://artifacts/bars-20261027/facade"
 func _initialize() -> void: run.call_deferred()

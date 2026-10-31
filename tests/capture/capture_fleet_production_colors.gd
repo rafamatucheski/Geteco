@@ -1,9 +1,9 @@
 extends "res://tests/measure/measure_fleet_redesign.gd"
-## Finite visual follow-up in real Main. Reuses target placement and real spawn
-## paint; never invokes scenario() or gathers another performance comparison.
+## Acompanhamento visual finito no Main real. Reaproveita o posicionamento do alvo e a pintura real
+## de spawn; nunca chama scenario() nem coleta outra comparação de desempenho.
 ## Godot 4.7.2 .NET --path . --script res://tests/capture/capture_fleet_production_colors.gd
 ## -- --no-save --skip-arrival --population=24
-## Internal deadline: 180 s. Suggested external watchdog: 210 s.
+## Prazo interno: 180 s. Watchdog externo sugerido: 210 s.
 
 var _capture_finished := false
 var _capture_started := 0
@@ -122,7 +122,7 @@ func run() -> void:
 	_capture_report.max_fps = Engine.max_fps
 	if not await _capture_photo("ten-cars-real-colors", "Same overview camera as the earlier day-04-final image"):
 		return
-	# Use higher western viewpoints to avoid the roofs that occluded attempt one.
+	# Usa pontos de vista mais altos a oeste para evitar os telhados que tamparam a primeira tentativa.
 	_capture_camera(police.global_position + Vector3(0, .8, 0), Vector3(-12, 28, -16), 8.0)
 	if not await _capture_photo("police-white-front", "Elevated western front three-quarter view; unchanged model, paint and day lighting"):
 		return

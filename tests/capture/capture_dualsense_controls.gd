@@ -1,5 +1,5 @@
 extends SceneTree
-## Real SettingsMenu at 1280x720. In-memory defaults only; never saves preferences.
+## SettingsMenu real em 1280x720. Só padrões em memória; nunca salva preferências.
 const OUTPUT := "res://evidence/dualsense-20261002/"
 const FILE_NAMES := ["00-on-foot", "01-combat", "02-vehicle", "03-skate", "04-ski", "05-motocross", "06-camera", "07-menus-map"]
 var failures: Array[String] = []

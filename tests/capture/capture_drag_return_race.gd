@@ -1,5 +1,5 @@
 extends "res://tests/capture/capture_drag_start_camera.gd"
-## Rendered real Main/.NET flow, isolated save; only pedals/shifts are supplied.
+## Fluxo real renderizado no Main/.NET, save isolado; só pedais/trocas são fornecidos.
 var failures: Array[String]=[]
 var recording := false
 var stamp := 0
@@ -101,7 +101,7 @@ func review(race) -> void:
 			if ms>66.7: over66+=1
 		evidence.metrics={"seconds":total/1000,"frames":samples.size(),"fps":samples.size()*1000/total,"p50":ordered[int(ordered.size()*.5)],"p95":ordered[int(ordered.size()*.95)],"p99":ordered[int(ordered.size()*.99)],"max":ordered.back(),"over33":over33,"over66":over66}
 		print("RETURN_METRICS ",JSON.stringify(evidence.metrics))
-	# Result UI must preserve this mode on rematch, then Q must clean all owners.
+	# A UI de resultado precisa preservar este modo na revanche, e então Q precisa limpar todos os donos.
 	for i in 3: await process_frame
 	if session.modal:
 		await race.board_controller._result_action("rematch")

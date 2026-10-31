@@ -1,6 +1,6 @@
 extends Node
-## Visual evidence only: capture overhead and the 30 Hz limit invalidate FPS use.
-## Every rendered frame is stored as JPEG; each phase also has a reference PNG.
+## Só evidência visual: o custo da captura e o limite de 30 Hz invalidam o uso para FPS.
+## Todo quadro renderizado é guardado como JPEG; cada fase também tem um PNG de referência.
 const MAX_FRAMES := 2400
 var world
 var race

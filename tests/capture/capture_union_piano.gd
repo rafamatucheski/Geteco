@@ -1,5 +1,5 @@
 extends SceneTree
-## Presentation fixture only; does not certify production performance or access.
+## Só fixture de apresentação; não certifica desempenho nem acesso de produção.
 func _initialize() -> void:
 	run.call_deferred()
 

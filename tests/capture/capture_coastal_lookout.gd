@@ -1,6 +1,6 @@
 extends SceneTree
-## Production scene: physical ascent/descent, real session action, optical input,
-## pause/recovery and residency return. Readbacks are NOT FPS measurements.
+## Cena de produção: subida/descida física, ação real da sessão, entrada óptica,
+## pausa/recuperação e volta da residência. As leituras NÃO são medições de FPS.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const SITE := preload("res://world/places/coastal_lookout/CoastalLookout.gd")
 var world
@@ -45,7 +45,7 @@ func run() -> void:
 	if lifecycle_only: spawn = SITE.binocular_interaction_position()+Vector3.UP*.08
 	var snapshot := FIXTURE.full_snapshot(spawn,false)
 	if lifecycle_only:
-		# An unfinished, inactive campaign allows saving while keeping the gate shut.
+		# Uma campanha inacabada e inativa permite salvar mantendo o portão fechado.
 		var state = preload("res://runtime/GameState.gd").new()
 		if not check(state.restore_snapshot(snapshot),"Lifecycle fixture restores before mission cancellation"): finish(); return
 		state.campaign.cancel("coastal_lifecycle_fixture")
@@ -77,8 +77,8 @@ func run() -> void:
 		await lifecycle(spawn,return_spawn,save_path)
 		finish()
 		return
-	# --skip-arrival returns to Maciota: move only the initial observer to the
-	# entrance after startup. Every metre of ascent/descent below uses Actor physics.
+	# --skip-arrival volta para o Maciota: move só o observador inicial até a
+	# entrada depois do início. Cada metro de subida/descida abaixo usa a física do Actor.
 	await relocate(spawn)
 	await create_timer(2.0).timeout
 	var runtime = world.session.coastal_lookout
@@ -97,8 +97,8 @@ func run() -> void:
 	check(true,"Entire pedestrian ascent completed with production collision")
 	check(world.player.is_on_floor() and absf(world.player.global_position.y-SITE.summit_position().y)<.3,"Summit supports the player at its authored height")
 	await photo("03-summit")
-	# Observe the same resident scene from a photographic camera; normal gameplay
-	# remains running; a bounded30s sequence covers static, moving and returning views.
+	# Observa a mesma cena residente de uma câmera fotográfica; o jogo normal
+	# continua rodando; uma sequência limitada a30s cobre vistas paradas, em movimento e de volta.
 	overview = Camera3D.new()
 	overview.fov = 58
 	overview.far = 3500
@@ -182,8 +182,8 @@ func run() -> void:
 			finish(); return
 	check(await walk(spawn,"return-to-street"),"Entire pedestrian descent returns to the city sidewalk")
 	await photo("08-return-to-street")
-	# Residency lifecycle diagnostic: the path above is physically walked; this
-	# bounded repositioning tests unload/re-entry, not the route back to Maciota.
+	# Diagnóstico do ciclo de vida da residência: o caminho acima é percorrido a pé; este
+	# reposicionamento limitado testa descarga/reentrada, não a rota de volta ao Maciota.
 	await relocate(return_spawn)
 	await create_timer(2).timeout
 	check(not is_instance_valid(runtime.site) and not runtime.active,"Leaving locality unloads optic and scene")
@@ -194,7 +194,7 @@ func run() -> void:
 	finish()
 
 func lifecycle(saved_point: Vector3, distant_point: Vector3, save_path: String) -> void:
-	# NO relocation before these checks: this is a real cold restore on the top.
+	# NENHUMA realocação antes destas checagens: é uma restauração fria real no topo.
 	var runtime = world.session.coastal_lookout
 	await create_timer(.5).timeout
 	if not check(runtime!=null and is_instance_valid(runtime.site),"Cold restore mounts the terrace before gameplay"): return
@@ -208,7 +208,7 @@ func lifecycle(saved_point: Vector3, distant_point: Vector3, save_path: String) 
 	if is_instance_valid(gateway): check(not gateway.completed,"Resident bridge controller keeps construction closed")
 	await photo("lifecycle-01-cold-restored-top")
 	check(world.session.save_block_reason().is_empty(),"Supported summit is saveable outside observation")
-	# Exercise the actual save path only after isolation has been verified above.
+	# Exercita o caminho real de save só depois que o isolamento foi conferido acima.
 	var no_save: bool = world.production.no_save
 	world.production.no_save = false
 	var saved: bool = world.session.save_game()
@@ -267,8 +267,8 @@ func lifecycle(saved_point: Vector3, distant_point: Vector3, save_path: String) 
 	check(int(runtime.get_meta("template_generation_count",0))==1 and int(runtime.get_meta("residency_install_count",0))>=2,"Streaming return reuses prepared resources without generating geometry again")
 	print("LIGHTHOUSE_CACHE prepare_ms=",runtime.get_meta("template_prepare_ms")," install_ms=",runtime.get_meta("last_residency_install_ms"))
 	await photo("lifecycle-03-streaming-return")
-	# The full ascent was already tested separately; this relocation isolates
-	# optical ownership after recreation without pretending to walk it twice.
+	# A subida completa já foi testada à parte; esta realocação isola a
+	# posse óptica depois da recriação sem fingir percorrê-la duas vezes.
 	await relocate(saved_point)
 	await create_timer(.5).timeout
 	if not check(await world.session.interact() and runtime.active,"Recreated optical runtime admits a second interaction"): return

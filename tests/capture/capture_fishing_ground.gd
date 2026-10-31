@@ -1,6 +1,6 @@
 extends "res://tests/test_fishing_relocation_session.gd"
-## Directed visual/physical follow-up: existing session already covers fishing
-## ledger and UI. This journey covers the altered grass/soil joins and perimeter.
+## Acompanhamento visual/físico dirigido: a sessão existente já cobre o livro-razão
+## e a UI da pesca. Esta jornada cobre as junções de grama/solo alteradas e o perímetro.
 
 func fingerprint() -> Dictionary:
 	var result := super.fingerprint()

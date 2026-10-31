@@ -1,6 +1,6 @@
 extends "res://tests/capture/video_review_final.gd"
-## A/B diagnosis: same actor, camera and meshes, only the silhouette overlay
-## is removed for one screenshot, then restored. No runtime file is changed.
+## Diagnóstico A/B: mesmo ator, câmera e malhas, só a sobreposição de silhueta
+## é removida numa captura e depois restaurada. Nenhum arquivo de runtime é alterado.
 
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or not "--no-save" in OS.get_cmdline_user_args(): quit(2); return

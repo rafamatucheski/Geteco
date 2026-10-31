@@ -7,7 +7,7 @@ func shot(label: String) -> void:
 func run() -> void:
 	if DisplayServer.get_name()=="headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	root.size=Vector2i(1280,720); root.content_scale_size=root.size
-	# Inspect the menu itself with no pending real session/save preview.
+	# Inspeciona o próprio menu sem prévia pendente de sessão/save real.
 	root.get_node("V2Launch").direct_start_consumed=true
 	var menu=load("res://ui/MainMenu.tscn").instantiate(); root.add_child(menu)
 	if is_instance_valid(menu.sky): menu.sky.set_process(false)

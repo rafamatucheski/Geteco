@@ -55,11 +55,11 @@ func run() -> void:
 	check(session.wine.ui.visible and session.modal, "wine commerce panel visible")
 	await photo("03-shop")
 	check(session.wine.ui.card.get_global_rect().end.x <= 1280 and session.wine.ui.card.get_global_rect().end.y <= 720, "shop fits the gameplay viewport")
-	# Isolated wallet funding is fixture setup, not a mission reward assertion.
+	# O dinheiro isolado na carteira é preparação da fixture, não asserção de recompensa de missão.
 	check(session.state.economy.grant_reward("curitiba_session_test_funds", 2500), "test wallet funded")
-	# Settling earned-money achievements belongs to fixture setup. Otherwise
-	# the first purchase save also grants first_grand (+50), hiding the debit
-	# when asserting only the net balance.
+	# Acertar as conquistas de dinheiro ganho é parte da preparação da fixture. Senão
+	# o save da primeira compra também concede first_grand (+50), escondendo o débito
+	# quando só o saldo líquido é conferido.
 	session.activities.refresh_achievements()
 	var balance: int = session.state.economy.balance
 	session.wine.ui.selected = "zacharias_malagousia"
@@ -108,8 +108,8 @@ func run() -> void:
 	var outside_wine: Dictionary = session.wine.snapshot()
 	var outside_wallet: Dictionary = session.state.economy.snapshot()
 	check(not session.wine.buy("ancla_merlot") and session.wine.snapshot() == outside_wine and session.state.economy.snapshot() == outside_wallet, "remote purchase rejected without mutation")
-	# no-save captures world state but does not write the user's slot. Persist
-	# the resulting snapshot explicitly to another validated isolated fixture.
+	# no-save captura o estado do mundo, mas não grava o slot do usuário. Persiste
+	# o snapshot resultante explicitamente em outra fixture isolada validada.
 	check(session.save_game(), "session captures wine state")
 	var full: Dictionary = session.state.snapshot()
 	full.combat = world.gameplay.snapshot()

@@ -1,7 +1,7 @@
 extends SceneTree
-## Rendered, no-save lighting/geometry diagnosis for the native V2 world.
-## Captures identical places with a settled camera, camera motion, zoom, rotation,
-## day and night. This is visual evidence, not a performance benchmark.
+## Diagnóstico renderizado, sem save, de iluminação/geometria para o mundo V2 nativo.
+## Captura lugares idênticos com câmera assentada, câmera em movimento, zoom, rotação,
+## dia e noite. É evidência visual, não benchmark de desempenho.
 
 const OUTPUT_DIR := "res://evidence/lighting_glitch_review"
 const DAY_TIME := 0.36

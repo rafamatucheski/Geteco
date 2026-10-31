@@ -1,5 +1,5 @@
 extends SceneTree
-## Controlled oblique views of native V2 harbor geometry; visual QA only.
+## Vistas oblíquas controladas da geometria nativa do porto na V2; só QA visual.
 const REGION := preload("res://world/regions/NativeRegion.gd")
 var region: Node3D
 var camera: Camera3D

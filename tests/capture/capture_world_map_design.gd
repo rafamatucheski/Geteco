@@ -1,6 +1,6 @@
 extends SceneTree
-## Fast visual QA only: production MapUI and prepared production geography.
-## Does not mount Main, chunks, traffic or the C# navigation runtime. No FPS claim.
+## Só QA visual rápido: MapUI de produção e geografia de produção preparada.
+## Não monta Main, chunks, trânsito nem o runtime de navegação em C#. Nenhuma afirmação de FPS.
 const MAP := preload("res://ui/hud/MapUI.gd")
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const EDITABLE := preload("res://world/editing/EditableRegion.gd")
@@ -71,7 +71,7 @@ func run() -> void:
 	report={"status":"running","evidence_kind":"UI with real prepared geography","main_scene_loaded":false,"performance_valid":false,"limitations":"Visual QA of production MapUI only. No Main scene, live population, streaming, C# navigation or session-only activity markers. Use measure_world_map.gd for integration and performance.","engine":Engine.get_version_info().string,"renderer":RenderingServer.get_current_rendering_method(),"captures":[],"regions":{}}
 	save_report()
 	root.mode=Window.MODE_WINDOWED
-	# Match the selected concept without changing the user's persisted language.
+	# Segue o conceito selecionado sem mudar o idioma persistido do usuário.
 	TranslationServer.set_locale("pt_BR")
 	root.content_scale_size=Vector2i(1280,720); root.size=Vector2i(1280,720)
 	var world := World.new(); root.add_child(world)

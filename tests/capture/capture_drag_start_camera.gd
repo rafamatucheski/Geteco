@@ -1,6 +1,6 @@
 extends SceneTree
-## Visual launch review in actual Main/.NET with an isolated checkpoint.
-## PNG capture overhead makes this unsuitable for performance measurement.
+## Revisão visual da largada no Main/.NET real com um checkpoint isolado.
+## O custo da captura em PNG torna isto inadequado para medir desempenho.
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LAYOUT = preload("res://world/desert/DesertLayout.gd")
 var world

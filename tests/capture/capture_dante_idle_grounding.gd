@@ -1,7 +1,7 @@
 extends SceneTree
-## Rendered Main/.NET diagnostic. Normal pacing, no save and no production edits.
+## Diagnóstico renderizado no Main/.NET. Ritmo normal, sem save e sem edições na produção.
 ## -- --no-save --skip-arrival --population=24 --label=before
-## Thirty seconds of timing precede all screenshots and skin deformation probes.
+## Trinta segundos de cronometragem vêm antes de todas as capturas e sondas de deformação da pele.
 
 const ROUTER := preload("res://gameplay/dispatch/DispatchRoadRouter.gd")
 const OUT := "res://evidence/dante-idle-grounding-20261011/"
@@ -109,8 +109,8 @@ func _prepare_skin() -> bool:
 			for side in candidates:
 				if float(side_weights[side])>.25: candidates[side].append(vertex)
 		surfaces.append({"vertices":vertices,"bones":bones,"weights":weights,"influences":influences,"candidates":candidates})
-	# Select the outsole ONCE in the imported rest pose. Selecting current
-	# minimum Y would report a grounded toe while hiding an elevated heel.
+	# Seleciona a sola UMA vez na pose de repouso importada. Selecionar o Y mínimo
+	# atual acusaria a ponta do pé no chão enquanto esconde um calcanhar erguido.
 	var rests: Array[Transform3D] = []
 	for index in bind_bones.size(): rests.append(player.skeleton.get_bone_global_rest(bind_bones[index])*bind_poses[index])
 	var scale_y: float = player.skeleton.global_basis.y.length()
@@ -162,8 +162,8 @@ func _range(values: Array[float]) -> Dictionary:
 	return {"count":values.size(),"min":values[0],"p50":values[int((values.size()-1)*.5)],"p95":values[int((values.size()-1)*.95)],"max":values.back()}
 
 func _soles() -> Dictionary:
-	# Same weighted Skin-bind reconstruction as the prior foot_probe. Use actual
-	# skeleton world transforms, including actor/model scale and visual offset.
+	# Mesma reconstrução ponderada do bind de Skin da foot_probe anterior. Usa as transformações
+	# reais de mundo do esqueleto, incluindo escala do ator/modelo e deslocamento visual.
 	var matrices: Array[Transform3D] = []
 	for index in bind_bones.size(): matrices.append(player.skeleton.get_bone_global_pose(bind_bones[index])*bind_poses[index])
 	var result := {}
@@ -282,8 +282,8 @@ func _run() -> void:
 		if not finished:
 			_check(false,"180 s total watchdog")
 			_finish(3))
-	# Keep the real Input action path while preventing physical user input from
-	# steering this isolated diagnostic process.
+	# Mantém o caminho real das ações de Input enquanto impede a entrada física do usuário
+	# de dirigir este processo de diagnóstico isolado.
 	for action in InputMap.get_actions(): InputMap.action_erase_events(action)
 	seed(11102026)
 	world=load("res://Main.tscn").instantiate()

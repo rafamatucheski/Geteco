@@ -28,7 +28,7 @@ func run() -> void:
 	world.session.weather.time_of_day=.45
 	world.session.weather.weather_state=0
 	world.session.weather._update()
-	# Long-lived target for separate retaliation checks; no invulnerability or disabled AI.
+	# Alvo duradouro para checagens separadas de retaliação; sem invulnerabilidade nem IA desligada.
 	world.gameplay.health=5000
 	world.player.teleport(Vector3(450,.1,98))
 	await create_timer(7).timeout
@@ -64,7 +64,7 @@ func run() -> void:
 	check(not patrol.hostile and patrol.shots==0,"Passing player does not trigger gunfire")
 	car.receive_damage(1,null)
 	check(not patrol.hostile,"Unattributed damage does not blame player")
-	# Actual boarding flow; fixture moves the player to an existing car's door.
+	# Fluxo real de embarque; a fixture leva o jogador à porta de um carro existente.
 	car.speed=0
 	var door: Vector3=car.driver_door_anchor(1)
 	world.player.teleport(door+car.global_basis.x*.25+Vector3.UP*.12)
@@ -124,7 +124,7 @@ func run() -> void:
 	quit(0 if failures.is_empty() else 1)
 
 func check_roof(car, label: String) -> void:
-	# Intersect actual rendered triangles above the cabin, not a roof node name.
+	# Intersecta os triângulos renderizados reais acima da cabine, não o nome de um nó de teto.
 	var highest := -INF
 	var roof_material: Material
 	for part in car.visual.find_children("*","MeshInstance3D",true,false):

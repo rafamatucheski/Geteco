@@ -1,9 +1,9 @@
 extends SceneTree
-## Rendered functional evidence, separate from the frame-time benchmark.
-## Run with Godot .NET -- --no-save --skip-arrival --population=24 --label=after.
-## Saves per-frame metadata and either JPEG frames or an external native video.
-## Continuous capture spans >=30 s including entry, driving, steering, braking,
-## night headlights and exit. Image readback overhead is NOT a performance result.
+## Evidência funcional renderizada, separada do benchmark de tempo de quadro.
+## Rode com Godot .NET -- --no-save --skip-arrival --population=24 --label=after.
+## Salva metadados por quadro e quadros JPEG ou um vídeo nativo externo.
+## A captura contínua cobre >=30 s incluindo entrada, direção, esterço, frenagem,
+## faróis noturnos e saída. O custo da leitura de imagem NÃO é resultado de desempenho.
 var world
 var car: CharacterBody3D
 var route: Curve3D
@@ -49,7 +49,7 @@ func run() -> void:
 	seed(11102026)
 	for action in InputMap.get_actions(): InputMap.action_erase_events(action)
 	normal_max_fps = Engine.max_fps
-	Engine.max_fps = 30 # Loading/capture budget, restored before the normal-settings sample.
+	Engine.max_fps = 30 # Orçamento de carregamento/captura, restaurado antes da amostra com configurações normais.
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
@@ -70,8 +70,8 @@ func run() -> void:
 		await finish(); return
 	car.paint_color = Color("ba3f35")
 	car.ensure_equipment(world)
-	# Move only during setup, to a physically admitted road pose. Capture contains
-	# normal movement thereafter, without position/rotation injection.
+	# Move só durante a preparação, para uma pose de rua admitida fisicamente. A captura contém
+	# movimento normal daí em diante, sem injeção de posição/rotação.
 	if not record_check(await prepare_road_pose(), "50 metres of authored road pass physical and camera admission"):
 		await finish(); return
 	car.external_input = false
@@ -99,7 +99,7 @@ func run() -> void:
 	world.camera.initialized = false
 	set_time(false)
 	await hold(1.0)
-	# Independent normal-settings check, before any readbacks or capture coroutine.
+	# Checagem independente com configurações normais, antes de qualquer leitura ou corrotina de captura.
 	if not skip_normal:
 		Engine.max_fps = normal_max_fps
 		await measure_normal_settings()
@@ -150,7 +150,7 @@ func run() -> void:
 		await finish(); return
 	await hold(1.0)
 	await shot("05-night-braking")
-	expected_night_lamps = false # Engine/headlight shutdown on leaving is intentional.
+	expected_night_lamps = false # Desligar motor/faróis ao sair é intencional.
 	phase = "exit"
 	release_inputs()
 	if not record_check(world.driving.leave(), "Driving.leave accepts safe stopped exit"):
@@ -176,8 +176,8 @@ func prepare_road_pose() -> bool:
 	var graph = world.production.ambient_traffic_routes
 	var candidates: Array[Dictionary] = []
 	var rejected := {"physical":0,"camera":0}
-	# Sample real authored straight road segments. The bounded slow review needs
-	# 50 m, including stopping distance; do not require a complete traffic cycle.
+	# Amostra trechos retos reais de rua autoral. A revisão lenta limitada precisa de
+	# 50 m, incluindo a distância de parada; não exige um ciclo completo de trânsito.
 	for segment in graph.segments:
 		var a: Vector3 = segment.a
 		var b: Vector3 = segment.b
@@ -296,14 +296,14 @@ func drive_for(seconds: float) -> void:
 		var direction := destination-car.global_position
 		var yaw := atan2(-direction.x,-direction.z)
 		var steer := clampf(angle_difference(car.rotation.y,yaw)*1.8,-.65,.65)
-		# One gentle half-second correction makes steering visible on a straight,
-		# while the road-following controller immediately brings the car back.
+		# Uma correção suave de meio segundo deixa o esterço visível numa reta,
+		# enquanto o controlador que segue a rua traz o carro de volta na hora.
 		if Time.get_ticks_msec()-began < 450: steer = .28
 		Input.action_release("move_left")
 		Input.action_release("move_right")
 		if absf(steer)>.015:
-			# Input.get_vector removes the average action deadzone; compensate it
-			# explicitly so a gentle direction input reaches the real player path.
+			# Input.get_vector remove a zona morta média da ação; compensa-a
+			# explicitamente para que uma entrada suave de direção chegue ao caminho real do jogador.
 			Input.action_press("move_left" if steer > 0 else "move_right", deadzone+(1.0-deadzone)*absf(steer))
 		if car.speed < 2.5: Input.action_press("accelerate", .4)
 		else: Input.action_release("accelerate")

@@ -1,5 +1,5 @@
 extends SceneTree
-## UI-only visual comparison; Main integration and timing have separate runners.
+## Comparação visual só de UI; integração no Main e cronometragem têm runners à parte.
 const PANEL := preload("res://gameplay/desert_cars/DesertTuningPanel.gd")
 const OUT := "res://artifacts/tuning-design-20261019/qa/"
 var panel: CanvasLayer

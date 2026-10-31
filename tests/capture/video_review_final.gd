@@ -31,7 +31,7 @@ func run() -> void:
 	world.session.weather.weather_state = 1
 	world.session.weather.weather_timer = 99999.0
 	await frames(15)
-	# A tighter inspection camera, confined to this capture process.
+	# Uma câmera de inspeção mais fechada, restrita a este processo de captura.
 	var ordinary_size: float = world.camera.target_size
 	world.camera.target_size = 8.0
 	world.camera.size = 8.0
@@ -61,7 +61,7 @@ func run() -> void:
 		await frames(125)
 		world.player.automatic_direction = Vector3.ZERO
 		await capture("ammo-counter-service")
-		# Call the actual automatic-exit helper, including the exterior zoom.
+		# Chama o helper real de saída automática, incluindo o zoom externo.
 		world.player.teleport(world.session.room.exit_position + Vector3.UP * .05)
 		await frames(3)
 		world.session.weapon_shop_entrance._leave()
@@ -96,8 +96,8 @@ func capture_zoom_sequence() -> void:
 	for index in times.size():
 		while float(Time.get_ticks_usec() - began) / 1000000.0 < times[index]: await process_frame
 		await RenderingServer.frame_post_draw
-		# Encode PNGs only after the animation completes. GPU readback remains
-		# instrumentation, so these photographs are not a timing benchmark.
+		# Codifica os PNGs só depois de a animação terminar. A leitura da GPU continua sendo
+		# instrumentação, então estas fotografias não são benchmark de tempo.
 		pending.append({"image": root.get_texture().get_image(), "record": {"label": capture_prefix + "ammo-zoom-%02d" % index, "elapsed_ms": float(Time.get_ticks_usec() - began) / 1000.0, "camera_size": world.camera.size, "camera_position": str(world.camera.global_position), "player_position": str(world.player.global_position), "place": world.session.state.place_id, "prompt": world.session.prompt.text}})
 	for item in pending:
 		var row: Dictionary = item.record
