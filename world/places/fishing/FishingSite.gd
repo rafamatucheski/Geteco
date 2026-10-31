@@ -1,5 +1,6 @@
 extends Node3D
 ## Outdoor fishing park in the western woodland, reached by a local dirt road.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const LOCATION := preload("res://runtime/FishingLocation.gd")
 const ANCHOR := LOCATION.ANCHOR
 const LOT := LOCATION.GROUNDS
@@ -350,7 +351,7 @@ func _triangle(material: String,a: Vector3,b: Vector3,c: Vector3) -> void:
 		surface.add_vertex(point)
 
 func _append_mesh(material: String,mesh: Mesh,mesh_transform: Transform3D) -> void:
-	var arrays := mesh.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(mesh, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 	var uv: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]

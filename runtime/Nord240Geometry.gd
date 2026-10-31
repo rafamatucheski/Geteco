@@ -1,5 +1,6 @@
 extends RefCounted
 ## Spawn-time Nord geometry pass. Caches contain resources, never scene nodes.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const RENDER_PROPERTIES := [
 	"layers", "cast_shadow", "gi_mode", "transparency", "material_overlay",
@@ -232,7 +233,7 @@ static func _prepare(source: Mesh, surface: int, transform: Transform3D) -> Arra
 	var cache_key := [source, surface, transform]
 	if _prepared.has(cache_key):
 		return _prepared[cache_key]
-	var arrays := source.surface_get_arrays(surface).duplicate()
+	var arrays := MESH_ARRAYS.arrays_of(source, surface).duplicate(true)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	arrays[Mesh.ARRAY_VERTEX] = transform * vertices
 	var normals := PackedVector3Array()

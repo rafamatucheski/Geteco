@@ -12,6 +12,7 @@ extends RefCounted
 ## mobília quebrável é registrada em FragileProps3D. Decalques e detalhes de
 ## telhado permanecem apenas visuais.
 
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const CONTEXT_INDEX := preload("res://world/city_look/CityContextIndex.gd")
 const CONTEXT_META := &"city_context_index"
 const MATERIALS := preload("res://world/city_look/CityLookMaterials.gd")
@@ -1553,7 +1554,7 @@ static func _face_ground_mesh(mesh: MeshInstance3D) -> void:
 static func _flipped(source: ArrayMesh) -> ArrayMesh:
 	var result := ArrayMesh.new()
 	for surface in source.get_surface_count():
-		var arrays := source.surface_get_arrays(surface)
+		var arrays := MESH_ARRAYS.arrays_of(source, surface).duplicate()
 		var indices = arrays[Mesh.ARRAY_INDEX]
 		if indices != null and indices.size() > 0:
 			var flipped := PackedInt32Array(indices)
@@ -1597,7 +1598,7 @@ static func _faces_down(array_mesh: ArrayMesh) -> bool:
 	return down
 
 static func _faces_down_read(array_mesh: ArrayMesh) -> bool:
-	var arrays := array_mesh.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(array_mesh, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var indices = arrays[Mesh.ARRAY_INDEX]
 	var up := 0.0

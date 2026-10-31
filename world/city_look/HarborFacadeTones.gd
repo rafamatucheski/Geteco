@@ -2,6 +2,7 @@ extends RefCounted
 ## Harbor-only replacement finish. Existing vertices carry a whole-building
 ## palette; three shared albedos use baked face UVs, not triplanar/normal samples.
 ## No overlay meshes, additional surfaces, lights or per-frame work.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const TEXTURES := {
 	"brick": preload("res://assets/materials/harbor_facades/brick.png"),
 	"plaster": preload("res://assets/materials/harbor_facades/plaster.png"),
@@ -39,7 +40,7 @@ static func apply(chunk: Node3D) -> void:
 		var local_inverse: Transform3D = building.global_transform.affine_inverse()
 		for surface in instance.mesh.get_surface_count():
 			var material := instance.get_active_material(surface) as StandardMaterial3D
-			var arrays := instance.mesh.surface_get_arrays(surface)
+			var arrays := MESH_ARRAYS.arrays_of(instance.mesh, surface).duplicate()
 			if _eligible(material):
 				var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 				var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]

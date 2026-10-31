@@ -2,6 +2,7 @@ extends Node
 ## Furniture interactions use the real room and the original dressed player.
 ## The physical body stays at its validated approach point; only the explicit
 ## bed interaction moves the visual onto the mattress. No preview actor is made.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const WEAPON_MODEL := preload("res://gameplay/ArsenalWeapon3D.gd")
 const CUSTOM := preload("res://gameplay/WeaponCustomization.gd")
 const MIRROR_LAYER := 1 << 19
@@ -181,7 +182,7 @@ func _ground_standing_pose() -> void:
 		poses.append(skeleton.global_transform*skeleton.get_bone_global_pose(bone)*mesh.skin.get_bind_pose(bind))
 	var lowest := INF
 	for surface in mesh.mesh.get_surface_count():
-		var arrays: Array = mesh.mesh.surface_get_arrays(surface)
+		var arrays: Array = MESH_ARRAYS.arrays_of(mesh.mesh, surface)
 		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		var influences: int = arrays[Mesh.ARRAY_BONES].size()/maxi(1,vertices.size())
 		for index in vertices.size():

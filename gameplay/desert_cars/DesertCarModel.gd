@@ -1,6 +1,7 @@
 extends RefCounted
 ## Authored silhouettes, open wheel arches and material batches. All geometry is
 ## built once per catalog ID; the fleet keeps its normal paint, doors and wheels.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static func create(s: Dictionary) -> Node3D:
 	var root := Node3D.new()
 	root.name = "DesertCar"
@@ -453,7 +454,7 @@ static func _batch(root: Node3D) -> void:
 			groups[key]={"tool":st,"material":material,"wheel":wheel,"name":part.name,"tail":part.get_meta("coupe_damage_material_key","")=="tail"}
 		var tool: SurfaceTool = groups[key].tool
 		for surface in part.mesh.get_surface_count():
-			var arrays := part.mesh.surface_get_arrays(surface)
+			var arrays := MESH_ARRAYS.arrays_of(part.mesh, surface)
 			var positions: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 			var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 			var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV] if arrays[Mesh.ARRAY_TEX_UV]!=null else PackedVector2Array()

@@ -1,5 +1,6 @@
 extends RefCounted
 ## Small, shared model finishing pass. Gameplay anchors and moving parts stay intact.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const GEO = preload("res://assets/regions/source/scripts/player/WeaponPresentation3D.gd")
 # Immutable local geometry, bounded independently of weapon instances.
 static var _bevel_meshes: Dictionary = {}
@@ -184,7 +185,7 @@ static func _batch_static(root: Node3D) -> void:
 				branch_merged[Mesh.ARRAY_INDEX] = PackedInt32Array()
 				batches[key] = {"arrays": branch_merged, "material": material}
 			var merged: Array = batches[key].arrays
-			var arrays: Array = child.mesh.surface_get_arrays(surface)
+			var arrays: Array = MESH_ARRAYS.arrays_of(child.mesh, surface).duplicate(true)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 			var previous_count: int = merged[Mesh.ARRAY_VERTEX].size() if merged[Mesh.ARRAY_VERTEX] != null else 0
 			# Transform shared vertices once, not once for each triangle corner.

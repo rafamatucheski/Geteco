@@ -1,5 +1,6 @@
 extends RefCounted
 ## Semantic access for both flattened legacy parts and multi-surface exports.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var _centers: Dictionary = {}
 
 ## A role is a semantic identifier, not arbitrary text: "detail" contains "tail".
@@ -27,7 +28,7 @@ static func center(part: MeshInstance3D, surface: int) -> Vector3:
 	if not _centers.has(part.mesh):
 		var centers: Array[Vector3] = []
 		for i in part.mesh.get_surface_count():
-			var vertices: PackedVector3Array = part.mesh.surface_get_arrays(i)[Mesh.ARRAY_VERTEX]
+			var vertices: PackedVector3Array = MESH_ARRAYS.arrays_of(part.mesh, i)[Mesh.ARRAY_VERTEX]
 			var bounds := AABB(vertices[0], Vector3.ZERO) if not vertices.is_empty() else part.get_aabb()
 			for vertex in vertices: bounds = bounds.expand(vertex)
 			centers.append(bounds.get_center())

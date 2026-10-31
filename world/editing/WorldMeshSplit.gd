@@ -7,6 +7,7 @@ extends RefCounted
 ##
 ## Só usa dados de malha (iguais na prévia sem renderizador e no jogo), então o resultado e os
 ## ids derivados dele são os mesmos nos dois.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const MIN_TRIANGLES := 600
 const MAX_TRIANGLES := 600000
 const JOIN := .04
@@ -68,7 +69,7 @@ static func _label(batch: MeshInstance3D) -> String:
 	return text.replace("_", " ").strip_edges()
 
 static func _index_count(mesh: ArrayMesh) -> int:
-	var arrays := mesh.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(mesh, 0)
 	var indices: Variant = arrays[Mesh.ARRAY_INDEX]
 	if indices != null and (indices as PackedInt32Array).size() > 0: return (indices as PackedInt32Array).size()
 	return (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
@@ -81,7 +82,7 @@ static func _find(parents: PackedInt32Array, item: int) -> int:
 
 ## Componentes ligados de uma malha: {batch, triangles: PackedInt32Array de índices de triângulo, box}.
 static func _components(batch: MeshInstance3D, parts: Array[Dictionary]) -> void:
-	var arrays := batch.mesh.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(batch.mesh, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 	var count := indices.size() if indices.size() > 0 else vertices.size()
@@ -143,7 +144,7 @@ static func _cluster(parts: Array[Dictionary]) -> Array[Dictionary]:
 	return result
 
 static func _sub_mesh(batch: MeshInstance3D, parts: Array) -> ArrayMesh:
-	var arrays := batch.mesh.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(batch.mesh, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL] if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()

@@ -14,6 +14,7 @@ extends RefCounted
 ## Só o veículo que o jogador entra recebe interior; os vidros conservam os materiais originais.
 ## O trânsito segue
 ## com os modelos achatados, de vidro opaco, como antes.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
@@ -177,7 +178,7 @@ static func contact_arrays(mesh: Mesh, surface: int) -> Array:
 	var key := "%d:%d" % [mesh.get_instance_id(),surface]
 	var entry: Variant = _contact_arrays.get(key)
 	if entry != null and entry.ref.get_ref() == mesh: return entry.arrays
-	var arrays := mesh.surface_get_arrays(surface)
+	var arrays := MESH_ARRAYS.arrays_of(mesh, surface)
 	remember_contact(mesh,surface,arrays)
 	return arrays
 
@@ -594,7 +595,7 @@ static func _cut_roof(part: MeshInstance3D, surface: int, xf: Transform3D, s: Di
 	if not mesh is ArrayMesh:
 		_roof_cuts[key] = {}
 		return {}
-	var arrays := mesh.surface_get_arrays(surface)
+	var arrays := MESH_ARRAYS.arrays_of(mesh, surface).duplicate()
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var normals := PackedVector3Array()
 	if arrays[Mesh.ARRAY_NORMAL] != null: normals = arrays[Mesh.ARRAY_NORMAL]
@@ -630,7 +631,7 @@ static func _cut_roof(part: MeshInstance3D, surface: int, xf: Transform3D, s: Di
 	var body := ArrayMesh.new()
 	for j in mesh.get_surface_count():
 		# A superfície cortada já foi lida acima: cada leitura de malha volta da GPU e trava o quadro.
-		var other: Array = arrays.duplicate() if j == surface else mesh.surface_get_arrays(j)
+		var other: Array = arrays.duplicate() if j == surface else MESH_ARRAYS.arrays_of(mesh, j)
 		if j == surface: other[Mesh.ARRAY_INDEX] = body_indices
 		body.add_surface_from_arrays(mesh.surface_get_primitive_type(j), other)
 		body.surface_set_material(j, mesh.surface_get_material(j))

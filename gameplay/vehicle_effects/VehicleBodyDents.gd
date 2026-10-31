@@ -1,6 +1,7 @@
 extends Node
 ## Event-only mesh deformation. Pristine meshes stay shared until the first dent.
 ## Records use vehicle-local metres; rebuilding from rest makes save/load exact.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const MAX_DENTS := 12
@@ -187,7 +188,7 @@ static func _rest_arrays(mesh: Mesh) -> Array:
 	if valid and not cached.is_empty(): return cached
 	var read_began := STALL_WORK.begin()
 	var arrays: Array=[]
-	for surface in mesh.get_surface_count(): arrays.append(mesh.surface_get_arrays(surface))
+	for surface in mesh.get_surface_count(): arrays.append(MESH_ARRAYS.arrays_of(mesh, surface))
 	STALL_WORK.finish_slow("vehicle.dents.readback", read_began, 1000)
 	_rest_cache.erase(mesh)
 	while _rest_cache.size()>=REST_CACHE_LIMIT: _rest_cache.erase(_rest_cache.keys()[0])

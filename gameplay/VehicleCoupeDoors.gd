@@ -2,6 +2,7 @@ extends Node3D
 ## Reuses authored coupe door leaves, or splits legacy bodies at their seams.
 ## Only the vehicle being entered is prepared; traffic keeps shared meshes.
 
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 var hinges: Dictionary = {}
 
 func configure(vehicle: CharacterBody3D) -> bool:
@@ -13,14 +14,14 @@ func configure(vehicle: CharacterBody3D) -> bool:
 		var part := child as MeshInstance3D
 		if part.mesh == null: continue
 		var key := str(part.get_meta("coupe_damage_material_key", ""))
-		var arrays := part.mesh.surface_get_arrays(0)
+		var arrays := MESH_ARRAYS.arrays_of(part.mesh, 0)
 		var triangles: int = (arrays[Mesh.ARRAY_INDEX].size() if arrays[Mesh.ARRAY_INDEX] != null else arrays[Mesh.ARRAY_VERTEX].size()) / 3
 		if key == "paint" and triangles > 5000: shell = part
 		elif key == "glass" and triangles == 68: glass = part
 	if shell == null or glass == null: return false
 
 	var source_mesh: Mesh=shell.get_meta("body_dents_rest_mesh",shell.mesh)
-	var source := source_mesh.surface_get_arrays(0)
+	var source := MESH_ARRAYS.arrays_of(source_mesh, 0)
 	var vertices: PackedVector3Array = source[Mesh.ARRAY_VERTEX]
 	var indices: PackedInt32Array = source[Mesh.ARRAY_INDEX]
 	if indices.is_empty(): return false
@@ -52,7 +53,7 @@ func configure(vehicle: CharacterBody3D) -> bool:
 	for side in [-1, 1]:
 		door_meshes[side] = _compact_mesh(source, leaves[side], false)
 
-	var glass_source := glass.mesh.surface_get_arrays(0)
+	var glass_source := MESH_ARRAYS.arrays_of(glass.mesh, 0)
 	var glass_vertices: PackedVector3Array = glass_source[Mesh.ARRAY_VERTEX]
 	var glass_normals: PackedVector3Array = glass_source[Mesh.ARRAY_NORMAL]
 	var glass_tool := SurfaceTool.new()

@@ -1,5 +1,6 @@
 extends RefCounted
 ## Cosmetic history derived from the persisted identity. No health changes or frame work.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const CIVILIAN := ["besouro_1300", "mare_microvan", "toco_minitruck", "union_sedan", "sedan_classic", "metro_hatch", "station_wagon", "nordic_estate", "courier_van", "polar_van", "ranch_single", "ranch_pickup", "lumber_pickup_4x4", "atlas_crew_pickup", "sertao_trail_pickup", "sport_estate", "summit_suv", "vale_crossover"]
 # Bed interior: floor height, center Z, usable width, usable length (model coordinates).
 const BEDS := {
@@ -162,12 +163,14 @@ static func _open_bed(model: Node3D, id: String) -> void:
 	var bed: Array = BEDS[id]
 	var front := float(bed[1]) - float(bed[3]) * .5
 	var source := body.mesh
-	var arrays := source.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(source, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 	var uv: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV] if arrays[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
 	if indices.is_empty():
+		# Array novo: o vazio pode ser o da cópia compartilhada do MeshArrayCache, que não se altera.
+		indices = PackedInt32Array()
 		for i in vertices.size(): indices.append(i)
 	var tool := SurfaceTool.new()
 	tool.begin(Mesh.PRIMITIVE_TRIANGLES)

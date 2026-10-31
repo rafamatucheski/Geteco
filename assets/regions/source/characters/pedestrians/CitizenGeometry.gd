@@ -1,5 +1,6 @@
 extends RefCounted
 ## Build-time geometry only. Vertex colours batch all opaque detail on a joint.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var _prewarm_mesh: ArrayMesh
 static var _prewarm_material: StandardMaterial3D
 var surface := SurfaceTool.new()
@@ -24,7 +25,7 @@ func _init() -> void:
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 
 func add(mesh: Mesh, color: Color, transform := Transform3D.IDENTITY) -> void:
-	var arrays := mesh.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(mesh, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]

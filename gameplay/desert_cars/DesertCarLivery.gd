@@ -1,6 +1,7 @@
 extends RefCounted
 ## Authored, opaque race vinyl. One vertex-coloured mesh/material per car, shared
 ## by the catalog cache. The door cutter carries its triangles onto the door.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const OFFSET := .006
 const LAYER_GAP := .002
 static var _vinyl: StandardMaterial3D
@@ -578,7 +579,7 @@ static func _curved_mesh(
 ) -> ArrayMesh:
 	var out := SurfaceTool.new()
 	out.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var arrays := source.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(source, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 	var colors: PackedColorArray = arrays[Mesh.ARRAY_COLOR]

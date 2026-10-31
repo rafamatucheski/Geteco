@@ -1,6 +1,7 @@
 extends RefCounted
 ## Lofted rescue/patrol airframe. Static pieces are batched by material; moving
 ## doors/rotors retain their own transforms. All cockpit glass is opaque.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const ART = preload("res://gameplay/police_response/air_k9/AirK9Models.gd")
 const NAVY := Color("182c3c")
 const WHITE := Color("cbd4cf")
@@ -256,7 +257,7 @@ static func _bake_static(parent: Node3D) -> void:
 			st.begin(Mesh.PRIMITIVE_TRIANGLES)
 			batches[mat] = st
 		for surface in child.mesh.get_surface_count():
-			var arrays: Array = child.mesh.surface_get_arrays(surface)
+			var arrays: Array = MESH_ARRAYS.arrays_of(child.mesh, surface).duplicate()
 			var indices: Variant = arrays[Mesh.ARRAY_INDEX]
 			if indices == null or indices.is_empty():
 				# append_from does not synthesize indices for a non-indexed source.

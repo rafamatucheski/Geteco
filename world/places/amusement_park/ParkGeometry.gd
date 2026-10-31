@@ -1,5 +1,6 @@
 extends Node3D
 ## Static material batches; tagged solids retain complete authored volumes.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const EXTERIOR_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
 const EXTERIOR_RECIPES := {
 	"wood":["745e49","423e4a","6d5b4e","e1cfa4","ae8856","957250","38625f","8f734e","873e4a","d1ab59","63769a"],
@@ -119,7 +120,7 @@ func beam(a: Vector3, b: Vector3, width: float, height: float, color: String, ki
 
 func append_mesh(mesh: Mesh, mesh_transform: Transform3D, color: String, kind := "paint") -> void:
 	var st := batch(color,kind)
-	var arrays := mesh.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(mesh, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]

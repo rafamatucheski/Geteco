@@ -1,5 +1,6 @@
 extends RefCounted
 ## Shared, authored low-poly motocross geometry. No physics, riders or effects.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var _sets: Dictionary = {}
 static var _materials: Dictionary = {}
 
@@ -39,7 +40,7 @@ static func triangle_count() -> int:
 	var total := 0
 	for key in _sets:
 		for part in _sets[key]:
-			var arrays: Array = part.mesh.surface_get_arrays(0)
+			var arrays: Array = MESH_ARRAYS.arrays_of(part.mesh, 0)
 			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
 			# Whole-number grouping/index; preserve integer truncation and precision.
 			@warning_ignore("integer_division")

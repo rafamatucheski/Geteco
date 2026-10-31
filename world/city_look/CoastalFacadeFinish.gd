@@ -2,6 +2,7 @@ extends RefCounted
 ## Authored Police upper glazing between the existing concrete pilasters.
 ## Two static meshes, one shader material per facade; no lights, collision,
 ## scene scans, per-frame work or private reflection camera.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const GLASS_SHADER := preload("res://world/city_look/coastal_facade_glass.gdshader")
 const MASONRY := preload("res://world/city_look/CoastalMasonryFinish.gd")
 const REFLECTION_GROUP := &"coastal_reflective_facade"
@@ -79,7 +80,7 @@ static func _append_box(surface: SurfaceTool, center: Vector3, size: Vector3, ti
 		return
 	# Different matte finishes share one surface/material instead of adding a
 	# draw mesh for each frame. This construction runs only when its chunk loads.
-	var arrays := box.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(box, 0).duplicate()
 	var colors := PackedColorArray()
 	colors.resize((arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size())
 	colors.fill(tint)

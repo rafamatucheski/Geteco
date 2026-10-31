@@ -1,4 +1,5 @@
 extends Node3D
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
 var stage: Node3D
 var palette: Dictionary = {}
@@ -14,7 +15,7 @@ func _ready() -> void:
 	for rect in [Rect2(-130,-118,460,18), Rect2(-130,134,460,18), Rect2(-130,-118,18,270), Rect2(312,-118,18,270)]:
 		var blocker := _box(rect, 2.8, 0.0, "#252f30")
 		var shadow_mesh := ArrayMesh.new()
-		shadow_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, blocker.mesh.surface_get_arrays(0))
+		shadow_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, MESH_ARRAYS.arrays_of(blocker.mesh, 0))
 		blocker.mesh = shadow_mesh
 		blocker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 

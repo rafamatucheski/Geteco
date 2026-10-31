@@ -10,6 +10,7 @@ extends RefCounted
 ## 2026-10-06): pulso em |x| = 0,625; polegar = vértices da frente (z > −0,005)
 ## entre |x| 0,62 e 0,78, base em |x| ≈ 0,665 e ponta em |x| ≈ 0,75.
 
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const SHAPES := {"FistRight": -1.0, "FistLeft": 1.0}
 const THUMB_BASE := Vector3(0.665, 1.25, 0.0)
 const THUMB_MIN_Z := -0.005
@@ -37,7 +38,7 @@ static func fixed(mesh: Mesh) -> Mesh:
 	result.blend_shape_mode = source.blend_shape_mode
 	for index in source.get_blend_shape_count(): result.add_blend_shape(source.get_blend_shape_name(index))
 	for surface in source.get_surface_count():
-		var arrays := source.surface_get_arrays(surface)
+		var arrays := MESH_ARRAYS.arrays_of(source, surface)
 		var shapes := source.surface_get_blend_shape_arrays(surface)
 		for index in targets:
 			if int(index) < shapes.size(): shapes[index] = _fold_thumb(arrays, shapes[index], float(targets[index]))

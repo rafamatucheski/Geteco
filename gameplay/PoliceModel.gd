@@ -1,5 +1,6 @@
 extends Node3D
 ## Geometry extracted from V1 PoliceOfficer without its private viewport.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 enum UnitTier { REGULAR, DETECTIVE, SWAT, FBI, ARMY }
 var tier := 0
 var motorcycle_officer := false
@@ -544,7 +545,7 @@ func _merge_equipment(joint: MeshInstance3D, part: String) -> void:
 	if not _equipment_meshes.has(key):
 		var b = BODY_KIT._builder()
 		_build_equipment(b, part)
-		var original: Array = joint.mesh.surface_get_arrays(0)
+		var original: Array = MESH_ARRAYS.arrays_of(joint.mesh, 0).duplicate(true)
 		var offset: int = original[Mesh.ARRAY_VERTEX].size()
 		# Godot returns generated tangents on readback even though this rigid
 		# cloth shader uses vertex normals only. The old tangent stream cannot
@@ -568,7 +569,7 @@ func _merge_equipment(joint: MeshInstance3D, part: String) -> void:
 		merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, original)
 		merged.surface_set_material(0, BODY_KIT.material())
 		for surface in range(1, joint.mesh.get_surface_count()):
-			merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, joint.mesh.surface_get_arrays(surface))
+			merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, MESH_ARRAYS.arrays_of(joint.mesh, surface))
 			merged.surface_set_material(surface, joint.mesh.surface_get_material(surface))
 		_equipment_meshes[key] = merged
 	joint.mesh = _equipment_meshes[key]
