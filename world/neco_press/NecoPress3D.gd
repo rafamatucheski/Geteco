@@ -1,17 +1,17 @@
 extends Node3D
 class_name NecoPress3D
 
-## Neco's Vehicle Crusher / Industrial Scrap Press Component (Geteco V2).
-## Independent visual & kinematic presentation rig recreating the classic Geteco V1
-## crusher geometry and multi-phase sequence with native 3D geometry and cached materials.
+## Componente Prensa de Veículos / Prensa Industrial de Sucata do Neco (Geteco V2).
+## Rig independente de apresentação visual e cinemática que recria a geometria clássica do
+## britador da Geteco V1 e a sequência de várias fases com geometria 3D nativa e materiais em cache.
 ##
-## ARCHITECTURAL CONSTRAINTS:
-## - Visual presentation only: Does NOT delete entities, does NOT grant rewards,
-##   does NOT modify save states, and does NOT decide scrap eligibility.
-##   All reward, destruction, and economic logic belongs exclusively to GarageRewards.
-## - The integrator supplies a visual vehicle node (or duplicate) to start_presentation().
-## - Exposes physical collision volumes and bounding boxes for integration without internal damage hooks.
-## - Zero decorative/descriptive signage on structure (per AGENTS.md).
+## RESTRIÇÕES DE ARQUITETURA:
+## - Só apresentação visual: NÃO apaga entidades, NÃO dá recompensas,
+##   NÃO altera estados de save e NÃO decide se algo vira sucata.
+##   Toda a lógica de recompensa, destruição e economia pertence só ao GarageRewards.
+## - O integrador fornece um nó visual de veículo (ou duplicata) a start_presentation().
+## - Expõe volumes de colisão física e caixas envolventes para integração sem ganchos internos de dano.
+## - Zero sinalização decorativa/descritiva na estrutura (conforme o AGENTS.md).
 
 signal presentation_started(vehicle_visual: Node3D)
 signal phase_changed(new_phase: String)
@@ -23,7 +23,7 @@ enum Phase {
 	APPROACHING,  ## Ram moves forward along Z to align above vehicle
 	CRUSHING,     ## Ram descends vertically along Y, squashing visual representation
 	HOLDING,      ## Ram dwells under maximum downward pressure
-	RETRACTING,   ## Ram ascends along Y and retracts back along -Z to resting position
+	RETRACTING,   ## O pistão sobe ao longo de Y e recua ao longo de -Z até a posição de repouso
 	CANCELLED
 }
 
@@ -75,9 +75,9 @@ func _exit_tree() -> void:
 # Presentation API (Public)
 # ==============================================================================
 
-## Begins the crushing visual sequence using the provided visual representation of a vehicle.
-## The caller (e.g. GarageRewards / SalvageYard integrator) is responsible for providing
-## the visual node to squash and deciding when to clean it up or replace it with scrap cubes.
+## Inicia a sequência visual de prensagem usando a representação visual dada de um veículo.
+## Quem chama (por exemplo, o integrador GarageRewards / SalvageYard) é responsável por fornecer
+## o nó visual a ser esmagado e decidir quando limpá-lo ou trocá-lo por cubos de sucata.
 func start_presentation(vehicle_visual: Node3D) -> bool:
 	if _current_phase != Phase.IDLE:
 		push_warning("NecoPress3D: Cannot start presentation while phase is %s." % _phase_to_string(_current_phase))
@@ -96,8 +96,8 @@ func start_presentation(vehicle_visual: Node3D) -> bool:
 	_run_presentation_sequence()
 	return true
 
-## Immediately stops the crushing sequence and safely restores the press to resting state.
-## Does not delete the vehicle visual node; leaves state clean for reuse.
+## Para na hora a sequência de prensagem e devolve a prensa com segurança ao estado de repouso.
+## Não apaga o nó visual do veículo; deixa o estado limpo para reuso.
 func cancel_presentation() -> void:
 	if _current_phase == Phase.IDLE:
 		return
@@ -106,7 +106,7 @@ func cancel_presentation() -> void:
 		_active_tween.kill()
 		_active_tween = null
 
-	# Cancellation is synchronous and owns no untracked recovery tween.
+	# O cancelamento é síncrono e não tem tween de recuperação sem rastreio.
 	if is_instance_valid(_current_vehicle_visual): _current_vehicle_visual.scale = _original_vehicle_scale
 	_current_vehicle_visual = null
 	_ram_assembly.position = RAM_RESTING_POS
@@ -114,7 +114,7 @@ func cancel_presentation() -> void:
 	_set_phase(Phase.IDLE)
 	presentation_cancelled.emit()
 
-## Full swept volume (including the parked plate) in press-local coordinates.
+## Volume varrido inteiro (incluindo a placa estacionada) em coordenadas locais da prensa.
 func get_admission_bounds() -> AABB: return ADMISSION_BOUNDS
 func get_admission_transform() -> Transform3D:
 	return global_transform * Transform3D(Basis.IDENTITY,ADMISSION_BOUNDS.get_center())
@@ -125,7 +125,7 @@ func is_admission_clear() -> bool:
 	box.size = ADMISSION_BOUNDS.size
 	query.shape = box
 	query.transform = get_admission_transform()
-	query.collision_mask = 6 # all native actors and actual vehicles, never the visual proxy
+	query.collision_mask = 6 # todos os atores nativos e veículos reais, nunca o proxy visual
 	return get_world_3d().direct_space_state.intersect_shape(query,1).is_empty()
 func _install_guard() -> void:
 	_guard = StaticBody3D.new()
@@ -140,7 +140,7 @@ func _install_guard() -> void:
 	_guard.add_child(collision)
 	add_child(_guard)
 func _physics_process(_delta: float) -> void:
-	# Teleport/save admission can bypass walls; cancel safely if any actor appears inside.
+	# A admissão por teleporte/save pode atravessar paredes; cancela com segurança se algum ator aparecer dentro.
 	if not is_instance_valid(_current_vehicle_visual) or not is_admission_clear(): cancel_presentation()
 
 func _release_guard() -> void:
@@ -150,7 +150,7 @@ func _release_guard() -> void:
 		_guard.queue_free()
 	_guard = null
 
-## Returns true if a presentation sequence is currently active.
+## Devolve verdadeiro se uma sequência de apresentação estiver ativa.
 func is_active() -> bool:
 	return _current_phase != Phase.IDLE
 
@@ -158,11 +158,11 @@ func is_active() -> bool:
 func get_phase() -> Phase:
 	return _current_phase
 
-## Returns the human-readable string name of the current phase.
+## Devolve o nome legível da fase atual.
 func get_current_phase() -> String:
 	return _phase_to_string(_current_phase)
 
-## Returns the local center coordinates of the vehicle reception bed.
+## Devolve as coordenadas locais do centro da cama de recepção do veículo.
 func get_reception_center() -> Vector3:
 	return RECEPTION_CENTER
 
@@ -170,21 +170,21 @@ func get_reception_center() -> Vector3:
 func get_reception_size() -> Vector3:
 	return RECEPTION_BOUNDS
 
-## Returns the global transform where a scrap vehicle should be staged.
-## Forward direction of the bed points towards +Z (facing out through hazard teeth).
+## Devolve o transform global onde um veículo de sucata deve ser posicionado.
+## A frente da cama aponta para +Z (virada para fora pelos dentes de perigo).
 func get_reception_transform() -> Transform3D:
 	var t := global_transform
 	t.origin = global_transform * RECEPTION_CENTER
 	return t
 
-## Returns the current global AABB of the moving crusher plate.
+## Devolve o AABB global atual da placa móvel da prensa.
 func get_crusher_plate_aabb() -> AABB:
 	if _ram_plate_mesh:
 		return _ram_plate_mesh.global_transform * _ram_plate_mesh.get_aabb()
 	return AABB(global_position + RAM_RESTING_POS - RAM_PLATE_SIZE * 0.5, RAM_PLATE_SIZE)
 
-## Returns the AnimatableBody3D attached to the moving ram plate, allowing integrators
-## to inspect collisions or configure collision layers/masks.
+## Devolve o AnimatableBody3D preso à placa móvel do pistão, permitindo aos integradores
+## inspecionar colisões ou configurar camadas/máscaras de colisão.
 func get_crusher_plate_body() -> AnimatableBody3D:
 	return _ram_body
 
@@ -200,8 +200,8 @@ func _run_presentation_sequence() -> void:
 	_active_tween.set_parallel(false)
 	_active_tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 
-	# --- Phase 1: APPROACHING (0.65s) ---
-	# Ram slides horizontally along +Z from resting pose (-5.5) to directly overhead (0.0)
+	# --- Fase 1: APPROACHING (0.65s) ---
+	# O pistão desliza na horizontal ao longo de +Z da pose de repouso (-5.5) até ficar bem em cima (0.0)
 	_active_tween.tween_property(_ram_assembly, "position", RAM_ALIGNED_POS, 0.65)\
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 
@@ -210,8 +210,8 @@ func _run_presentation_sequence() -> void:
 		_set_phase(Phase.CRUSHING)
 	)
 
-	# --- Phase 2: CRUSHING (1.10s) ---
-	# Ram descends vertically along -Y from 2.9 down to 0.90
+	# --- Fase 2: CRUSHING (1.10s) ---
+	# O pistão desce na vertical ao longo de -Y de 2.9 até 0.90
 	_active_tween.tween_property(_ram_assembly,"position:y",RAM_CRUSHED_POS.y,1.10).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	if is_instance_valid(_current_vehicle_visual):
 		var compacted_scale := _original_vehicle_scale*Vector3(1.08,.16,1.04)
@@ -347,7 +347,7 @@ func _create_gantry_tracks() -> void:
 	var rail_height := 0.40
 	var rail_thick := 0.28
 	var rail_y := 3.90
-	var rail_z := -2.40  # Extends back to -7.25 to accommodate ram resting pose
+	var rail_z := -2.40  # Estende para trás até -7.25 para acomodar a pose de repouso do pistão
 	var rail_x := 1.60
 
 	var rail_mesh := BoxMesh.new()
@@ -412,7 +412,7 @@ func _create_hydraulic_pump_unit() -> void:
 	housing.material_override = NecoPressMaterials.pump_housing()
 	pump_root.add_child(housing)
 
-	# Motor cylinder on top of housing
+	# Cilindro do motor em cima da carcaça
 	var motor := MeshInstance3D.new()
 	motor.name = "ElectricMotor"
 	var m_cyl := CylinderMesh.new()
@@ -473,7 +473,7 @@ func _create_ram_assembly() -> void:
 	_ram_plate_mesh.material_override = NecoPressMaterials.press_plate()
 	_ram_assembly.add_child(_ram_plate_mesh)
 
-	# Kinematic / Animatable Body attached to the moving ram plate
+	# Corpo cinemático / Animatable preso à placa móvel do pistão
 	_ram_body = AnimatableBody3D.new()
 	_ram_body.name = "RamCollisionBody"
 	_ram_body.sync_to_physics = false
@@ -487,7 +487,7 @@ func _create_ram_assembly() -> void:
 	_ram_body.add_child(_ram_collision)
 	_ram_assembly.add_child(_ram_body)
 
-	# Reinforcement I-beams on top of plate
+	# Vigas I de reforço em cima da placa
 	var rib_mesh := BoxMesh.new()
 	rib_mesh.size = Vector3(2.8, 0.25, 0.20)
 	var rib_mat := NecoPressMaterials.frame_yellow()
