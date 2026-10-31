@@ -163,6 +163,16 @@ static func _half_plane(polygon: PackedVector2Array, a: Vector2, b: Vector2, pos
 
 ## Malha plana em `y` com normais para cima e UV de mundo dividido por `uv_scale`.
 static func flat_mesh(polygons: Array[PackedVector2Array], y: float, uv_scale: float) -> ArrayMesh:
+	var arrays := flat_arrays(polygons, y, uv_scale)
+	if arrays.is_empty(): return null
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+## Os mesmos arrays de `flat_mesh`, sem montar a malha. Quem só junta a geometria em outra
+## malha (SlabVisibleFaces) usa isto para não ler de volta da GPU com surface_get_arrays.
+## Vazio quando nenhum polígono gera triângulo.
+static func flat_arrays(polygons: Array[PackedVector2Array], y: float, uv_scale: float) -> Array:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var uvs := PackedVector2Array()
@@ -199,16 +209,14 @@ static func flat_mesh(polygons: Array[PackedVector2Array], y: float, uv_scale: f
 			# zero não têm lado da frente; descarta só essas, mantendo faces reais minúsculas.
 			if (b-a).cross(c-a) == 0.0: continue
 			for corner in 3: indices.append(offset + triangles[triangle+corner])
-	if indices.is_empty(): return null
+	if indices.is_empty(): return []
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
 	arrays[Mesh.ARRAY_INDEX] = indices
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return mesh
+	return arrays
 
 
 static func _without_degenerate_edges(polygon: PackedVector2Array) -> PackedVector2Array:

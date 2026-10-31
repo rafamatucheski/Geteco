@@ -21,9 +21,10 @@ static func box_with_top_opening(size: Vector3, opening: Rect2) -> ArrayMesh:
 			out_vertices.append(vertices[index]); out_normals.append(normals[index]); out_uv.append(uv[index])
 	var footprint := Rect2(-Vector2(size.x,size.z)*.5,Vector2(size.x,size.z))
 	var exposed := CUT.subtract_exact([CUT.rect_polygon(footprint)],[CUT.rect_polygon(opening)])
-	var top := CUT.flat_mesh(exposed,size.y*.5,1.0)
-	if top!=null:
-		var arrays: Array=top.surface_get_arrays(0)
+	# Arrays direto da triangulação: montar a malha só para ler de volta custava uma ida à GPU.
+	var top: Array=CUT.flat_arrays(exposed,size.y*.5,1.0)
+	if not top.is_empty():
+		var arrays: Array=top
 		for index in arrays[Mesh.ARRAY_INDEX]:
 			out_vertices.append(arrays[Mesh.ARRAY_VERTEX][index])
 			out_normals.append(arrays[Mesh.ARRAY_NORMAL][index])
