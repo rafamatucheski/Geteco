@@ -8,6 +8,9 @@ extends Node3D
 ## pelas câmeras vira combate; o alarme chama o segundo esquadrão (4 soldados) pelas
 ## portas do fundo. O saque no fundo da sala é o prêmio (persistido como recompensa).
 const SOLDIER := preload("res://gameplay/urban_v1/fort/FortSoldier.gd")
+const EXPANSION := preload("res://gameplay/urban_v1/fort/FortExpansionState.gd")
+## Onda que o operador de rádio chama quando o alarme já tocou (uma vez por visita).
+const RADIO_WAVE := ["rifleman","flanker"]
 const ACTION_PREFIX := "truckers_village_secret_"
 const STASH_ID := "mountain_fort_stash_cash"
 const CELL := .5
@@ -38,6 +41,9 @@ var _reinforce_timer := -1.0
 var _camera_yaw := [0.0,0.0]
 var _follow_z := -.4
 var _doors_opened := false
+## Operador de rádio -> chamada em andamento (FortExpansionState.RadioCall).
+var radios: Dictionary = {}
+var radio_wave_called := false
 
 func configure(owner_place: Node3D,owner_session) -> void:
 	place = owner_place
@@ -51,6 +57,7 @@ func configure(owner_place: Node3D,owner_session) -> void:
 	if gameplay.has_signal("weapon_fired") and not gameplay.weapon_fired.is_connected(_on_weapon_fired):
 		gameplay.weapon_fired.connect(_on_weapon_fired)
 	if _stash_taken():
+		EXPANSION.unlock(session.state.world_state)
 		model.set_blast_open(true)
 		rebuild_navigation()
 	else:
@@ -68,13 +75,33 @@ func nearest_action() -> Dictionary:
 		return {"id":"urban_v1","target":ACTION_PREFIX+"fort_open_door","label":"Abrir porta blindada"}
 	if local.distance_to(model.LIFT_POINT) <= 1.7:
 		return {"id":"urban_v1","target":ACTION_PREFIX+"fort_ascend","label":"Subir pelo elevador"}
+	# Primeira pista da expansão: a mesa de comando já existe na sala de operações.
+	if _desk_open() and Vector2(local.x,local.z).distance_to(Vector2(model.COMMAND_DESK.x,model.COMMAND_DESK.z)) <= 1.9:
+		return {"id":"urban_v1","target":ACTION_PREFIX+"fort_search_desk","label":"Revistar mesa de comando"}
 	return {}
+
+func _desk_open() -> bool:
+	if session == null or not _stash_taken() or not alive_soldiers().is_empty(): return false
+	EXPANSION.unlock(session.state.world_state)
+	return EXPANSION.stage(session.state.world_state) == "desk"
+
+## Conclui uma área da expansão e mostra as pistas novas. As salas sem geometria ainda
+## (alojamento, arsenal, comando) chamam isto quando forem montadas.
+func complete_expansion_area(area: String,quiet := false) -> Dictionary:
+	if session == null: return {"ok":false,"reason":"no_session"}
+	var result := EXPANSION.complete_area(session.state.world_state,session.state.economy,area,quiet)
+	if result.ok and result.reason == "completed":
+		for clue in result.clues:
+			session.show_message(EXPANSION.clue_message(clue))
+	return result
 
 ## O elevador só parte com a sala calma: sob fogo as portas não fecham.
 func can_ascend() -> bool:
 	return not alive_soldiers().any(func(soldier): return soldier.state == "combat")
 
 func perform(target: String) -> bool:
+	if target == ACTION_PREFIX+"fort_search_desk":
+		return _desk_open() and bool(complete_expansion_area("desk").ok)
 	if target != ACTION_PREFIX+"fort_open_door" or model.blast_open: return false
 	model.set_blast_open(true,true)
 	# A porta é barulhenta: quem estiver perto do vão ouve.
@@ -103,7 +130,48 @@ func spawn_soldier(spec: Dictionary) -> Node:
 	add_child(soldier)
 	soldier.died.connect(_on_soldier_died)
 	soldiers.append(soldier)
+	if soldier.role == "radioman": radios[soldier] = EXPANSION.RadioCall.new()
 	return soldier
+
+## Esquadrão de uma sala nova (FortExpansionState.SQUADS). `points` dá a posição local de
+## cada soldado: vem da geometria da sala quando ela existir.
+func spawn_expansion_squad(area: String,points: Array) -> Array:
+	var spawned: Array = []
+	var squad: Array = EXPANSION.SQUADS.get(area,[])
+	for index in mini(squad.size(),points.size()):
+		var spec: Dictionary = squad[index].duplicate()
+		spec.pos = points[index]
+		spec.facing = Vector3(0,0,1)
+		spawned.append(spawn_soldier(spec))
+	return spawned
+
+func _reinforcements_cut() -> bool:
+	return session != null and EXPANSION.reinforcements_cut(session.state.world_state)
+
+func _update_radios(delta: float) -> void:
+	for radioman in radios.keys():
+		var call = radios[radioman]
+		var alive: bool = is_instance_valid(radioman) and not radioman.dead
+		if not alive:
+			radios.erase(radioman)
+			continue
+		if call.tick(delta,alive,radioman.state == "combat",_reinforcements_cut()):
+			radio_called(radioman)
+
+## O operador ficou vivo tempo demais: sem alarme, ele dispara o alarme; com alarme, chama
+## uma onda extra. Abater o operador rápido (ou cortar o rádio no comando) evita isso.
+func radio_called(radioman) -> void:
+	if session != null: session.show_message("O operador de rádio pediu reforço!")
+	if not alarm_active:
+		trigger_alarm(player_point())
+		return
+	if radio_wave_called or _reinforcements_cut(): return
+	radio_wave_called = true
+	for index in RADIO_WAVE.size():
+		var door: Vector3 = model.REINFORCEMENT_DOORS[index%2]
+		var soldier = spawn_soldier({"id":"fort_r%d"%(index+1),"role":RADIO_WAVE[index],"pos":Vector3(door.x,.04,door.z+1.0),"facing":Vector3(0,0,1),"alerted":true})
+		soldier.last_known = radioman.global_position
+	cleared_announced = false
 
 func alive_soldiers() -> Array:
 	return soldiers.filter(func(soldier): return is_instance_valid(soldier) and not soldier.dead)
@@ -119,8 +187,13 @@ func _on_soldier_died(_soldier) -> void:
 func trigger_alarm(point: Vector3) -> void:
 	if alarm_active: return
 	alarm_active = true
-	_reinforce_timer = reinforcement_delay
 	model.set_alarm_visual(true)
+	# Com o rádio do comando desligado o alarme ainda acende, mas ninguém responde.
+	if _reinforcements_cut():
+		if session != null: session.show_message("ALARME! O rádio do comando está mudo: sem reforços.")
+		report_sighting(null,point)
+		return
+	_reinforce_timer = reinforcement_delay
 	if session != null: session.show_message("ALARME! Reforços a caminho.")
 	report_sighting(null,point)
 
@@ -129,6 +202,7 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(player): return
 	known_time += delta
 	_update_cameras(delta)
+	if not radios.is_empty(): _update_radios(delta)
 	if alarm_active:
 		for index in model.beacons.size():
 			model.beacons[index].light_energy = 1.4+1.6*absf(sin(_clock*5.0+float(index)*PI))

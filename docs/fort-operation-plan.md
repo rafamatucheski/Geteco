@@ -64,6 +64,12 @@ cofre do túnel secreto (`docs/secret-headquarters.md`).
 
 Teste: `tests/test_fort_ascent.gd -- --no-save [--shots]`.
 
+## Expansão (31/10/2026)
+
+Lógica do alojamento, arsenal e comando, tipos novos de soldado e pistas sobre Vicente:
+`docs/forte-expansao-20261031.md`. A mesa de comando já entrega a primeira pista; as
+salas novas ainda não têm geometria.
+
 ## Próximas etapas (decisões suas)
 
 1. **Forte maior:** salas seguintes (alojamento, arsenal, central de comando) entre a
