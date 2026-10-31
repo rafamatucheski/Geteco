@@ -37,7 +37,7 @@ func run() -> void:
 	tires._update_skid_audio(false, 0.0, 0.0)
 	_check(not tires.skid_audio.playing, "skid WAV stops when grip returns")
 	CRASH.play(car, null, car.global_position, 200.0)
-	# Contact voices now live in the shared bounded pool, not beside the car.
+	# As vozes de contato agora vivem no pool limitado compartilhado, não ao lado do carro.
 	var pool = scene.get_node_or_null("ContactAudio")
 	var crash_playing := false
 	if pool != null:
@@ -53,8 +53,8 @@ func run() -> void:
 	CRASH.play(car, second_car, car.global_position, 200.0)
 	_check(pool != null and pool.played_count == before,
 		"same-source collision is suppressed during source cooldown")
-	# The pool clock uses physics ticks. Let the source and rejected contact
-	# release naturally; resetting the old crash_audio_ms metadata does nothing.
+	# O relógio do pool usa ticks de física. Deixa a fonte e o contato recusado
+	# soltarem naturalmente; zerar o metadado antigo crash_audio_ms não faz nada.
 	var release_frames := ceili(maxf(CRASH.SOURCE_COOLDOWN, CRASH.CONTACT_RELEASE)
 		* Engine.physics_ticks_per_second) + 1
 	for frame in release_frames: await physics_frame

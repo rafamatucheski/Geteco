@@ -1,5 +1,5 @@
 extends RefCounted
-## The player belongs to its subtitle surface, including visibility and lifetime.
+## O player pertence à superfície da legenda, incluindo visibilidade e tempo de vida.
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
 const PLAYER_NAME := "AuthoredDialogueVoice"
 

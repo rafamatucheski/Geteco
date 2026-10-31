@@ -1,5 +1,5 @@
 extends RefCounted
-## Exact authored notices only: UI notifications and objectives stay unvoiced.
+## Só avisos escritos exatos: notificações de UI e objetivos ficam sem voz.
 const BANK := preload("res://audio/DirectedVoiceBank.gd")
 static var _notices: Dictionary = {}
 static var _loaded := false

@@ -1,6 +1,6 @@
 extends Node
-## One location-owned voice, no per-frame synthesis or polling. The session
-## calls sync from its existing location update; fades can reverse on re-entry.
+## Uma voz do local, sem síntese nem consulta por quadro. A sessão
+## chama sync a partir da atualização de local que já existe; os fades podem reverter ao reentrar.
 const TRACK := "res://audio/workshop/digo_blues_loop.ogg"
 const LEVEL_DB := -18.0
 const SILENCE_DB := -70.0

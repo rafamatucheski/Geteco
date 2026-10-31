@@ -1,6 +1,6 @@
 extends Node3D
-## Authored loaded/coast mixer, using the SAME gearbox as motion and HUD.
-## Legacy banks remain available while shared banks warm and for A/B diagnosis.
+## Mixer escrito de carga/desaceleração, usando o MESMO câmbio do movimento e do HUD.
+## Os bancos antigos continuam disponíveis enquanto os compartilhados aquecem e para diagnóstico A/B.
 const BANKS := preload("res://audio/EngineBankCache.gd")
 const DESIGN_BANKS := preload("res://audio/EngineDesignBanks.gd")
 const DESIGN_VOICE := preload("res://audio/EngineDesignVoice.gd")
@@ -62,8 +62,8 @@ func _apply_spatial_role() -> void:
 
 func _apply_design_role() -> void:
 	if not is_instance_valid(_design_voice): return
-	# Own these per-car voices only; no global bus or shared engine-bank changes.
-	# At a 4 m lane separation, a 12 m source scale amplified the opponent.
+	# Cuida só destas vozes por carro; sem mudar bus global nem banco de motor compartilhado.
+	# Com 4 m de separação entre faixas, uma escala de fonte de 12 m amplificava o adversário.
 	_design_voice.spatial_unit_size=3.0 if race_role=="rival" else 12.0
 	for player in _design_voice.get_children():
 		if not player is AudioStreamPlayer3D: continue
@@ -92,7 +92,7 @@ func _ready() -> void:
 	_shift = _player("ShiftBlowoff",-16.0)
 	_shift.stream = SHIFT_BLOWOFF
 	_tire = _player("Wheelspin",-80.0)
-	# The driver's close race listener must not amplify rubber above the motor.
+	# O ouvinte próximo da corrida do motorista não pode pôr o pneu acima do motor.
 	_tire.max_db = WHEELSPIN_MAX_DB
 	_tire.unit_size = 4.0
 	# Mesmo guincho novo de VehicleTireEffects (tools/generate_tire_skid_loops.py); os skid_*.wav
@@ -122,13 +122,13 @@ func _sync_recorded_idle() -> void:
 	if path.is_empty(): return
 	_recorded_idle = _player("RecordedIdle",-80.0)
 	_recorded_idle.stream = _loop(path)
-	# Reapply foreground settings when tuning rebinds an occupied vehicle.
+	# Reaplica os ajustes de primeiro plano quando o tuning religa um veículo ocupado.
 	_foreground = false
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(vehicle) or drivetrain == null: queue_free(); return
-	# Match WorldAudio's foreground engine for Dante. A raised or cinematic
-	# camera must not attenuate/mute his own motor; NPCs keep spatial falloff.
+	# Bate com o motor de primeiro plano do WorldAudio para o Dante. Uma câmera elevada ou
+	# cinematográfica não pode atenuar/calar o próprio motor dele; NPCs mantêm a queda espacial.
 	var foreground := race_role=="player" or (race_role!="rival" and bool(vehicle.get("controlled")) and not bool(vehicle.get("traffic")) and not bool(vehicle.get("external_input")))
 	if foreground != _foreground or _spatial_dirty:
 		_foreground = foreground
@@ -139,9 +139,9 @@ func _process(delta: float) -> void:
 	if _range_clock <= 0.0:
 		_range_clock = .2
 		var camera := get_viewport().get_camera_3d()
-		# Drag has a listener at Dante's car; its wide side camera can be hundreds
-		# of metres away. Keep only these two race mixers active and let spatial
-		# attenuation use that listener instead of muting by camera distance.
+		# O arrancadão tem um ouvinte no carro do Dante; a câmera lateral larga pode estar a centenas
+		# de metros. Mantém só estes dois mixers de corrida ativos e deixa a atenuação
+		# espacial usar esse ouvinte em vez de calar pela distância da câmera.
 		_in_range = vehicle.has_meta("desert_drag_physics") or (camera != null and camera.global_position.distance_squared_to(vehicle.global_position) < 85.0*85.0)
 	var running := bool(vehicle.get("controlled")) or bool(vehicle.get("traffic")) or bool(vehicle.get("external_input")) or absf(float(vehicle.get("speed"))) > .15
 	# Race controller owns physics while staging; revving there is still audible.
@@ -159,8 +159,8 @@ func _process(delta: float) -> void:
 		_audible_cut = 0.0
 		return
 	_synchronize_external(delta)
-	# Race clutch inertia is already in the authoritative RPM. Street/reverse
-	# adapters retain their audible smoothing without changing street handling.
+	# A inércia da embreagem de corrida já está no RPM oficial. Adaptadores de rua/ré
+	# mantêm a suavização audível sem mudar a dirigibilidade na rua.
 	var target_rpm := float(drivetrain.rpm)
 	var response := 10.0 if target_rpm > _audible_rpm else 6.0
 	var continuous_shift := bool(drivetrain.race_mode)
@@ -176,9 +176,9 @@ func _process(delta: float) -> void:
 			pedal = maxf(pedal, clampf(float(raw), 0.0, 1.0))
 	var target_load := pedal*(lerpf(.18,1.0,clutch) if continuous_shift else 1.0)
 	_audible_load = lerpf(_audible_load,target_load,1.0-exp(-maxf(delta,0.0)*(20.0 if continuous_shift else 7.0)))
-	# Each nominal value is complete four-stroke cycles per second: RPM / 120.
-	# Align both bands to that SAME rate, otherwise the crossfade plays two
-	# incompatible notes and produces beating/chirps as the engine accelerates.
+	# Cada valor nominal é ciclos completos de quatro tempos por segundo: RPM / 120.
+	# Alinha as duas faixas a essa MESMA taxa; senão o crossfade toca duas
+	# notas incompatíveis e gera batimento/chiados quando o motor acelera.
 	var nominal: Array = PROFILE.NOMINAL.get(_family, PROFILE.NOMINAL.street)
 	var cycles := maxf(1.0,_audible_rpm/120.0)
 	var low := 0
@@ -189,7 +189,7 @@ func _process(delta: float) -> void:
 	if drivetrain.limiter: cut -= 4.0
 	_audible_cut = lerpf(_audible_cut,cut,1.0-exp(-maxf(delta,0.0)*18.0))
 	var exhaust := float(drivetrain.spec.get("exhaust",0.0))
-	# Injection increases engine load. It is not an external air-brake purge.
+	# A injeção aumenta a carga do motor. Não é uma purga externa de freio a ar.
 	var nitro_load := 1.5 if drivetrain.nitro_active else 0.0
 	var role_gain := _race_gain()
 	# O pneu do jogador em drift forte pede espaço: o motor cede até 2,5 dB (meta de
@@ -205,9 +205,9 @@ func _process(delta: float) -> void:
 		_last_throttle = float(drivetrain.throttle)
 		_loop_level(_tire,float(drivetrain.wheelspin),WHEELSPIN_DB+tire_gain,delta)
 		return
-	# Real idle recordings supply low-speed character for these two families.
-	# Do not stretch an idle recording across the entire rev range: fade it out
-	# before 2000 RPM, leaving the RPM-aligned load banks in charge.
+	# Gravações reais de marcha lenta dão o caráter em baixa para estas duas famílias.
+	# Não estica uma gravação de lenta pela faixa de giro inteira: some com ela
+	# antes de 2000 RPM, deixando os bancos de carga alinhados ao RPM no comando.
 	var idle_weight := 0.0
 	if is_instance_valid(_recorded_idle):
 		idle_weight = (1.0-smoothstep(1050.0,2000.0,_audible_rpm))*(1.0-power*.4)
@@ -219,8 +219,8 @@ func _process(delta: float) -> void:
 	var synthesized_gain := linear_to_db(1.0-idle_weight*.82)
 	for i in 2:
 		var index := low+i
-		# Adjacent bands alternate players. Keep the shared band playing through
-		# every boundary instead of restarting both samples at audible volume.
+		# Faixas vizinhas alternam players. Mantém a faixa compartilhada tocando em
+		# cada fronteira em vez de reiniciar as duas amostras em volume audível.
 		var slot := index % 2
 		var player := _layers[slot]
 		if index >= _bank.size(): continue
@@ -261,8 +261,8 @@ func _mix_designed_engine(delta: float, level: float) -> bool:
 	return true
 
 func has_wheelspin_voice() -> bool:
-	# Only claim the longitudinal tire sound while it is actually being mixed.
-	# Braking/cornering remain owned by VehicleTireEffects.
+	# Só reivindica o som longitudinal do pneu enquanto ele está de fato sendo mixado.
+	# Frenagem/curva continuam com o VehicleTireEffects.
 	return is_instance_valid(_tire) and _tire.playing and drivetrain != null and float(drivetrain.wheelspin) > .02
 
 func _synchronize_external(delta: float) -> void:
@@ -278,7 +278,7 @@ func _synchronize_external(delta: float) -> void:
 	var acceleration := (absf(actual_speed)-absf(_last_observed_speed))/maxf(.001,delta)
 	var drive_load := 0.0
 	if traffic:
-		# Route following sets speed directly and does not populate throttle_input.
+		# Seguir rota define a velocidade direto e não preenche throttle_input.
 		drive_load = clampf(.25+acceleration*.20,0.0,1.0) if absf(actual_speed)>.15 else 0.0
 		if bool(vehicle.get("blocked")) or bool(vehicle.get("junction_wait")): drive_load=0.0
 	elif external:
@@ -291,9 +291,9 @@ func _synchronize_external(delta: float) -> void:
 
 func _play_shift() -> void:
 	if _blowoff_cooldown > 0.0: return
-	# Aspirated engines have no pressurized intake to vent. A stock diesel also
-	# does not close a gasoline throttle plate on shifts. The RPM/load dip is
-	# already supplied by the authoritative transmission.
+	# Motores aspirados não têm admissão pressurizada para aliviar. Um diesel de série também
+	# não fecha borboleta de gasolina nas trocas. A queda de RPM/carga
+	# já vem da transmissão oficial.
 	if float(drivetrain.spec.boost_gain) <= .01 or _family == "diesel" or float(drivetrain.turbo_pressure) < .25: return
 	_blowoff_cooldown = .22
 	_shift.volume_db = -23.0+_race_gain()

@@ -1,5 +1,5 @@
 extends SceneTree
-## Prepared contract test; run only after coordinating Godot execution.
+## Teste de contrato preparado; rode só depois de coordenar a execução do Godot.
 const MIXER = preload("res://audio/service_vehicles/ServiceVehicleAudio.gd")
 class TestWorld extends Node3D:
 	var driving: Node

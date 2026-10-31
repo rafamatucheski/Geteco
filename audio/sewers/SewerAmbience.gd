@@ -28,8 +28,8 @@ func _process(delta: float) -> void:
 func _sync() -> void:
 	var room := get_parent() as Node3D
 	var audible := room != null and room.is_visible_in_tree() and room.can_process() and not get_tree().paused
-	# Candidates are built while Dante is still on the street. Only the admitted
-	# room owns a sound bed, including save restoration and canceled descents.
+	# Os candidatos são montados enquanto o Dante ainda está na rua. Só a sala
+	# admitida tem fundo sonoro, incluindo restauração de save e descidas canceladas.
 	if audible:
 		var place := room.get_parent()
 		var world := place.get_parent() if place != null else null

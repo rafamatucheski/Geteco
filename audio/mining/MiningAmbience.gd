@@ -1,6 +1,6 @@
 extends Node3D
-## Two positional voices per site, owned by the streamed chunk or active room.
-## Recorded sources are cached; no synthesis or resource work in the frame loop.
+## Duas vozes posicionais por local, do chunk em streaming ou da sala ativa.
+## Fontes gravadas ficam em cache; nada de síntese ou trabalho de recurso no laço do quadro.
 const CATALOG := preload("res://audio/v1_ambience/V1AudioCatalog.gd")
 const FIREFLY := preload("res://audio/FireflyBank.gd")
 var cavern := false

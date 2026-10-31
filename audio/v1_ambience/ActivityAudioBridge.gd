@@ -1,5 +1,5 @@
 extends Node
-## Read-only bridge to live V2 activity state; activity systems remain authoritative.
+## Ponte só de leitura para o estado vivo das atividades V2; os sistemas de atividade continuam oficiais.
 const BANK := preload("res://audio/v1_ambience/V1AudioCatalog.gd")
 var world
 var voices: Array[AudioStreamPlayer] = []
@@ -29,7 +29,7 @@ func bind_tow_events(source: Node) -> void:
 	if is_instance_valid(tow_source):
 		tow_source.connect("tow_event",on_tow_event)
 
-## These are activity confirmations, not mechanical winch recordings.
+## São confirmações de atividade, não gravações mecânicas de guincho.
 func on_tow_event(kind: String) -> void:
 	match kind:
 		"loaded": _play("mission_start")

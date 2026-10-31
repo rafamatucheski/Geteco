@@ -38,8 +38,8 @@ func run() -> void:
 	var audio: Node = world.production.world_audio
 	var mixer: Node = audio.vehicle_ambience
 	_check(is_instance_valid(mixer), "WorldAudio installs nearby vehicle mixer")
-	# Arrival can put Dante beyond the 45 m mixer radius of all traffic cars.
-	# Sample actual moving production cars with a dedicated nearby listener.
+	# A chegada pode deixar o Dante além do raio de 45 m do mixer de todos os carros do trânsito.
+	# Amostra carros de produção realmente em movimento com um ouvinte próximo dedicado.
 	var nearby_listener := Node3D.new()
 	world.add_child(nearby_listener)
 	for candidate in world.production.vehicles:
@@ -144,8 +144,8 @@ func run() -> void:
 					break
 			_check(is_instance_valid(second_car), "second production vehicle exists for bank switch")
 			if is_instance_valid(second_car):
-				# Exercise the sound ownership change directly. Boarding itself was
-				# verified above; a second physical entry is unrelated to audio.
+				# Exercita direto a troca de posse do som. O embarque em si foi
+				# verificado acima; uma segunda entrada física não tem relação com áudio.
 				world.driving.car = second_car
 				world.driving.occupied = true
 				second_car.controlled = true
@@ -155,8 +155,8 @@ func run() -> void:
 					"foreground bank follows the new vehicle family")
 				_check(second_car.get_instance_id() not in mixer.snapshot().audible_ids,
 					"newly occupied vehicle is not duplicated")
-				# Exercise the V1 one-shot routes with imported samples. Traffic and
-				# the foreground engine are already covered in the real drive above.
+				# Exercita as rotas de disparo único da V1 com amostras importadas. O trânsito e
+				# o motor de primeiro plano já estão cobertos na direção real acima.
 				audio.family = "bus"
 				audio.engine_gear = 2
 				audio.engine_load = 0.8

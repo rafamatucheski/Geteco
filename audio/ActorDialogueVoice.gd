@@ -17,8 +17,8 @@ class ActorPlayer extends AudioStreamPlayer3D:
 	func _ready() -> void:
 		process_mode = Node.PROCESS_MODE_PAUSABLE
 		bus = &"Dialogue" if AudioServer.get_bus_index("Dialogue") >= 0 else &"Master"
-		# The isometric camera sits ~36m above/behind its focus. It supplies pan,
-		# while audibility belongs to the player's position, as in combat audio.
+		# A câmera isométrica fica ~36m acima/atrás do foco. Ela dá o pan,
+		# enquanto a audibilidade pertence à posição do jogador, como no áudio de combate.
 		attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
 		max_distance = 0.0
 		panning_strength = .6
@@ -109,8 +109,8 @@ static func speak(actor: Node3D, canonical_text: String, binding: Dictionary, su
 		return fallback
 	var listener := _listener_for(actor)
 	if is_instance_valid(listener) and Vector2(actor.global_position.x - listener.global_position.x, actor.global_position.z - listener.global_position.z).length() >= 45.0:
-		# Reject offscreen/distant speech before allocating a player, loading PCM
-		# or displacing any nearby speaker from the three active slots.
+		# Recusa fala fora da tela/distante antes de alocar um player, carregar PCM
+		# ou tirar algum falante próximo dos três espaços ativos.
 		stop(actor)
 		return fallback
 	var player := actor.get_node_or_null(PLAYER_NAME) as ActorPlayer

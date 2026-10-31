@@ -1,6 +1,6 @@
 extends RefCounted
-## Identity belongs to the emitting body. Resolve only on speech events; never
-## infer gender from a name, pitch, scene order or a fresh random roll.
+## A identidade pertence ao corpo que emite. Resolve só em eventos de fala; nunca
+## deduz gênero por nome, tom, ordem na cena ou um sorteio novo.
 const NAMED := {
 	"Raul": ["raul", "raul_sewer", "male"], "Cida": ["cida", "cida", "female"],
 	"Beto": ["beto", "beto", "male"], "Seu Abel": ["seu abel", "seu_abel", "male"],
@@ -35,7 +35,7 @@ static func model_gender(model: Node) -> String:
 	if body is Node and body != model:
 		var rendered := model_gender(body)
 		if not rendered.is_empty(): return rendered
-	# wardrobe is the final, rendered appearance, overrides precede model ready.
+	# wardrobe é a aparência final renderizada; as substituições vêm antes do model ready.
 	for key in ["wardrobe", "wardrobe_overrides"]:
 		var value: Variant = model.get(key)
 		if value is Dictionary and value.has("female"):
@@ -47,7 +47,7 @@ static func model_gender(model: Node) -> String:
 
 static func gender_of(actor: Node) -> String:
 	if not is_instance_valid(actor): return ""
-	# The controlled story protagonist is the authored Dante body, not a roll.
+	# O protagonista controlado da história é o corpo escrito do Dante, não um sorteio.
 	if actor.get("is_player") == true: return "male"
 	for key in ["resident_model", "model", "visual"]:
 		var visual: Variant = actor.get(key)
@@ -69,7 +69,7 @@ static func actor_id(actor: Node) -> String:
 static func resolve(actor: Node, role := "", section := "", _fallback_persona := "") -> Dictionary:
 	if not is_instance_valid(actor): return {}
 	var gender := gender_of(actor)
-	if gender.is_empty(): return {} # No male default when the body is unknown.
+	if gender.is_empty(): return {} # Sem padrão masculino quando o corpo é desconhecido.
 	var result: Dictionary = actor.get_meta("voice_binding", {}).duplicate(true)
 	if role in ["building_social", "building_warning"]:
 		if not actor.has_method("social_snapshot"): return {}
@@ -93,7 +93,7 @@ static func resolve(actor: Node, role := "", section := "", _fallback_persona :=
 	result["actor_id"] = actor_id(actor)
 	if not section.is_empty(): result["section"] = section
 	elif not result.has("section"): result["section"] = role
-	# Subsequent pain uses the same person, including procedural personalities.
+	# A dor seguinte usa a mesma pessoa, incluindo personalidades procedurais.
 	actor.set_meta("voice_binding", result.duplicate(true))
 	return result
 

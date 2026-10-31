@@ -1,5 +1,5 @@
 extends Node3D
-## Shared, bounded contact Foley. Public play keeps the legacy px/s interface.
+## Foley de contato compartilhado e limitado. O play público mantém a interface antiga em px/s.
 const DIR := "res://audio/vehicle_crashes/"
 const META := &"contact_audio_pool"
 const MAX_VOICES := 12
@@ -34,8 +34,8 @@ var rng := RandomNumberGenerator.new()
 var played_count := 0
 var dropped_count := 0
 
-## Hold all contact takes before playable collisions. No voices, bus or RNG
-## are touched, and loader results are fetched only after their work ends.
+## Retém todos os takes de contato antes das colisões jogáveis. Nenhuma voz, bus ou RNG
+## é tocado, e os resultados do loader só são buscados depois que o trabalho deles termina.
 static func prewarm(tree: SceneTree) -> void:
 	PROP_SOUNDS.prewarm()
 	for kind in VEHICLE_KINDS + MATERIAL_KINDS + BODY_KINDS + PROP_FILE_KINDS.keys():
@@ -153,8 +153,8 @@ static func contact_kind(target: Object, speed: float, motorcycle: bool) -> Stri
 static func play(p_owner: CharacterBody3D, target: Object, point: Vector3, speed: float) -> void:
 	play_contact(p_owner, target, point, speed / 16.0)
 
-## Use speed in m/s before any bounce restitution. Both phases share the
-## bounded contact pool; each body owns its cooldown even in a crowd.
+## Usa a velocidade em m/s antes de qualquer restituição de quique. As duas fases dividem o
+## pool limitado de contato; cada corpo tem o próprio cooldown, mesmo na multidão.
 static func play_body_impact(context: Node3D, target: Object, point: Vector3, speed: float, landing := false) -> bool:
 	var kind := "body_land" if landing else "body_hit"
 	var key := "body_land|%d" % target.get_instance_id() if landing and is_instance_valid(target) else ""
@@ -176,8 +176,8 @@ static func play_contact(context: Node3D, target: Object, point: Vector3, speed:
 			var target_id := target.get_instance_id()
 			key = "%d|%d" % [mini(source_id, target_id), maxi(source_id, target_id)]
 		else: key = "%d|%s" % [source_id, str(Vector3i((point * 2.0).round()))]
-	# StreetPhysics is shared by every falling actor. Its source cooldown must
-	# not silence another body landing during the same physics tick.
+	# A StreetPhysics é compartilhada por todo ator que cai. O cooldown da fonte não pode
+	# silenciar outro corpo pousando no mesmo tick de física.
 	if kind in BODY_KINDS and is_instance_valid(target): source_id = -target.get_instance_id()
 	var director = pool(context)
 	return director.emit_contact(source_id, key, point, speed, kind) if director != null else false
@@ -207,7 +207,7 @@ func emit_contact(source_id: int, key: String, point: Vector3, speed: float, kin
 			chosen = voice
 			break
 	if chosen == null:
-		# Do not cut an equally loud crash tail to make room for another impact.
+		# Não corta a cauda de uma batida igualmente alta para abrir espaço a outro impacto.
 		for voice in voices:
 			if voice.volume_db + 3.0 < volume and (chosen == null or voice.volume_db < chosen.volume_db): chosen = voice
 	if chosen == null:

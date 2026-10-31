@@ -43,8 +43,8 @@ func update_contacts(contacts: Array[Dictionary], speed: float, sliding: bool, d
 	var moving := smoothstep(.3, 8.0, absf(speed))
 	for kind in voices:
 		var voice: AudioStreamPlayer = voices[kind]
-		# Sand shares the dirt contact bank. Keep its broad scrape beneath the
-		# engine, including at full rolling speed; other surfaces keep their mix.
+		# Areia divide o banco de contato da terra. Mantém o raspado largo abaixo do
+		# motor, inclusive em velocidade máxima; as outras superfícies mantêm a mixagem.
 		var level := -30.0 if kind == "dirt" else (-26.0 if kind == "hard" else -20.0)
 		var target := float(weights[kind]) * moving * db_to_linear(level + (3.0 if sliding else 0.0))
 		voice.volume_linear = lerpf(voice.volume_linear, target, 1.0 - exp(-delta * 14.0))
@@ -61,6 +61,6 @@ func stop() -> void:
 		voice.volume_linear = 0.0
 
 func _process(_delta: float) -> void:
-	# A garage/streaming transition can freeze vehicle physics before its next tick.
+	# Uma transição de garagem/streaming pode congelar a física do veículo antes do próximo tick.
 	if not is_instance_valid(vehicle) or not vehicle.controlled or not vehicle.is_visible_in_tree() or not vehicle.is_physics_processing():
 		stop()

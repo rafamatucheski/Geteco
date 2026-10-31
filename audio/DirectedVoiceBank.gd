@@ -1,6 +1,6 @@
 extends RefCounted
-## One immutable metadata index per session; WAVs are loaded only on speech events.
-## Generated, technically validated takes may play while artistic review is pending.
+## Um índice imutável de metadados por sessão; os WAVs só carregam em eventos de fala.
+## Takes gerados e validados tecnicamente podem tocar enquanto a revisão artística está pendente.
 const MANIFEST := "res://audio/mission_voices/directed/runtime.json"
 ## Falas da ElevenLabs ficam fora de runtime.json porque a publicação do banco local
 ## reescreve aquele arquivo; este se sobrepõe chave a chave (tools/install_elevenlabs_voices.py).
@@ -47,8 +47,8 @@ static func _load_index() -> void:
 		for alias in row.get("aliases", []): _add_alias(str(alias), str(row.get("persona", "")), row_key)
 	_profiles = _json(CAST).get("personas", {})
 	var manifest := _json(MANIFEST)
-	# Whole-file hashes are calculated once, never on the frame/speech hot path.
-	# Changing acting direction or a cast profile invalidates an older runtime bank.
+	# Hashes do arquivo inteiro são calculados uma vez, nunca no caminho quente de quadro/fala.
+	# Mudar a direção de atuação ou um perfil do elenco invalida um banco de runtime mais antigo.
 	if int(manifest.get("version", 0)) == 1 and str(manifest.get("cast_sha256", "")) == FileAccess.get_sha256(CAST) \
 			and str(manifest.get("direction_sha256", "")) == FileAccess.get_sha256(DIRECTION):
 		_takes = manifest.get("lines", {})

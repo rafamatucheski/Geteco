@@ -52,7 +52,7 @@ func _warm() -> void:
 			else: bank[kind].append(CATALOG.regional(kind, variant) if kind in ["gust", "scrap"] else CATALOG.detail(kind, variant))
 
 func _process(delta: float) -> void:
-	# Context and fades run at 10 Hz, without world scans or per-frame resource loads.
+	# Contexto e fades rodam a 10 Hz, sem varrer o mundo nem carregar recurso por quadro.
 	tick += delta
 	if tick < 0.1: return
 	var elapsed := tick
@@ -90,7 +90,7 @@ func _play_detail() -> void:
 	var kinds: Array[String] = ["gust", "wind", "dog" if dark else "birds"]
 	if dark: kinds.append_array(["coyote", "crickets"])
 	if near_structure: kinds.append("scrap")
-	# Avoid consecutive identical cues; timing and direction are independently varied.
+	# Evita sons idênticos seguidos; tempo e direção variam de forma independente.
 	if kinds.has(last_kind): kinds.erase(last_kind)
 	var kind: String = kinds[rng.randi_range(0, kinds.size() - 1)]
 	last_kind = kind

@@ -1,7 +1,7 @@
 extends Node3D
-## Four native voices: two adjacent RPM bands x loaded/coast. Their start phases
-## follow one crank clock. Turbo FX are foreground-only and never run for diesel
-## bypass or aspirated engines. The caller owns eligibility and spatial slots.
+## Quatro vozes nativas: duas faixas de RPM vizinhas x carga/desaceleração. As fases iniciais
+## seguem um único relógio de virabrequim. Os efeitos de turbo são só do primeiro plano e nunca rodam
+## em bypass diesel nem motores aspirados. Quem chama cuida da elegibilidade e dos espaços espaciais.
 const BANKS := preload("res://audio/EngineDesignBanks.gd")
 const CATALOG := preload("res://audio/FleetEngineDesign.gd")
 const MOTOR_VOICE_LIMIT := 4
@@ -59,8 +59,8 @@ func _player(label: String) -> AudioStreamPlayer3D:
 	var p := AudioStreamPlayer3D.new()
 	p.name = label
 	p.max_polyphony = 1
-	# This mixer routes directly to its bus. The game has no Area3D audio
-	# overrides; skip their per-voice physics queries while retaining 3D pan.
+	# Este mixer vai direto para o bus. O jogo não tem substituições de áudio por Area3D;
+	# pula as consultas de física por voz e mantém o pan 3D.
 	p.area_mask = 0
 	p.unit_size = spatial_unit_size
 	p.max_distance = spatial_range

@@ -152,7 +152,7 @@ func _exit_tree() -> void:
 	shutdown()
 
 func _eligible(vehicle: CharacterBody3D, entry: Dictionary) -> bool:
-	# Registration does not transfer engine ownership from the desert adapter.
+	# O registro não transfere a posse do motor do adaptador do deserto.
 	if vehicle.has_node("DesertCarAudio"): return false
 	if vehicle.is_queued_for_deletion() or not entry.active or not vehicle.is_inside_tree():
 		return false
@@ -160,7 +160,7 @@ func _eligible(vehicle: CharacterBody3D, entry: Dictionary) -> bool:
 		return false
 	if vehicle.health <= 0 or vehicle.engine_disabled:
 		return false
-	# Dispatch controlled=true is an NPC only while external_input=true.
+	# Dispatch controlled=true só é NPC enquanto external_input=true.
 	if vehicle.controlled and not vehicle.external_input:
 		return false
 	var driving: Variant = _world.get("driving")
@@ -194,7 +194,7 @@ func _process(delta: float) -> void:
 		entry.acceleration = lerpf(entry.acceleration, clampf(acceleration, -10, 10), minf(1, delta * 5))
 		var ratio := clampf(speed / maxf(vehicle.max_forward_speed, 1), 0, 1)
 		var load_value := clampf(maxf(0, entry.acceleration) / maxf(vehicle.drive_acceleration, 1), 0, 1)
-		# Dispatch/traffic can bypass the drivetrain, so infer audio load locally.
+		# Despacho/trânsito pode contornar o trem de força, então deduz a carga do áudio localmente.
 		entry.design_load = 0.0 if float(entry.acceleration) < -0.2 else clampf(0.12 + ratio * 0.3 + load_value * 0.6, 0.0, 1.0)
 		var rpm := clampf(0.1 + ratio * 0.72 + load_value * 0.18, 0, 1) * 6
 		entry.rpm = lerpf(entry.rpm, rpm, minf(1, delta * 5))

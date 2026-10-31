@@ -1,5 +1,5 @@
 extends RefCounted
-## V1 soundscape zones converted from source pixels to V2 native metres.
+## Zonas sonoras da V1 convertidas de pixels da fonte para metros nativos da V2.
 const SCALE := 1.0/16.0
 const SOUTH_PORT := Rect2(3200,3200,2900,2800)
 const SALVAGE := Vector2(-750,550)

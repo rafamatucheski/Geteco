@@ -1,6 +1,6 @@
 extends Node
 ## Three constant voices, authored offline. No PCM generation or transient Tweens.
-## A private bus filters only this weather instance, then sends to the user's Ambient.
+## Um bus privado filtra só esta instância de clima e depois envia para o Ambient do usuário.
 const FIREFLY := preload("res://audio/FireflyBank.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Sons gerados no ElevenLabs (2026-10-16) em audio/ambience_el: chuva fraca e forte, tempestade
@@ -8,7 +8,7 @@ const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## sem emenda; os trovões são pontuais.
 const LOOPS := [["rain_light_0.wav"], ["rain_light_1.wav"], ["rain_heavy_0.wav"], ["storm_0.wav"]]
 const THUNDER_KEYS := ["thunder_crack", "thunder_roll"]
-# Rain is a background bed, including storms: retain space for voices/engines/shots.
+# Chuva é fundo, inclusive tempestade: reserva espaço para vozes/motores/tiros.
 const RAIN_TRIM_DB := -16.0
 var layers: Array[AudioStreamPlayer] = []
 var thunder: AudioStreamPlayer

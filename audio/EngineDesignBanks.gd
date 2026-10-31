@@ -1,6 +1,6 @@
 extends Node
-## Immutable authored banks. Disk decoding runs off the game thread; publication
-## happens only after the worker has finished. No PCM synthesis runs in gameplay.
+## Bancos escritos imutáveis. A decodificação do disco roda fora da thread do jogo; a publicação
+## só acontece depois que o worker terminou. Nenhuma síntese de PCM roda no jogo.
 const CATALOG := preload("res://audio/FleetEngineDesign.gd")
 const ROOT := "res://audio/engine_design/"
 static var _cache: Dictionary = {}
@@ -63,8 +63,8 @@ func _exit_tree() -> void:
 	if _worker == self: _worker = null
 
 static func _read(path: String, looped: bool) -> AudioStreamWAV:
-	# ResourceLoader supports exported remaps. Raw source loading also allows
-	# a fresh developer checkout to work before the editor imports the WAVs.
+	# O ResourceLoader suporta remaps exportados. Carregar a fonte crua também permite
+	# que um checkout novo de desenvolvedor funcione antes de o editor importar os WAVs.
 	var stream: AudioStreamWAV
 	if ResourceLoader.exists(path):
 		var source := load(path) as AudioStreamWAV

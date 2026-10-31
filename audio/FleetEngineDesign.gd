@@ -1,8 +1,8 @@
 extends RefCounted
-## Explicit sound design assignment, independent of legacy family heuristics.
-## A profile is an authored acoustic class, not proof of an OEM engine swap.
-## Constants only: no file access, directory scans or resource loads per frame.
-## Motorcycles, the tank and the electric forklift retain their dedicated banks.
+## Atribuição explícita de design de som, independente das heurísticas antigas de família.
+## Um perfil é uma classe acústica escrita, não prova de troca de motor de fábrica.
+## Só constantes: sem acesso a arquivo, varredura de diretório nem carga de recurso por quadro.
+## Motos, o tanque e a empilhadeira elétrica mantêm seus bancos dedicados.
 
 const VEHICLE_PROFILES := {
 	"american_dump_truck": "truck_i6_diesel",
@@ -108,8 +108,8 @@ const DEDICATED_PROFILES := {
 	"port_forklift": "electric",
 }
 
-## Must match tools/audio/build_engine_design_pack.py and its manifest.
-## Nominal values are measured in RPM; divide by 120 for four-stroke cycle Hz.
+## Precisa bater com tools/audio/build_engine_design_pack.py e o manifesto dele.
+## Valores nominais são medidos em RPM; divida por 120 para Hz do ciclo de quatro tempos.
 const PROFILE_META := {
 	"jz2_i6_turbo": {"rpm_bands":[840,1320,2040,3000,4200,5640,6960],"cylinders":6,"fuel":"petrol","turbo":true,"bypass_valve":true},
 	"rb26_i6_turbo": {"rpm_bands":[960,1440,2160,3240,4560,6120,7800],"cylinders":6,"fuel":"petrol","turbo":true,"bypass_valve":true},

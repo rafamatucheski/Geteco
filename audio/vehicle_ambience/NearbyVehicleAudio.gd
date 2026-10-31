@@ -1,5 +1,5 @@
 extends Node3D
-## Bounded spatial engine bed for nearby traffic and externally driven vehicles.
+## Fundo espacial limitado de motores para o trânsito próximo e veículos dirigidos externamente.
 
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
@@ -170,8 +170,8 @@ func _select_nearby() -> void:
 func _discover_vehicles() -> Array:
 	var result: Array = get_tree().get_nodes_in_group(&"drivable")
 	result.append_array(get_tree().get_nodes_in_group(&"public_transport_vehicle"))
-	# Dispatch vehicles intentionally leave the drivable group. Its public unit list is
-	# the existing read-only bridge; no dispatch state is changed here.
+	# Veículos de despacho saem de propósito do grupo dirigível. A lista pública de unidades é
+	# a ponte só de leitura existente; nenhum estado de despacho muda aqui.
 	var dispatch: Variant = _world.get("dispatch")
 	if not is_instance_valid(dispatch):
 		return result
@@ -307,7 +307,7 @@ func _update_slot(slot: Dictionary, delta: float) -> void:
 		_states.erase(slot.id)
 		_release(slot)
 		return
-	# Ownership changes must not overlap the foreground or service engine mixers.
+	# Trocas de posse não podem se sobrepor aos mixers de motor de primeiro plano ou de serviço.
 	if not _eligible(vehicle) or _service_mixer_handles(vehicle):
 		_states.erase(slot.id)
 		_release(slot)
@@ -324,8 +324,8 @@ func _update_slot(slot: Dictionary, delta: float) -> void:
 	state.acceleration = lerpf(float(state.acceleration), clampf(acceleration, -10.0, 10.0), minf(1.0, delta * 5.0))
 	var ratio := clampf(speed / maxf(float(vehicle.max_forward_speed), 1.0), 0.0, 1.0)
 	var load_value := clampf(maxf(0.0, float(state.acceleration)) / maxf(float(vehicle.drive_acceleration), 1.0), 0.0, 1.0)
-	# Traffic controllers can bypass the drivetrain. Infer load without writing
-	# their physics state or reading an RPM that has stopped updating.
+	# Controladores de trânsito podem contornar o trem de força. Deduz a carga sem escrever
+	# no estado de física deles nem ler um RPM que parou de atualizar.
 	state.design_load = 0.0 if float(state.acceleration) < -0.2 else clampf(0.12 + ratio * 0.3 + load_value * 0.6, 0.0, 1.0)
 	var target_rpm := clampf(0.1 + ratio * 0.72 + load_value * 0.18, 0.0, 1.0) * 6.0
 	state.rpm = lerpf(float(state.rpm), target_rpm, minf(1.0, delta * 5.0))
@@ -346,8 +346,8 @@ func _mix(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, delta :
 	var lower := mini(5, floori(float(state.rpm)))
 	var blend := clampf(float(state.rpm) - lower, 0.0, 1.0)
 	var bank: Array = _banks[state.family]
-	# The top-down camera is high above the road. Keep horizontal 3D panning,
-	# while measuring attenuation from the same ground plane as the listener.
+	# A câmera de cima fica bem acima da rua. Mantém o pan 3D horizontal,
+	# medindo a atenuação a partir do mesmo plano de chão do ouvinte.
 	var camera := get_viewport().get_camera_3d()
 	var audio_height := camera.global_position.y - _listener.global_position.y if camera != null else 0.0
 	var at := vehicle.global_position + Vector3.UP * (audio_height + 0.7)
@@ -386,7 +386,7 @@ func _mix_design(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, 
 		voice.player_relative = _player_relative
 		add_child(voice)
 		slot.design_voice = voice
-	# Rebinding also silences a reused slot when its next car is dedicated/legacy.
+	# Religar também cala um espaço reaproveitado quando o próximo carro é dedicado/antigo.
 	if not voice.configure(str(vehicle.archetype)): return false
 	for player in slot.players: player.stop()
 	if float(slot.gain) <= 0.001:

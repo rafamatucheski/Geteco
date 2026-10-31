@@ -1,5 +1,5 @@
 extends RefCounted
-## Recorded V1 ambience and activity cues, cached for the native V2 world.
+## Ambiência e sons de atividade gravados da V1, em cache para o mundo nativo da V2.
 const LIVING_ROOT := "res://audio/living_city/"
 const REGIONAL_ROOT := "res://audio/regional/"
 const FOOTSTEP_ROOT := "res://audio/footsteps/"
@@ -34,8 +34,8 @@ static func activity(kind: String) -> AudioStream:
 	return _stream(ACTIVITY_ROOT+kind+".wav",false)
 
 static func footstep_pitch(surface: String) -> float:
-	# V1 has no separate recorded dirt/snow library. Keep its recorded soft step,
-	# with a restrained playback treatment instead of synthesizing new PCM.
+	# A V1 não tem biblioteca gravada própria de terra/neve. Mantém o passo macio gravado,
+	# com um tratamento contido de reprodução em vez de sintetizar PCM novo.
 	match surface.trim_suffix("_wet"):
 		"snow": return .82
 		"dirt": return .92

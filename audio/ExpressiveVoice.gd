@@ -1,6 +1,6 @@
 extends RefCounted
-## Recorded dialogue follows the audio preference, independently of subtitle locale.
-## Legacy ambient speech keeps one finite buffer per line and a bounded cache.
+## Diálogo gravado segue a preferência de áudio, independente do idioma da legenda.
+## A fala ambiente antiga mantém um buffer finito por fala e um cache limitado.
 const RATE := 22050
 const DIRECTED := preload("res://audio/DirectedVoiceBank.gd")
 static var cache: Dictionary = {}
@@ -28,8 +28,8 @@ static func recording_key(text: String, persona: String) -> String:
 static func playback_volume(stream: AudioStream, portuguese_volume := 0.0) -> float:
 	if stream != null and stream.get_meta("directed_voice", false):
 		return float(stream.get_meta("directed_gain_db", 0.0))
-	# English takes are normalized as one cast. Keep the same dialogue level in
-	# cutscenes, conversations and ambient captions; retain the existing PT mix.
+	# Os takes em inglês são normalizados como um elenco só. Mantém o mesmo nível de diálogo em
+	# cutscenes, conversas e legendas ambientes; preserva a mixagem PT existente.
 	return -8.0 if stream != null and stream.get_meta("voice_language", "") == "en" else portuguese_volume
 
 static func _legacy_recording(text: String, persona: String, language: String) -> AudioStream:
@@ -58,12 +58,12 @@ static func _legacy_recording(text: String, persona: String, language: String) -
 					for alias in aliases:
 						if str(alias).is_empty(): continue
 						_canonical_keys[recording_key(str(alias), str(entry.get("persona", "")))] = canonical_key
-	# The caller is Maciota too. Keep both on the same authored voice bank and
-	# never fall back to the older, independently designed VoiceDesign takes.
+	# Quem liga também é o Maciota. Mantém os dois no mesmo banco de voz escrito e
+	# nunca cai nos takes VoiceDesign antigos, desenhados à parte.
 	var bank := maciota_recordings if persona.to_lower() in ["maciota", "caller"] else recordings
 	if language == "en": bank = english_recordings
-	# Resolve subtitle aliases before choosing the take, so English subtitles can
-	# still use Portuguese voices (including Maciota's fixed baritone recording).
+	# Resolve os apelidos de legenda antes de escolher o take, para que legendas em inglês
+	# ainda usem vozes em português (incluindo a gravação fixa de barítono do Maciota).
 	var raw_key := recording_key(text, persona)
 	var key: String = _canonical_keys.get(raw_key, raw_key)
 	var path := String(bank.get(key, ""))
@@ -163,8 +163,8 @@ static func line(text: String, persona := "dante", duration := 0.0, language := 
 	return stream
 
 static func recorded_line(text: String, persona := "dante", language := "", character_id := "", section := "") -> AudioStream:
-	# Authored dialogue is silent until the exact recording exists. Non-verbal
-	# fallback is still available to its original ambient speech consumers.
+	# Diálogo escrito fica mudo até a gravação exata existir. O recurso não verbal
+	# ainda está disponível para os consumidores originais de fala ambiente.
 	var resolved_language := _language(language)
 	var stream := _recording(text, persona, resolved_language, character_id, section)
 	if stream == null: _report_missing(text, persona, resolved_language)

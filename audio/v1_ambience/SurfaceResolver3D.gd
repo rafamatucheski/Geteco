@@ -1,5 +1,5 @@
 extends RefCounted
-## V2 surface identity derived from the active room, authored roads and real floor hit.
+## Identidade de superfície V2 derivada da sala ativa, das ruas escritas e do acerto real no chão.
 const SCALE := 1.0/16.0
 const MOUNTAIN_OFFSET := Vector2(4300,-4960)
 const TILE_PLACES := [
@@ -97,7 +97,7 @@ static func _geographic_surface(region: String, point: Vector3) -> String:
 	if region == "mountain":
 		original -= MOUNTAIN_OFFSET
 		return "snow" if original.y < -1200 else "grass"
-	# Exact V1 cemetery bed and paths, now expressed in native V2 metres.
+	# Fundo e caminhos exatos do cemitério da V1, agora em metros nativos da V2.
 	var cemetery_local := original-Vector2(-650,1740)
 	if Rect2(-390,-350,780,700).has_point(cemetery_local):
 		for path in CEMETERY_PATHS:

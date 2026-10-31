@@ -47,8 +47,8 @@ const NOMINAL := {
 }
 
 static func family(archetype: String) -> String:
-	# Match V1 VehicleEngineSound.family_for_vehicle, including the old catalogue's
-	# missing engine_family fields. The V2 fleet JSON retained those omissions.
+	# Bate com VehicleEngineSound.family_for_vehicle da V1, incluindo os campos engine_family
+	# ausentes no catálogo antigo. O JSON da frota V2 manteve essas omissões.
 	if archetype == "maciota_m8": return "m8_v8"
 	if archetype == "maciota_350z": return "vq35"
 	if archetype == "porto_rosso": return "rosso_v12"
@@ -74,12 +74,12 @@ static func family(archetype: String) -> String:
 
 static func bank_family(archetype: String) -> String:
 	var chosen := family(archetype)
-	# V1 synthesizes Monaliza from the street profile, which is also its
-	# acoustic fallback here. Electric has its own exported inverter bank.
+	# A V1 sintetiza o Monaliza a partir do perfil de rua, que também é o
+	# recurso acústico aqui. O elétrico tem seu próprio banco de inversor exportado.
 	return chosen if NOMINAL.has(chosen) else "street"
 
 static func drive_load(speed: float, throttle: float, braking: bool) -> float:
-	# Opposite input is the service brake until the car stops and engages reverse.
+	# Entrada oposta é o freio de serviço até o carro parar e engatar a ré.
 	if braking or (absf(speed) > .4 and speed * throttle < 0.0): return 0.0
 	return clampf(absf(throttle), 0.0, 1.0)
 

@@ -88,8 +88,8 @@ const STATION_NAMES := ["PORTO FM · Empty Stretch","PORTO NOITE · Fusion Jazz"
 const COUNTRY_STATION := 11
 const RADIO_VOLUME_DB := -6.0
 var radio_car: CharacterBody3D
-## Exclusive room music pauses only this radio voice; station and playback
-## position remain owned by the vehicle. Weak ownership also recovers on free.
+## Música exclusiva de sala pausa só esta voz de rádio; estação e posição de
+## reprodução continuam do veículo. A referência fraca também se recupera no free.
 var _scoped_music_owner: WeakRef
 var radio_notice: Label
 var radio_notice_time := 0.0
@@ -170,8 +170,8 @@ func _ready() -> void:
 		city_life.world = world
 		add_child(city_life)
 	for index in 7:
-		# The listener camera sits about 36 m above the occupied car. In V1 the
-		# driver's engine was foreground audio, so it must not fade with that gap.
+		# A câmera ouvinte fica uns 36 m acima do carro ocupado. Na V1 o
+		# motor do motorista era áudio de primeiro plano, então não pode sumir com essa distância.
 		var layer := AudioStreamPlayer.new()
 		layer.name = "PlayerEngineBand%d" % index
 		layer.bus = _bus(&"Vehicles")
@@ -267,7 +267,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 func _driver_audio_ready() -> bool:
-	# Occupied reserves the car at the start of boarding; control begins at the seat.
+	# Ocupado reserva o carro no início do embarque; o controle começa no assento.
 	return world.driving.occupied and is_instance_valid(world.driving.car) and world.driving.car.controlled
 
 func set_scoped_music_override(owner: Node) -> bool:
@@ -445,8 +445,8 @@ func _process_traced(delta: float) -> void:
 			# exatamente igual) em vez do mesmo dB fixo toda vez.
 			footsteps.volume_db = FOOTSTEP_VOLUME_DB + rng.randf_range(-1.5,1.5)
 			footsteps.play()
-	# Street cars also have desert_powertrain mechanics but retain this mixer.
-	# Yield only when the vehicle actually owns a dedicated audio node.
+	# Carros de rua também têm mecânica desert_powertrain mas mantêm este mixer.
+	# Cede só quando o veículo realmente tem um nó de áudio dedicado.
 	if not _driver_audio_ready() or world.driving.car.health <= 0 or world.driving.car.engine_disabled or world.driving.car.has_node("DesertCarAudio"):
 		if is_instance_valid(design_voice): design_voice.stop()
 		engine_car = null
@@ -559,8 +559,8 @@ func _mix_designed_engine(car: CharacterBody3D, throttle: float, previous_gear: 
 	if design_rpm <= 0.0: design_rpm = rpm
 	design_rpm = lerpf(design_rpm, rpm, 1.0 - exp(-delta * (10.0 if rpm > design_rpm else 6.0)))
 	design_cut = lerpf(design_cut, cut, 1.0 - exp(-delta * 18.0))
-	# The authored PCM has about 3 dB more headroom than the former banks.
-	# Retain the driver's existing load/RPM envelope and foreground presence.
+	# O PCM escrito tem uns 3 dB a mais de headroom que os bancos anteriores.
+	# Mantém o envelope de carga/RPM do motorista e a presença de primeiro plano.
 	var rpm_fraction := clampf(design_rpm / float(bands[6]), 0.0, 1.0)
 	var road_fraction := clampf(absf(float(car.speed)) / maxf(float(car.max_forward_speed), 1.0), 0.0, 1.0)
 	var level := -17.0 + load_value * 7.0 + rpm_fraction * 6.5 + road_fraction * 1.5 + design_cut
@@ -571,7 +571,7 @@ func _mix_designed_engine(car: CharacterBody3D, throttle: float, previous_gear: 
 	return true
 
 func _update_design_utility_foley(car: CharacterBody3D, throttle: float) -> void:
-	# Air brakes and reverse warnings belong to the vehicle, not turbo discharge.
+	# Freios a ar e alertas de ré pertencem ao veículo, não à descarga do turbo.
 	_ensure_firefly_players()
 	if family in REVERSE_BEEP_FAMILIES:
 		if absf(float(car.speed)) > 1.25: engine_was_moving_fast = true
@@ -623,9 +623,9 @@ func _sync_engine_family(car: CharacterBody3D) -> void:
 		road_audio.stream = road_stream
 	if next_family == family: return
 	family = next_family
-	# Nearby audio already warms and retains these immutable seven-band loops.
-	# Its duplicates have no resource path: loading the originals here again
-	# misses ResourceLoader's weak cache after warm-up releases them.
+	# O áudio próximo já aquece e retém estes loops imutáveis de sete faixas.
+	# As duplicatas não têm caminho de recurso: carregar os originais aqui de novo
+	# erra o cache fraco do ResourceLoader depois que o aquecimento os solta.
 	# Não espera a leitura: sem o banco pronto toca a ponte e `_update_engine_bank` troca depois.
 	_bind_engine_layers(ENGINE_BANKS.bridge_family(family))
 	engine_swap_gain = 1.0
@@ -695,7 +695,7 @@ func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, _ratio: float
 		_play_vehicle_fx(_blowoff_sounds(), clampf(-21.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -23.0, -11.0), 1.2)
 	if heavy_turbo and engine_fx_cooldown <= 0.0 and engine_last_throttle > 0.65 and throttle < 0.15 and engine_rpm > 0.42:
 		_play_vehicle_fx(_turbo_shift_sounds(), -2.0)
-	# Keep the coupe's pressure release quiet and sparse during repeated braking.
+	# Mantém o alívio de pressão do cupê baixo e espaçado em frenagens repetidas.
 	if sport_turbo and engine_fx_cooldown <= 0.0 and engine_last_throttle > 0.58 and throttle < 0.16 and engine_turbo_pressure > 0.40:
 		_play_vehicle_fx(_blowoff_sounds(), clampf(-21.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -23.0, -11.0), 1.2)
 		engine_turbo_pressure *= 0.24

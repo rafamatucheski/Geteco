@@ -1,5 +1,5 @@
 extends RefCounted
-## Original, offline-authored PCM. Runtime only loads and reuses a small fixed bank.
+## PCM original, escrito offline. O runtime só carrega e reaproveita um banco fixo pequeno.
 const NOMINAL := [10, 13, 16, 20, 24, 28, 33]
 const START_SECONDS := 2.8
 static var _cache: Dictionary = {}
@@ -44,7 +44,7 @@ static func _stream(id: String, looped: bool) -> AudioStreamWAV:
 	if ResourceLoader.exists(path, "AudioStreamWAV"):
 		source = ResourceLoader.load(path, "AudioStreamWAV") as AudioStreamWAV
 	elif FileAccess.file_exists(path):
-		# Fresh source checkout before the editor imports assets. Export uses resources above.
+		# Checkout novo da fonte antes de o editor importar os assets. O export usa os recursos acima.
 		source = AudioStreamWAV.load_from_file(path)
 	if source == null:
 		push_error("TankAudio: missing original sound %s" % path)
@@ -57,7 +57,7 @@ static func _stream(id: String, looped: bool) -> AudioStreamWAV:
 	return stream
 
 static func tracks_gain(speed: float) -> float:
-	# Zero while stationary, including revving in neutral; identical in reverse.
+	# Zero parado, inclusive acelerando em ponto morto; idêntico na ré.
 	return smoothstep(0.08, 1.3, absf(speed)) * lerpf(0.35, 1.0, clampf(absf(speed) / 13.0, 0.0, 1.0))
 
 static func tracks_pitch(speed: float) -> float:
@@ -69,7 +69,7 @@ static func claim_start(vehicle: Node) -> bool:
 	return absf(float(vehicle.get("speed"))) < 0.4
 
 static func mix_spatial(players: Array, vehicle: CharacterBody3D, rpm: float, gain: float, base_db: float, position: Vector3) -> void:
-	# Keep the established two-voice NPC budget: continuous diesel plus independent tracks.
+	# Mantém o orçamento de duas vozes de NPC: diesel contínuo mais esteiras independentes.
 	var bank := engine_bank()
 	if bank.size() != 7 or players.size() < 2: return
 	vehicle.set_meta(&"tank_engine_heard", true)
