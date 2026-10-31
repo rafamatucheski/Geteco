@@ -1,5 +1,5 @@
 extends SceneTree
-## Run against V1; writes only isolated V2 snapshots of original geometry.
+## Roda contra a V1; grava só snapshots isolados da V2 com a geometria original.
 const CATALOG := preload("res://cars/VehicleCatalog.gd")
 const OUTPUT := "res://assets/fleet/"
 var failures: Array[String] = []

@@ -1,5 +1,5 @@
 extends "res://tools/fleet_fixups/build_sport_coupe_gt.gd"
-## Offline authored utility collection. Geometry is baked; no per-frame work or extra lights.
+## Coleção utilitária autoral offline. A geometria vai no bake; sem trabalho por quadro nem luzes extras.
 const IDS := preload("res://tools/fleet_fixups/utility_inventory.gd").IDS
 const FOLDER := "res://evidence/fleet-redesign-20261011/utility"
 var car_id := ""
@@ -69,8 +69,8 @@ func setup(id: String, row: Dictionary) -> void:
 	model.set_meta("fleet_finish",true)
 	model.set_meta("fleet_redesign_version",1)
 	model.set_meta("fleet_redesign_family",family)
-	# These bodies already have an authored open bed. The legacy usage adapter
-	# removes a cap from a one-surface export and must not slice this batched body.
+	# Estas carrocerias já têm uma caçamba aberta autoral. O adaptador de uso legado
+	# remove uma tampa de um export de superfície única e não pode fatiar esta carroceria agrupada.
 	if preload("res://runtime/VehicleUsage.gd").BEDS.has(id): model.set_meta("usage_open_bed",true)
 	active="Body"
 
@@ -114,7 +114,7 @@ func chassis() -> void:
 			var shoulder:=belt_y-.085
 			quad("paint",Vector3(s*side_x(za),ya,za),Vector3(s*side_x(zb),yb,zb),Vector3(s*side_x(zb),maxf(shoulder,yb),zb),Vector3(s*side_x(za),maxf(shoulder,ya),za),Vector3(s,0,0))
 			quad("paint",Vector3(s*side_x(za),maxf(shoulder,ya),za),Vector3(s*side_x(zb),maxf(shoulder,yb),zb),Vector3(s*(side_x(zb)-.065),maxf(belt_y,yb),zb),Vector3(s*(side_x(za)-.065),maxf(belt_y,ya),za),Vector3(s,1,0))
-			# Inner return at the open wheel wells; no body plane across the tyres.
+			# Retorno interno nas caixas de roda abertas; nenhum plano de carroceria atravessa os pneus.
 			tint=DARK
 			quad("detail",Vector3(s*side_x(za),ya,za),Vector3(s*side_x(zb),yb,zb),Vector3(s*(side_x(zb)-.13),yb+.018,zb),Vector3(s*(side_x(za)-.13),ya+.018,za),Vector3(0,-1,0))
 			tint=Color.WHITE
@@ -128,7 +128,7 @@ func chassis() -> void:
 				var za:=c.z+cos(a)*rr
 				var zb:=c.z+cos(b)*rr
 				beam("detail",Vector3(s*(side_x(za)+.005),c.y+sin(a)*rr,za),Vector3(s*(side_x(zb)+.005),c.y+sin(b)*rr,zb),.040 if family=="suv" else .023,DARK)
-			# Calipers are stationary, separate from wheel rotation but in body batch.
+			# As pinças são paradas, separadas da rotação da roda, mas no lote da carroceria.
 			box("detail",Vector3(s*(absf(c.x)+.095),c.y+.05,c.z+.14),Vector3(.025,.15,.075),Color("a96038"))
 		var rocker_front := maxf(float(door.get("zf",-.4)),axles[0].z+axles[0].y+.07)
 		var rocker_rear := minf(float(door.get("zr",.5)),axles[1].z-axles[1].y-.07)
@@ -137,7 +137,7 @@ func chassis() -> void:
 		if length>.12:
 			box("detail",Vector3(s*(skin-.04),sill_y+.035,middle_z),Vector3(.07,.075,length),DARK)
 			box("detail",Vector3(s*(skin+.012),sill_y+.045,middle_z),Vector3(.02,.022,length-.10),accent)
-	# The underbody stays inside the wells. Front/rear faces include bevelled paint.
+	# O assoalho fica dentro das caixas de roda. As faces dianteira/traseira incluem pintura chanfrada.
 	box("detail",Vector3(0,sill_y+.025,(front+rear)*.5),Vector3(skin*1.53,.06,rear-front-.1),DARK)
 	for z in [front,rear]:
 		var n:=Vector3.FORWARD if z==front else Vector3.BACK
@@ -160,7 +160,7 @@ func cabin() -> void:
 	var upper_x:=skin-(.16 if family=="van" else .19)
 	active="Body"
 	glazing([Vector3(-lower_x,belt_y,windshield_z),Vector3(lower_x,belt_y,windshield_z),Vector3(upper_x,roof_y,roof_front),Vector3(-upper_x,roof_y,roof_front)],Vector3(0,1,-1))
-	# Visually connected wipers sit on the glazing instead of floating trim.
+	# Limpadores visualmente ligados ficam sobre o vidro em vez de acabamento flutuando.
 	for s in [-1.0,1.0]:
 		beam("detail",Vector3(s*.10,belt_y+.045,windshield_z+.012),Vector3(s*.55,belt_y+.13,windshield_z+.065),.013,DARK)
 	var cuts: Array[float] = [windshield_z,float(door.zr),cabin_back]
@@ -184,7 +184,7 @@ func cabin() -> void:
 				tint=Color.WHITE
 				beam("detail",Vector3(s*(lower_x+.01),belt_y+.21,za+.12),Vector3(s*(lower_x+.01),belt_y+.21,zb-.12),.015,DARK)
 			else: glazing(corners,Vector3(s,0,0))
-		# Door seams, handle and mirror sit on the same measured side as old doors.
+		# Emendas da porta, maçaneta e retrovisor ficam no mesmo lado medido das portas antigas.
 		for z in [float(door.zf),float(door.zr)]: beam("detail",Vector3(s*(skin+.005),sill_y+.05,z),Vector3(s*(skin+.005),belt_y-.10,z),.009,DARK)
 		active="DoorTrimL" if s<0 else "DoorTrimR"
 		box("detail",Vector3(s*(skin+.014),belt_y-.17,float(door.zr)-.15),Vector3(.024,.046,.19),DARK)
@@ -244,7 +244,7 @@ func pickup_bed() -> void:
 	var bed_rear:=rear-.13
 	var floor_y:=sill_y+.23
 	var load_beds:Dictionary=preload("res://runtime/VehicleUsage.gd").BEDS
-	# Cargo rests on the liner ribs, whose tops sit .0475 above the floor center.
+	# A carga repousa nas nervuras do revestimento, cujo topo fica .0475 acima do centro do piso.
 	if load_beds.has(car_id): floor_y=float(load_beds[car_id][0])-.0475
 	# Actual open bed: four thin walls, recessed floor, inner wheel housings and ribs.
 	box("detail",Vector3(0,floor_y,(bed_front+bed_rear)*.5),Vector3((skin-.105)*2,.055,bed_rear-bed_front),Color("303638"))
@@ -450,7 +450,7 @@ func buggy() -> void:
 	sill_y=.29
 	var c_front:=axles[0].z
 	var c_rear:=axles[1].z
-	# Open fiberglass tub and tapered boat-tail, deliberately different from an SUV.
+	# Banheira aberta de fibra de vidro e traseira afunilada em casco de barco, diferente de propósito de um SUV.
 	var nose: Array=[Vector3(-skin*.58,.52,front+.09),Vector3(skin*.58,.52,front+.09),Vector3(skin*.92,.75,-.58),Vector3(-skin*.92,.75,-.58)]
 	quad("paint",nose[0],nose[1],nose[2],nose[3],Vector3.UP)
 	quad("paint",Vector3(-skin*.58,.34,front+.09),Vector3(skin*.58,.34,front+.09),nose[1],nose[0],Vector3.FORWARD)
@@ -470,7 +470,7 @@ func buggy() -> void:
 			# Visible wishbone suspension under exposed wheels.
 			beam("detail",Vector3(s*.39,.30,z-.20),Vector3(s*.79,.36,z),.028,METAL)
 			beam("detail",Vector3(s*.39,.30,z+.20),Vector3(s*.79,.36,z),.028,METAL)
-		# The low roll hoop fits the original height envelope and remains open.
+		# O arco de proteção baixo cabe no envelope de altura original e continua aberto.
 		var roof:=1.26 if car_id=="beach_buggy" else 1.34
 		beam("detail",Vector3(s*.64,.40,.48),Vector3(s*.59,roof,.42),.058,DARK)
 		beam("detail",Vector3(s*.59,roof,.42),Vector3(s*.52,roof,-.28),.058,DARK)
@@ -484,7 +484,7 @@ func buggy() -> void:
 		ellipse("headlight",Vector3(s*.54,.69,front+.20),Vector3.RIGHT,Vector3.UP,.105,0,Vector3.FORWARD,Color.WHITE,16)
 		active="Body"
 		ellipse("detail",Vector3(s*.54,.69,front+.201),Vector3.RIGHT,Vector3.UP,.131,.105,Vector3.FORWARD,accent,16)
-		# Closed lamp bucket and bracket, visible from the rear of the open buggy.
+		# Caçamba de lanterna fechada e suporte, visíveis por trás do buggy aberto.
 		var lamp_at:Vector3=Vector3(s*.54,.69,front+.207)
 		for j in 16:
 			var a:=TAU*j/16

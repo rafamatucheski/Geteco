@@ -1,5 +1,5 @@
 extends SceneTree
-## Fixed, paired close review of the active production and offline candidates.
+## Revisão próxima, fixa e pareada da produção ativa e dos candidatos offline.
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const ROOT := "res://artifacts/vehicle-fit-20261023/passenger"
 const IDS := ["aurora_executive","beach_cabriolet","cobra_v8","metro_hatch","muscle_classic","nordic_estate","orbita_micro","porto_rosso","sedan_classic","sport_estate","station_wagon","surf_woody_wagon","taxi_yellow","union_sedan","vale_crossover","vertice_midengine"]

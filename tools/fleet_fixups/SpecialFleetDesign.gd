@@ -3,9 +3,9 @@ extends "res://tools/fleet_fixups/PassengerDesign.gd"
 var target_id := ""
 
 func split_front_lenses(target: Node3D) -> void:
-	# These two legacy exports put both headlights in one surface. Equipment
-	# binds their side from surface bounds, so a shared centre produced one beam.
-	# Separate actual triangles offline without changing topology or materials.
+	# Estes dois exports legados põem os dois faróis numa só superfície. O equipamento
+	# define o lado pelos limites da superfície, então um centro compartilhado produzia um facho só.
+	# Separa os triângulos reais offline sem mudar topologia nem materiais.
 	var roles:=preload("res://runtime/VehicleSurfaceRoles.gd")
 	for part: MeshInstance3D in target.find_children("*","MeshInstance3D",true,false):
 		if part.mesh==null or part.has_meta("wheel_center"): continue
@@ -73,8 +73,8 @@ func split_front_lenses(target: Node3D) -> void:
 func details(id: String,half: Vector3,bc: Vector3,wheels: Dictionary) -> void:
 	var saved_profile := profile
 	profile=profile.duplicate()
-	# A sedan does not inherit an estate's roof rails. Keep the new detailing
-	# inside existing bumpers instead of suspending vents beyond a rounded tail.
+	# Um sedã não herda as barras de teto de uma perua. Mantém o novo detalhamento
+	# dentro dos para-choques existentes em vez de pendurar entradas de ar além de uma traseira arredondada.
 	if profile.style in ["touring","touring_sport","cross"]: profile.style="gt"
 	if target_id=="supra_a80": profile.style="supercar"
 	super.details("cobra_v8",half,bc,wheels)
@@ -85,7 +85,7 @@ func details(id: String,half: Vector3,bc: Vector3,wheels: Dictionary) -> void:
 	var trim := Color(profile.accent)
 	var sportive := target_id in ["desert_mirage","desert_mirage_gt","supra_a80","jessica_jetta_gli","rauhz_focus_mk1","desert_faisca_rally"]
 	if sportive:
-		# Supported lower aero, brake ducts and a diffuser define the sport set.
+		# Aerodinâmica inferior apoiada, dutos de freio e um difusor definem o conjunto esportivo.
 		for side in [-1.0,1.0]:
 			box("detail",Vector3(side*half.x*.79,.24,front+.09),Vector3(.13,.045,.25),DARK)
 			box("detail",Vector3(side*half.x*.79,.268,front+.08),Vector3(.11,.014,.22),trim)
@@ -96,17 +96,17 @@ func details(id: String,half: Vector3,bc: Vector3,wheels: Dictionary) -> void:
 			ring("detail",at,Vector3.RIGHT,Vector3.UP,.078,.060,Vector3.FORWARD,trim,14)
 			ring("detail",at+Vector3(0,0,.007),Vector3.RIGHT,Vector3.UP,.060,0,Vector3.FORWARD,DARK,14)
 	if target_id in ["desert_bison","digo_amarok_2014"]:
-		# Recessed skid plate and integrated running boards, clear of the doors.
+		# Protetor de cárter embutido e estribos integrados, longe das portas.
 		box("detail",Vector3(0,.29,front+.055),Vector3(half.x*1.12,.15,.04),METAL)
 		for x in [-.3,0.0,.3]: box("detail",Vector3(x,.30,front+.031),Vector3(.1,.026,.01),DARK)
 		for side in [-1.0,1.0]:
 			box("detail",Vector3(side*(half.x-.15),.27,0),Vector3(.16,.06,1.55),METAL)
 			for j in 7: box("detail",Vector3(side*(half.x-.15),.305,-.6+j*.2),Vector3(.13,.007,.04),DARK)
 	if target_id in ["desert_faisca","desert_siroco","digo_gol_1993"]:
-		# Modest urban detailing with a bright belt beneath the glazing.
+		# Detalhamento urbano modesto com uma faixa clara abaixo dos vidros.
 		for side in [-1.0,1.0]:
 			box("detail",Vector3(side*half.x*.87,.40,.0),Vector3(.025,.026,half.z*.75),trim)
 	if target_id=="desert_faisca_rally":
-		# Small metal tow loops instead of extra nodes or dynamic lights.
+		# Pequenos olhais de reboque de metal em vez de nós extras ou luzes dinâmicas.
 		for z in [front,rear]:
 			ring("detail",Vector3(-half.x*.34,.32,z),Vector3.RIGHT,Vector3.UP,.063,.040,Vector3.FORWARD if z==front else Vector3.BACK,Color("cd5e36"),12)

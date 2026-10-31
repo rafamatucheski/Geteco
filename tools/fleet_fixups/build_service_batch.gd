@@ -31,8 +31,8 @@ func run() -> void:
 		if ResourceLoader.exists(baseline_path):
 			model=(load(baseline_path) as PackedScene).instantiate()
 		else:
-			# A fresh checkout may lack the evidence snapshot. Build the original
-			# without reusing catalog entries cached for the integrated redesign.
+			# Um checkout novo pode não ter o snapshot de evidência. Monta o original
+			# sem reaproveitar entradas de catálogo em cache do redesenho integrado.
 			var redesigned_enabled: bool=REDESIGNED.enabled
 			var saved_catalog: Dictionary=FLEET._data
 			REDESIGNED.enabled=false
@@ -84,8 +84,8 @@ func prepare() -> void:
 	paint=null
 	for p: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
 		if p.get_parent()!=model: continue
-		# The cab and vault paint already contain only 252 triangles. Simplifying
-		# their disconnected boxes erases the cab door sheets when they open.
+		# A pintura da cabine e do cofre já tem só 252 triângulos. Simplificar
+		# as caixas desconectadas apaga as chapas das portas da cabine quando abrem.
 		if id=="armored_truck" and p.name=="Armor_paint": p.set_meta("batch_ratio",1.0)
 		if not p.visible:
 			p.free(); continue
@@ -97,7 +97,7 @@ func prepare() -> void:
 				wheels[center].radius=maxf(wheels[center].radius,float(p.get_meta("wheel_radius",box.size.y*.5)))
 				wheels[center].width=maxf(wheels[center].width,box.size.x)
 				p.free(); continue
-			# Calipers remain stationary in the same location, grouped with trim.
+			# As pinças ficam paradas no mesmo lugar, agrupadas com o acabamento.
 			p.remove_meta("wheel_center")
 			p.remove_meta("wheel_spins")
 		for s in p.mesh.get_surface_count():
@@ -158,7 +158,7 @@ func police_body() -> void:
 	var rear:=2.52 if suv else 2.28
 	var belt:=1.14 if suv else .80
 	var roof:=1.82 if suv else 1.40
-	# Replace the original rectangular lower body with a faceted, open-arch shell.
+	# Substitui a parte baixa retangular original por uma casca facetada com caixas de roda abertas.
 	for p: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
 		if p.get_parent()!=model: continue
 		var b: AABB=p.transform*p.get_aabb()
@@ -192,7 +192,7 @@ func police_body() -> void:
 				var r: float=wheels[c].radius+.07
 				kit.beam(Vector3(s*(half-.01),c.y+sin(aa)*r,c.z+cos(aa)*r),Vector3(s*(half-.01),c.y+sin(bb)*r,c.z+cos(bb)*r),.028,DARK)
 	hood(shell,half*2,front,-1.10 if suv else -.89,belt-.03,belt)
-	# Rear deck and front/rear valance close the shell.
+	# O deque traseiro e as saias dianteira/traseira fecham a casca.
 	shell.box(Vector3(0,belt-.04,2.13 if suv else 1.73),Vector3(half*1.75,.08,.72 if suv else 1.08),Color.WHITE)
 	for z in [front,rear]: shell.box(Vector3(0,.43,z),Vector3(half*1.78,.23,.08),Color.WHITE)
 	shell.box(Vector3(0,belt-.22,front+.006),Vector3(half*1.75,.42,.04),Color.WHITE)
@@ -201,8 +201,8 @@ func police_body() -> void:
 	kit.box(Vector3(0,belt-.16,rear+.035),Vector3(.23,.05,.03),DARK)
 	if not suv:
 		for s in [-1,1]:
-			# Closed A/C pillar cheeks bridge the rectangular side glass and the
-			# inclined windshields, whose endpoints were disjoint in the old asset.
+			# Bochechas fechadas das colunas A/C fazem a ponte entre o vidro lateral retangular e os
+			# para-brisas inclinados, cujas pontas eram desconexas no asset antigo.
 			shell.quad(Vector3(s*.705,.808,.883),Vector3(s*.675,.808,1.15),Vector3(s*.675,1.32,.858),Vector3(s*.705,1.32,.884),Vector3(s,0,0),Color.WHITE)
 			shell.quad(Vector3(s*.675,.808,-.892),Vector3(s*.705,.808,-.642),Vector3(s*.705,1.32,-.642),Vector3(s*.675,1.32,-.58),Vector3(s,0,0),Color.WHITE)
 			shell.quad(Vector3(s*.855,.80,-.895),Vector3(s*.855,.80,1.15),Vector3(s*.699,.821,1.15),Vector3(s*.699,.821,-.895),Vector3.UP,Color.WHITE)
@@ -213,7 +213,7 @@ func police_body() -> void:
 	plate_frame(gz-.08,.46)
 	kit.box(Vector3(0,.31,front+.03),Vector3(half*1.85,.06,.22),DARK)
 	kit.box(Vector3(0,.35,rear),Vector3(half*1.8,.09,.16),DARK)
-	# Roof rails on SUV; restrained deck spoiler on sedan.
+	# Barras de teto no SUV; aerofólio discreto no sedã.
 	if suv:
 		for s in [-1,1]:
 			kit.beam(Vector3(s*.71,roof+.025,-.7),Vector3(s*.71,roof+.025,1.86),.055,DARK)
@@ -224,7 +224,7 @@ func police_body() -> void:
 	kit.beam(Vector3(.5,roof,-.1),Vector3(.5,roof+.2,-.1),.017,DARK)
 
 func american_cab() -> void:
-	# A tapered bonnet replaces the old broad cube. The cab and all lamp mounts stay.
+	# Um capô afunilado substitui o cubo largo antigo. A cabine e todos os suportes de lanterna ficam.
 	for p: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
 		if p.get_parent()!=model: continue
 		var b: AABB=p.transform*p.get_aabb()
@@ -254,7 +254,7 @@ func american_cab() -> void:
 			kit.box(Vector3(s*1.30,2.46,1.72),Vector3(.10,.08,4.51),Color("55615d"))
 			chevrons(s*1.322,1.18,1.7,3.9,Color("d6b665"))
 	elif id=="american_tanker_truck":
-		# Separate broad steel bands and a narrow catwalk distinguish the cylindrical tank.
+		# Faixas largas de aço separadas e uma passarela estreita distinguem o tanque cilíndrico.
 		for z in [.15,1.62,3.1]:
 			for j in 24:
 				var aa:=TAU*j/24.0; var bb:=TAU*(j+1)/24.0
@@ -264,8 +264,8 @@ func american_cab() -> void:
 		for s in [-1,1]: kit.beam(Vector3(s*.33,3.05,-.25),Vector3(s*.33,3.05,3.5),.034,STEEL)
 		for s in [-1,1]:
 			for z in [-.25,1.62,3.5]: kit.beam(Vector3(s*.33,2.78,z),Vector3(s*.33,3.05,z),.032,STEEL)
-			# The inherited yellow rail lost tiny posts in the old detail reduction.
-			# Restore continuous supports as authored geometry, kept at full detail.
+			# O corrimão amarelo herdado perdeu postinhos na antiga redução de detalhe.
+			# Restaura os suportes contínuos como geometria autoral, mantida em detalhe completo.
 			for z in [.3,1.2,2.2,3.1]: kit.box(Vector3(s*.3,3.165,z),Vector3(.034,.30,.034),Color("c69c30"))
 	else:
 		for s in [-1,1]:
@@ -278,8 +278,8 @@ func american_cab() -> void:
 func medic() -> void:
 	van_nose(1.035,-2.65,-1.64,.97,1.03,1.74,-.49)
 	for s in [-1,1]:
-		# The beacon keeps its authored mounting height, now visibly carried by
-		# two feet anchored into the newly closed cabin roof.
+		# O giroflex mantém a altura de montagem autoral, agora visivelmente sustentado por
+		# dois pés ancorados no teto da cabine recém-fechado.
 		kit.box(Vector3(s*.62,1.902,-1.25),Vector3(.075,.275,.12),DARK)
 		kit.box(Vector3(s*.62,1.77,-1.25),Vector3(.16,.025,.23),STEEL)
 	grille(-2.70,.84,1.12,.35)
@@ -347,8 +347,8 @@ func tow() -> void:
 func snow() -> void:
 	grille(-3.313,1.07,1.20,.31,true)
 	for s in [-1,1]:
-		# A real reverse face and rolled edges keep the V blade visible from the
-		# rear. The original front-only sheet exposed isolated marker poles.
+		# Uma face traseira real e bordas dobradas mantêm a lâmina em V visível por
+		# trás. A chapa original só de frente deixava à mostra postes marcadores isolados.
 		var edge0:=Vector3(0,.14,-4.1)
 		var edge1:=Vector3(s*1.72,.14,-3.72)
 		var top0:=Vector3(0,1.05,-4.1)
@@ -366,7 +366,7 @@ func snow() -> void:
 		kit.beam(Vector3(s*1.63,.65,-3.59),Vector3(s*1.63,1.23,-3.59),.027,Color("d69336"))
 		kit.box(Vector3(s*1.63,1.20,-3.59),Vector3(.045,.14,.045),Color("ece0b7"))
 		compartment(s*1.16,.88,.3,.93,.27,Color("677980"))
-	# Top-screen grid on the grit hopper: purposeful, low polygon detail.
+	# Grade de tela no topo do silo de areia: detalhe com propósito e poucos polígonos.
 	kit.box(Vector3(0,2.087,1.2),Vector3(1.62,.022,2.63),DARK)
 	for x in [-.66,-.44,-.22,0,.22,.44,.66]: kit.box(Vector3(x,2.11,1.2),Vector3(.022,.025,2.6),STEEL)
 	for z in [.1,.55,1.0,1.45,1.90,2.30]: kit.box(Vector3(0,2.126,z),Vector3(1.6,.02,.022),STEEL)
@@ -391,7 +391,7 @@ func tactical() -> void:
 func armor() -> void:
 	grille(-2.873,1.36,1.08,.36,true)
 	for s in [-1,1]:
-		# Slanted reinforced brow and replaceable corner armor emphasize the safe body.
+		# Testa reforçada inclinada e blindagem de canto substituível realçam a carroceria-cofre.
 		kit.box(Vector3(s*1.15,2.03,-2.047),Vector3(.08,.73,.12),Color("344744"),Basis(Vector3.RIGHT,-.12))
 		kit.box(Vector3(s*1.245,2.02,2.46),Vector3(.09,1.39,.24),Color("344744"))
 		kit.box(Vector3(s*1.248,2.68,.70),Vector3(.06,.11,3.75),Color("465d58"))
@@ -416,7 +416,7 @@ func open_flat_cab(half: float,front: float,rear: float,floor_y: float,belt_y: f
 	shell.box(Vector3(0,roof_y-.04,centerz),Vector3(half*2,.08,rear-front),Color.WHITE)
 	shell.box(Vector3(0,(roof_y+belt_y)*.5,rear-.025),Vector3(half*2,roof_y-belt_y,.05),Color.WHITE)
 	for s in [-1,1]:
-		# The tapered screen has space behind it; no opaque cuboid fills the cabin.
+		# A tela afunilada tem espaço atrás; nenhum cuboide opaco enche a cabine.
 		shell.box(Vector3(s*(half-.025),(roof_y+belt_y)*.5,rear-.09),Vector3(.06,roof_y-belt_y,.13),Color.WHITE)
 		shell.beam(Vector3(s*(half-.04),belt_y,front+.035),Vector3(s*(half-.04),roof_y,front+.20),.055,Color.WHITE)
 		kit.box(Vector3(s*(half+.015),belt_y+.015,centerz+.16),Vector3(.026,.04,.91),DARK)
@@ -427,7 +427,7 @@ func van_nose(half: float,front: float,screen: float,front_y: float,belt_y: floa
 	hood(shell,half*2,front,screen,front_y,belt_y)
 	shell.box(Vector3(0,.57,front+.026),Vector3(half*1.84,.40,.06),Color.WHITE)
 	for s in [-1,1]:
-		# Close the fender shoulder above the original front wheel cutout.
+		# Fecha o ombro do para-lama acima do recorte original da roda dianteira.
 		shell.box(Vector3(s*(half-.045),belt_y-.095,(front+rear)*.5),Vector3(.09,.18,rear-front),Color.WHITE)
 		shell.box(Vector3(s*(half-.10),belt_y-.33,(screen+rear)*.5),Vector3(.13,.47,rear-screen),Color.WHITE)
 		shell.beam(Vector3(s*(half-.105),belt_y,screen),Vector3(s*(half-.12),roof_y,screen+.24),.054,Color.WHITE)

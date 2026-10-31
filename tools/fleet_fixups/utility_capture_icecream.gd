@@ -1,6 +1,6 @@
 extends SceneTree
-## Showroom photograph of the production ice-cream attachment and saved courier.
-## Not a driving test or performance capture.
+## Fotografia de showroom do acessório de sorvete de produção e do entregador salvo.
+## Não é teste de direção nem captura de desempenho.
 class PhotoVan extends CharacterBody3D:
 	var visual: Node3D
 	var archetype := "courier_van"

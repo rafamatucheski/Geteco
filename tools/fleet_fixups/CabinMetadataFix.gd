@@ -1,7 +1,7 @@
 extends RefCounted
-## Offline authoring contract: measure the actual front cabin independently of
-## consolidated surfaces. Values from cabin-probe.json's unbatched glazing.
-## No geometry, materials, physics or opacity changes.
+## Contrato de autoria offline: mede a cabine dianteira real independentemente das
+## superfícies consolidadas. Valores do envidraçamento não agrupado do cabin-probe.json.
+## Nenhuma mudança de geometria, materiais, física ou opacidade.
 const SPECS := {
 	"medic_box": {"kind":"van", "floor":.32, "belt":1.01298892498016,
 		"roof":1.68701112270355, "hw":.944999992847443,

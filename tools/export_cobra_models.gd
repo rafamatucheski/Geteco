@@ -1,5 +1,5 @@
 extends SceneTree
-## Run with the ORIGINAL project as --path; writes only V2 standalone resources.
+## Rode com o projeto ORIGINAL como --path; grava só recursos independentes da V2.
 func _initialize() -> void: call_deferred("export_models")
 func export_models() -> void:
 	var scene := Node2D.new()

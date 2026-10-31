@@ -75,7 +75,7 @@ func finish(name_: String,mat: StandardMaterial3D=null) -> MeshInstance3D:
 func wheel(center: Vector3,r: float,w: float,style: String) -> void:
 	var side:=signf(center.x)
 	var n:=Vector3(side,0,0)
-	# Four tapered tyre bands use smooth radial normals and a 24-sided silhouette.
+	# Quatro faixas afuniladas de pneu usam normais radiais suaves e uma silhueta de 24 lados.
 	var profile: Array[Vector2]=[Vector2(-w*.5,r*.72),Vector2(-w*.5,r*.90),Vector2(-w*.37,r),Vector2(w*.37,r),Vector2(w*.5,r*.90),Vector2(w*.5,r*.72)]
 	for j in profile.size()-1:
 		for i in 24:

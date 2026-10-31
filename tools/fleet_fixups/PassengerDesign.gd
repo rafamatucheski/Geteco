@@ -39,8 +39,8 @@ func apply(target: Node3D, id: String, spec: Dictionary) -> void:
 	var paint: StandardMaterial3D
 	for part: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
 		if part.mesh == null: continue
-		# Open cockpits expose these already inexpensive seat backs. Simplifying
-		# a disconnected upholstery surface erased them in the first art capture.
+		# Cockpits abertos expõem estes encostos já baratos. Simplificar uma
+		# superfície de estofado desconectada os apagou na primeira captura de arte.
 		for index in part.mesh.get_surface_count():
 			var role: String=preload("res://runtime/VehicleSurfaceRoles.gd").key(part,index)
 			if "upholstery" in role or "leather" in role or "seat" in role: part.set_meta("batch_ratio",1.0)
@@ -62,7 +62,7 @@ func apply(target: Node3D, id: String, spec: Dictionary) -> void:
 		var radius := minf(center.y, maxf(bounds.size.y,bounds.size.z)*.5)
 		var width := clampf(bounds.size.x,.15,.29)
 		build_wheel(center,radius,width,int(profile.spokes),Color(profile.accent))
-		# The caliper belongs to the body, so the wheel never spins it.
+		# A pinça pertence à carroceria, então a roda nunca a gira.
 		active="PassengerDetails"
 		var sign_x := signf(center.x)
 		box("detail",center+Vector3(sign_x*width*.48,radius*.12,radius*.42),Vector3(.028,radius*.4,radius*.18),Color("a44f35") if profile.style in ["gt","muscle","supercar","touring_sport"] else Color("646c70"))
@@ -80,8 +80,8 @@ func apply(target: Node3D, id: String, spec: Dictionary) -> void:
 	model.set_meta("fleet_finish",true)
 
 func end_closure(z: float,width: float,edge_y: float,rise: float) -> void:
-	# Legacy end caps ended at the shoulder height, leaving the curved crown
-	# open. Match the ten segments of the authored shell and overlap by 1 mm.
+	# As tampas de ponta legadas terminavam na altura do ombro, deixando a coroa curva
+	# aberta. Combina com os dez segmentos da casca autoral e sobrepõe 1 mm.
 	active="PassengerDetails"
 	color=Color.WHITE
 	var outward:=Vector3(0,0,signf(z))
@@ -94,8 +94,8 @@ func end_closure(z: float,width: float,edge_y: float,rise: float) -> void:
 		quad("paint",Vector3(x0,edge_y-.002,plane),Vector3(x1,edge_y-.002,plane),Vector3(x1,h1,plane),Vector3(x0,h0,plane),outward)
 
 func refine_vertice_source() -> void:
-	# The legacy nose contains inward-facing skin ahead of the wheel opening.
-	# Repair its winding offline; retain small islands such as mirror housings.
+	# O nariz legado tem pele virada para dentro à frente da abertura da roda.
+	# Conserta o sentido dela offline; mantém ilhas pequenas como as carcaças dos retrovisores.
 	for part: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
 		if part.mesh==null or part.has_meta("wheel_center"): continue
 		var role: String=part.get_meta("vertice_midengine_material_key","")
@@ -114,8 +114,8 @@ func refine_vertice_source() -> void:
 					var center: Vector3=part.transform*((points[start]+points[start+1]+points[start+2])/3.0)
 					var normal: Vector3=part.transform.basis*(normals[start]+normals[start+1]+normals[start+2]).normalized()
 					if center.z>=-.75 or center.y<.3 or center.y>.85: continue
-					# Keep the concave wheel opening facing its cavity. The hood
-					# above it and the nose must face away from the body's axis.
+					# Mantém a abertura côncava da roda virada para a cavidade. O capô
+					# acima dela e o nariz precisam ficar virados para longe do eixo da carroceria.
 					if absf(center.x)>.55 and Vector2(center.y-.27,center.z+1.38).length()<.405: continue
 					if normal.dot(Vector3(center.x,center.y-.25,minf(center.z+1.7,0.0)))>=0: continue
 					for channel in [Mesh.ARRAY_VERTEX,Mesh.ARRAY_NORMAL,Mesh.ARRAY_COLOR,Mesh.ARRAY_TEX_UV,Mesh.ARRAY_TEX_UV2]:
@@ -224,7 +224,7 @@ func details(id: String,half: Vector3,bc: Vector3,wheels: Dictionary) -> void:
 	var rear:=bc.z+half.z-.032
 	var bumper_y:=.32 if sporty else .36
 	var span:=half.x*.78
-	# Low twin ducts suit the roadsters; sedans retain an upright machined grille.
+	# Dutos duplos baixos combinam com os roadsters; os sedãs mantêm uma grade usinada vertical.
 	if profile.style=="supercar":
 		for side in [-1.0,1.0]:
 			box("paint",Vector3(side*span*.46,bumper_y+.065,front+.012),Vector3(span*.79,.20,.05))
@@ -242,7 +242,7 @@ func details(id: String,half: Vector3,bc: Vector3,wheels: Dictionary) -> void:
 			for j in 4:
 				box("detail",Vector3(0,bumper_y+.12+j*.045,front-.027),Vector3(span*1.2,.012,.013),accent if not sporty else Color("46555e"))
 			if profile.grille=="split": box("detail",Vector3(0,bumper_y+.19,front-.036),Vector3(.065,.18,.028),accent)
-	# Lower lip is beveled across its ends instead of a flat projecting plank.
+	# O lábio inferior é chanfrado nas pontas em vez de uma tábua chapada saliente.
 	color=DARK
 	quad("detail",Vector3(-span,bumper_y-.08,front+.035),Vector3(span,bumper_y-.08,front+.035),Vector3(span*.9,bumper_y-.12,front-.008),Vector3(-span*.9,bumper_y-.12,front-.008),Vector3(0,-.3,-1))
 	color=Color.WHITE
@@ -250,14 +250,14 @@ func details(id: String,half: Vector3,bc: Vector3,wheels: Dictionary) -> void:
 	for side in [-1.0,1.0]:
 		box("detail",Vector3(side*span*.84,bumper_y+.075,front+.012),Vector3(span*.18,.105,.018),DARK)
 		for j in 2: box("detail",Vector3(side*span*.84,bumper_y+.045+j*.045,front-.001),Vector3(span*.14,.008,.013),METAL)
-		# Rear exhaust has a dark mouth and a satin rim, grouped with the body.
+		# O escapamento traseiro tem boca escura e aro acetinado, agrupado com a carroceria.
 		var outlet:=Vector3(side*span*.67,bumper_y-.06,rear-.01)
 		ring("detail",outlet,Vector3.RIGHT,Vector3.UP,.052,.038,Vector3.BACK,METAL,14)
 		ring("detail",outlet-Vector3(0,0,.005),Vector3.RIGHT,Vector3.UP,.038,0,Vector3.BACK,DARK,14)
 	box("detail",Vector3(0,bumper_y+.01,rear-.003),Vector3(span*1.65,.18,.02),DARK)
 	for x in [-.6,-.3,0.0,.3,.6]:
 		box("detail",Vector3(x*span,bumper_y-.035,rear+.004),Vector3(.018,.11,.034),accent if not sporty else Color("3b474f"))
-	# Simple lower body accents sit clear of the animated door leaf area.
+	# Detalhes simples na parte baixa da carroceria ficam longe da área da folha animada da porta.
 	var front_axle:=INF
 	var rear_axle:=-INF
 	var track:=0.0
@@ -269,8 +269,8 @@ func details(id: String,half: Vector3,bc: Vector3,wheels: Dictionary) -> void:
 		var x: float=side*minf(half.x-.12,track+.01)
 		box("detail",Vector3(x,.255,(front_axle+rear_axle)*.5),Vector3(.028,.08,rear_axle-front_axle-.65),DARK)
 		box("detail",Vector3(x+side*.016,.281,(front_axle+rear_axle)*.5),Vector3(.014,.015,rear_axle-front_axle-.73),accent)
-	# Distinct practical silhouettes for the touring/urban profiles; existing
-	# authored surfboard and taxi sign remain intact in the source geometry.
+	# Silhuetas práticas distintas para os perfis touring/urbano; a prancha de surfe
+	# e a placa de táxi autorais existentes continuam intactas na geometria-fonte.
 	if profile.style in ["touring","touring_sport","cross"]:
 		var top:=bc.y+half.y
 		var geometry:=preload("res://tools/fleet_fixups/FleetGeometry.gd").new(model)

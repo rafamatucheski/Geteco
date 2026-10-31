@@ -1,5 +1,5 @@
 extends SceneTree
-## Offline fitting pass. Does not alter production, wheels, doors or materials.
+## Passe de encaixe offline. Não altera produção, rodas, portas nem materiais.
 const OUT="res://artifacts/vehicle-fit-20261023/utility"
 const IDS=["ranch_pickup","ranch_single","boxrunner","toco_minitruck"]
 const METRICS=preload("res://tools/fleet_fixups/FleetBatchMesh.gd")
@@ -14,7 +14,7 @@ func quad(surface:int,a:Vector3,b:Vector3,c:Vector3,d:Vector3,normal:Vector3)->v
 	for p:Vector3 in points:extra[surface].append({"p":p,"n":normal.normalized()})
 
 func frame(surface:int,corners:Array,normal:Vector3)->void:
-	# All four strips share exact vertices with the inset pane.
+	# As quatro faixas compartilham vértices exatos com o vidro embutido.
 	for rect:Vector4 in [Vector4(0,1,0,.07),Vector4(0,1,.94,1),Vector4(0,.045,.07,.94),Vector4(.955,1,.07,.94)]:
 		var pts:Array=[]
 		for uv:Vector2 in [Vector2(rect.x,rect.z),Vector2(rect.y,rect.z),Vector2(rect.y,rect.w),Vector2(rect.x,rect.w)]:
@@ -28,25 +28,25 @@ func pane(corners:Array,normal:Vector3)->void:
 	quad(1,points[0],points[1],points[2],points[3],normal)
 
 func ranch()->void:
-	# Close the open cabin bulkhead beneath the rear window. The bed stays open.
+	# Fecha a antepara aberta da cabine sob o vidro traseiro. A caçamba fica aberta.
 	quad(0,Vector3(-.895,.44,.29),Vector3(.895,.44,.29),Vector3(.895,1.,.29),Vector3(-.895,1.,.29),Vector3.BACK)
 	quad(0,Vector3(-.895,.44,.278),Vector3(-.895,1.,.278),Vector3(.895,1.,.278),Vector3(.895,.44,.278),Vector3.FORWARD)
 	quad(0,Vector3(-.895,1.,.29),Vector3(.895,1.,.29),Vector3(.85,.97,.39),Vector3(-.85,.97,.39),Vector3.UP)
-	# The outer shoulder ends 10 mm short of the window belt. Fit it exactly.
+	# O ombro externo termina 10 mm antes da faixa da janela. Encaixa-o exatamente.
 	for side:float in [-1.,1.]:
 		quad(0,Vector3(side*.905,1.,-1.07),Vector3(side*.905,1.,.29),Vector3(side*.895,1.,.29),Vector3(side*.895,1.,-1.07),Vector3.UP)
 
 func toco()->void:
 	for side:float in [-1.,1.]:
-		# Fill the triangular upper fender where the tapered hood meets the cab.
+		# Preenche o para-lama superior triangular onde o capô afunilado encontra a cabine.
 		quad(0,Vector3(side*.8,1.,-2.09),Vector3(side*.8,1.,-1.89),Vector3(side*.775,1.,-1.89),Vector3(side*.8,1.,-2.09),Vector3.UP)
-	# Rear cab has no lower back wall in the export; close it above the chassis.
+	# A cabine traseira não tem parede de fundo baixa no export; fecha-a acima do chassi.
 	quad(0,Vector3(-.775,.35,-.52),Vector3(.775,.35,-.52),Vector3(.775,1.,-.52),Vector3(-.775,1.,-.52),Vector3.BACK)
 	quad(0,Vector3(-.775,.35,-.53),Vector3(-.775,1.,-.53),Vector3(.775,1.,-.53),Vector3(.775,.35,-.53),Vector3.FORWARD)
 
 func boxrunner()->void:
-	# The inherited panes were thick rotated boxes, overlapping the authored
-	# open cab. One fitted sheet per opening removes the protruding blue slabs.
+	# Os vidros herdados eram caixas grossas rotacionadas, sobrepostas à cabine
+	# aberta autoral. Uma chapa ajustada por abertura remove as placas azuis salientes.
 	var wind:Array=[Vector3(-1.02,1.115,-3.247),Vector3(1.02,1.115,-3.247),Vector3(1.02,1.94,-3.075),Vector3(-1.02,1.94,-3.075)]
 	frame(12,wind,Vector3(0,.2,-1))
 	pane(wind,Vector3(0,.2,-1))

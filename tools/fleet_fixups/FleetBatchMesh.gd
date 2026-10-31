@@ -1,6 +1,6 @@
 extends RefCounted
-## Offline mesh authoring only. Semantic surfaces remain available to paint,
-## doors, glass damage and equipment. No runtime simplification is installed.
+## Só autoria de malha offline. As superfícies semânticas continuam disponíveis para pintura,
+## portas, dano de vidro e equipamento. Nenhuma simplificação em runtime é instalada.
 const ROLES = preload("res://runtime/VehicleSurfaceRoles.gd")
 const PAINT = preload("res://runtime/VehiclePaint.gd")
 
@@ -100,8 +100,8 @@ static func bake(source: Node3D, budget_ratio: float=.25, archetype: String="") 
 		elif part.has_meta("batch_keep") or part.name in ["VaultDoorLeft","VaultDoorRight","VaultCargo"]:
 			group=str(part.name)
 		elif not door.is_empty():
-			# DoorBuilder transfers these complete objects to the leaf. Batching
-			# them into the hull would leave their top/bottom faces on the body.
+			# O DoorBuilder transfere estes objetos completos para a folha. Agrupá-los
+			# no casco deixaria as faces de cima/baixo deles na carroceria.
 			var bounds: AABB=part.transform*part.mesh.get_aabb()
 			var inside: bool=bounds.position.z>=float(door.zf)-.02 and bounds.end.z<=float(door.zr)+.02 and bounds.position.y>=float(door.sill)-.02 and bounds.end.y<=float(door.top)+.02
 			if inside and bounds.size.x<.6:
@@ -135,8 +135,8 @@ static func bake(source: Node3D, budget_ratio: float=.25, archetype: String="") 
 			var signature := str(original.get_instance_id())+":"+key
 			if original is StandardMaterial3D:
 				material=original.duplicate()
-				# Colour is geometry data for noninteractive trim; one material can
-				# draw black grilles, brushed alloy and small coloured details.
+				# A cor é dado de geometria para acabamento não interativo; um material pode
+				# desenhar grades pretas, liga escovada e pequenos detalhes coloridos.
 				var semantic := key=="paint" or key=="roof_paint" or "glass" in key or ROLES.is_headlight_lens(key) or ROLES.is_tail_lens(key) or key in ["bar_left","bar_right","rubber","tire","wheel_rubber"]
 				if not semantic and original.albedo_texture==null and not original.emission_enabled and original.transparency==BaseMaterial3D.TRANSPARENCY_DISABLED:
 					baked_color=original.albedo_color if original.vertex_color_is_srgb else original.albedo_color.srgb_to_linear()
@@ -148,8 +148,8 @@ static func bake(source: Node3D, budget_ratio: float=.25, archetype: String="") 
 					var property_name: String=property.name
 					if int(property.usage)&PROPERTY_USAGE_STORAGE and not property_name.begins_with("resource_") and property_name!="script": properties[property_name]=material.get(property_name)
 				signature=str(hash(properties))+":"+key
-			# Left/right headlight surfaces must remain separate: equipment gets
-			# projector and broken-lens sides from their respective bounds.
+			# As superfícies dos faróis esquerdo/direito precisam ficar separadas: o equipamento tira
+			# os lados do projetor e da lente quebrada dos respectivos limites.
 			if ROLES.is_headlight_lens(key):
 				signature += ":"+str(signf((part.transform*ROLES.center(part,surface)).x))
 			if not materials.has(signature): materials[signature]=material

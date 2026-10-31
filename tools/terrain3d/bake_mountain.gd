@@ -1,7 +1,7 @@
 extends SceneTree
-## Regenerate with Godot 4.7.2 .NET --headless --script this file.
-## Terrain3D's public importer/bake_mesh exports the tile. Support regions are
-## cropped. No native Terrain3D node is retained by the running game.
+## Regenere com Godot 4.7.2 .NET --headless --script neste arquivo.
+## O importer/bake_mesh público do Terrain3D exporta o ladrilho. As regiões de apoio são
+## recortadas. Nenhum nó nativo do Terrain3D fica retido pelo jogo rodando.
 const ORIGIN := Vector2(704,-448)
 func _initialize() -> void: call_deferred("run")
 
@@ -27,8 +27,8 @@ func run() -> void:
 	for v in baked.get_faces():
 		if v.x>=704 and v.x<=768 and v.z>=-448 and v.z<=-384:
 			exported[Vector2i(roundi(v.x),roundi(v.z))] = v
-	# Terrain3D alternates diagonals. Match the existing collider's diagonal
-	# without changing the exported vertex positions or height samples.
+	# O Terrain3D alterna as diagonais. Combina com a diagonal do colisor existente
+	# sem mudar as posições de vértice exportadas nem as amostras de altura.
 	var faces := PackedVector3Array()
 	for z in range(-448,-384):
 		for x in range(704,768):

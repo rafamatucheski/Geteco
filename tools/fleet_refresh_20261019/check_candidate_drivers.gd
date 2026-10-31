@@ -1,6 +1,6 @@
 extends "res://tests/test_seated_driver.gd"
-## Run the existing complete driver/hand/exit contracts against candidate scenes
-## without installing them or changing the production catalog on disk.
+## Roda os contratos completos existentes de motorista/mão/saída contra as cenas candidatas
+## sem instalá-las nem mudar o catálogo de produção no disco.
 func _initialize() -> void:
 	for id: String in preload("res://tools/fleet_refresh_20261019/build_current.gd").FAMILIES:
 		preload("res://runtime/RedesignedFleet.gd")._scenes[id]=load("res://artifacts/car-fleet-implementation-20261019/candidates/"+id+".scn")

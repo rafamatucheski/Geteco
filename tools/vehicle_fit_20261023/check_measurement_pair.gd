@@ -1,6 +1,6 @@
 extends "res://tools/vehicle_fit_20261023/measure_integrated.gd"
-## Check measurement fixture parity before spending a rendered ABBA block.
-## Does not certify visuals or FPS.
+## Confere a paridade dos fixtures de medição antes de gastar um bloco ABBA renderizado.
+## Não certifica visual nem FPS.
 func run() -> void:
 	world=Node3D.new()
 	root.add_child(world)

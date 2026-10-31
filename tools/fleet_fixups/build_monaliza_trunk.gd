@@ -1,6 +1,6 @@
 extends "res://tools/fleet_fixups/build_breakaway_prototype.gd"
-## Offline partition: the closed authored exterior is conserved, with a real
-## deck lid pivot and an opaque recessed bay. No per-frame mesh processing.
+## Partição offline: o exterior autoral fechado é conservado, com um pivô real
+## da tampa do porta-malas e um compartimento opaco embutido. Sem processamento de malha por quadro.
 const TRUNK_OUTPUT := "res://assets/fleet/interactive"
 const TRUNK_PIVOT := Vector3(0, .81, 1.425)
 const TRUNK_ZONE := AABB(Vector3(-.76, .70, 1.425), Vector3(1.52, .85, .78))
@@ -61,8 +61,8 @@ func partition_trunk(model: Node3D) -> Dictionary:
 				var base_role := role.get_slice("#", 0)
 				var eligible := base_role == "paint" and absf(normal.y) > .5
 				var zone := TRUNK_ZONE
-				# The rear spoiler and its vertical supports belong to the lid.
-				# Keep the rear-window frame ahead of them fixed to the cabin.
+				# O aerofólio traseiro e os suportes verticais dele pertencem à tampa.
+				# Mantém a moldura do vidro traseiro à frente deles presa à cabine.
 				if base_role in ["detail", "trim", "chrome"]:
 					eligible = true
 					zone = AABB(Vector3(-1.02, .72, 1.75), Vector3(2.04, .83, .37))

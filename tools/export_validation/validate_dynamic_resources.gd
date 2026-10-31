@@ -1,8 +1,8 @@
 extends SceneTree
 
-## Inventories production-time dynamic resources and validates the same paths from
-## either the source project or an exported PCK. This script is intentionally kept
-## outside production code and is excluded from the Windows package.
+## Inventaria os recursos dinâmicos de produção e valida os mesmos caminhos a partir
+## do projeto-fonte ou de um PCK exportado. Este script fica de propósito
+## fora do código de produção e é excluído do pacote Windows.
 
 const MANIFEST_VERSION := 1
 const JSON_PATHS := [

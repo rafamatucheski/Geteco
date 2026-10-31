@@ -1,6 +1,6 @@
 extends SceneTree
-## Patch root metadata only, preserving the baked exterior. Refuses to save if
-## the geometry/material fingerprint changes. Backups are never overwritten.
+## Corrige só os metadados da raiz, preservando o exterior do bake. Recusa salvar se
+## a impressão digital de geometria/material mudar. Backups nunca são sobrescritos.
 const FIX = preload("res://tools/fleet_fixups/CabinMetadataFix.gd")
 const BATCH = preload("res://tools/fleet_fixups/FleetBatchMesh.gd")
 const DIR = "res://evidence/fleet-redesign-20261011/validation/cabin-metadata-fix/"

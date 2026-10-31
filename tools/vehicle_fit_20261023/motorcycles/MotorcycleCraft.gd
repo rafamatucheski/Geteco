@@ -1,5 +1,5 @@
 extends "res://tools/fleet_fixups/PassengerDesign.gd"
-## Offline closed shells and wheelsets. No runtime code, lights or handling changes.
+## Cascas fechadas e jogos de rodas offline. Nenhuma mudança de código em runtime, luzes ou dirigibilidade.
 var id: String
 func apply_fit(target: Node3D,archetype: String) -> void:
 	model=target; id=archetype; groups.clear(); materials.clear()
@@ -32,8 +32,8 @@ func apply_fit(target: Node3D,archetype: String) -> void:
 		part.mesh=updated
 		part.material_override=null
 		part.set_meta("batch_surface_material_keys",keys)
-		# The rear brake and fender are static and share Body instead of creating
-		# an unnecessary rear steering group. Geometry and axle anchor stay put.
+		# O freio traseiro e o para-lama são estáticos e compartilham o Body em vez de criar
+		# um grupo de direção traseiro desnecessário. A geometria e a âncora do eixo ficam no lugar.
 		if part.has_meta("wheel_center") and (part.get_meta("wheel_center") as Vector3).z>0:
 			part.remove_meta("wheel_center"); part.remove_meta("wheel_spins")
 	materials["paint"]=paint_mat
@@ -68,7 +68,7 @@ func profile_point(s: Vector4,a: float) -> Vector3:
 func sport_shells() -> void:
 	# A closed tank with a rounded shoulder, neck and knee recess.
 	loft("paint",[Vector4(-.48,.075,.78,.91),Vector4(-.39,.18,.77,1.00),Vector4(-.24,.225,.76,1.075),Vector4(-.04,.22,.77,1.06),Vector4(.14,.135,.78,.94),Vector4(.21,.105,.79,.86)])
-	# Joined upper front and side shell replaces the disconnected block below.
+	# Casca superior dianteira e lateral unidas substitui o bloco desconectado de baixo.
 	loft("paint",[Vector4(-.696,.285,.81,1.03),Vector4(-.64,.285,.81,1.105),Vector4(-.53,.29,.69,1.10),Vector4(-.37,.275,.44,.94),Vector4(-.17,.285,.355,.83),Vector4(.12,.26,.36,.80),Vector4(.34,.15,.47,.79)])
 	# A tapered tail hugs the original saddle underside; lenses retain location.
 	loft("paint",[Vector4(.12,.135,.72,.785),Vector4(.37,.165,.73,.802),Vector4(.59,.118,.76,.81),Vector4(.64,.08,.767,.80)])
@@ -85,17 +85,17 @@ func cruiser_shells() -> void:
 	loft("paint",[Vector4(.57,.09,.745,.79),Vector4(.67,.18,.75,.84),Vector4(.84,.185,.75,.85),Vector4(.94,.12,.755,.815)],Color.WHITE,12)
 	cap(Vector3(0,.963,-.12),.043,.021)
 	for side in [-1.0,1.0]:
-		# Small touring cases have bevelled edges and sit on actual frame rails.
+		# Malas touring pequenas têm bordas chanfradas e ficam sobre trilhos reais do quadro.
 		loft("detail",[Vector4(.13,.065,.40,.67),Vector4(.20,.105,.355,.74),Vector4(.69,.105,.355,.74),Vector4(.78,.075,.40,.69)],Color("29333a"),12,Vector3(side*.245,0,0))
 		beam("detail",Vector3(side*.19,.72,.19),Vector3(side*.19,.72,.70),.025,Color("4d5a60"))
 		box("detail",Vector3(side*.352,.62,.45),Vector3(.012,.025,.07),Color("82959e"))
-		# Slim chrome knee trim follows the rounded flank instead of a floating box.
+		# Friso cromado fino do joelho segue o flanco arredondado em vez de uma caixa flutuando.
 		beam("detail",Vector3(side*.219,.825,-.18),Vector3(side*.215,.825,.04),.016,METAL)
 		beam("detail",Vector3(side*.17,.73,.64),Vector3(side*.17,.73,.88),.02,Color("4d5a60"))
 
 func urban_shells() -> void:
 	loft("paint",[Vector4(-.39,.055,.78,.86),Vector4(-.32,.145,.75,.95),Vector4(-.19,.185,.745,1.005),Vector4(.02,.175,.75,.98),Vector4(.14,.105,.765,.86)],Color.WHITE,12)
-	# Closed beveled side covers meet the saddle rails and conceal the battery.
+	# Tampas laterais chanfradas fechadas encontram os trilhos do selim e escondem a bateria.
 	for side in [-1.0,1.0]:
 		var sections: Array=[Vector4(.04,.135,.58,.77),Vector4(.12,.165,.52,.77),Vector4(.32,.145,.535,.76),Vector4(.41,.08,.60,.75)]
 		if side<0: loft("paint",sections)
@@ -111,7 +111,7 @@ func mounts() -> void:
 		var clamp: Vector3=Vector3(0,.9,-.50) if id=="bike_cruiser" else Vector3(0,.88,-.40)
 		for side in [-1.0,1.0]:
 			beam("detail",lamp+Vector3(side*.09,0,0),clamp+Vector3(side*.09,0,0),.025,Color("4e5c62"))
-	# Indicators and licence plate connect to the saddle frame with real stalks.
+	# Piscas e placa se ligam ao quadro do selim com hastes de verdade.
 	var tail_y: float=.66 if id=="bike_cruiser" else .74
 	for side in [-1.0,1.0]:
 		beam("detail",Vector3(side*.08,tail_y,.71),Vector3(side*.19,tail_y,.71),.018,Color("28343b"))
@@ -140,7 +140,7 @@ func wheelset(center: Vector3,source_width: float) -> void:
 			quad("wheel",face+u*radius*.16-v*radius*.06,face+u*radius*.16+v*radius*.06,face+u*radius*.67+v*radius*.035,face+u*radius*.67-v*radius*.035,Vector3(side,0,0))
 		ring("wheel",face+Vector3(side*.005,0,0),Vector3.UP,Vector3.BACK,radius*.19,0,Vector3(side,0,0),METAL,12)
 		ring("wheel",face-Vector3(side*.004,0,0),Vector3.UP,Vector3.BACK,radius*.53,radius*.24,Vector3(side,0,0),Color("7c8b93"),24)
-		# Ventilation holes are colour in the metal surface, behind the spokes.
+		# Os furos de ventilação são cor na superfície do metal, atrás dos raios.
 		for hole in 12:
 			var angle:=TAU*hole/12.0+.08
 			var at:=face-Vector3(side*.0035,0,0)+Vector3(0,sin(angle),cos(angle))*radius*.43
@@ -148,7 +148,7 @@ func wheelset(center: Vector3,source_width: float) -> void:
 	color=Color.WHITE
 
 func cap(base: Vector3,radius: float,height: float) -> void:
-	# The lower edge intersects the tank, eliminating the floating ring.
+	# A borda inferior cruza o tanque, eliminando o anel flutuando.
 	for k in 16:
 		var a:=TAU*k/16.0; var b:=TAU*(k+1)/16.0
 		var u:=Vector3(cos(a)*radius,0,sin(a)*radius)
@@ -172,8 +172,8 @@ func tire_quad(center: Vector3,u: Vector2,v: Vector2,a: float,b: float,width: fl
 		st.set_normal(normals[index]); st.set_color(color); st.set_uv(Vector2(points[index].z,points[index].y)); st.add_vertex(points[index])
 
 func remove_obsolete_cap(arrays: Array) -> Array:
-	# The former tank crown sat at y1.10. Its silver filler cap shares trim2
-	# with the engine; remove only that closed component, keeping the hardware.
+	# A coroa antiga do tanque ficava em y1.10. A tampa prateada de abastecimento compartilha trim2
+	# com o motor; remove só esse componente fechado, mantendo as peças.
 	var vertices: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
 	var old: PackedInt32Array=arrays[Mesh.ARRAY_INDEX]
 	var fresh:=PackedInt32Array()
@@ -196,9 +196,9 @@ func component_root(parents: PackedInt32Array,index: int) -> int:
 	return index
 
 func stow_stand(arrays: Array) -> Array:
-	# Find only the disconnected stand touching the floor. Reorient that solid
-	# around its own upper mounting face; all other trim, pivots and contacts
-	# are copied unchanged. The gameplay bike stays upright while parked.
+	# Encontra só o cavalete desconectado que toca o chão. Reorienta esse sólido
+	# em torno da própria face superior de montagem; todo o resto do acabamento, pivôs e contatos
+	# são copiados sem mudança. A moto do gameplay fica em pé enquanto estacionada.
 	var points: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
 	var indices: PackedInt32Array=arrays[Mesh.ARRAY_INDEX]
 	var parents:=PackedInt32Array(); parents.resize(points.size()); var welded:={}
@@ -224,8 +224,8 @@ func stow_stand(arrays: Array) -> Array:
 		if component_root(parents,i)!=selected: continue
 		center+=points[i]; count+=1
 	center/=float(count)
-	# Power iteration gives the shaft direction independently of node names
-	# and face tessellation. Choose the direction from the hinge to the foot.
+	# A iteração de potência dá a direção da haste independentemente dos nomes de nó
+	# e da tesselação das faces. Escolhe a direção da dobradiça para o pé.
 	var axis:=Vector3(-.22,-.335,.12).normalized()
 	for _iteration in 12:
 		var next:=Vector3.ZERO

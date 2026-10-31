@@ -1,10 +1,10 @@
 extends "res://tests/capture/capture_sport_coupe_redesign.gd"
-## Continuous rendered evidence for one fleet archetype in the real Main scene.
+## Evidência renderizada contínua de um arquétipo da frota na cena Main real.
 ## Godot .NET --script res://tests/capture/capture_fleet_redesign_temporal.gd --
 ## --no-save --skip-arrival --population=24 --id=police_cruiser --label=after
-## Run alone, after the independent benchmark. Encode with
-## tools/build_sport_coupe_review_video.py <the resulting folder>.
-## Every rendered frame is recorded; readback cadence is NOT gameplay performance.
+## Rode sozinho, depois do benchmark independente. Codifique com
+## tools/build_sport_coupe_review_video.py <a pasta resultante>.
+## Todo quadro renderizado é gravado; a cadência de leitura NÃO é desempenho de gameplay.
 
 const VEHICLE_SCENE := preload("res://scripts/Vehicle.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
@@ -168,14 +168,14 @@ func run_case() -> void:
 	while absf(car.speed) > .2 and Time.get_ticks_msec() < deadline and failures.is_empty(): await physics_frame
 	if not record_check(absf(car.speed) <= .2, "real service brake stops the target vehicle"):
 		await finish(); return
-	# The brake axis becomes reverse after stopping. Release it at zero speed and
-	# hold the real handbrake, matching normal controls and the reference capture.
+	# O eixo do freio vira ré depois de parar. Solta-o na velocidade zero e
+	# segura o freio de mão real, como nos controles normais e na captura de referência.
 	release_inputs()
 	Input.action_press("handbrake")
 	await hold(1.5)
-	# Native-resolution JPEG readback can yield fewer than ten frames in1.5s.
-	# Keep the same brake-state threshold; extend observation once, at most10s.
-	# This is a capture-coverage guard, independent of gameplay performance.
+	# A leitura em JPEG na resolução nativa pode render menos de dez quadros em1.5s.
+	# Mantém o mesmo limiar de estado do freio; estende a observação uma vez, no máximo10s.
+	# É uma proteção de cobertura da captura, independente do desempenho de gameplay.
 	var brake_observation_deadline := Time.get_ticks_msec()+10000
 	while braking_frames<10 and Time.get_ticks_msec()<brake_observation_deadline and failures.is_empty(): await process_frame
 	if not record_check(absf(car.speed) <= .2 and car.equipment._tail_state == 2, "handbrake keeps the vehicle stopped and rear brake lamps bright"):
@@ -207,8 +207,8 @@ func run_case() -> void:
 	await finish()
 
 func shot(snapshot_name: String) -> void:
-	# Select an actual continuous frame; export its PNG after recording. Synchronous
-	# PNG compression during the drive hid the brief service-brake transient.
+	# Escolhe um quadro contínuo real; exporta o PNG dele depois da gravação. A compressão
+	# PNG síncrona durante a direção escondia o transiente breve do freio de serviço.
 	await RenderingServer.frame_post_draw
 	if not rows.is_empty(): snapshot_sources[snapshot_name] = rows[-1].file
 

@@ -1,5 +1,5 @@
 extends SceneTree
-## Reproduce the Nord-only optimized asset without altering the legacy source.
+## Reproduz o asset otimizado só do Nord sem alterar a fonte legada.
 ## godot --headless --path . --script res://tools/fleet_fixups/bake_nord240.gd
 const SOURCE := "res://assets/fleet/nordic_estate.scn"
 const OUTPUT := "res://assets/fleet/nordic_estate_detail.scn"

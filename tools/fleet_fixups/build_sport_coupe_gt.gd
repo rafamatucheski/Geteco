@@ -1,6 +1,6 @@
 extends SceneTree
-## Offline, deterministic authoring. No geometry generation or detail loops at runtime.
-## Default writes a candidate. --install explicitly replaces the production asset.
+## Autoria offline e determinística. Nenhuma geração de geometria nem laço de detalhe em runtime.
+## Por padrão grava um candidato. --install substitui explicitamente o asset de produção.
 const OUTPUT := "res://assets/fleet/sport_coupe.scn"
 var groups := {}
 var model: Node3D
@@ -119,7 +119,7 @@ func body() -> void:
 		# Door is authored as a complete removable leaf, including glass and mirror.
 		active = "DoorL" if s < 0 else "DoorR"
 		outer_side(s,-.720,.800,true)
-		# The upper triangular shoulder connects narrow glazing to the broad body.
+		# O ombro triangular superior liga o vidro estreito à carroceria larga.
 		quad("paint",Vector3(s*.845,.815,-.720),Vector3(s*.845,.815,.800),Vector3(s*.765,.815,.32),Vector3(s*.75,.81,-.73),Vector3(s,1,0))
 		glazing([Vector3(s*.75,.81,-.73),Vector3(s*.765,.815,.32),Vector3(s*.60,1.25,.24),Vector3(s*.60,1.25,-.30)],Vector3(s,0,0))
 		# Thin interior return and finished door card, no overlapping external skin.
@@ -132,16 +132,16 @@ func body() -> void:
 		beam("detail",Vector3(s*.80,.85,-.61),Vector3(s*.96,.88,-.58),.037,DARK)
 		box("paint",Vector3(s*.982,.91,-.58),Vector3(.10,.095,.19))
 		box("detail",Vector3(s*.984,.91,-.479),Vector3(.075,.065,.009),METAL)
-		# Two quiet gold coachlines set into the dark rocker; geometry, no labels.
+		# Dois frisos dourados discretos na soleira escura; geometria, sem rótulos.
 		box("detail",Vector3(s*.882,.295,.04),Vector3(.012,.08,1.47),DARK)
 		box("detail",Vector3(s*.890,.32,.04),Vector3(.010,.011,1.40),GOLD)
 		active = "Shell"
-		# Recessed jambs behind the physical shutline: no daylight through the seam.
+		# Batentes embutidos atrás da junta física: nenhuma luz atravessa a emenda.
 		box("detail",Vector3(s*.846,.53,-.725),Vector3(.03,.57,.024),DARK)
 		box("detail",Vector3(s*.846,.53,.81),Vector3(.03,.57,.024),DARK)
 		glazing([Vector3(s*.765,.815,.33),Vector3(s*.82,.85,1.14),Vector3(s*.61,1.255,.61),Vector3(s*.60,1.25,.27)],Vector3(s,0,0))
 		quad("paint",Vector3(s*.845,.815,.81),Vector3(s*(width(1.17)-.055),belt(1.17),1.17),Vector3(s*.82,.85,1.14),Vector3(s*.765,.815,.33),Vector3(s,1,0))
-		# Wheel arch edging and three extraction slits on each rear shoulder.
+		# Borda da caixa de roda e três fendas de extração em cada ombro traseiro.
 		active = "Details"
 		for axle in [-1.28,1.22]:
 			for j in 16:
@@ -153,10 +153,10 @@ func body() -> void:
 		for j in 3:
 			var z := 1.72 + j*.082
 			box("detail",Vector3(s*(width(z)-.02),.72,z),Vector3(.018,.12,.037),DARK)
-		# Fixed calipers sit behind the wheel spokes, never spin with the tyre.
+		# Pinças fixas ficam atrás dos raios da roda, nunca giram com o pneu.
 		for z in [-1.28,1.22]: box("detail",Vector3(s*.986,.41,z+.145),Vector3(.024,.15,.077),Color("c35830"))
 	active = "Shell"
-	# Longitudinal hood strips; fenders flow into the wheel shoulders.
+	# Faixas longitudinais no capô; os para-lamas fluem para os ombros das rodas.
 	var zs := [-2.23,-2.12,-1.96,-1.80,-1.60,-1.40,-1.20,-1.0,-.85,-.73]
 	var xs := [-1.0,-.90,-.72,-.57,0.0,.57,.72,.90,1.0]
 	for j in zs.size()-1:
@@ -174,7 +174,7 @@ func body() -> void:
 		var za := lerpf(1.14,2.23,j/6.0)
 		var zb := lerpf(1.14,2.23,(j+1)/6.0)
 		quad("paint",Vector3(-(width(za)-.055),belt(za),za),Vector3(width(za)-.055,belt(za),za),Vector3(width(zb)-.055,belt(zb),zb),Vector3(-(width(zb)-.055),belt(zb),zb),Vector3.UP)
-	# Front and rear bumper painted corners with a recessed dark center.
+	# Cantos pintados dos para-choques dianteiro e traseiro com centro escuro embutido.
 	for front in [true,false]:
 		var z := -2.235 if front else 2.235
 		var n := Vector3.FORWARD if front else Vector3.BACK
@@ -201,7 +201,7 @@ func body() -> void:
 			var zb := lerpf(-2.10,-.78,(j+1)/7.0)
 			beam("detail",hood(s*.56,za)+Vector3.UP*.006,hood(s*.56,zb)+Vector3.UP*.006,.006,DARK)
 	box("detail",Vector3(0,.771,-1.93),Vector3(.047,.012,.069),GOLD)
-	# Engine grille with raised louvres and dark holes beneath.
+	# Grade do motor com aletas elevadas e furos escuros por baixo.
 	box("detail",Vector3(0,.884,1.64),Vector3(1.15,.018,.48),DARK)
 	for j in 9: box("detail",Vector3(0,.906,1.44+j*.046),Vector3(1.13,.018,.022),Color("40494c"))
 	# Sculpted ducktail, compact supports and contrasting trailing lip.
@@ -216,9 +216,9 @@ func body() -> void:
 	for x in [-.56,.56]:
 		box("detail",Vector3(x,.305,2.26),Vector3(.21,.105,.06),METAL)
 		box("detail",Vector3(x,.305,2.293),Vector3(.16,.065,.01),DARK)
-	# Wipers lie on the windshield; no floating cylinders.
+	# Os limpadores ficam sobre o para-brisa; nada de cilindros flutuando.
 	for x in [-.36,.30]: beam("detail",Vector3(x-.12,.855,-.685),Vector3(x+.21,.875,-.664),.013,DARK)
-	# Wheel tubs close the view through the car while keeping an actual arch gap.
+	# As caixas de roda fecham a vista através do carro mantendo um vão real no arco.
 	for s in [-1.0,1.0]:
 		for z in [-1.28,1.22]:
 			tint=DARK
@@ -252,8 +252,8 @@ func lamps() -> void:
 		var u := Vector3(.15,0,0)
 		var v := Vector3(0,.145,.103)
 		var n := Vector3(0,.58,-.82)
-		# A closed, painted nacelle seats the lens in the fender. The reverse
-		# camera sees bodywork, not the back of a floating emissive disc.
+		# Uma nacela fechada e pintada assenta a lente no para-lama. A câmera
+		# de ré vê lataria, não as costas de um disco emissivo flutuando.
 		active="Shell"
 		for i in 24:
 			var a:=TAU*i/24.0
@@ -271,7 +271,7 @@ func lamps() -> void:
 		active = "HeadlightL" if s < 0 else "HeadlightR"
 		ellipse("headlight",center+n*.005,u,v,.925,0,n,Color.WHITE)
 		active = "Details"
-		# Lens ribs are shallow and broad enough to stay stable at gameplay distance.
+		# As nervuras da lente são rasas e largas o bastante para ficarem estáveis na distância de gameplay.
 		for x in [-.065,0.0,.065]: beam("detail",center+Vector3(x,-.094,-.068)+n*.008,center+Vector3(x,.094,.068)+n*.008,.006,Color("9dafb4"))
 		box("detail",Vector3(s*.756,.562,-2.246),Vector3(.13,.038,.016),Color("b77637"))
 	active = "Tail"
@@ -309,7 +309,7 @@ func wheels() -> void:
 				tint = GOLD
 				quad("wheel",at+radial*.055-tangent*.035,at+radial*.055+tangent*.035,at+radial*.237+tangent*.026,at+radial*.237-tangent*.026,Vector3(s,0,0))
 				beam("wheel",at+radial*.105+Vector3(s*.003,0,0),at+radial*.212+Vector3(s*.003,0,0),.012,DARK)
-				# Lug bolts and rotor perforations are baked into the same draw.
+				# Parafusos de roda e furos do disco vão no bake da mesma draw.
 				ellipse("wheel",at+radial*.048,Vector3.UP,Vector3.BACK,.008,0,Vector3(s,0,0),METAL,6)
 			for j in 15:
 				var a := TAU*j/15.0
@@ -348,8 +348,8 @@ func material(key: String) -> StandardMaterial3D:
 	return m
 
 func soften(tool: SurfaceTool) -> SurfaceTool:
-	# Average coincident corners within 50 degrees. The body remains low polygon;
-	# smooth normals replace the dense tessellation formerly used for curves.
+	# Faz a média de cantos coincidentes dentro de 50 graus. A carroceria continua low poly;
+	# normais suaves substituem a tesselação densa usada antes para as curvas.
 	var mesh := tool.commit()
 	var arrays := mesh.surface_get_arrays(0)
 	var points: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]

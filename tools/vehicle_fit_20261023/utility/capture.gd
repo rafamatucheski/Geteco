@@ -1,5 +1,5 @@
 extends SceneTree
-## Fixed camera captures of production or reviewed candidate geometry.
+## Capturas de câmera fixa da geometria de produção ou dos candidatos revisados.
 const FLEET=preload("res://runtime/FleetCatalog.gd")
 const IDS=["ranch_pickup","ranch_single","nimbus_minivan","courier_van","boxrunner","mare_microvan","toco_minitruck"]
 const OUT="res://artifacts/vehicle-fit-20261023/utility"

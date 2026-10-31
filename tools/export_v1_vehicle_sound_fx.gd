@@ -1,5 +1,5 @@
 extends SceneTree
-## Run with the V1 project root to export its current procedural vehicle Foley.
+## Rode com a raiz do projeto V1 para exportar o Foley procedural atual dos veículos.
 const ENGINE := preload("res://audio/VehicleEngineSound.gd")
 
 func _initialize() -> void:

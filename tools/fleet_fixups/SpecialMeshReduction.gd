@@ -1,6 +1,6 @@
 extends RefCounted
-## Simplify connected islands independently so a small mirror, scoop or pane
-## cannot disappear to satisfy the triangle target of a much larger body.
+## Simplifica ilhas conectadas independentemente, para que um retrovisor, entrada de ar ou vidro pequeno
+## não suma para cumprir a meta de triângulos de uma carroceria bem maior.
 static func reduce(source: Mesh, ratio: float) -> ArrayMesh:
 	var result := ArrayMesh.new()
 	for surface in source.get_surface_count():

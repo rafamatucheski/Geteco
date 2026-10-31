@@ -1,6 +1,6 @@
 extends SceneTree
-## Candidate showroom with the same camera and lighting as the fleet review.
-## Authoring review only: gameplay, temporal lighting and FPS require Main.tscn.
+## Showroom de candidatos com a mesma câmera e iluminação da revisão da frota.
+## Só revisão de autoria: gameplay, iluminação temporal e FPS exigem Main.tscn.
 const MESH := preload("res://tools/fleet_fixups/FleetBatchMesh.gd")
 func _initialize() -> void: run.call_deferred()
 func run() -> void:

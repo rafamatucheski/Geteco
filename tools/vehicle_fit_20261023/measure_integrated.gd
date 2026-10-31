@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_sport_coupe_redesign.gd"
-## Vehicle fit comparison in actual Main; immutable originals and installed assets.
-## Target list is supplied by --ids=; authoring never runs during sampling.
+## Comparação de encaixe de veículo no Main real; originais imutáveis e assets instalados.
+## A lista de alvos vem de --ids=; a autoria nunca roda durante a amostragem.
 const FLEET_REFRESH := preload("res://runtime/FleetCatalog.gd")
 const BENCH_VEHICLE := preload("res://scripts/Vehicle.gd")
 var BASE_IDS := ["bike_sport","bike_cruiser","bike_urban","porto_rosso","beach_cabriolet","orbita_micro","vale_crossover","ranch_pickup","ranch_single","boxrunner","toco_minitruck"]
@@ -145,10 +145,10 @@ func prepare_refresh_pair() -> bool:
 		var body: CharacterBody3D=targets[index]
 		var path := "res://artifacts/vehicle-fit-20261023/baseline/assets/"+str(BASE_IDS[index])+".scn"
 		if not ResourceLoader.exists(path): return false
-		# Compare matching production stages. Raw .scn files still contain the
-		# obsolete baked motorcycle rider; Vehicle replaces it and reparents the
-		# wheels. Doors may also already be prepared by nearby Driving activity.
-		# A raw scene versus a ready Vehicle visual would bias the comparison.
+		# Compara estágios de produção equivalentes. Os .scn crus ainda contêm o
+		# piloto de moto obsoleto do bake; o Vehicle o substitui e troca o pai das
+		# rodas. As portas também podem já ter sido preparadas pela atividade de Driving próxima.
+		# Uma cena crua contra um visual de Vehicle pronto enviesaria a comparação.
 		if not body.archetype.begins_with("bike_"): body.finish_doors()
 		var old: Node3D=create_ready_baseline(body,path)
 		if old==null: return false

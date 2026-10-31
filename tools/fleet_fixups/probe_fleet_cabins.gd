@@ -1,6 +1,6 @@
 extends SceneTree
-## Read-only resource diagnostic: cabin inference before/after consolidation.
-## No scene writes, gameplay approval, rendering or performance measurement.
+## Diagnóstico de recurso só leitura: inferência de cabine antes/depois da consolidação.
+## Sem gravação de cena, aprovação de gameplay, renderização ou medição de desempenho.
 const VEHICLE = preload("res://scripts/Vehicle.gd")
 const FLEET = preload("res://runtime/FleetCatalog.gd")
 const REGISTRY = preload("res://runtime/RedesignedFleet.gd")

@@ -1,6 +1,6 @@
 extends SceneTree
-## Offline art pass. Retains wheel meshes/anchors and the chassis; replaces only the
-## Nimbus shell. Re-running produces the same shell without accumulating parts.
+## Passe de arte offline. Mantém as malhas/âncoras das rodas e o chassi; substitui só a
+## casca do Nimbus. Rodar de novo produz a mesma casca sem acumular peças.
 const PATH := "res://assets/fleet/nimbus_minivan.scn"
 var model: Node3D
 var batches := {}
@@ -68,7 +68,7 @@ func run() -> void:
 		if key == "rubber" and bounds.end.y < .32: continue
 		model.remove_child(child)
 		child.free()
-	# Continuous belt and sill with real wheel openings, not black rectangles.
+	# Faixa e soleira contínuas com aberturas de roda de verdade, não retângulos pretos.
 	var stations: Array[float] = [-2.46,-2.30,-2.10,-1.99,-1.95,-1.88,-1.78,-1.67,-1.55,-1.43,-1.32,-1.22,-1.15,-1.11,-.61,.30,1.04,1.08,1.15,1.25,1.36,1.48,1.60,1.71,1.81,1.88,1.92,2.05,2.24,2.42]
 	for side in [-1.0,1.0]:
 		for i in stations.size()-1:
@@ -86,13 +86,13 @@ func run() -> void:
 		box("trim",Vector3(side*.993,.65,.18),Vector3(.025,.065,1.65))
 		box("chrome",Vector3(side*1.005,.96,.18),Vector3(.014,.018,3.6))
 		for z in [-.76,.09]: box("chrome",Vector3(side*1.009,.90,z),Vector3(.045,.045,.17))
-		# Door shut lines below the windows, with a sliding track on the rear door.
+		# Linhas de junta das portas abaixo das janelas, com um trilho deslizante na porta traseira.
 		for z in [-.61,.94]: box("trim",Vector3(side*.995,.69,z),Vector3(.009,.49,.010))
 		box("trim",Vector3(side*.995,.90,1.43),Vector3(.012,.018,.83))
 		box("trim",Vector3(side*1.03,1.10,-1.64),Vector3(.17,.045,.055))
 		box("paint",Vector3(side*1.105,1.14,-1.65),Vector3(.19,.14,.20))
 		box("glass",Vector3(side*1.105,1.14,-1.544),Vector3(.15,.10,.008))
-	# Short sloping bonnet joins the windshield without the old projecting slabs.
+	# Capô curto e inclinado encontra o para-brisa sem as placas salientes antigas.
 	for i in range(3):
 		var za: float = [-2.46,-2.30,-2.10][i]
 		var zb: float = [-2.30,-2.10,-1.72][i]
@@ -109,7 +109,7 @@ func run() -> void:
 		quad("paint",Vector3(xs[i],1.74,2.05),Vector3(xs[i+1],1.74,2.05),Vector3(xs[i+1],ys[i+1],ze[i+1]),Vector3(xs[i],ys[i],ze[i]),Vector3.BACK)
 	var hatch_width := width(2.24)*.97
 	window_frame([Vector3(-hatch_width,1.03,2.24),Vector3(hatch_width,1.03,2.24),Vector3(.84,1.74,2.05),Vector3(-.84,1.74,2.05)],Vector3.BACK,.12)
-	# Rounded tail under the hatch, narrower glass and integrated vertical lights.
+	# Traseira arredondada sob a tampa, vidro mais estreito e lanternas verticais integradas.
 	quad("paint",Vector3(-.88,.40,2.42),Vector3(.88,.40,2.42),Vector3(.8536,1.03,2.42),Vector3(-.8536,1.03,2.42),Vector3.BACK)
 	quad("paint",Vector3(-.8536,1.03,2.42),Vector3(.8536,1.03,2.42),Vector3(hatch_width,1.03,2.24),Vector3(-hatch_width,1.03,2.24),Vector3.UP)
 	quad("paint",Vector3(-.83,.40,-2.46),Vector3(.83,.40,-2.46),Vector3(.8051,.86,-2.46),Vector3(-.8051,.86,-2.46),Vector3.FORWARD)

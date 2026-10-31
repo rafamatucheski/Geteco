@@ -1,7 +1,7 @@
 extends SceneTree
-## All three revised production motorcycles in actual Main.
-## Public boarding, input, wheelie, pause/menu, lowering and safe dismount.
-## Capture readbacks document motion and are not an FPS measurement.
+## As três motos de produção revisadas no Main de verdade.
+## Embarque público, entrada, empinada, pausa/menu, abaixamento e desmontagem segura.
+## As leituras da captura documentam movimento e não são medição de FPS.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const COURSE := preload("res://activities/motocross/MotocrossCourse.gd")
 var world
@@ -14,8 +14,8 @@ var target: Node3D
 var selected_ids: Array=["bike_sport","bike_cruiser","bike_urban"]
 var route_anchor:=Vector3(66,.1,129)
 func _initialize() -> void:
-	# Candidate mode changes only the model source; Main, Vehicle and Driving
-	# remain production code. Omit this flag to inspect installed assets.
+	# O modo candidato muda só a fonte do modelo; Main, Vehicle e Driving
+	# continuam código de produção. Omita esta flag para inspecionar os assets instalados.
 	if "--candidates" in OS.get_cmdline_user_args():
 		for id: String in ["bike_sport","bike_cruiser","bike_urban"]:
 			preload("res://runtime/RedesignedFleet.gd")._scenes[id]=load("res://artifacts/vehicle-fit-20261023/motorcycles/"+id+".scn")
@@ -62,8 +62,8 @@ func run() -> void:
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
 	current_scene = world
-	# Match the proven Main benchmark's ready-state contract. A frame count
-	# is not a startup deadline when renderer/prewarm cadence changes.
+	# Segue o contrato de estado pronto do benchmark do Main já comprovado. Uma contagem de quadros
+	# não é prazo de inicialização quando a cadência do renderizador/pré-aquecimento muda.
 	var startup_began := Time.get_ticks_msec()
 	var startup_deadline := startup_began+300000
 	var last_stage := ""
@@ -178,9 +178,9 @@ func run() -> void:
 	quit(0 if failures.is_empty() else 1)
 
 func admit_review_road(bike: CharacterBody3D) -> Dictionary:
-	# Same authored-segment admission used by the eight passing car flows.
-	# A nearest traffic curve can bend; projecting its first tangent for50m
-	# incorrectly hits the adjacent scenery. Keep city traffic active.
+	# Mesma admissão por segmento autoral usada pelos oito fluxos de carro que passam.
+	# A curva de trânsito mais próxima pode dobrar; projetar a primeira tangente por50m
+	# acerta indevidamente o cenário vizinho. Mantém o trânsito da cidade ativo.
 	var graph=world.production.ambient_traffic_routes
 	var candidates: Array[Dictionary]=[]
 	for segment in graph.segments:

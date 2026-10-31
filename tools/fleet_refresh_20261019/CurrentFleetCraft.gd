@@ -1,13 +1,13 @@
 extends "res://tools/fleet_fixups/PassengerDesign.gd"
-## Offline family wheels. Reuses semantic wheel/tire surfaces and the original
-## contact radius/pivots; no new runtime nodes, materials or lights.
+## Rodas de família offline. Reaproveita as superfícies semânticas de roda/pneu e o raio
+## de contato/pivôs originais; nenhum nó, material ou luz novo em runtime.
 func replace_wheels(target: Node3D, family: String) -> void:
 	model=target
 	groups.clear()
 	materials.clear()
 	if family=="work":
-		# The existing utility wheels already share rubber and steel in one
-		# vertex-colour surface. Keep that draw budget for the work family.
+		# As rodas utilitárias existentes já compartilham borracha e aço numa só
+		# superfície de cor de vértice. Mantém esse orçamento de draw para a família de trabalho.
 		var steel_rubber:=material("wheel")
 		steel_rubber.metallic=.20
 		steel_rubber.roughness=.68
@@ -42,8 +42,8 @@ func wheel(center: Vector3,radius: float,width: float,family: String) -> void:
 	var face := center+Vector3(side*width*.515,0,0)
 	var n:=Vector3(side,0,0)
 	var alloy:=Color("b1b9bb")
-	# Close the inward rim: steering exposes the inner face of the front
-	# wheels, so the tire must not read as an open tunnel through the axle.
+	# Fecha o aro interno: o esterçamento expõe a face interna das rodas
+	# dianteiras, então o pneu não pode parecer um túnel aberto através do eixo.
 	ring("wheel" if family=="work" else "tire",center-Vector3(side*width*.48,0,0),Vector3.UP,Vector3.BACK,radius*.70,0,-n,Color("262d31"),segments)
 	ring("wheel",face,Vector3.UP,Vector3.BACK,radius*.71,radius*.63,n,alloy,segments)
 	if family in ["popular","work"]:

@@ -1,6 +1,6 @@
 extends SceneTree
-## Offline extraction of complete damage panels from the current authored fleet.
-## Never overwrites the original presentation. No cutting runs during gameplay.
+## Extração offline de painéis de dano completos da frota autoral atual.
+## Nunca sobrescreve a apresentação original. Nenhum corte roda durante o gameplay.
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const OUTPUT := "res://assets/fleet/breakaway"
@@ -10,8 +10,8 @@ const SOURCES := {
 	"metro_hatch": "res://assets/fleet/redesigned/metro_hatch.scn",
 	"police_cruiser": "res://assets/fleet/redesigned/police_cruiser.scn",
 }
-## Per-model extraction regions isolate the engine cover and low bumper bodies;
-## lamps/glass, wheels and authored door leaves remain untouched. Model metres.
+## Regiões de extração por modelo isolam a tampa do motor e os corpos baixos do para-choque;
+## lanternas/vidros, rodas e folhas de porta autorais ficam intocados. Metros do modelo.
 const PROFILES := {
 	"sport_coupe": {"hood": AABB(Vector3(-.72,.70,-1.98),Vector3(1.44,.36,1.20)), "front": -2.12, "rear": 2.14, "bumper_top": .59},
 	"monaliza": {"hood": AABB(Vector3(-.73,.70,-2.06),Vector3(1.46,.46,1.25)), "front": -2.19, "rear": 2.17, "bumper_top": .64},
@@ -45,8 +45,8 @@ func run() -> void:
 			manifest = previous
 	for id: String in SOURCES:
 		if not only.is_empty() and id != only: continue
-		# The canonical factory also applies any model-specific finishing pass.
-		# VehiclePanelCatalog is selected by Vehicle, not by this factory.
+		# A fábrica canônica também aplica qualquer passe de acabamento específico do modelo.
+		# O VehiclePanelCatalog é escolhido pelo Vehicle, não por esta fábrica.
 		var model := FLEET.create(id)
 		if model == null: fail(id + " missing source"); continue
 		var report := prepare(model,id)
@@ -146,7 +146,7 @@ func prepare(model: Node3D, id: String) -> Dictionary:
 				rebuilt.add_surface_from_arrays(node.mesh.surface_get_primitive_type(surface),arrays)
 			else:
 				changed = true
-				# Convert split vertices back to the source node's local frame.
+				# Converte os vértices divididos de volta para o referencial local do nó-fonte.
 				var inverse := xf.affine_inverse()
 				for v: Array in keep:
 					v[0] = inverse * (v[0] as Vector3)
@@ -160,8 +160,8 @@ func prepare(model: Node3D, id: String) -> Dictionary:
 		if changed:
 			changed_nodes += 1
 			if rebuilt.get_surface_count() == 0: node.free(); continue
-			# Captured active materials are now on rebuilt; clear old overrides while
-			# their original surface indices are still valid, before compaction.
+			# Os materiais ativos capturados já estão no rebuilt; limpa as sobreposições antigas enquanto
+			# os índices de superfície originais ainda valem, antes da compactação.
 			for surface in node.get_surface_override_material_count(): node.set_surface_override_material(surface,null)
 			node.mesh = rebuilt
 			node.material_override = null
@@ -195,10 +195,10 @@ func prepare(model: Node3D, id: String) -> Dictionary:
 	report["geometry_after"] = count_geometry(model)
 	return report
 
-## The coupe author merges painted headlamp nacelles into Shell. A box alone
-## also extracts their inner halves. Select the actual bonnet skin using the
-## author's hood(u,z) surface (build_sport_coupe_gt.gd), keeping those lamp
-## supports and trim on the car. The authored crest is the one raised detail.
+## O autor do cupê mescla as nacelas pintadas dos faróis no Shell. Uma caixa sozinha
+## também extrai as metades internas delas. Seleciona a pele real do capô usando a
+## superfície hood(u,z) do autor (build_sport_coupe_gt.gd), mantendo esses suportes
+## de lanterna e o acabamento no carro. A crista autoral é o único detalhe elevado.
 func sport_hood_skin(polygon: Array, role: String) -> bool:
 	var crest := role.get_slice("#",0) == "detail"
 	for item: Array in polygon:

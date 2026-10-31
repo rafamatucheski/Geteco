@@ -210,8 +210,8 @@ func combat() -> void:
 	var gameplay = world.gameplay
 	var state = world.session.state
 	state.economy.activate_arsenal_cheat()
-	# Keep background traffic out of the staged fight's camera corridor.
-	# This affects this unsaved filming session only.
+	# Mantém o trânsito de fundo fora do corredor de câmera da luta encenada.
+	# Isso afeta só esta sessão de filmagem sem save.
 	for vehicle in world.production.vehicles:
 		if is_instance_valid(vehicle) and vehicle.traffic:
 			vehicle.set_physics_process(false)

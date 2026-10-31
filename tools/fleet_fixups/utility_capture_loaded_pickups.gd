@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Vehicle + VehicleUsage, photographed after the authored bed-floor fix.
-## A still-life integration view; this is not a driving/performance benchmark.
+## Vehicle + VehicleUsage reais, fotografados depois da correção autoral do piso da caçamba.
+## Uma vista estática de integração; não é benchmark de direção/desempenho.
 const IDS := ["ranch_single", "ranch_pickup", "lumber_pickup_4x4", "atlas_crew_pickup", "sertao_trail_pickup"]
 const USAGE := preload("res://runtime/VehicleUsage.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")

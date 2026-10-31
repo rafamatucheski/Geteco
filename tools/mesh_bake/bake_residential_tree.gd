@@ -1,5 +1,5 @@
 extends SceneTree
-## Offline bake: keep GPU mesh reads out of residential streaming.
+## Bake offline: mantém leituras de malha da GPU fora do streaming residencial.
 const OUTPUT := "res://assets/urban_detail/residential_tree.res"
 func _initialize() -> void: bake.call_deferred()
 func bake() -> void:

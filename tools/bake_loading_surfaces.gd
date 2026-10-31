@@ -1,5 +1,5 @@
 extends SceneTree
-## Authoring tool: bake the existing recipe without changing any pixel or mip.
+## Ferramenta de autoria: faz o bake da receita existente sem mudar nenhum pixel ou mip.
 const GROUND := preload("res://assets/regions/source/world/harbor/UrbanGround.gd")
 const SET := preload("res://world/shared/SurfaceTextureSet.gd")
 const OUT := "res://assets/materials/urban_ground_cache/"

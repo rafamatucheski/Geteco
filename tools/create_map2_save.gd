@@ -1,6 +1,6 @@
 extends SceneTree
-## Creates an authored chapter-start checkpoint; never replaces an occupied slot.
-## Run with --publish to install after validation; otherwise writes only to temp.
+## Cria um checkpoint autoral de início de capítulo; nunca substitui um slot ocupado.
+## Rode com --publish para instalar depois da validação; senão grava só no temp.
 const STATE = preload("res://runtime/GameState.gd")
 const STORE = preload("res://runtime/SaveStore.gd")
 const MISSIONS = preload("res://data/campaign/HarborMissions.gd")

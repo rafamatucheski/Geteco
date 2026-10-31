@@ -1,5 +1,5 @@
 extends "res://tools/capture_promo_20261007.gd"
-## Additional genuine gameplay takes for the expanded promotional edit.
+## Tomadas adicionais de gameplay real para a edição promocional ampliada.
 const PLACES = preload("res://world/places/PlaceCatalog.gd")
 const BUILDINGS = preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
 const NETWORK = preload("res://world/railway/RailwayNetwork.gd")
@@ -41,7 +41,7 @@ func walk_to(point: Vector3, limit := 180) -> bool:
 func walk_take(label: String, count := 150) -> void:
 	var start: Vector3 = world.player.global_position
 	var goal := start
-	# Select an actually clear short path in the current room or on the street.
+	# Escolhe um caminho curto realmente livre na sala atual ou na rua.
 	for direction in [Vector3.FORWARD,Vector3.RIGHT,Vector3.LEFT,Vector3.BACK]:
 		var candidate: Vector3 = start+direction*3.2
 		if not world.session.position_clear(candidate): continue

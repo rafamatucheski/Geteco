@@ -46,8 +46,8 @@ func run() -> void:
 		if not only.is_empty() and id!=only: continue
 		var source_path := EVIDENCE+"/original/"+id+".scn"
 		var model: Node3D
-		# User explicitly rejected the imported Meshy citycar. The new Metro is
-		# rebuilt from its clean authored hatch source; the snapshot stays intact.
+		# O usuário rejeitou explicitamente o citycar importado do Meshy. O novo Metro é
+		# reconstruído da fonte hatch autoral limpa; o snapshot fica intacto.
 		if id=="metro_hatch" and "--inventory" not in OS.get_cmdline_user_args():
 			model=(load("res://assets/fleet/metro_hatch.scn") as PackedScene).instantiate()
 			preload("res://runtime/VehicleFinish.gd").decorate(id,model)

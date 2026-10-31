@@ -1,5 +1,5 @@
 extends SceneTree
-## Offline corrections of actual production gaps. No runtime nodes or loops.
+## Correções offline de vãos reais de produção. Nenhum nó ou laço em runtime.
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const BATCH := preload("res://tools/fleet_fixups/FleetBatchMesh.gd")
@@ -27,8 +27,8 @@ func quad(a: Vector3,b: Vector3,c: Vector3,d: Vector3,n: Vector3,tint:=Color.WHI
 
 func roof_caps(id: String) -> void:
 	if id=="vale_crossover":
-		# The nose's old vertical cap stopped at the hood shoulder. Fill the
-		# actual .065 m crown above the grille, using its original ten spans.
+		# A tampa vertical antiga do nariz parava no ombro do capô. Preenche a
+		# coroa real de .065 m acima da grade, usando os dez vãos originais.
 		for i in 10:
 			var x0:=lerpf(-.60,.60,i/10.0)
 			var x1:=lerpf(-.60,.60,(i+1)/10.0)
@@ -41,8 +41,8 @@ func roof_caps(id: String) -> void:
 	var front:=-.56 if id=="orbita_micro" else -.66
 	var rear:=1.04 if id=="orbita_micro" else 1.36
 	var rise:=.09 if id=="orbita_micro" else .085
-	# Match the authored parabolic roof crown and the exact glass top edge.
-	# Each formerly open end now joins its whole edge, not just the pillars.
+	# Combina com a coroa parabólica autoral do teto e com a borda superior exata do vidro.
+	# Cada ponta antes aberta agora une a borda inteira, não só as colunas.
 	for z: float in [front,rear]:
 		var n:=Vector3.FORWARD if z==front else Vector3.BACK
 		for i in 10:
@@ -63,11 +63,11 @@ func liners(model: Node3D,id: String) -> void:
 		var box: AABB=wheels[center]
 		var radius:=maxf(box.size.y,box.size.z)*.5+.078
 		var side:=signf(center.x)
-		# This back wall sits well inside the full-lock envelope, and the
-		# curved liner remains outside the tire's diagonal sweep radius.
+		# Esta parede traseira fica bem dentro do envelope de esterçamento total, e o
+		# revestimento curvo fica fora do raio de varredura diagonal do pneu.
 		var inner_x:=side*maxf(.25,absf(center.x)-box.size.x*.5-.30)
-		# Sit just behind the tapered body skin. The well must reach the
-		# opening to block oblique daylight, without becoming an outer flare.
+		# Fica logo atrás da pele afunilada da carroceria. A caixa precisa chegar à
+		# abertura para bloquear a luz oblíqua, sem virar um alargador externo.
 		var outer_x:=center.x+side*.002 if id=="beach_cabriolet" else center.x-side*.045
 		var tint:=Color("171c20")
 		for i in 16:
@@ -79,7 +79,7 @@ func liners(model: Node3D,id: String) -> void:
 			var co:=Vector3(outer_x,center.y,center.z)
 			quad(ci+pa,ci+pb,co+pb,co+pa,-(pa+pb).normalized(),tint)
 			tri(ci,ci+pb,ci+pa,Vector3(side,0,0),tint)
-			# Rear face stops the opening showing through the opposite well.
+			# A face traseira impede que a abertura apareça pela caixa oposta.
 			tri(ci,ci+pa,ci+pb,Vector3(-side,0,0),tint)
 
 func repair_porto(mesh: Mesh,surface: int) -> Mesh:
@@ -94,8 +94,8 @@ func repair_porto(mesh: Mesh,surface: int) -> Mesh:
 		var c:=points[cursor+2]
 		var p:=(a+b+c)/3.0
 		var cross:=(b-a).cross(c-a)
-		# The rear quarter has one exterior skin; its sides were authored
-		# facing the axle. Preserve top deck, wheel tunnel, doors and mirrors.
+		# A lateral traseira tem uma única pele externa; os lados dela foram autorados
+		# virados para o eixo. Preserva o deque superior, o túnel da roda, as portas e os retrovisores.
 		if p.z<.79 or p.y>.86 or absf(p.x)<.70 or absf(cross.x)<cross.length()*.70 or cross.x*p.x<=0: continue
 		for channel in [Mesh.ARRAY_VERTEX,Mesh.ARRAY_NORMAL,Mesh.ARRAY_TEX_UV,Mesh.ARRAY_TEX_UV2,Mesh.ARRAY_COLOR]:
 			if arrays[channel]==null or arrays[channel].size()!=points.size(): continue
@@ -116,7 +116,7 @@ func run() -> void:
 	var report:={}
 	for id: String in IDS:
 		var baseline:="res://artifacts/vehicle-fit-20261023/baseline/assets/"+id+".scn"
-		# Read only immutable snapshots once the coordinator made them.
+		# Lê só snapshots imutáveis depois que o coordenador os criou.
 		var packed:=load(baseline if ResourceLoader.exists(baseline) else FLEET.spec(id).scene) as PackedScene
 		var model:=packed.instantiate() as Node3D
 		var before:=BATCH.counts(model)
@@ -137,8 +137,8 @@ func run() -> void:
 			tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 			if role=="paint" and id=="porto_rosso": tool.append_from(repair_porto(body.mesh,surface),0,Transform3D.IDENTITY)
 			else: tool.append_from(body.mesh,surface,Transform3D.IDENTITY)
-			# append_from retains the source index buffer; expand it before
-			# adding new corners so the final index() includes the closures.
+			# append_from mantém o buffer de índices da fonte; expande-o antes de
+			# acrescentar cantos novos para que o index() final inclua os fechamentos.
 			tool.deindex()
 			if role=="paint": roof_caps(id)
 			if surface==liner_surface: liners(model,id)

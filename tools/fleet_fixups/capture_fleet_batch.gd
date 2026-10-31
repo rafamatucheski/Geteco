@@ -1,5 +1,5 @@
 extends SceneTree
-## Photographs actual saved assets. This showroom does not certify gameplay/FPS.
+## Fotografa os assets salvos de verdade. Este showroom não certifica gameplay/FPS.
 const MESH=preload("res://tools/fleet_fixups/FleetBatchMesh.gd")
 var batch := "passenger"
 var variant := "before"
