@@ -1,5 +1,5 @@
 extends SceneTree
-## Rendered Main inspection of articulated cannon and actual crush collision.
+## Inspeção renderizada do Main com o canhão articulado e a colisão real de esmagamento.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 var output := "res://evidence/tank-control-20260928/"
 var world: Node3D
@@ -87,7 +87,7 @@ func run() -> void:
 		await physics_frame
 		if cannon.impact_count > 0: break
 	await photo("tank-impact")
-	# Reset only the test target, then let real move_and_slide climb its hull.
+	# Reinicia só o alvo do teste e deixa o move_and_slide real subir pelo casco.
 	target.repair()
 	target.place(tank.to_global(Vector3(0,.02,-7)),yaw)
 	target.horizontal_velocity = Vector3.ZERO

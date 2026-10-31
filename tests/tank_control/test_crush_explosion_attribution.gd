@@ -1,6 +1,6 @@
 extends SceneTree
-## Real Main/ProductionWorld, collision contact, native damage art and persistence.
-## This headless test asserts state and physical bodies; rendered art is separate.
+## Main/ProductionWorld reais, contato de colisão, arte nativa de dano e persistência.
+## Este teste headless confere estado e corpos físicos; a arte renderizada é à parte.
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const CRUSH := preload("res://gameplay/street_physics/HeavyVehicleCrush.gd")
 const FLEET_STATE := preload("res://runtime/FleetState.gd")
@@ -91,8 +91,8 @@ func run() -> void:
 		world.production.region.prepare_collision_at(candidate.point)
 		await settle()
 		if not world.dispatch._space_clear(Vector3(8.0,4.0,18.0),candidate.point,candidate.yaw,world.dispatch.no_exclusions): continue
-		# Road graph points lie on the surface. Dispatch also lifts vehicle
-		# spawn by .12 m; Production's exact hull admission needs that clearance.
+		# Os pontos do grafo de ruas ficam na superfície. O Dispatch também ergue o spawn
+		# do veículo em .12 m; a admissão exata do casco na Production precisa dessa folga.
 		spot = candidate.point+Vector3.UP*.12
 		yaw = candidate.yaw
 		break
@@ -153,7 +153,7 @@ func run() -> void:
 	victim.repair()
 	victim.set_physics_process(false)
 	check(victim.health == victim.max_health and victim.shape.shape == original_shape and not victim.engine_disabled,"restored wreck remains fully repairable")
-	# Real vehicles created by scripts may have no ProductionWorld handler.
+	# Veículos reais criados por scripts podem não ter handler do ProductionWorld.
 	var fallback := add_car("sport_coupe",spot+Vector3(0,15,0))
 	var fallback_id := fallback.get_instance_id()
 	tank.set_external_driver(true)
@@ -200,8 +200,8 @@ func run() -> void:
 	world.gameplay.explode(protected.global_position+Vector3.UP,3.0,1000.0,tank,false)
 	check(protected.health == protected.max_health and deaths[protected_id] == 0 and explosions[protected_id] == 0,"protected ancestor remains invulnerable to nearby explosion")
 	check(not charred(protected) and protected.shape.shape is BoxShape3D,"protected body's materials and collision remain intact")
-	# An isolated physical low ceiling in Main proves shape admission, without
-	# depending on furniture or changing an authored interior.
+	# Um teto baixo físico isolado no Main prova a admissão da forma, sem
+	# depender de mobília nem alterar um interior autoral.
 	var platform := spot+Vector3(0,90,0)
 	solid(platform-Vector3.UP*.1,Vector3(22,.2,22))
 	solid(platform+Vector3.UP,Vector3(10,.4,10))
