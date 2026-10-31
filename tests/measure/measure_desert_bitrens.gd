@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_desert.gd"
-## Focused art/performance review using Main, the ordinary camera and an isolated save.
+## Revisão focada de arte/desempenho usando o Main, a câmera comum e um save isolado.
 func run() -> void:
 	if DisplayServer.get_name()=="headless" or "--no-save" not in OS.get_cmdline_user_args() or not OS.get_environment("HARBOR_NO_CSHARP").is_empty():
 		quit(2); return
@@ -38,7 +38,7 @@ func run() -> void:
 	var valid := fingerprint==source_fingerprint(fingerprint)
 	var result := {"valid":valid,"engine":Engine.get_version_info().string,"gpu":RenderingServer.get_video_adapter_name(),"cpu":OS.get_processor_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"scenarios":reports,"source_sha256":fingerprint}
 	FileAccess.open(output.path_join("report.json"),FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))
-	# Inspection camera only AFTER the ordinary gameplay-camera measurements.
+	# Câmera de inspeção só DEPOIS das medições com a câmera de jogo comum.
 	world.session.weather.time_of_day=.43
 	world.session.weather._update()
 	var camera := Camera3D.new()

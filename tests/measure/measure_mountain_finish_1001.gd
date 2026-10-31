@@ -90,8 +90,8 @@ func run() -> void:
 		if original==null: push_error("Site missing "+site); quit(1); return
 		var parent := original.get_parent()
 		var transform := original.transform
-		# Only the changed object is swapped; final background, weather and population
-		# are common to both variants. This isolates geometry/placement runtime cost.
+		# Só o objeto alterado é trocado; fundo final, clima e população
+		# são comuns às duas variantes. Isto isola o custo de execução de geometria/posicionamento.
 		original.free()
 		for variant in ["before","after"]:
 			var script = (old_exit if site=="hideout" else (old_pad if site=="helipad" else old_lift)) if variant=="before" else (EXIT_SCRIPT if site=="hideout" else (PAD_SCRIPT if site=="helipad" else LIFT_SCRIPT))

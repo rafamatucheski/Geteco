@@ -1,8 +1,8 @@
 extends SceneTree
-## Finite ownership reproduction, one family per process; no Main or FPS claim.
-## Run .NET headless with --disable-crash-handler, --no-save and isolated storage.
-## On broken child ownership we write the report and intentionally do NOT free,
-## attach or reuse that graph: destructing a corrupted child map may crash natively.
+## Reprodução finita de posse, uma família por processo; sem Main nem afirmação de FPS.
+## Rode .NET headless com --disable-crash-handler, --no-save e armazenamento isolado.
+## Com a posse de filhos quebrada gravamos o relatório e de propósito NÃO liberamos,
+## anexamos nem reaproveitamos esse grafo: destruir um mapa de filhos corrompido pode quebrar no nativo.
 const HEAVY := preload("res://runtime/HeavyVehicleDetail.gd")
 const POLICE := preload("res://gameplay/police_response/ground/PoliceGroundModels.gd")
 const TRANSPORT := preload("res://gameplay/dispatch/PoliceTransportModel.gd")
@@ -15,7 +15,7 @@ const SOURCES := ["res://runtime/HeavyVehicleDetail.gd",
 	"res://gameplay/police_response/ground/PoliceGroundModels.gd",
 	"res://gameplay/dispatch/PoliceTransportModel.gd",
 	"res://tests/measure/test_fleet_child_name_collision.gd"]
-var packed: PackedScene # Keep the source alive, as ProductionWorld does.
+var packed: PackedScene # Mantém a origem viva, como o ProductionWorld faz.
 var family := "cargo"
 var checks := 0
 var failures: Array[String] = []

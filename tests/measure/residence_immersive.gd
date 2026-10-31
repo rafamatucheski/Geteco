@@ -69,6 +69,6 @@ func sample(id: String) -> void:
 		if value>66.7: very_slow+=1
 	results[id]={"samples_ms":rows,"frames":rows.size(),"seconds":(previous-start)/1000000.0,"fps":rows.size()*1000000.0/(previous-start),"p50":sorted[int(sorted.size()*.5)],"p95":sorted[int(sorted.size()*.95)],"p99":sorted[int(sorted.size()*.99)],"max":sorted.back(),"over_33":slow,"over_66":very_slow}
 	results[id].quality={"size":str(root.size),"msaa":root.msaa_3d,"scale":root.scaling_3d_scale}
-	# Preserve every completed sample if another diagnostic interrupts the run.
+	# Preserva toda amostra concluída se outro diagnóstico interromper a rodada.
 	FileAccess.open(DIRECTORY+"/"+label+".json",FileAccess.WRITE).store_string(JSON.stringify(results,"\t"))
 	print("HOME_SAMPLE ",label," ",id," fps=",results[id].fps," p95=",results[id].p95)

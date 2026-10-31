@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_harbor_idle_regression.gd"
-## Diagnostic only: every-frame script/native profile; receiver accumulates frames.
-## --native-profile-cap=2048 must match receiver --function-cap. Do not use --profile.
+## Só diagnóstico: perfil de script/nativo a cada quadro; o receptor acumula os quadros.
+## --native-profile-cap=2048 precisa bater com --function-cap do receptor. Não use --profile.
 var _native_cap := 2048
 var _native_started := 0
 var _native_stopped := 0

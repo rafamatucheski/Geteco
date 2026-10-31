@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Same rendered Main scene and six occupied motorcycles before/after.
+## Mesma cena renderizada do Main e seis motos ocupadas antes/depois.
 var variant := "before"
 var bikes: Array = []
 func run() -> void:

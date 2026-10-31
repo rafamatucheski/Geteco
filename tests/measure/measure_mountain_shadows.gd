@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Rendered 30-second production benchmark at the mountain village, without saves.
+## Benchmark de produção renderizado de 30 segundos na vila da montanha, sem saves.
 
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 var out_dir := ""

@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_desert.gd"
-## Main measurements follow the canyon's current approach, bridge and gate.
+## As medições no Main seguem a aproximação, a ponte e o portão atuais do cânion.
 const L := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 var failures: Array[String] = []
 var capture_only := false
@@ -101,8 +101,8 @@ func run() -> void:
 	quit(0 if failures.is_empty() else 1)
 
 func capture_motion(id: String) -> void:
-	# MovieWriter records every rendered frame at --fixed-fps 30. Its wall time
-	# and HUD FPS are recording overhead, never performance evidence.
+	# O MovieWriter grava todo quadro renderizado a --fixed-fps 30. O tempo de parede
+	# e o FPS do HUD dele são custo de gravação, nunca evidência de desempenho.
 	var first_frame := Engine.get_process_frames()
 	var elapsed := 0.0
 	var timeline: Array[Dictionary] = []

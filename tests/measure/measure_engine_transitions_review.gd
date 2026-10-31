@@ -1,8 +1,8 @@
 extends SceneTree
-## Rendered Main, normal driving camera, real boarding and engine-bus recording.
-## Derived from desert_car_audio_lights_session; omits screenshot I/O.
-## --no-save is mandatory. Captures engine-bus WAV and per-frame driving state;
-## this functional review is not a controlled before/after benchmark.
+## Main renderizado, câmera de direção normal, embarque real e gravação do bus do motor.
+## Derivado de desert_car_audio_lights_session; omite a E/S de capturas.
+## --no-save é obrigatório. Captura o WAV do bus do motor e o estado de direção por quadro;
+## esta revisão funcional não é um benchmark controlado de antes/depois.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 var world
 var car
@@ -72,7 +72,7 @@ func run() -> void:
 	world.session.weather.weather_timer = 3600
 	world.session.weather.time_of_day = .9
 	world.session.weather._update()
-	# Keep the normal world, population, weather and gameplay camera running.
+	# Mantém o mundo, a população, o clima e a câmera de jogo normais rodando.
 	AudioServer.add_bus()
 	meter_bus = AudioServer.bus_count-1
 	AudioServer.set_bus_name(meter_bus,"DesertAVCapture")

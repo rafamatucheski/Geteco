@@ -1,7 +1,7 @@
 extends SceneTree
-## Real Main, physical walk-up admission, first visit, 30 s steady room, revisit.
+## Main real, admissão física chegando a pé, primeira visita, 30 s de sala estável, revisita.
 ## --no-save --skip-arrival --benchmark --population=40 --label=before --evidence-dir=ABSOLUTE
-## --causal-headless is construction diagnosis only; never certifies FPS.
+## --causal-headless é só diagnóstico de construção; nunca certifica FPS.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SOURCE_PATHS := ["runtime/FullSession.gd", "world/places/NativePlace.gd", "world/places/AmmunationModel.gd", "assets/regions/source/guns/ammunation/AmmunationArt.gd", "assets/regions/source/scripts/player/WeaponFinish3D.gd", "runtime/WeaponShopEntrance.gd"]
 const COLUMNS := ["interval_ms", "process_ms", "physics_ms", "main_render_cpu_ms", "main_render_gpu_ms", "render_setup_cpu_ms", "draw_calls", "nodes"]
@@ -98,7 +98,7 @@ func _run() -> void:
 		return
 	context["interior_inventory"] = _inventory()
 	if not causal_headless:
-		# Save the screenshot before warm-up; disk readback is not a frame sample.
+		# Salva a captura antes do aquecimento; a leitura para disco não é amostra de quadro.
 		await _capture("first-inside")
 		room_walk = true
 		_begin("interior_warmup")
@@ -110,7 +110,7 @@ func _run() -> void:
 		room_walk = false
 		world.player.automatic_direction = Vector3.ZERO
 		await _capture("steady-inside")
-	# Use the same exit flow as gameplay, then retreat before walking back in.
+	# Usa o mesmo fluxo de saída do jogo e depois recua antes de entrar de novo a pé.
 	world.player.teleport(world.session.room.exit_position + Vector3(0, .08, -.95))
 	for _i in 3: await physics_frame
 	_begin("exit")

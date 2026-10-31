@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure.gd"
-## Main + native routing, fixed night street, three independent mobile sources.
-## --label=before/after; --temporal records every rendered frame separately.
+## Main + roteamento nativo, rua noturna fixa, três fontes móveis independentes.
+## --label=before/after; --temporal grava todo quadro renderizado à parte.
 const OUT := "res://evidence/mobile-lights-20261015"
 var temporal := false
 var only := ""
@@ -80,7 +80,7 @@ func run() -> void:
 		while Time.get_ticks_usec()-begin < 30000000:
 			if temporal:
 				var elapsed := float(Time.get_ticks_usec()-begin)/1000000.0
-				# Keep the first ten seconds static, then exercise real walking and zoom.
+				# Mantém os primeiros dez segundos parados, depois exercita caminhada e zoom reais.
 				if scenario != "car" and elapsed > 10.0:
 					world.player.automatic_direction = Vector3(sin(elapsed),0,cos(elapsed))
 				world.camera.target_size = 32.0 if elapsed < 20.0 else 32.0 + sin(elapsed)*4.0

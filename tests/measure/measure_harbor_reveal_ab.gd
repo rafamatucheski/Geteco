@@ -1,7 +1,7 @@
 extends "res://tests/measure/measure_harbor_idle_regression.gd"
-## Explicit diagnostic only: --reveal-ab-diagnostic --seconds=62 --no-save.
-## ON before inherited10s warm-up, ON30s, reported transition frame, OFF30s.
-## No logger/trace/quality/population changes. Normal runtime remains OFF afterward.
+## Só diagnóstico explícito: --reveal-ab-diagnostic --seconds=62 --no-save.
+## ON antes do aquecimento herdado de10s, ON30s, quadro de transição reportado, OFF30s.
+## Sem mudanças de logger/rastreio/qualidade/população. O runtime normal continua OFF depois.
 const REVEAL_SEGMENT_USEC := 30000000
 const REVEAL_WORK := preload("res://runtime/StallWorkTrace.gd")
 var _reveal_segments: Array[Dictionary] = []
@@ -51,7 +51,7 @@ func apply_load(now: int) -> void:
 	if _reveal_finished: return
 	if _reveal_current.is_empty():
 		if not _reveal_transition.is_empty():
-			# No sample is discarded: the whole interval applying OFF is reported here.
+			# Nenhuma amostra é descartada: o intervalo inteiro que aplica OFF é reportado aqui.
 			_reveal_transition.end_usec = now
 			_reveal_transition.frame_ms = float(now-int(_reveal_transition.start_usec))/1000.0
 			_reveal_transition.focused_end = DisplayServer.window_is_focused()

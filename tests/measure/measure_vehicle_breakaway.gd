@@ -87,7 +87,7 @@ func run() -> void:
 	check(is_instance_valid(target),"production traffic target created")
 	if not failures.is_empty(): quit(1); return
 	target.traffic=true
-	target.route=null # A stopped traffic car; vehicle physics and the common collision solver remain active.
+	target.route=null # Um carro de trânsito parado; a física do veículo e o solver de colisão comum continuam ativos.
 	target.set_physics_process(false)
 	world.camera.set_process(false)
 	frame_pair()
@@ -229,7 +229,7 @@ func timed_window(label: String, impacts: bool) -> void:
 		await process_frame
 		if impacts and Time.get_ticks_msec()>=next:
 			next+=5000
-			# Two collisions complete a damage cycle: bumpers first, then the hood.
+			# Duas colisões completam um ciclo de dano: primeiro os para-choques, depois o capô.
 			if count%2==0:
 				car.repair(); target.repair()
 			await strike(count,false)
@@ -253,7 +253,7 @@ func strike(index: int, frames: bool) -> void:
 	target.place(anchor-car.global_basis.z*11,yaw)
 	target.speed=0; target.horizontal_velocity=Vector3.ZERO
 	car.set_physics_process(true); target.set_physics_process(true)
-	# Settle the teleported fixtures on the actual street before a new physical trial.
+	# Assenta as fixtures teleportadas na rua real antes de uma nova tentativa física.
 	for frame in 12: await physics_frame
 	var start_pose:={"car":str(car.global_position),"traffic":str(target.global_position),"car_grounded":car.is_on_floor(),"traffic_grounded":target.is_on_floor()}
 	check(car.is_on_floor() and target.is_on_floor(),"trial starts on real floor "+str(index))

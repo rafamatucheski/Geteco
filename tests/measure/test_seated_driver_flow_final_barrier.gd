@@ -33,8 +33,8 @@ func run() -> void:
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
 	current_scene = world
-	# Restore publishes Session readiness briefly before startup settling/fade.
-	# Use the completed Main barrier; keep all subsequent flow assertions intact.
+	# O restore publica a prontidão da Session brevemente antes do assentamento/fade do início.
+	# Usa a barreira concluída do Main; mantém intactas todas as asserções de fluxo seguintes.
 	for i in 1500:
 		await process_frame
 		if world.production != null and world.production.ready_for_play and world.session != null and world.session.ready_for_play and not root.has_node("LoadingCurtain"): break

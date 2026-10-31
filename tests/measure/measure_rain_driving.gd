@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure.gd"
-## Rendered presentation A/B; actual player vehicle, handling, traffic and lights.
-## The legacy variant is injected only in this process; no production flag/save.
+## A/B renderizado de apresentação; veículo real do jogador, dirigibilidade, trânsito e luzes.
+## A variante legada é injetada só neste processo; sem flag/save de produção.
 class Probe extends Node:
 	var owner_probe
 	func _process(_delta: float) -> void: owner_probe.present()
@@ -66,8 +66,8 @@ func run() -> void:
 	weather.coastal_wetness = 1.0
 	weather.time_of_day = .93
 	car = world.driving.car
-	# Authored Foundry Avenue: a continuous 370m straight, no tight block-loop
-	# corners that can accumulate collisions and invalidate later A/B samples.
+	# Foundry Avenue autoral: uma reta contínua de 370m, sem esquinas fechadas de volta no quarteirão
+	# que possam acumular colisões e invalidar amostras A/B posteriores.
 	path = world.production.traffic_routes.route_between(Vector3(30,0,25),Vector3(400,0,25),Vector3.RIGHT)
 	if path==null: push_error("No authored avenue route"); quit(4); return
 	initial_offset = path.get_closest_offset(Vector3(35,0,25))
@@ -124,7 +124,7 @@ func run() -> void:
 			reset_car()
 			world.camera.initialized = false
 			running = true
-			# Settle weather and warm route/shaders separately from steady sample.
+			# Assenta o clima e aquece rota/shaders separado da amostra estável.
 			for i in 200: weather._update()
 			var warm := await sample(8.0)
 			var start_distance: float = car.distance_travelled

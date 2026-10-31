@@ -74,7 +74,7 @@ func _observe_heartbeat(heartbeat: Dictionary, unix_now: float, now: int) -> voi
 			return
 		if timestamp > _last_heartbeat_unix:
 			_last_heartbeat_unix = timestamp
-			# Re-reading the same file or a transient miss cannot renew this lease.
+			# Reler o mesmo arquivo ou uma falha passageira não pode renovar esta concessão.
 			_heartbeat_deadline_usec = now+int((3.0-maxf(age,0.0))*1000000.0)
 	if _heartbeat_deadline_usec == 0 or now >= _heartbeat_deadline_usec:
 		failure = "native_presentation_observer_missing_or_stale"

@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_desert.gd"
-## Main scene, normal live population and compiled C# routing. Run one process
-## at a time; the before phase intentionally needs no Curitiba Cellar scripts.
+## Cena do Main, população viva normal e roteamento C# compilado. Rode um processo
+## por vez; a fase de antes de propósito não precisa de scripts do Curitiba Cellar.
 const CELLAR_ID := "harbor_curitiba_cellar"
 const STREET_POINT := Vector3(136.5, .20, 18.3)
 var phase := "after"
@@ -126,7 +126,7 @@ func _measure_cellar(id: String) -> void:
 	print("CELLAR_CASE ", id, " ", JSON.stringify(reports[-1].summary))
 
 func _confirm_sequence() -> bool:
-	# Keep the last interior edit in the same finite rendered verification.
+	# Mantém a última edição do interior na mesma verificação renderizada finita.
 	if not await world.session.enter_place(CELLAR_ID,false):
 		push_error("Confirmation interior admission failed"); return false
 	await _warmup("confirm-interior")
@@ -138,8 +138,8 @@ func _confirm_sequence() -> bool:
 	world.player.teleport(STREET_POINT)
 	await _warmup("confirm-drunk")
 	await _measure_cellar("confirm-drunk")
-	# No new entry, teleport, population reset or camera changes between this pair.
-	# The one explicit variable is recovery; elapsed live simulation is logged.
+	# Nenhuma entrada nova, teleporte, reinício de população ou mudança de câmera neste par.
+	# A única variável explícita é a recuperação; a simulação viva decorrida é registrada.
 	world.session.wine.recover()
 	await _warmup("confirm-recovered")
 	await _measure_cellar("confirm-recovered")

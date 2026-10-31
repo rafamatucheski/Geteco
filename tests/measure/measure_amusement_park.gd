@@ -91,8 +91,8 @@ func run() -> void:
 		if not park.start_ride(): push_error("Could not start coaster"); quit(6); return
 		await sample("ride",30)
 		await capture("ride")
-		# Inspect the downward view separately; capture/readback never enters the
-		# performance sample above. The climbing frame alone cannot reveal gaps.
+		# Inspeciona a vista para baixo à parte; captura/leitura nunca entra na
+		# amostra de desempenho acima. Só o trepa-trepa não consegue revelar vãos.
 		park.leave()
 		if not park.start_ride(): push_error("Could not repeat coaster for summit view"); quit(8); return
 		var summit_deadline := Time.get_ticks_msec()+60000

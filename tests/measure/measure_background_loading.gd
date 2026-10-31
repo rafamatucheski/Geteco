@@ -20,7 +20,7 @@ func run() -> void:
 	while not is_instance_valid(world.production) or not world.production.startup_streaming_settled or world.session == null or not world.session.ready_for_play:
 		await process_frame
 		if Time.get_ticks_usec()-begin > 180000000: push_error("STARTUP_TIMEOUT"); quit(3); return
-	# Wait for the curtain to release input, not the earlier population-ready flag.
+	# Espera a cortina liberar a entrada, não a flag anterior de população pronta.
 	while world.player.controlled_automatically:
 		await process_frame
 		if Time.get_ticks_usec()-begin > 180000000: quit(4); return

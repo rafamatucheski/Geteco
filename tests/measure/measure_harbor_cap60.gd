@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_harbor_idle_regression.gd"
-## Explicit diagnostic: cap60 before warm-up, never write Settings or user files.
-## All other Main behavior, physics60/max3, graphics and population stay intact.
+## Diagnóstico explícito: cap60 antes do aquecimento, nunca grava Settings nem arquivos do usuário.
+## Todo o resto do comportamento do Main, physics60/max3, gráficos e população ficam intactos.
 const CAP_WORK := preload("res://runtime/StallWorkTrace.gd")
 var _cap_original := -1
 var _cap_applied_usec := 0
@@ -39,7 +39,7 @@ func settle_load() -> bool:
 	_cap_trace = {"work":CAP_WORK.enabled,"world":world.get_meta("benchmark_trace",false),
 		"interpolation":physics_interpolation,"vsync":DisplayServer.window_get_vsync_mode(),
 		"low_processor_usage_mode":OS.low_processor_usage_mode}
-	# Setup only, before inherited native presentation gate and >=10s warm-up.
+	# Só preparação, antes do portão herdado de apresentação nativa e do aquecimento de >=10s.
 	_cap_applied_usec = Time.get_ticks_usec()
 	Engine.max_fps = 60
 	print("CAP60_DIAGNOSTIC_APPLIED ",JSON.stringify({"original":_cap_original,"temporary":Engine.max_fps,"engine_usec":_cap_applied_usec}))

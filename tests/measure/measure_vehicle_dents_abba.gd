@@ -1,7 +1,7 @@
 extends "res://tests/measure/measure_desert.gd"
-## ABBA within one live city avoids different population/startup states between
-## separate processes. All directors remain active. Each event includes repair
-## then a fresh real receive_impact: geometry rebuilds never saturate the sample.
+## ABBA dentro de uma cidade viva só evita estados diferentes de população/início entre
+## processos separados. Todos os diretores ficam ativos. Cada evento inclui reparo
+## e então um receive_impact real novo: reconstruções de geometria nunca saturam a amostra.
 class ToggleDents extends "res://gameplay/vehicle_effects/VehicleBodyDents.gd":
 	var enabled := false
 	func impact(amount: float, point: Vector3, contact_inward := Vector3.ZERO) -> void:

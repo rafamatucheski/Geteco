@@ -73,7 +73,7 @@ func run() -> void:
 		print("MOUNTAIN_VISUAL_CAPTURE_COMPLETE")
 		quit()
 		return
-	# Continuous camera sweep across summit chunk edges, same route before/after.
+	# Varredura contínua de câmera pelas bordas dos chunks do cume, mesma rota antes/depois.
 	var start_point: Vector3 = sites.get("summit",sites.values()[0])
 	if "--temporal" in OS.get_cmdline_user_args() and "--only-sawmill" not in OS.get_cmdline_user_args(): start_point = Vector3(751,0,-488)
 	place(start_point)

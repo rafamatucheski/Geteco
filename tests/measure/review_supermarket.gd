@@ -66,7 +66,7 @@ func run() -> void:
 	await frames(240)
 	await shot("exterior")
 	if "--before" in OS.get_cmdline_user_args(): quit(); return
-	# Approach on foot: the production door controller owns admission.
+	# Aproxima-se a pé: o controlador de porta de produção cuida da admissão.
 	world.player.automatic_direction = Vector3.FORWARD
 	for i in 900:
 		await physics_frame

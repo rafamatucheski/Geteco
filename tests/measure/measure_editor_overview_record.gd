@@ -1,5 +1,5 @@
 extends SceneTree
-## Standalone attribution harness. Does not alter the production canvas or authored world.
+## Arnês de atribuição independente. Não altera o canvas de produção nem o mundo autoral.
 const UI := preload("res://addons/geteco_world_editor/WorldEditor.gd")
 const DATA := preload("res://world/editing/WorldEditData.gd")
 
@@ -43,8 +43,8 @@ func run() -> void:
 	editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	editor._switch_region("harbor")
 	editor._set_view_mode(0)
-	# Copy only script state into an instrumented subtype before its first draw.
-	# Object tables/meshes retain the exact production data; no fullmap reconstruction.
+	# Copia só o estado do script para um subtipo instrumentado antes do primeiro desenho.
+	# Tabelas de objetos/malhas mantêm os dados exatos de produção; sem reconstrução do mapa inteiro.
 	var original: Control = editor.canvas
 	var canvas := ProfileCanvas.new()
 	for property in original.get_property_list():

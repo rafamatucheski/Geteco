@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_desert.gd"
-## Identical real Main scene before/after, 30 s idle + 30 s repeated impacts.
+## Cena real do Main idêntica antes/depois, 30 s parado + 30 s de impactos repetidos.
 var baseline := false
 var car: CharacterBody3D
 func run() -> void:

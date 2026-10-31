@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_sport_coupe_redesign.gd"
-## Finite visual ABBA: ten real parked vehicles in active Main, same bodies and
-## city. Only their visible models change. Does not claim ten-car racing cost.
+## ABBA visual finito: dez veículos reais estacionados no Main ativo, mesmos corpos e
+## cidade. Só os modelos visíveis mudam. Não afirma o custo de uma corrida com dez carros.
 const IDS := ["aurora_executive","monaliza","muscle_classic","sedan_classic","station_wagon","porto_rosso","arctic_jeep","courier_van","police_cruiser","medic_box"]
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const PAINT := preload("res://runtime/VehiclePaint.gd")
@@ -49,8 +49,8 @@ func run() -> void:
 		if world.session!=null and world.session.ready_for_play: break
 	if world.session==null or not world.session.ready_for_play or not world.production.no_save:
 		push_error("Isolated Main did not become ready"); quit(3); return
-	# Video settings autoload is now fully applied; retain the effective normal
-	# settings before disabling their pacing for this process's diagnostic.
+	# O autoload de configurações de vídeo já está totalmente aplicado; guarda as configurações
+	# normais efetivas antes de desligar o ritmo delas para o diagnóstico deste processo.
 	normal_cap=Engine.max_fps if Engine.max_fps>0 else normal_cap
 	normal_vsync=DisplayServer.window_get_vsync_mode() if DisplayServer.window_get_vsync_mode()!=0 else normal_vsync
 	Engine.max_fps=0
@@ -85,7 +85,7 @@ func run() -> void:
 		world.free(); quit(4); return
 	car=targets[0].body
 	car_origin=car.global_position
-	# Keep the photographed composition fixed; the camera controller is locked.
+	# Mantém fixa a composição fotografada; o controlador da câmera fica travado.
 	world.player.teleport(Vector3(147,.05,111.3))
 	for target in targets:
 		target.origin=target.body.global_position
@@ -106,8 +106,8 @@ func run() -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(folder+"/ten-cars-prepared.png")
 	print("FLEET_BENCH_PREPARED ",JSON.stringify(fixture))
-	# Let normal traffic/population reach its regular operating load. No AI,
-	# collision, streaming, lights or shadows are disabled to make this cheaper.
+	# Deixa o trânsito/população normais chegarem à carga regular de operação. Nenhuma IA,
+	# colisão, streaming, luz ou sombra é desligada para baratear isto.
 	warm_deadline=Time.get_ticks_msec()+60000
 	while Time.get_ticks_msec()<warm_deadline: await process_frame
 	for target in targets:
@@ -174,8 +174,8 @@ func place_targets() -> bool:
 		body.external_input=true
 		body.throttle_input=0.0
 		body.brake_input=true
-		# Keep the real spawn paint, including the white police/medical livery.
-		# The baseline presentation below receives this same per-vehicle color.
+		# Mantém a pintura real de spawn, incluindo a pintura branca de polícia/médica.
+		# A apresentação de linha de base abaixo recebe esta mesma cor por veículo.
 		body.ensure_equipment(world)
 		var row: Dictionary=manifest.vehicles[id]
 		var before_path := "res://evidence/fleet-redesign-20261011/"+str(row.group)+"/original/"+id+".scn"
@@ -207,9 +207,9 @@ func place_targets() -> bool:
 func wait_stable_window() -> bool:
 	if background_run:
 		expected_focus_mode="unfocused"
-		# Windows can leave a newly created window focused even after NO_FOCUS
-		# is set. Release it once, before any sample, then restore the same size.
-		# No minimized frame is accepted by wait_background_ready/scenario.
+		# O Windows pode deixar uma janela recém-criada com foco mesmo depois de NO_FOCUS
+		# ser definido. Solta-o uma vez, antes de qualquer amostra, e restaura o mesmo tamanho.
+		# Nenhum quadro minimizado é aceito por wait_background_ready/scenario.
 		if DisplayServer.window_is_focused():
 			var sample_size := DisplayServer.window_get_size()
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MINIMIZED)

@@ -17,7 +17,7 @@ func run() -> void:
 	var session = world.session
 	preload("res://tests/fixtures/TravelBagScene.gd").complete_through(session,"primeiro_giro")
 	session.personal_car.refresh()
-	# Same earned backpack in both revisions; baseline predates the mission award.
+	# Mesma mochila conquistada nas duas revisões; a linha de base é anterior ao prêmio da missão.
 	if session.state.economy.grid_snapshot().bag == "": session.state.economy.grid_equip_bag("backpack")
 	gameplay = world.gameplay
 	gameplay.god_mode = true

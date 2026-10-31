@@ -43,8 +43,8 @@ func run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--label="): label = arg.trim_prefix("--label=")
 	folder = FIXTURE.output_dir("coastal-lookout-"+label)
-	# Start at the existing Maciota return, outside scenic residency. The first
-	# approach below includes construction of this feature, not a prebuilt site.
+	# Começa no retorno existente do Maciota, fora da residência cênica. A primeira
+	# aproximação abaixo inclui a construção deste recurso, não um local pré-montado.
 	var snapshot := FIXTURE.full_snapshot(Vector3(166,.08,112.8),false)
 	snapshot.world.time = .45
 	snapshot.world.weather = 0
@@ -65,8 +65,8 @@ func run() -> void:
 	world.session.weather.weather_state = 0
 	world.session.weather.weather_timer = 9999
 	world.session.weather._update()
-	# --skip-arrival deliberately returns to Maciota; establish the measured site
-	# after that productive startup flow, never assume fixture coordinates survived.
+	# --skip-arrival volta de propósito ao Maciota; estabelece o local medido
+	# depois desse fluxo produtivo de início, nunca supõe que coordenadas da fixture sobreviveram.
 	var entry := Vector3(319.5,.1,-130.5)
 	world.production.region.set_focus(entry)
 	world.production.region.prepare_collision_at(entry)
@@ -85,8 +85,8 @@ func run() -> void:
 	world.add_child(overview)
 	overview.global_position = Vector3(350,43,-128)
 	overview.look_at(Vector3(303,5,-190))
-	# The diagnostic overview uses panorama distances rather than Harbor's 75m
-	# orthographic haze. Identical environment on both sides of the A/B.
+	# A visão geral de diagnóstico usa distâncias de panorama em vez da névoa ortográfica
+	# de 75m do Harbor. Ambiente idêntico dos dois lados do A/B.
 	overview.environment = world.production.environment.environment.duplicate(true)
 	overview.environment.fog_depth_begin = 150
 	overview.environment.fog_depth_end = 2400

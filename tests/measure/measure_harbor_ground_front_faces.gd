@@ -1,13 +1,13 @@
 extends "res://tests/measure/measure_harbor_ground_layers.gd"
-## Diagnostic counterpart: clockwise Godot top faces have a negative Y cross.
-## The original census intentionally sees both sides; never compare their totals
-## as before/after performance or claim every retained face is outdoor pavement.
+## Contraparte de diagnóstico: faces de cima no sentido horário do Godot têm produto vetorial Y negativo.
+## O censo original vê de propósito os dois lados; nunca compare os totais deles
+## como desempenho de antes/depois nem afirme que toda face mantida é calçamento externo.
 var reported := {}
 
 func _scan(chunk: Node3D) -> void:
 	super._scan(chunk)
-	# Report the complete two requested pairs, even when they disappear below
-	# the inherited report's top-40 cutoff. Their footprints fit one chunk each.
+	# Reporta os dois pares pedidos completos, mesmo quando somem abaixo
+	# do corte top-40 do relatório herdado. As áreas deles cabem num chunk cada.
 	for target in ["AmmunationFacade3D", "CemeteryHouseExterior3D"]:
 		var present := false
 		for node in chunk.find_children("*", "MeshInstance3D", true, false):

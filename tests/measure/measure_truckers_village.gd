@@ -8,8 +8,8 @@ func run() -> void:
 		if arg.begins_with("--variant="): variant = arg.trim_prefix("--variant=").validate_filename()
 	seed(28092026)
 	if "--redesign-baseline" in OS.get_cmdline_user_args():
-		# Exact saved pre-redesign source, reconstructed only in this process.
-		# Never rewrites shared project files to obtain the control measurement.
+		# Código exato salvo de antes do redesenho, reconstruído só neste processo.
+		# Nunca reescreve arquivos compartilhados do projeto para obter a medição de controle.
 		var folder := "res://evidence/truckers-village-20260928/redesign-baseline-source/"
 		for path in ["res://gameplay/urban_v1/FreightOutskirts.gd","res://gameplay/urban_v1/TruckersVillageVisuals.gd","res://world/urban_detail/HarborRoadGeometry3D.gd"]:
 			var source: GDScript = load(path)
@@ -17,8 +17,8 @@ func run() -> void:
 			if source.reload(true) != OK: quit(4); return
 			_baseline_sources.append(source)
 		Engine.set_meta("geteco_world_edit_document",JSON.parse_string(FileAccess.get_file_as_string(folder+"world_edits.json")))
-		# The original village had its stationary V1 actor and no resident manager.
-		# Adapt only this benchmark process to that original integration contract.
+		# A vila original tinha o ator V1 parado e nenhum gerenciador de moradores.
+		# Adapta só este processo de benchmark àquele contrato de integração original.
 		var operations: GDScript = load("res://gameplay/urban_v1/UrbanOperations.gd")
 		var code := operations.source_code
 		var start := code.find("\tvillage.tonico.gameplay = session.world.gameplay")
@@ -214,8 +214,8 @@ func run() -> void:
 	quit()
 
 func _review_pair(player_at: Vector3,npc_at: Vector3,npc: CharacterBody3D) -> void:
-	# Exchange two physical actors only after the physics server has vacated
-	# their former poses. Direct swaps interpret one as a moving platform.
+	# Troca dois atores físicos só depois que o servidor de física desocupou
+	# as poses anteriores deles. Trocas diretas interpretam um como plataforma móvel.
 	var staging := Vector3(-350,.1,108)
 	world.production.region.prepare_collision_at(staging)
 	npc.global_position=staging

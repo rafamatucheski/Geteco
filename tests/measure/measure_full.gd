@@ -23,8 +23,8 @@ func guard_interior_preparation() -> void:
 			guarded_player = world.player
 			original_player_protection = guarded_player.get_meta("invulnerable") if guarded_player.has_meta("invulnerable") else null
 			guarded_player.set_meta("invulnerable",true)
-		# A user key press or a roadside injury during population admission must
-		# not turn this steady interior benchmark into rescue/custody gameplay.
+		# Uma tecla do usuário ou um ferimento na beira da rua durante a admissão da população não
+		# pode transformar este benchmark estável de interior em jogo de resgate/custódia.
 		world.player.controlled_automatically = true
 		world.player.automatic_direction = Vector3.ZERO
 	if is_instance_valid(world.gameplay) and not is_instance_valid(guarded_gameplay):
@@ -186,8 +186,8 @@ func run() -> void:
 func _process(delta: float) -> bool:
 	if started == 0: guard_interior_preparation()
 	if started != 0 and combat_mode:
-		# Explicit stress fixture: replenish health to keep the real combat workload active.
-		# Death/respawn is validated separately, not hidden behind an FPS result.
+		# Fixture de estresse explícita: repõe a vida para manter ativa a carga real de combate.
+		# Morte/renascimento é validado à parte, não escondido atrás de um resultado de FPS.
 		if world.gameplay.health > 0 and not world.session.modal:
 			combat_alive_seconds += delta
 			world.gameplay.health = 100

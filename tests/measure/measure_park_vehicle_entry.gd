@@ -1,5 +1,5 @@
 extends "res://tests/test_vehicle_park_manhole_passage.gd"
-## Integrated entrance regression with production car, isolated save and rendered timing.
+## Regressão integrada da entrada com carro de produção, save isolado e cronometragem renderizada.
 const METRICS := preload("res://tests/measure/measure.gd")
 var intervals: Array[float] = []
 var tracing := false
@@ -57,8 +57,8 @@ func run() -> void:
 		metrics.free()
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(folder.path_join("entrance.png"))
-	# Keep ordinary traffic during measurement. During the swept terrain check,
-	# ignore vehicles in both directions so a passing car cannot strike the fixture.
+	# Mantém o trânsito comum durante a medição. Durante a checagem varrida do terreno,
+	# ignora veículos nos dois sentidos para que um carro passando não acerte a fixture.
 	car.collision_mask = 1
 	car.collision_layer = 0
 	pictures = true

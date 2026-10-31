@@ -87,7 +87,7 @@ func run() -> void:
 		await create_timer(2).timeout
 		var movement := []
 		world.player.automatic_direction = Vector3.RIGHT
-		# Continuous rendered frames document the material seam in motion.
+		# Quadros renderizados contínuos documentam a emenda de material em movimento.
 		for frame in 120:
 			await process_frame
 			await RenderingServer.frame_post_draw

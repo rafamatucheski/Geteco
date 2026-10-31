@@ -1,7 +1,7 @@
 extends "res://tests/measure/measure_harbor_idle_regression.gd"
-## Main temporal evidence: --market --walk --camera-preview --night --reveal-off.
-## Every frame_post_draw for30s; first10s stationary, then20s real walking.
-## Full viewport JPG quality1.0. Readback/encoding/writes INVALIDATE FPS results.
+## Evidência temporal no Main: --market --walk --camera-preview --night --reveal-off.
+## Todo frame_post_draw por30s; primeiros10s parado, depois20s de caminhada real.
+## JPG do viewport inteiro com qualidade1.0. Leitura/codificação/gravação INVALIDAM resultados de FPS.
 const TEMPORAL_DURATION_USEC := 30000000
 const TEMPORAL_STILL_USEC := 10000000
 const TEMPORAL_JPEG_QUALITY := 1.0
@@ -52,8 +52,8 @@ func settle_load() -> bool:
 
 func apply_load(now: int) -> void:
 	if _temporal_start == 0:
-		# Preserve the inherited warm-up behavior. Recording starts only after
-		# the parent has begun its measured frame array.
+		# Preserva o comportamento de aquecimento herdado. A gravação só começa depois
+		# de o pai ter começado o array de quadros medidos.
 		super.apply_load(now)
 		if not frames.is_empty() and not _temporal_closed: _start_temporal(now)
 	elif _temporal_active:

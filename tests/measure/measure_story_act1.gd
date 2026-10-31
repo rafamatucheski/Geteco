@@ -41,8 +41,8 @@ func run() -> void:
 	world.player.teleport(point)
 	world.camera.target = world.player
 	if scenario == "jessica":
-		# The same authored checkpoint is used in the populated after sample.
-		# This measures the production character/car, not bank gameplay coverage.
+		# O mesmo checkpoint autoral é usado na amostra povoada de depois.
+		# Isto mede o personagem/carro de produção, não a cobertura de jogo do banco.
 		var catalog = preload("res://data/campaign/HarborMissions.gd")
 		var checkpoint: Dictionary = world.session.state.campaign.snapshot()
 		checkpoint.completed = ["primeiro_giro","cobra_contact","cobra_race"]
@@ -90,15 +90,15 @@ func finish() -> void:
 	quit()
 
 func review_neon() -> void:
-	# This bounded temporal capture runs after the uncapped benchmark sample.
-	# Its 60 FPS ceiling protects desktop use and is not a performance result.
+	# Esta captura temporal limitada roda depois da amostra de benchmark sem limite.
+	# O teto de 60 FPS dela protege o uso do desktop e não é resultado de desempenho.
 	var previous_cap := Engine.max_fps
 	Engine.max_fps = 60
 	world.player.automatic_direction = Vector3.ZERO
 	world.player.set_physics_process(false)
 	if neon_only:
-		# Review from an available orbit angle around the real parked car;
-		# the south-facing benchmark view can be obscured by passing buses.
+		# Revisa de um ângulo de órbita disponível em volta do carro real estacionado;
+		# a vista de benchmark voltada para o sul pode ser tampada por ônibus passando.
 		world.camera.target = world.session.jessica.car
 		world.camera.heading = PI*.5
 		world.camera.target_size = 18.0

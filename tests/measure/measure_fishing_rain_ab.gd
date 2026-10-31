@@ -1,7 +1,7 @@
 extends "res://tests/measure/measure_fishing_life.gd"
-## Diagnostic only: reconstructed in-memory baseline, NOT a historical build.
-## Run with Godot 4.7.2 .NET after building Harbor.csproj. No screenshots.
-## Native casting reaches waiting; only this fixture holds its bite timer.
+## Só diagnóstico: linha de base reconstruída em memória, NÃO um build histórico.
+## Rode com Godot 4.7.2 .NET depois de compilar Harbor.csproj. Sem capturas.
+## O arremesso nativo chega à espera; só esta fixture segura o timer da fisgada.
 const COVERAGE := preload("res://runtime/atmosphere/PrecipitationCoverage.gd")
 const DYNAMICS := preload("res://world/places/fishing/FishingWaterDynamics.gd")
 const ORIGINAL_SHADER := """shader_type spatial;
@@ -130,8 +130,8 @@ func run() -> void:
 			_swap_water(baseline)
 			world.session.weather.rain_ground._rng.seed = 71026
 			_set_weather(int(condition.state), float(condition.level))
-			# RainGround refreshes its surface list every .1 s while active. Let
-			# that cache drop the removed site before installing the empty field.
+			# O RainGround atualiza a lista de superfícies a cada .1 s enquanto ativo. Deixa
+			# esse cache largar o local removido antes de instalar o campo vazio.
 			await create_timer(.2, true, false, true).timeout
 			if baseline: site.water_dynamics = DYNAMICS.new(site.pond_polygon)
 			await create_timer(5.0, true, false, true).timeout
@@ -177,7 +177,7 @@ func _build_baseline() -> void:
 	baseline_material.shader.code = ORIGINAL_SHADER
 
 func _swap_water(baseline: bool) -> void:
-	# Replace only this fixture's live references. No production clear/reset API.
+	# Substitui só as referências vivas desta fixture. Sem API de produção de limpar/reiniciar.
 	site.remove_from_group("native_water_surface")
 	site.water_dynamics = DYNAMICS.new(site.pond_polygon)
 	water.mesh = baseline_mesh if baseline else current_mesh

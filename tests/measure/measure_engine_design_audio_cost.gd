@@ -1,7 +1,7 @@
 extends SceneTree
-## Rendered audio microbenchmark: twelve spatial sources, then one foreground.
-## Both banks and all nodes stay resident. A/B/B/A replays the same RPM/load
-## curve for 31s after 3s warmup per phase. This does NOT approve Main FPS.
+## Microbenchmark de áudio renderizado: doze fontes espaciais e depois uma em primeiro plano.
+## Os dois bancos e todos os nós ficam residentes. A/B/B/A reproduz a mesma curva de RPM/carga
+## por 31s depois de 3s de aquecimento por fase. Isto NÃO aprova o FPS do Main.
 ## Godot .NET --path . --script res://tests/measure/measure_engine_design_audio_cost.gd
 ##   -- --no-save
 const LEGACY_BANKS := preload("res://audio/EngineBankCache.gd")
@@ -66,8 +66,8 @@ func run() -> void:
 	initial_fingerprint = fingerprint()
 	prior_cap = Engine.max_fps
 	prior_vsync = DisplayServer.window_get_vsync_mode()
-	# This diagnostic intentionally removes the frame cap in its own process.
-	# These settings are not persisted and are not a Main gameplay benchmark.
+	# Este diagnóstico remove de propósito o limite de quadros no próprio processo.
+	# Estas configurações não são persistidas e não são benchmark de jogo do Main.
 	Engine.max_fps = 0
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	root.size = Vector2i(1280, 720)
@@ -165,9 +165,9 @@ func build_scene() -> void:
 			"anchors": DESIGN_CATALOG.rpm_bands(profile), "legacy": legacy, "design": design, "at": at})
 	if sources.size() != 12: failures.append("expected twelve complete audio sources")
 	if sources.is_empty(): return
-	# WorldAudio's legacy engine uses 2D AudioStreamPlayers (seven resident,
-	# adjacent bands audible). The new motor owns four 3D players with its
-	# foreground attenuation disabled. Turbo is excluded to isolate the motor.
+	# O motor legado do WorldAudio usa AudioStreamPlayers 2D (sete residentes,
+	# faixas adjacentes audíveis). O motor novo tem quatro players 3D com a
+	# atenuação de primeiro plano desligada. O turbo fica de fora para isolar o motor.
 	var legacy_foreground: Array[AudioStreamPlayer] = []
 	for index in 7:
 		var player := AudioStreamPlayer.new()
@@ -209,7 +209,7 @@ func _process(delta: float) -> bool:
 			var rpm := exp(lerpf(log(float(anchors[lower])), log(float(anchors[lower + 1])), blend))
 			source.design.update_mix(rpm, load_value, delta, -30.0, source.at, scenario == "foreground_one", false)
 		else:
-			# The foreground bank keeps one player per band, as WorldAudio does.
+			# O banco de primeiro plano mantém um player por faixa, como o WorldAudio faz.
 			if scenario == "foreground_one":
 				for layer in 7:
 					if layer != lower and layer != lower + 1: source.legacy[layer].stop()

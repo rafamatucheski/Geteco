@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure.gd"
-## Real Main, map controls and admitted tow-truck boarding. Teleports are diagnostic setup,
-## not evidence of driving the access route. APPDATA must be isolated by the runner.
+## Main real, controles do mapa e embarque admitido no guincho. Teleportes são preparação de diagnóstico,
+## não evidência de dirigir a rota de acesso. O APPDATA precisa ser isolado pelo runner.
 const OUT := "res://artifacts/navigation-review-20261022"
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 var checks := 0
@@ -59,7 +59,7 @@ func run() -> void:
 	await frames(20); refresh()
 	check(mini.destination.is_empty() and not mini.caption.visible and mini.route_points.is_empty(),"clearing destination removes name, marker and route")
 	state.campaign.restore_snapshot(saved)
-	# Prepare the actual neighborhood before admitting the player and the truck.
+	# Prepara o bairro real antes de admitir o jogador e o caminhão.
 	var point: Vector3=mission.truck.position+Vector3(-4,.08,0)
 	world.player.set_physics_process(false); world.player.teleport(point)
 	world.production.region.set_focus(point)

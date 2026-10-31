@@ -111,7 +111,7 @@ func run() -> void:
 			settings.set_graphics_preset(2)
 			if choice == "taa": settings.aa_mode=3
 			if choice == "ssr":
-				# Stale environments from an older config must also be cleaned by the policy.
+				# Ambientes obsoletos de uma config mais antiga também precisam ser limpos pela política.
 				world.production.environment.environment.ssr_enabled=true
 			if choice == "fsr2": settings.upscale_mode=2
 			settings.apply_settings()
@@ -123,7 +123,7 @@ func run() -> void:
 			settings.set_graphics_preset(preset)
 			await create_timer(5.0).timeout
 			snapshot("preset_%d"%preset)
-		# Exercise the remaining custom effects, including the user's high-quality combination.
+		# Exercita os efeitos personalizados restantes, incluindo a combinação de alta qualidade do usuário.
 		settings.set_graphics_preset(3)
 		settings.aa_mode=2
 		settings.volumetric_fog=true

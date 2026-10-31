@@ -1,11 +1,11 @@
 extends "res://tests/measure/measure_performance_plan.gd"
-## Production idle/foot diagnostic; inherits isolated saves, population settling,
-## 10 s warm-up, >=30 s sampling and --out=, --label=, --seconds=, --profile.
-## --market selects the facade viewpoint; --reveal-on opts into diagnostic
-## exterior transparency. Normal play keeps it off; --reveal-off also forces off.
-## --walk uses normal actor movement between nearby endpoints, never sample-time
-## teleportation. Record concurrent rendered processes outside this runner:
-## it cannot certify that other Codex chats/Godot sessions left the GPU idle.
+## Diagnóstico de produção parado/a pé; herda saves isolados, assentamento da população,
+## 10 s de aquecimento, >=30 s de amostragem e --out=, --label=, --seconds=, --profile.
+## --market seleciona o ponto de vista da fachada; --reveal-on opta pela transparência
+## externa de diagnóstico. O jogo normal a mantém desligada; --reveal-off também força desligar.
+## --walk usa o movimento normal do ator entre pontas próximas, nunca teleporte durante
+## a amostra. Registre processos renderizados concorrentes fora deste runner:
+## ele não consegue certificar que outros chats do Codex/sessões do Godot deixaram a GPU ociosa.
 const MARKET_POINT := Vector3(109.375, .12, 32.8875)
 const WALK_HALF_LENGTH := 1.5
 var _market := false
@@ -39,7 +39,7 @@ func settle_load() -> bool:
 	if _reveal_on: world.camera._exterior_reveal.enabled = true
 	if _reveal_off: world.camera._exterior_reveal.enabled = false
 	if _market:
-		# This relocation belongs to setup, before settling/warm-up/measurement.
+		# Esta realocação faz parte da preparação, antes de assentamento/aquecimento/medição.
 		world.production.region.prepare_collision_at(MARKET_POINT)
 		world.player.teleport(MARKET_POINT)
 		world.production.region.set_focus(MARKET_POINT)
@@ -51,11 +51,11 @@ func settle_load() -> bool:
 		"concurrency": "Unverified: other rendered sessions may contaminate frame times; capture process inventory separately."
 	}))
 	var settled: bool = await super.settle_load()
-	# Loading can take long enough for the user to leave the window. Request
-	# focus once before warm-up; never steal it back during the measured loop.
+	# O carregamento pode demorar o bastante para o usuário sair da janela. Pede
+	# foco uma vez antes do aquecimento; nunca o rouba de volta durante o laço medido.
 	if settled:
-		# A hidden console launch can leave the engine reporting minimized even
-		# after focus returns. Restore once before warm-up, never during sampling.
+		# Um lançamento por console escondido pode deixar o motor reportando minimizado mesmo
+		# depois de o foco voltar. Restaura uma vez antes do aquecimento, nunca durante a amostragem.
 		if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_MINIMIZED:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 		DisplayServer.window_move_to_foreground()
@@ -64,8 +64,8 @@ func settle_load() -> bool:
 	return settled
 
 func apply_load(_now: int) -> void:
-	# The parent establishes daytime after settling. Apply night once at the
-	# first warm-up callback, before the measured interval, without saving settings.
+	# O pai estabelece o dia depois do assentamento. Aplica a noite uma vez no
+	# primeiro callback de aquecimento, antes do intervalo medido, sem salvar configurações.
 	if _night and not _night_applied:
 		_night_applied = true
 		world.session.weather.time_of_day = .78
@@ -85,8 +85,8 @@ func apply_load(_now: int) -> void:
 		goal = _walk_anchor + Vector3.RIGHT * WALK_HALF_LENGTH * _walk_side
 		offset = goal - point
 		offset.y = 0.0
-	# A real obstacle can prevent reaching a waypoint. Preserve it and report
-	# actual movement/turns, rather than teleporting or claiming a completed route.
+	# Um obstáculo real pode impedir de chegar a um waypoint. Preserva-o e reporta
+	# o movimento/curvas reais, em vez de teleportar ou afirmar uma rota concluída.
 	world.player.automatic_direction = offset.normalized()
 
 func state() -> Dictionary:

@@ -2,11 +2,11 @@ using System;
 using System.Runtime.InteropServices;
 using Godot;
 
-// Test-only main-thread counters. CPU accounting may be coarse; cycles are not time.
+// Contadores da thread principal só para teste. A contabilidade de CPU pode ser grosseira; ciclos não são tempo.
 public partial class ThreadCpuProbe : RefCounted
 {
-    // Sparse anchors only, outside the frame observer. QPC brackets show clock
-    // alignment uncertainty; these counters do not identify scheduler states.
+    // Só âncoras esparsas, fora do observador de quadros. Os delimitadores QPC mostram a incerteza
+    // de alinhamento de relógio; estes contadores não identificam estados do escalonador.
     public long[] ClockAnchor()
     {
         long before = System.Diagnostics.Stopwatch.GetTimestamp();

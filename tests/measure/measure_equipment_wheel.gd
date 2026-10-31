@@ -48,8 +48,8 @@ func run() -> void:
 	var wheel_script: Script = world.session.equipment_wheel.get_script()
 	var cursor_mode := Input.mouse_mode
 	for phase: String in (["before-ab", "after"] if variant == "paired" else [variant]):
-		# Keep the same loaded resource graph, including concurrent camera edits.
-		# Only the new UI/runtime component changes between A and B.
+		# Mantém o mesmo grafo de recursos carregado, incluindo edições concorrentes da câmera.
+		# Só o componente novo de UI/runtime muda entre A e B.
 		Engine.time_scale = 1.0
 		world.player.input_locked = false
 		Input.mouse_mode = cursor_mode

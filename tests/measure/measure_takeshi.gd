@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_full.gd"
-## Current budget of the new room. No comparable before sample exists.
+## Orçamento atual da sala nova. Não existe amostra comparável de antes.
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const CAMPAIGN := preload("res://systems/campaign/CampaignRuntime.gd")
 const STORY := preload("res://systems/campaign/HarborStory.gd")
@@ -15,8 +15,8 @@ var invalid_context := false
 var exterior_population_context: Dictionary = {}
 
 func finish_list_dialogue(session) -> bool:
-	# Same Continue callback as the house test; completing it supplies the real
-	# mission event. An active mission must never bypass the normal save guard.
+	# Mesmo callback de Continue do teste da casa; concluí-lo fornece o evento real
+	# da missão. Uma missão ativa nunca pode contornar a proteção normal de save.
 	var advances := 0
 	while session.dialogue_open and advances<40:
 		session._advance_dialogue()
@@ -39,8 +39,8 @@ func population_policy_at(point: Vector3) -> Dictionary:
 	return {"point":point,"private_port_area":PORT_POLICY.contains_private_area(point),"ambient_road_count":world.production.ambient_roads_cache.size(),"near_long_segments":candidates,"excluded_near_short_segments":short_segments,"spawn_min_distance":world.production.POPULATION_SPAWN_MIN,"spawn_max_distance":world.production.POPULATION_SPAWN_MAX,"despawn_distance":world.production.POPULATION_DESPAWN,"requested":world.production.requested_population,"effective_population":world.people.size(),"scope":"Normal production spawning rejects segments <=4m and unsafe/on-road/private/visible points. Requested count is an intention, not a guaranteed physical count at this sparse place."}
 
 func install_post_race_prefix(session) -> bool:
-	# Same consistent fixture as test_cobra_leader_house.install_post_race_prefix.
-	# Bank/Jessica history is a checkpoint; bank staging is not an FPS workload.
+	# Mesma fixture consistente de test_cobra_leader_house.install_post_race_prefix.
+	# O histórico de Bank/Jessica é um checkpoint; a encenação do banco não é carga de FPS.
 	var value: Dictionary = session.state.campaign.snapshot()
 	value.completed = MISSIONS.ORDER.slice(0,MISSIONS.ORDER.find("cobra_finale"))
 	value.claimed_rewards = value.completed.duplicate()
@@ -167,7 +167,7 @@ func run() -> void:
 	if not story.brother_route_found or not story.act_two_available:
 		fail_setup("Takeshi benchmark list did not unlock its actual story route"); return
 	route = PackedVector3Array()
-	# The passage stays west of the desk, east of the sofa and north of the exit.
+	# A passagem fica a oeste da mesa, a leste do sofá e ao norte da saída.
 	for local in [Vector3(0,0,1.5),Vector3(-2,0,1.5),Vector3(-2,0,-1.8),Vector3(0,0,-1.8)]:
 		var point: Vector3 = room.to_global(local)
 		if not session.position_clear(point+Vector3.UP*.08):

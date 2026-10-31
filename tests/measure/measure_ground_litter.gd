@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Same rendered Main, route, weather and seed for before/after. No save writes.
+## Mesmo Main renderizado, rota, clima e semente para antes/depois. Sem gravar save.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args():
 		quit(2)
@@ -120,8 +120,8 @@ func _show_litter(shown: bool) -> void:
 	for node in world.production.region.find_children("CityGroundLitter","Node3D",true,false): node.visible = shown
 
 
-## Short, alternating windows balance time-dependent traffic/incident load.
-## Both modes use the same already-loaded code, actors and generated chunks.
+## Janelas curtas e alternadas equilibram a carga de trânsito/incidentes que depende do tempo.
+## Os dois modos usam o mesmo código, atores e chunks gerados já carregados.
 func _alternate(folder: String, report: Dictionary) -> bool:
 	for site in [{"id":"day","time":.55,"weather":3},{"id":"night-rain","time":.84,"weather":1}]:
 		world.player.teleport(Vector3(86.7,.08,101.5))
@@ -150,7 +150,7 @@ func _alternate(folder: String, report: Dictionary) -> bool:
 		var windows: Array = []
 		var elapsed_start := Time.get_ticks_usec()
 		for pair in 30:
-			# Reverse the order on alternate pairs, avoiding a systematic trend bias.
+			# Inverte a ordem em pares alternados, evitando um viés sistemático de tendência.
 			for mode in ([false,true] if pair%2==0 else [true,false]):
 				_show_litter(mode)
 				var window_start := Time.get_ticks_usec()

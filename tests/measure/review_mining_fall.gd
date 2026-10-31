@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_desert.gd"
-## A staged 18 m fall followed by real Actor physics and recovery on the pit floor.
-## Temporal camera evidence; this short route is not a frame-rate benchmark.
+## Uma queda encenada de 18 m seguida de física real do Actor e recuperação no fundo da cava.
+## Evidência temporal de câmera; esta rota curta não é benchmark de taxa de quadros.
 const GROUND := preload("res://world/mining/MiningExterior.gd")
 
 func run() -> void:
@@ -11,8 +11,8 @@ func run() -> void:
 	var point:=Vector3(-198,0,-1788)
 	var floor_height:=GROUND.surface_height(Vector2(point.x,point.z))
 	point.y=floor_height+18.0
-	# Restore on the supported portal landing; a save on a steep bench face
-	# correctly invokes safe-location recovery instead of admitting that pose.
+	# Restaura no patamar apoiado do portal; um save numa face íngreme de bancada
+	# aciona com razão a recuperação para local seguro em vez de admitir essa pose.
 	var admission:=preload("res://world/mining/MiningLayout.gd").SECRET_ENTRY+Vector3.UP*.08
 	var snapshot:=FIXTURE.full_snapshot(admission,true)
 	snapshot.region_id="desert"

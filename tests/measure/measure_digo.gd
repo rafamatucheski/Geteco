@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_motocross.gd"
-## A/B in the full rendered map, identical paddock camera and 30 s samples.
-## --without-digo removes only this task's NPC/car after streaming completes.
+## A/B no mapa renderizado completo, câmera idêntica no paddock e amostras de 30 s.
+## --without-digo remove só o NPC/carro desta tarefa depois que o streaming termina.
 var without_digo := false
 
 func run() -> void:
@@ -10,7 +10,7 @@ func run() -> void:
 	await super.run()
 	started = 0
 	if without_digo:
-		# Keep the manager's reference valid to prevent respawning the A/B car.
+		# Mantém válida a referência do gerenciador para impedir que o carro do A/B renasça.
 		for group in ["digo_instructor","digo_car","digo_amarok"]:
 			for actor in get_nodes_in_group(group):
 				actor.hide()

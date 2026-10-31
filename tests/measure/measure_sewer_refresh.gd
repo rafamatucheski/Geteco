@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Same integrated sewer, camera and population before/after; no personal save.
+## Mesmo esgoto integrado, câmera e população antes/depois; sem save pessoal.
 var site := "sewer_port"
 var combat := false
 

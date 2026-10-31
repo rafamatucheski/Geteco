@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_editor_workspace.gd"
-## Actual editor room preview: 8 s warm-up, then 30 s of rendered camera movement.
-## --interior=harbor_bank|maciota|<PlaceCatalog id> --floor=0 --label=<name>
+## Prévia real de sala no editor: 8 s de aquecimento e depois 30 s de movimento de câmera renderizado.
+## --interior=harbor_bank|maciota|<PlaceCatalog id> --floor=0 --label=<nome>
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return
 	var id := "harbor_bank"

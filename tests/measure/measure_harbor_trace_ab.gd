@@ -1,7 +1,7 @@
 extends "res://tests/measure/measure_harbor_idle_regression.gd"
-## Diagnostic ABBA in one live world. Select --seconds=121 (120 is extended to121).
-## The logger stays enabled; only detailed work/dispatch tracing changes.
-## No aggregate sink, script profiler, population reset or simulation throttling.
+## ABBA de diagnóstico num mundo vivo só. Selecione --seconds=121 (120 é estendido para121).
+## O logger fica ligado; só o rastreio detalhado de trabalho/dispatch muda.
+## Sem coletor agregado, profiler de script, reinício de população ou limitação da simulação.
 const TRACE_WORK := preload("res://runtime/StallWorkTrace.gd")
 const DISPATCH_TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const SEGMENT_USEC := 30000000
@@ -35,8 +35,8 @@ func run() -> void:
 		quit(7)
 		return
 	_ab_cpu_probe = cpu_source.new()
-	# run() is on SceneTree's main thread. Anchor its native ID before startup;
-	# Sample() itself is called exactly twice per completed segment, never per frame.
+	# run() roda na thread principal da SceneTree. Ancora o ID nativo dela antes do início;
+	# o próprio Sample() é chamado exatamente duas vezes por segmento concluído, nunca por quadro.
 	_ab_clock_anchor = _ab_cpu_probe.ClockAnchor()
 	if _ab_clock_anchor.size() != 6 or _ab_clock_anchor[5] == 0:
 		push_error("TRACE_AB_NATIVE_MAIN_THREAD_ID_UNAVAILABLE")
@@ -52,7 +52,7 @@ func run() -> void:
 	_export_ab()
 
 func settle_load() -> bool:
-	# The inherited parser has run. Leave its 240s total timeout unchanged.
+	# O parser herdado já rodou. Deixa o timeout total de 240s dele inalterado.
 	_ab_requested_seconds = seconds
 	seconds = maxf(seconds, 121.0)
 	return await super.settle_load()
@@ -61,7 +61,7 @@ func apply_load(now: int) -> void:
 	super.apply_load(now)
 	if _ab_done: return
 	if _ab_current.is_empty():
-		# Parent's frame array starts only after its ten-second warm-up.
+		# O array de quadros do pai só começa depois do aquecimento de dez segundos.
 		if frames.is_empty(): return
 		var logger := root.get_node_or_null("StallLog")
 		if logger == null or not bool(logger.get("_enabled")) or logger.get("_world") != world:
@@ -77,7 +77,7 @@ func apply_load(now: int) -> void:
 		return
 	var focus := DisplayServer.window_is_focused()
 	if _ab_previous_usec == 0:
-		# This first interval began partway through a render frame at the toggle.
+		# Este primeiro intervalo começou no meio de um quadro de render na troca.
 		_ab_current.complete_start_usec = now
 		_ab_current.start_fringe_usec = now - int(_ab_current.start_usec)
 	else:
@@ -97,7 +97,7 @@ func apply_load(now: int) -> void:
 			_finish_ab()
 			_export_ab()
 		else:
-			# Export only between windows, never serialize or scan arrays per frame.
+			# Exporta só entre janelas, nunca serializa nem varre arrays por quadro.
 			_export_ab()
 			_open_segment()
 
@@ -105,8 +105,8 @@ func _open_segment() -> void:
 	var mode: bool = MODES[_ab_segments.size()]
 	TRACE_WORK.enabled = mode
 	world.set_meta("benchmark_trace",mode)
-	# Production normally refreshes next physics tick. Synchronize the boundary,
-	# which also clears diagnostic spans/counters when the mode actually changes.
+	# A produção normalmente atualiza no próximo tick de física. Sincroniza o limite,
+	# o que também limpa spans/contadores de diagnóstico quando o modo muda de fato.
 	DISPATCH_TRACE.refresh(world)
 	var context := state()
 	var cpu_before := Time.get_ticks_usec()
@@ -131,7 +131,7 @@ func _open_segment() -> void:
 
 func _close_segment(ended: int, complete: bool) -> void:
 	if _ab_current.is_empty(): return
-	# Read before state snapshots, frame sorting and serialization at the boundary.
+	# Lê antes dos snapshots de estado, da ordenação de quadros e da serialização no limite.
 	var cpu_before := Time.get_ticks_usec()
 	var cpu_end: PackedInt64Array = _ab_cpu_probe.Sample()
 	var cpu_after := Time.get_ticks_usec()

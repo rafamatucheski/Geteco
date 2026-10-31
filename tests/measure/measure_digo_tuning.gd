@@ -1,7 +1,7 @@
 extends SceneTree
-## Rendered A/B/A in actual Main with an isolated disk fixture.
-## Baseline is the preserved interface/showroom on the CURRENT runtime, not a
-## reconstruction of the entire game before this change. Never run concurrently.
+## A/B/A renderizado no Main real com uma fixture isolada em disco.
+## A linha de base é a interface/showroom preservada no runtime ATUAL, não uma
+## reconstrução do jogo inteiro antes desta mudança. Nunca rode em paralelo.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const DIGO := preload("res://systems/campaign/DigoProgress.gd")
@@ -105,7 +105,7 @@ func _run() -> void:
 		var watermark := root.get_node_or_null("BuildWatermark")
 		if watermark is CanvasLayer: watermark.visible = false
 	for frame in 6: await process_frame
-	# Only substitute the preserved showroom reference; retain the old UI source.
+	# Substitui só a referência preservada do showroom; mantém o código antigo da UI.
 	var source := FileAccess.get_file_as_string(LEGACY)
 	if source.is_empty() or not FileAccess.file_exists(OLD_SHOWROOM): push_error("Preserved baseline sources missing"); _finish(1); return
 	_legacy_script = GDScript.new()
@@ -233,8 +233,8 @@ func _capture(name: String) -> void:
 	root.get_texture().get_image().save_png(folder.path_join(name))
 
 func _capture_temporal() -> Dictionary:
-	# Every rendered frame is captured in this separate QA pass. Encoding and the
-	# temporary 30 FPS cap never contaminate the earlier performance samples.
+	# Todo quadro renderizado é capturado nesta passada de QA separada. A codificação e o
+	# limite temporário de 30 FPS nunca contaminam as amostras de desempenho anteriores.
 	var destination := folder.path_join("temporal-live-tuned")
 	DirAccess.make_dir_recursive_absolute(destination)
 	var original_max_fps := Engine.max_fps

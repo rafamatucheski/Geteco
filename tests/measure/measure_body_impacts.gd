@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_vehicle_bailout.gd"
-## Rendered production world; repeatable staged contacts and moving dismounts.
-## Placement is a diagnostic fixture; car collision, flight, damage and help are real.
+## Mundo de produção renderizado; contatos encenados repetíveis e desmontes em movimento.
+## O posicionamento é fixture de diagnóstico; colisão do carro, voo, dano e socorro são reais.
 var victim: CharacterBody3D
 var launched := 0
 var completed := 0

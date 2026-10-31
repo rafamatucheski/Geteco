@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_rain_driving.gd"
-## Actual driving + rain. Reference equipment is injected only in this process.
-## Every native rendered frame is archived; JPEG encoding runs on worker threads.
+## Direção real + chuva. O equipamento de referência é injetado só neste processo.
+## Todo quadro nativo renderizado é arquivado; a codificação JPEG roda em threads de trabalho.
 const OUT := "res://evidence/mobile-lights-rain-20261015"
 var reference := false
 var capture := false
@@ -39,8 +39,8 @@ func run() -> void:
 	if reference:
 		old_equipment = load(OUT+"/reference/LegacyEquipment.gd")
 		assert(old_equipment != null)
-		# Vehicle is already preloaded by gameplay dependencies: replace complete
-		# equipment instances, including future spawns, rather than just its cache.
+		# O Vehicle já vem pré-carregado pelas dependências de jogo: substitui instâncias completas
+		# de equipamento, incluindo spawns futuros, em vez de só o cache.
 		node_added.connect(_reference_node_added)
 	seed(15102026)
 	root.size = Vector2i(1280,720)

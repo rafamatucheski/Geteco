@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_sky_menu.gd"
-## Includes every cold-start frame: do not hide loading stalls in warm-up.
+## Inclui todo quadro do início frio: não esconde travadas de carregamento no aquecimento.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args():
 		quit(2)

@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Fixed rendered Main scenario. Never use personal saves or headless for this measurement.
+## Cenário fixo renderizado no Main. Nunca use saves pessoais nem headless para esta medição.
 const STARTUP := preload("res://tests/fixtures/TravelBagScene.gd")
 var variant := "before"
 const SOURCES := ["gameplay/Gameplay.gd","gameplay/WeaponCatalog.gd","gameplay/CombatAudio.gd","gameplay/CombatEffects.gd","gameplay/WeaponVariantModels.gd","runtime/EquipmentWheel.gd","ui/hud/EquipmentWheelView.gd","runtime/ProductionWorld.gd","runtime/TrafficFleetRoster.gd","scripts/Vehicle.gd","gameplay/desert_cars/StreetPowertrainCatalog.gd"]
@@ -103,7 +103,7 @@ func run() -> void:
 	quit()
 
 func showcase(folder: String) -> void:
-	# Presentation-only recording follows timing samples, so GPU readback does not affect them.
+	# A gravação só de apresentação vem depois das amostras de tempo, então a leitura da GPU não as afeta.
 	TranslationServer.set_locale("pt_BR")
 	world.gameplay.clear_wanted()
 	world.player.teleport(world.production.nearest_road(world.driving.car.global_position+Vector3(0,0,14))+Vector3.UP*.1)
@@ -149,8 +149,8 @@ func showcase(folder: String) -> void:
 	if not stamps.is_empty():
 		FileAccess.open(sequence+"/frames.json",FileAccess.WRITE).store_string(JSON.stringify(stamps))
 		print("VARIANT_TEMPORAL_CAPTURE frames=",frame_index," seconds=",float(Time.get_ticks_usec()-start)/1000000.0)
-	# This isolated catalog fixture does not enter the shop, so hide the outdoor
-	# HUD explicitly; the real storefront handles its modal state on entry.
+	# Esta fixture de catálogo isolada não entra na loja, então esconde o HUD externo
+	# explicitamente; a vitrine real trata o estado modal dela na entrada.
 	world.hud.visible = false
 	var shop := preload("res://runtime/HarborAmmunationCatalog.gd").new()
 	shop.configure(world.session)

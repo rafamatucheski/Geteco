@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_drag_ui.gd"
-## Identical Main scene and real tow transitions before/after event wiring.
+## Cena do Main idêntica e transições reais de reboque antes/depois da ligação de eventos.
 func run() -> void:
 	if DisplayServer.get_name()=="headless" or "--no-save" not in OS.get_cmdline_user_args() or not OS.get_environment("HARBOR_NO_CSHARP").is_empty(): quit(2); return
 	seed(7102026)
@@ -24,8 +24,8 @@ func run() -> void:
 	var mission = world.session.mission_world
 	var job: Dictionary = preload("res://data/catalogs/TowJobs.gd").JOBS[0].duplicate(true)
 	job.merge({"index":0,"token":"tow_1"})
-	# Fixture starts with the customer already beside the truck, in the active
-	# region. The measured load/unload still uses the production physical gate.
+	# A fixture começa com o cliente já ao lado do caminhão, na região
+	# ativa. A carga/descarga medida ainda usa o portão físico de produção.
 	mission.tow_job = job
 	mission.truck = world.production.spawn_vehicle("towmaster",at,PI)
 	if mission.truck == null: push_error("tow benchmark truck setup rejected"); quit(1); return

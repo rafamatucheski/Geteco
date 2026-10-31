@@ -1,6 +1,6 @@
 extends SceneTree
-## Rendered production driving, isolated save, separate engine/tire recordings.
-## --no-save --tag=before|after; 30 seconds per surface after warm-up.
+## Direção de produção renderizada, save isolado, gravações separadas de motor/pneu.
+## --no-save --tag=before|after; 30 segundos por superfície depois do aquecimento.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 var world
@@ -93,7 +93,7 @@ func run() -> void:
 	await screenshot("idle")
 	for surface in ["asphalt","sand"]:
 		phase = ""
-		# Teleport only to the start of each measured straight; actual input drives the route.
+		# Teleporta só para o início de cada reta medida; a entrada real dirige a rota.
 		var point := at+Vector3(0,0,-25 if surface == "sand" else 0)
 		world.production.region.prepare_collision_at(point)
 		car.place(point,-PI*.5)

@@ -57,7 +57,7 @@ func run() -> void:
 	await create_timer(60).timeout
 	var report := {"gpu":RenderingServer.get_video_adapter_name(),"engine":Engine.get_version_info(),"vsync":DisplayServer.window_get_vsync_mode(),"cap":Engine.max_fps,"size":str(root.size)}
 	report.windows=[]
-	# One finite ABBA confirmation in the same live city, same loaded fleet.
+	# Uma confirmação ABBA finita na mesma cidade viva, mesma frota carregada.
 	for variant in ["legacy","current","current","legacy"]:
 		var cars := fleet.duplicate()
 		cars.append(car)
@@ -79,7 +79,7 @@ func run() -> void:
 	world.free()
 	quit()
 
-# Exact prior selection and projection for measurement only; never used by gameplay.
+# Seleção e projeção anteriores exatas só para medição; nunca usadas pelo jogo.
 func legacy_apply(car: Node3D) -> void:
 	var visual: Node3D = car.get("visual")
 	for part: MeshInstance3D in visual.find_children("*","MeshInstance3D",true,false):

@@ -21,7 +21,7 @@ func run() -> void:
 	for definition in CATALOG.definitions():
 		if not await world.session.enter_place(definition.id,false): quit(4); return
 		var room=world.session.room
-		# Rejected destination must preserve the previous room and release controls.
+		# Um destino rejeitado precisa preservar a sala anterior e liberar os controles.
 		world.player.teleport(room.to_global(room.stair_point()+Vector3.UP*.04))
 		var blocker:=StaticBody3D.new()
 		var collision:=CollisionShape3D.new()

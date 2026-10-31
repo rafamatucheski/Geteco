@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure.gd"
-## Rendered production scene. --capture-only for visual QA; otherwise 5s warmup + 30s.
-## Run with --no-save --skip-arrival --benchmark --population=24.
+## Cena de produção renderizada. --capture-only para QA visual; senão 5s de aquecimento + 30s.
+## Rode com --no-save --skip-arrival --benchmark --population=24.
 class LegacyWater extends RefCounted:
 	var material := StandardMaterial3D.new()
 	func _init() -> void:

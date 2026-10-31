@@ -1,5 +1,5 @@
 extends SceneTree
-## Production scene, isolated save; baseline and final use identical cameras/time.
+## Cena de produção, save isolado; linha de base e final usam câmeras/tempo idênticos.
 var world
 var folder := "res://evidence/classic-meet/baseline"
 var failures: Array[String] = []
@@ -101,7 +101,7 @@ func capture_motion() -> void:
 	while Time.get_ticks_usec()-begin<30000000:
 		await RenderingServer.frame_post_draw
 		var elapsed:=float(Time.get_ticks_usec()-begin)/1000000.0
-		# Static camera, then rotation and a short physical walk along the clear aisle.
+		# Câmera parada, depois rotação e uma caminhada física curta pelo corredor livre.
 		world.camera.heading=PI+(sin((elapsed-8)*.32)*.6 if elapsed>8 else 0.0)
 		world.player.automatic_direction=Vector3(0,0,1) if elapsed>=18 and elapsed<20 else (Vector3(0,0,-1) if elapsed>=22 and elapsed<24 else Vector3.ZERO)
 		root.get_texture().get_image().save_jpg(folder.path_join("motion-%05d.jpg"%frame),.78)
@@ -163,7 +163,7 @@ func validate_lifecycle() -> void:
 	world.session.weather.time_of_day=.5/24.0
 	await create_timer(.6).timeout
 	check(meet.event_active and ids==meet.guests.map(func(g):return g.get_instance_id()),"Midnight keeps Tuesday's encounter alive")
-	# Real save-store roundtrip uses an isolated output file.
+	# A ida e volta real pelo save-store usa um arquivo de saída isolado.
 	world.session.state.world_state.time=world.session.weather.time_of_day
 	var store=preload("res://runtime/SaveStore.gd").new()
 	store.path=folder.path_join("isolated-progress.json")
@@ -186,7 +186,7 @@ func validate_lifecycle() -> void:
 	await create_timer(4).timeout
 	world.player.automatic_direction=Vector3.ZERO
 	check(world.player.global_position.z>118 and absf(world.player.global_position.y)<.2,"Player walks from existing street through the driveway")
-	# Swept movement, separately from the depth-render test.
+	# Movimento varrido, separado do teste de render de profundidade.
 	for body in [world.player,meet.guests[1]]:
 		check(body.test_move(Transform3D(Basis.IDENTITY,Vector3(413.6,.08,120)),Vector3(0,0,-5)),"Full actor capsule cannot sweep through parked car")
 		check(body.test_move(Transform3D(Basis.IDENTITY,Vector3(420,.08,129)),Vector3(0,0,3)),"Full actor capsule cannot sweep through auto-parts store")

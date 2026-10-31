@@ -17,8 +17,8 @@ var _weapon := ""
 var _natural_traffic_diagnostic := false
 
 func run() -> void:
-	# Fixed-population runs require --no-density. The explicit area-policy
-	# comparison opts into authored density and records the resulting live caps.
+	# Rodadas de população fixa exigem --no-density. A comparação explícita de política
+	# de área opta pela densidade autoral e registra os limites vivos resultantes.
 	if not "--no-density" in OS.get_cmdline_user_args() and not "--area-density-comparison" in OS.get_cmdline_user_args():
 		push_error("HEART_MEASURE_REQUIRES_NO_DENSITY: preserve the full population and traffic targets")
 		quit(2)
@@ -45,9 +45,9 @@ func run() -> void:
 
 func settle_load() -> bool:
 	scenario = "idle"
-	# Explicit separate diagnostic of the naturally admitted traffic. This does
-	# not change targets or freeze/remove cars, and does not certify the traffic
-	# target's replenishment. Full NPC admission and native FPS gates still apply.
+	# Diagnóstico explícito separado do trânsito admitido naturalmente. Isto
+	# não muda alvos nem congela/remove carros, e não certifica a reposição do alvo
+	# de trânsito. A admissão completa de NPCs e os portões de FPS nativos continuam valendo.
 	var settled: bool = await _settle_natural_traffic() if _natural_traffic_diagnostic else await super.settle_load()
 	if not settled: return false
 	world.gameplay.toggle_god_mode()

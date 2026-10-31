@@ -1,5 +1,5 @@
 extends SceneTree
-## Two finite 30 s samples in one warmed production world. Geometry-only diagnostic.
+## Duas amostras finitas de 30 s num mundo de produção aquecido. Diagnóstico só de geometria.
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 var world
 var yard: Node3D
@@ -50,10 +50,10 @@ func set_variant(before: bool) -> void:
 	for material in ground_materials:
 		material.shader = preload("res://world/regions/natural_ground.gdshader") if before else final_shader
 func sample(variant: String) -> void:
-	# Warm every shader/material combination after the toggle, outside the sample.
+	# Aquece toda combinação de shader/material depois da troca, fora da amostra.
 	var warm := Time.get_ticks_usec()
 	while Time.get_ticks_usec()-warm<5000000: await process_frame
-	# Capture outside the timing window; a process_frame has already drawn.
+	# Captura fora da janela de tempo; um process_frame já desenhou.
 	root.get_texture().get_image().save_png(folder.path_join(variant+".png"))
 	await frames(5)
 	var values: Array[float] = []

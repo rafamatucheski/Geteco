@@ -1,5 +1,5 @@
 extends SceneTree
-## Exact geometry comparison and CPU attribution; not a rendered FPS approval.
+## Comparação exata de geometria e atribuição de CPU; não é aprovação de FPS renderizado.
 func _initialize() -> void: run.call_deferred()
 
 func run() -> void:

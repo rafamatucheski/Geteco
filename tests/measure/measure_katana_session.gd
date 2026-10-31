@@ -101,9 +101,9 @@ func phase(label: String, use_rage := false) -> void:
 			ended_at = elapsed
 		if use_rage:
 			var controls: Node = root.get_node("GameInput")
-			# Walk away from the automatic garage entrance before returning.
-			# Touch controls may clear their axes on context changes. Drive desktop
-			# keyboard actions explicitly instead of relying on an inactive stick.
+			# Afasta-se da entrada automática da garagem antes de voltar.
+			# Os controles de toque podem limpar os eixos em mudanças de contexto. Aciona
+			# as ações de teclado do desktop explicitamente em vez de depender de um analógico inativo.
 			if elapsed >= 5.0 and elapsed < 6.0: Input.action_press("move_left")
 			else: Input.action_release("move_left")
 			if elapsed >= 6.0 and elapsed < 7.0: Input.action_press("move_right")

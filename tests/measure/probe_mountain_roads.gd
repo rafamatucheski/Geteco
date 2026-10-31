@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Rendered Main-scene inspection and comparable 30 s benchmark for mountain roads.
+## Inspeção renderizada na cena do Main e benchmark comparável de 30 s para as estradas da montanha.
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 
 func _initialize() -> void:

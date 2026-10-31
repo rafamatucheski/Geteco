@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_desert.gd"
-## Before/after same Main scene, workers, fleet, weather and ground. The only
-## diagnostic toggle is the optional job. Run each variant sequentially.
+## Antes/depois na mesma cena do Main, trabalhadores, frota, clima e chão. A única
+## chave de diagnóstico é o trabalho opcional. Rode cada variante em sequência.
 const JOB := preload("res://gameplay/mining/jobs/MiningYardJob.gd")
 
 func run() -> void:

@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_desert.gd"
-## Same real pit, ordinary driving camera and live population before/after.
+## Mesma cava real, câmera de direção comum e população viva antes/depois.
 var machine: CharacterBody3D
 var hydraulics: Node
 var cycle := false

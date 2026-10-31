@@ -17,8 +17,8 @@ var capture_only := false
 func _initialize() -> void:
 	atlas_compare="--atlas-compare" in OS.get_cmdline_user_args()
 	capture_only="--capture-only" in OS.get_cmdline_user_args()
-	# 18 x 30 s samples + 104 s observed cold startup + ~84 s view/capture
-	# overhead + bounded process queries. Keep every sample; bound the whole run.
+	# 18 x 30 s de amostras + 104 s de início frio observado + ~84 s de custo de vista/captura
+	# + consultas de processo limitadas. Guarda toda amostra; limita a rodada inteira.
 	create_timer(900 if atlas_compare else 300).timeout.connect(func(): fail("WORLD_MAP timeout",3))
 	run.call_deferred()
 
@@ -35,8 +35,8 @@ func save_results() -> void:
 	file.store_string(JSON.stringify(results,"\t")); file.close()
 
 func record_concurrency(label: String) -> bool:
-	# Outside measurement windows: the process query itself must not inflate a frame.
-	# Once contaminated, keep capturing evidence without spawning more process queries.
+	# Fora das janelas de medição: a própria consulta de processo não pode inflar um quadro.
+	# Depois de contaminada, continua capturando evidência sem disparar mais consultas de processo.
 	if not performance_eligible: return false
 	var entry := {"phase":label,"at_ms":Time.get_ticks_msec(),"checked":false,"processes":[]}
 	if OS.get_name()=="Windows":
@@ -66,7 +66,7 @@ func _process(_delta: float) -> bool:
 func sample(label: String, map, moving := false) -> bool:
 	if not performance_eligible: return false
 	if not record_concurrency(label+"_before"): return false
-	# Let the frame containing the synchronous process query finish before timing.
+	# Deixa o quadro que contém a consulta síncrona de processo terminar antes de cronometrar.
 	await create_timer(.5).timeout
 	var population_before: int=world.people.size()
 	var origin: Vector2=map.target_center
@@ -122,7 +122,7 @@ func measure_atlas(map, label: String, establish_views := false) -> void:
 		if not await sample(label+"_"+region+"_pan",map,true): return
 	results.comparison_views=comparison_views.duplicate(true); save_results()
 	if capture_only: return
-	# Validate the normal limit/VSync after the uncapped diagnostic, in both versions.
+	# Valida o limite/VSync normal depois do diagnóstico sem limite, nas duas versões.
 	Engine.max_fps=60; DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
 	apply_comparison_view(map,"desert"); await create_timer(3).timeout
 	await sample(label+"_normal_60fps",map,true)
@@ -142,7 +142,7 @@ func record_relief(map, key: String) -> void:
 	save_results()
 
 func capture_current_states(map) -> void:
-	# Current production layout at both supported review sizes, independent of A/B fit.
+	# Layout atual de produção nos dois tamanhos de revisão aceitos, independente do encaixe A/B.
 	for viewport_size: Vector2i in [Vector2i(1280,720),Vector2i(800,600)]:
 		root.content_scale_size=viewport_size; root.size=viewport_size
 		await create_timer(.7).timeout
@@ -224,7 +224,7 @@ func run() -> void:
 				await sample("baseline_stationary",old_map)
 				await sample("baseline_pan",old_map,true)
 		world.session.close_menu(); await process_frame
-	# Both maps use the same mounted scene; only the modal Control is replaced.
+	# Os dois mapas usam a mesma cena montada; só o Control modal é substituído.
 	Engine.max_fps=0; DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	results.phase="current_open"; save_results()
 	var began := Time.get_ticks_usec()

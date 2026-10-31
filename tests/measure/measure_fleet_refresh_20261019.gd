@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_sport_coupe_redesign.gd"
-## Fixed finite integration benchmark, before/after in the actual Main city.
+## Benchmark de integração finito e fixo, antes/depois na cidade real do Main.
 const FLEET_REFRESH := preload("res://runtime/FleetCatalog.gd")
 const BASE_IDS := ["sedan_classic","union_sedan","aurora_executive","metro_hatch","desert_faisca","ranch_pickup","station_wagon","orbita_micro","courier_van","ranch_single"]
 const NEW_IDS := ["besouro_1300","mare_microvan","toco_minitruck"]
@@ -26,9 +26,9 @@ func run() -> void:
 	var boot_start := Time.get_ticks_msec()
 	root.add_child(world)
 	current_scene=world
-	# Initial concurrent cold startup advanced through 64 s + 34 s stages,
-	# then exhausted the original 120 s readiness window. Preserve the failure;
-	# use one finite 300 s diagnostic startup, logging actual stage progress.
+	# O início frio concorrente inicial avançou por etapas de 64 s + 34 s,
+	# e então esgotou a janela original de prontidão de 120 s. Preserva a falha;
+	# usa um início de diagnóstico finito de 300 s, registrando o progresso real das etapas.
 	var deadline := Time.get_ticks_msec()+300000
 	var last_stage := ""
 	while Time.get_ticks_msec()<deadline:

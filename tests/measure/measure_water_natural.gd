@@ -1,11 +1,11 @@
 extends "res://tests/measure/measure.gd"
-## Build Harbor.csproj with the project's .NET SDK before running Godot 4.7.2 mono.
-## --no-save --skip-arrival --benchmark --population=24 --output-dir=<unique path>
-## --only=quay-day|quay-night|canal-day|canal-night filters scenarios.
-## --temporal captures every rendered frame separately from performance sampling.
-## Default: original/pilot pairs, then two temporal pilot recordings in one session.
-## --pilot selects one candidate measurement; --temporal selects one recording pass.
-## --uncapped is optional diagnosis; normal gameplay settings remain the default.
+## Compile Harbor.csproj com o SDK .NET do projeto antes de rodar o Godot 4.7.2 mono.
+## --no-save --skip-arrival --benchmark --population=24 --output-dir=<caminho único>
+## --only=quay-day|quay-night|canal-day|canal-night filtra os cenários.
+## --temporal captura todo quadro renderizado separado da amostragem de desempenho.
+## Padrão: pares original/piloto, depois duas gravações temporais do piloto numa sessão.
+## --pilot seleciona uma medição candidata; --temporal seleciona uma passada de gravação.
+## --uncapped é diagnóstico opcional; as configurações normais de jogo continuam o padrão.
 
 const WATER_PILOT := preload("res://world/regions/HarborWaterPilot.gd")
 
@@ -79,8 +79,8 @@ func run() -> void:
 				set_pilot(pilot)
 				if not await measure_site(site,site.id+("-pilot" if pilot else "-original"),false): return
 				if not pilot: original_summary = last_summary.duplicate()
-			# One finite reversed-order confirmation, only for the changed quay.
-			# Never repeat until a desirable number appears.
+			# Uma confirmação finita em ordem invertida, só para o cais alterado.
+			# Nunca repete até aparecer um número desejável.
 			if not photos and site.id.begins_with("quay-") and (last_summary.p95_ms > original_summary.p95_ms * 1.05 or last_summary.p99_ms > original_summary.p99_ms * 1.05):
 				for pilot in [true,false]:
 					set_pilot(pilot)
@@ -209,7 +209,7 @@ func capture_temporal(site: Dictionary) -> Dictionary:
 		var name := "%05d.jpg" % records.size()
 		var error := root.get_texture().get_image().save_jpg(folder+"/"+name,.9)
 		records.append({"file":name,"time_ms":(timestamp-begin)/1000.0,"drawn":drawn,"save_error":error})
-		# Static first 10 s, gentle rotation through 20 s, then return to the initial view.
+		# Parado nos primeiros 10 s, rotação suave até 20 s e depois volta à vista inicial.
 		var elapsed := (timestamp-begin)/1000000.0
 		world.camera.heading = site.heading+(.22*sin((elapsed-10.0)*PI/10.0) if elapsed>10.0 else 0.0)
 	FileAccess.open(folder+"/timestamps.json",FileAccess.WRITE).store_string(JSON.stringify(records))

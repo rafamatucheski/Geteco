@@ -1,6 +1,6 @@
 extends SceneTree
-## CPU-only attribution using an in-memory instrumented copy of the source.
-## Does not edit product art or substitute the GPU / Main benchmark.
+## Atribuição só de CPU usando uma cópia instrumentada do código em memória.
+## Não edita a arte do produto nem substitui o benchmark de GPU / Main.
 const SOURCE := "res://assets/regions/source/guns/ammunation/AmmunationArt.gd"
 
 func _initialize() -> void:

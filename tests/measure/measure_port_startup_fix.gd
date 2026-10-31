@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure.gd"
-## Compare the apron change in daytime, when quay operation is unchanged.
-## Baseline reconstructs only the former apron transform in this process.
+## Compara a mudança do pátio de dia, quando a operação do cais não muda.
+## A linha de base reconstrói só a transformação antiga do pátio neste processo.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	var baseline := "--baseline" in OS.get_cmdline_user_args()
@@ -49,7 +49,7 @@ func run() -> void:
 	var report := {"gpu":RenderingServer.get_video_adapter_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"summary":stats(frames),"warmup":stats(warmup),"frames_ms":frames,"comparison":"daytime apron geometry only; night workload regression not measured"}
 	FileAccess.open(folder+"/frames.json",FileAccess.WRITE).store_string(JSON.stringify(report))
 	print("PORT_FIX_MEASURE ",variant," ",JSON.stringify(report.summary))
-	# Temporal evidence is separate from timing; take every drawn frame.
+	# A evidência temporal é separada da cronometragem; pega todo quadro desenhado.
 	Engine.max_fps = 30
 	var rows: Array = []
 	start = Time.get_ticks_usec()

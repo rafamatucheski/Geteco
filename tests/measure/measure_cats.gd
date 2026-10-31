@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Same production scene/cameras for before/after; isolated save, real frame intervals.
+## Mesma cena/câmeras de produção antes/depois; save isolado, intervalos reais de quadro.
 const FIXTURE = preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const PLACES = preload("res://world/places/PlaceCatalog.gd")
 var folder := ""

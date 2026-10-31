@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure.gd"
-## Serial rendered Main/.NET comparison. Each invocation measures one site.
-## --parking-baseline disables only the new feature at its integration hook.
+## Comparação renderizada em série no Main/.NET. Cada invocação mede um local.
+## --parking-baseline desliga só o recurso novo no gancho de integração dele.
 var folder := ""
 var region_id := "harbor"
 var variant := "before"
@@ -83,8 +83,8 @@ func run() -> void:
 
 func _process(delta: float) -> bool:
 	if started>0:
-		# Same three real StreetPhysics bursts in both variants, at a visible bay.
-		# This compares the reported floating-debris fix alongside parking workload.
+		# As mesmas três rajadas reais de StreetPhysics nas duas variantes, numa vaga visível.
+		# Isto compara a correção relatada de destroços flutuantes junto com a carga do estacionamento.
 		if measuring and debris_events.size()<3:
 			var elapsed := float(Time.get_ticks_usec()-measured_started)/1000000.0
 			if elapsed>=4.0+float(debris_events.size())*10.0:

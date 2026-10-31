@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Same production scene and seeded conditions before/after. Never writes saves.
+## Mesma cena de produção e condições semeadas antes/depois. Nunca grava saves.
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return
 	seed(22092026)

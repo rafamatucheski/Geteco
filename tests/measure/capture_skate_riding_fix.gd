@@ -87,7 +87,7 @@ func run() -> void:
 	quit()
 
 func street_capture() -> void:
-	# Real population director and authored pedestrian routes, away from the park.
+	# Diretor de população real e rotas autorais de pedestres, longe do parque.
 	world.player.teleport(Vector3(-65, .1, -65))
 	world.production.region.set_focus(world.player.position)
 	world.camera.target_size = 24

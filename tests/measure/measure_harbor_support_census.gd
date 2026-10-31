@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_harbor_idle_regression.gd"
-## Read-only geometry diagnostic before warm-up; production motion is unchanged.
-## Subsequent FPS is a separate warmed run, not the cost of these ray queries.
+## Diagnóstico de geometria só leitura antes do aquecimento; o movimento de produção não muda.
+## O FPS seguinte é uma rodada aquecida separada, não o custo destas consultas de raio.
 const MAX_SUPPORT_HITS := 32
 const SUPPORT_ABOVE := 0.6
 const SUPPORT_BELOW := 1.5

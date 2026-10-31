@@ -1,6 +1,6 @@
 extends "res://tests/measure/measure_harbor_idle_regression.gd"
-## Diagnostic only: original30s -> render cap30fps for30s -> original30s.
-## Physics remains60Hz/max3, all production systems stay active. No aggregate sink.
+## Só diagnóstico: original30s -> limite de render 30fps por30s -> original30s.
+## A física continua 60Hz/max3, todos os sistemas de produção ficam ativos. Sem coletor agregado.
 const FREQUENCY_WORK := preload("res://runtime/StallWorkTrace.gd")
 const FREQUENCY_SEGMENT_USEC := 30000000
 const FREQUENCY_BIN_USEC := 5000000
@@ -40,7 +40,7 @@ func run() -> void:
 		quit(7)
 		return
 	_frequency_tid = anchor[5]
-	# Restore before the inherited240s deadline; _finalize also covers engine quit.
+	# Restaura antes do prazo herdado de240s; _finalize também cobre a saída do motor.
 	create_timer(239.0).timeout.connect(_frequency_timeout)
 	await super.run()
 	_finish_frequency()

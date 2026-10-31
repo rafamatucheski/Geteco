@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_amusement_park.gd"
-## Same integrated station/ride scenarios before and after the coaster revision.
+## Mesmos cenários integrados de estação/passeio antes e depois da revisão da montanha-russa.
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return
 	create_timer(180).timeout.connect(func(): quit(3))

@@ -1,6 +1,6 @@
 extends SceneTree
-## Actual rendered Main scene; 5 s warm-up then 30 s real frame intervals.
-## This is an initial prototype baseline, not a comparison with HarborGame.
+## Cena real renderizada do Main; 5 s de aquecimento e depois 30 s de intervalos reais de quadro.
+## É uma linha de base inicial de protótipo, não uma comparação com o HarborGame.
 var world
 var samples: Array[float] = []
 var cold: Array[float] = []
@@ -31,7 +31,7 @@ func run() -> void:
 	root.add_child(world)
 	if world.get("driving") != null: world.driving.set_process_unhandled_input(false)
 	if world.get("activity") != null: world.activity.set_process_unhandled_input(false)
-	# The measurement route and camera must not respond to unrelated key presses.
+	# A rota de medição e a câmera não podem responder a teclas não relacionadas.
 	world.camera.set_process_unhandled_input(false)
 	for child in world.hud.get_children():
 		if child.get_script() != null: child.set_process_unhandled_input(false)

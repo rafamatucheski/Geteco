@@ -8,8 +8,8 @@ var model := 0
 var full_moon := false
 var paddock_focus := false
 var jump_photo := false
-## A/B of the race-day dressing in the same build: frees the trackside node
-## (tape, bales, bleacher fans, banners, board) and the start gate at runtime.
+## A/B do acabamento de dia de corrida no mesmo build: libera o nó da beira da pista
+## (fita, fardos, torcida na arquibancada, faixas, placar) e o portão de largada em tempo de execução.
 var without_raceday := false
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return
@@ -107,8 +107,8 @@ func finish() -> void:
 	FileAccess.open("res://evidence/motocross/"+label+".json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("MOTOCROSS_BENCHMARK ",JSON.stringify(report.summary))
 	if racing and jump_photo:
-		# Capture a natural launch after the measurement window, never pause or
-		# read back GPU images during performance sampling.
+		# Captura uma largada natural depois da janela de medição; nunca pausa nem
+		# lê imagens da GPU durante a amostragem de desempenho.
 		for i in 1800:
 			await physics_frame
 			var jumping = world.session.motocross.player_bike

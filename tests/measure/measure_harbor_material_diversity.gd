@@ -81,7 +81,7 @@ func run() -> void:
 		FileAccess.open(folder+"/facade_instances.json",FileAccess.WRITE).store_string(JSON.stringify(toned))
 		var movement := []
 		world.player.automatic_direction = Vector3.RIGHT
-		# Continuous rendered frames document the material seam in motion.
+		# Quadros renderizados contínuos documentam a emenda de material em movimento.
 		for frame in 120:
 			await process_frame
 			await RenderingServer.frame_post_draw

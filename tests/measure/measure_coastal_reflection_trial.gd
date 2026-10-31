@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure.gd"
-## Paired rendered comparison of current materials and local geometry reflections.
+## Comparação renderizada pareada dos materiais atuais e dos reflexos de geometria local.
 const TRIAL := preload("res://tests/capture/CoastalReflectionProbeTrial.gd")
 const FACADE := preload("res://tests/capture/CoastalFacadeTrial.gd")
 const FOLDER := "res://evidence/coastal-weather-20261013/reflection-measure"

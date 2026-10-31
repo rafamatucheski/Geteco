@@ -1,5 +1,5 @@
 extends "res://tests/measure/measure_desert.gd"
-## Same rendered Main and isolated checkpoint, before/after population policy.
+## Mesmo Main renderizado e checkpoint isolado, antes/depois da política de população.
 var failures: Array[String]=[]
 func measure(id: String) -> void:
 	if "--functional-only" not in OS.get_cmdline_user_args():
@@ -66,8 +66,8 @@ func run() -> void:
 			for actor in world.people:
 				if not is_instance_valid(actor): continue
 				var slot: int=actor.get_meta("desert_social_slot",-1)
-				# Existing authored shop customers and pump attendants share people.
-				# They are intentionally preserved, outside the new slot registry.
+				# Os clientes autorais existentes das lojas e os frentistas compartilham pessoas.
+				# Eles são preservados de propósito, fora do novo registro de vagas.
 				if slot<0:
 					check(actor.has_meta("desert_routine") or actor.has_meta("roadside_visitor"),"existing purposeful resident is preserved")
 					continue
