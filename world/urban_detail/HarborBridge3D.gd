@@ -1,9 +1,9 @@
 extends Node3D
 class_name HarborBridge3D
 
-## Native 3D translation of world/harbor/HarborBridge.gd. The road system owns
-## asphalt and markings; this model owns the deck structure, edge rails,
-## cable-stayed pylons, fixtures and physical containment.
+## Tradução 3D nativa de world/harbor/HarborBridge.gd. O sistema de ruas é dono do
+## asfalto e das marcações; este modelo é dono da estrutura do tabuleiro, guarda-corpos de borda,
+## pilones estaiados, luminárias e contenção física.
 
 const SCALE:=1.0/16.0
 const SOURCE_CENTER:=Vector2(3790,400)
@@ -123,9 +123,9 @@ static func _outside_tunnel_cut(bounds: AABB) -> bool:
 	return not Rect2(bounds.position.x, bounds.position.z, bounds.size.x, bounds.size.z).intersects(closed)
 
 func _build_deck()->void:
-	# V1 deck 3200..4380 x 298..502, centred on this node.
-	# Keep the slab below HarborRoadGeometry3D's asphalt; only its margins and
-	# underside remain visible, as in the productive V1 layer order.
+	# Tabuleiro da V1 3200..4380 x 298..502, centrado neste nó.
+	# Mantém a laje abaixo do asfalto do HarborRoadGeometry3D; só as margens e a
+	# face de baixo ficam visíveis, como na ordem de camadas da V1 de produção.
 	_box("BridgeUnderside",Vector3(0,-.38,0),Vector3(1180*SCALE,.64,204*SCALE),"626e6e",true)
 	_box("BridgeDeckEdge",Vector3(0,-.13,0),Vector3(1180*SCALE,.12,220*SCALE),"a7aaa0")
 	for north in [true,false]:
@@ -186,9 +186,9 @@ func _build_luminaires()->void:
 
 func _build_abutment()->void:
 	var x:=(4380.0-SOURCE_CENTER.x)*SCALE
-	# The old full-height box crossed the entire deck and acted as an invisible
-	# wall at the east join.  The structural cap belongs below road level; only
-	# the two side wings are allowed to rise beside the traversable surface.
+	# A antiga caixa de altura total cruzava o tabuleiro inteiro e agia como parede
+	# invisível na junção leste.  A tampa estrutural fica abaixo do nível da estrada; só
+	# as duas asas laterais podem subir ao lado da superfície transitável.
 	_box("EastAbutment",Vector3(x+1.05,-.28,0),Vector3(2.25,.56,15.6),"879496",true)
 	for z in [-7.1,7.1]:
 		_box("AbutmentWing",Vector3(x+.7,.9,z),Vector3(2.9,1.8,1.25),"c5cdbe",true)

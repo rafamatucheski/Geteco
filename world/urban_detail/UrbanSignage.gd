@@ -11,8 +11,8 @@ const CANONICAL_PROPER_NAMES: Dictionary = {
 	"harbor_ammunation": "Ammu-Nation",
 	"NorthFrontage2": "Ammu-Nation",
 	"NorthFrontage3": "Union",
-	# The V1 fuel frontage has no proper establishment name. Pumps communicate
-	# its function visually; a category-only sign would violate the facade rule.
+	# A frente do posto de combustível da V1 não tem nome próprio de estabelecimento. As bombas comunicam
+	# a função visualmente; uma placa só de categoria violaria a regra de fachada.
 	"NorthFrontage4": "",
 	"NorthFrontage5": "Customs House",
 	"FoundryTerraceWest": "Foundry Terraces",
@@ -64,10 +64,10 @@ static func extract_proper_name(building_id: String, raw_name: String = "") -> S
 	# Clean up any UTF-8 decoding anomalies if present
 	var clean := raw_name.strip_edges()
 	
-	# If name contains slash (category / proper name), extract the proper name part
+	# Se o nome tiver barra (categoria / nome próprio), extrai a parte do nome próprio
 	if "/" in clean:
 		var parts := clean.split("/")
-		# Common pattern in V1 was "CATEGORY / PROPER NAME" or "PROPER NAME / CATEGORY" or "NAME / 02"
+		# O padrão comum na V1 era "CATEGORY / PROPER NAME" ou "PROPER NAME / CATEGORY" ou "NAME / 02"
 		var candidates: Array[String] = []
 		for part in parts:
 			var trimmed := part.strip_edges()
@@ -83,11 +83,11 @@ static func extract_proper_name(building_id: String, raw_name: String = "") -> S
 		else:
 			clean = parts[0].strip_edges()
 	
-	# Strip "THE " prefix if desired or title-case
+	# Tira o prefixo "THE " se desejado ou usa Title Case
 	if clean.to_upper().begins_with("THE "):
 		clean = clean.substr(4).strip_edges()
 	
-	# Format to Title Case for human elegance
+	# Formata em Title Case por elegância humana
 	return clean.capitalize()
 
 static func create_sign_3d(proper_name: String, size: Vector2, depth: float = 0.08, frame_mat: StandardMaterial3D = null) -> Node3D:

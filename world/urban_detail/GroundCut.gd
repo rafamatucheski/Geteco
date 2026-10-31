@@ -36,8 +36,8 @@ static func subtract(pieces: Array[PackedVector2Array], cover: Array[PackedVecto
 	if cover.is_empty() or not enabled: return pieces
 	return subtract_exact(pieces,cover)
 
-## Mandatory ownership clipping, also used by water where the diagnostic
-## ground-stack switch must never put the ocean back under dry land.
+## Recorte de posse obrigatório, também usado pela água, onde a chave de diagnóstico
+## da pilha de chão nunca pode pôr o oceano de volta sob terra seca.
 static func subtract_exact(pieces: Array[PackedVector2Array], cover: Array[PackedVector2Array]) -> Array[PackedVector2Array]:
 	if cover.is_empty(): return pieces
 	var oriented: Array[PackedVector2Array] = []
@@ -72,9 +72,9 @@ static func _subtract_piece(piece: PackedVector2Array, cover: Array[PackedVector
 				for cut in cuts:
 					if cut.size() >= 3: next.append(cut)
 				continue
-			# Only the current remainder and current cutter need reopening.
-			# Restarting every cover on the original polygon grew exponentially
-			# in planted courts containing many enclosed paths/corner discs.
+			# Só o resto atual e o cortador atual precisam ser reabertos.
+			# Reiniciar toda cobertura no polígono original crescia exponencialmente
+			# em quadras plantadas com muitos caminhos/discos de esquina fechados.
 			var single_cover: Array[PackedVector2Array] = [cover[index]]
 			var single_bounds: Array[Rect2] = [cover_bounds[index]]
 			if depth < MAX_SPLIT and maxf(part_bounds.size.x,part_bounds.size.y) > MIN_PIECE*2.0:
@@ -148,14 +148,14 @@ static func _half_plane(polygon: PackedVector2Array, a: Vector2, b: Vector2, pos
 		previous = point
 		previous_distance = distance
 		previous_inside = is_inside
-	# A vertex exactly on the plane can be emitted both as an intersection
-	# and as an inside point. Remove only coincident neighbours before meshing.
+	# Um vértice exatamente no plano pode ser emitido tanto como interseção
+	# quanto como ponto interno. Remove só vizinhos coincidentes antes de montar a malha.
 	var clean := PackedVector2Array()
 	for point in result:
 		if clean.is_empty() or clean[-1].distance_squared_to(point) > 1e-12: clean.append(point)
 	if clean.size() > 1 and clean[0].distance_squared_to(clean[-1]) <= 1e-12: clean.resize(clean.size()-1)
-	# Boundary-only polygons belong to neither surface area. Retaining a
-	# collinear fragment lets subsequent triangle cuts duplicate it repeatedly.
+	# Polígonos só de borda não pertencem à área de nenhuma superfície. Manter um
+	# fragmento colinear deixa cortes de triângulo seguintes o duplicarem várias vezes.
 	var twice_area := 0.0
 	for index in clean.size(): twice_area += clean[index].cross(clean[(index+1)%clean.size()])
 	if absf(twice_area) < 1e-10: return PackedVector2Array()
@@ -168,16 +168,16 @@ static func flat_mesh(polygons: Array[PackedVector2Array], y: float, uv_scale: f
 	var uvs := PackedVector2Array()
 	var indices := PackedInt32Array()
 	for polygon in polygons:
-		# Clip intersections can differ by micrometres yet collapse in Godot's
-		# triangle-mesh readback/physics deduplication. Clean the contour first,
-		# not only after a failed triangulation, to avoid zero-area bridge faces.
+		# As interseções do recorte podem diferir em micrômetros e mesmo assim colapsar na
+		# leitura de malha de triângulos/deduplicação de física do Godot. Limpa o contorno antes,
+		# não só depois de uma triangulação falhar, para evitar faces-ponte de área zero.
 		polygon = _without_degenerate_edges(polygon)
 		if polygon.size() < 3: continue
 		var triangles := Geometry2D.triangulate_polygon(polygon)
 		if triangles.is_empty():
-			# Global clipping followed by a local inverse transform can leave
-			# micrometre-wide backtracking spikes. Remove only degenerate edges,
-			# never replace a concave outline with its convex hull.
+			# Recorte global seguido de transform inverso local pode deixar
+			# picos de retrocesso de micrômetros de largura. Remove só bordas degeneradas,
+			# nunca troca um contorno côncavo pela carcaça convexa.
 			polygon = _without_degenerate_edges(polygon)
 			triangles = Geometry2D.triangulate_polygon(polygon)
 		if triangles.is_empty():
@@ -195,8 +195,8 @@ static func flat_mesh(polygons: Array[PackedVector2Array], y: float, uv_scale: f
 			var a := polygon[triangles[triangle]]
 			var b := polygon[triangles[triangle+1]]
 			var c := polygon[triangles[triangle+2]]
-			# Clipped hole bridges can triangulate duplicate vertices. Zero-area
-			# faces have no front side; discard only these, retaining tiny real faces.
+			# Pontes de buraco recortadas podem triangular vértices duplicados. Faces de área
+			# zero não têm lado da frente; descarta só essas, mantendo faces reais minúsculas.
 			if (b-a).cross(c-a) == 0.0: continue
 			for corner in 3: indices.append(offset + triangles[triangle+corner])
 	if indices.is_empty(): return null

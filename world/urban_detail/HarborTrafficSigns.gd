@@ -2,7 +2,7 @@
 extends RefCounted
 ## A-32b: signs follow the same enabled crossings as the road paint.
 ## Reference: SENATRAN, Manual Brasileiro de Sinalização, volume II (A-32b).
-## No priority/speed signs are inferred from geometry: those need traffic rules.
+## Nenhuma placa de preferência/velocidade é inferida da geometria: elas precisam de regras de trânsito.
 
 const SIGN_FACE := preload("res://world/urban_detail/traffic_signs/pedestrian_crossing.png")
 const POST_HEIGHT := 2.8

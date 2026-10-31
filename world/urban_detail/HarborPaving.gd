@@ -3,7 +3,7 @@ extends RefCounted
 ## Shared mineral finishes, projected in world space across chunk boundaries.
 const COLOR := Color("a0abb1")
 const EDGE_COLOR := Color("76786b")
-# Offline textures are explicit export dependencies and shared across chunks.
+# Texturas offline são dependências explícitas de export e compartilhadas entre chunks.
 const TILES := {
 	"concrete": preload("res://assets/materials/harbor_paving/concrete.png"),
 	"service": preload("res://assets/materials/harbor_paving/service.png"),

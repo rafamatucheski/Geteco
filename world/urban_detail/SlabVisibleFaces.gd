@@ -1,6 +1,6 @@
 extends RefCounted
-## Keep the underside and walls of a structural slab, excluding hidden top faces.
-## Physics belongs to the original solid; this helper only constructs render data.
+## Mantém a face de baixo e as paredes de uma laje estrutural, excluindo faces de cima escondidas.
+## A física pertence ao sólido original; este auxiliar só monta dados de render.
 const CUT := preload("res://world/urban_detail/GroundCut.gd")
 
 static func box_with_top_opening(size: Vector3, opening: Rect2) -> ArrayMesh:

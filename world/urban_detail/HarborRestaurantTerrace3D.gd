@@ -1,7 +1,7 @@
 extends Node3D
-## Static native counterpart of the productive V1 restaurant terrace.
-## Scheduling/guests remain an external routine contract; this model keeps the
-## six authored anchors visually and physically complete without callbacks.
+## Contraparte nativa estática do terraço do restaurante da V1 de produção.
+## Agenda/clientes continuam um contrato de rotina externo; este modelo mantém as
+## seis âncoras autoradas visual e fisicamente completas sem callbacks.
 
 var venue_id := ""
 var table_index := 0

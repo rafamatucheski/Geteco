@@ -21,8 +21,8 @@ static func material(tint: Color, world_projection := false) -> StandardMaterial
 				var grain := noise.get_noise_3dv(periodic * 34.0)
 				var aggregate := maxf(0.0, -grain - .18)
 				var tone := .88 + wear * .085 + grain * .055 - aggregate * .06
-				# Four-metre tile: one-metre slabs with 3 cm recessed joints.
-				# Keep the grid aligned to the existing road/world UVs at chunk seams.
+				# Ladrilho de quatro metros: placas de um metro com juntas rebaixadas de 3 cm.
+				# Mantém a grade alinhada aos UVs existentes de rua/mundo nas emendas de chunk.
 				var cell_x := floori(x / 64.0)
 				var cell_y := floori(y / 64.0)
 				tone += sin(cell_x * 13.7 + cell_y * 9.1) * .035

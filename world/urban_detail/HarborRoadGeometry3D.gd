@@ -2,9 +2,9 @@
 extends RefCounted
 class_name HarborRoadGeometry3D
 
-## Native projection of the productive HarborRoadNetwork surface stack.
-## Source authority: geodata/roads/UnifiedRoadNetwork2D.gd. Coordinates and
-## widths arrive already converted to metres by NativeRegion.
+## Projeção nativa da pilha de superfícies HarborRoadNetwork de produção.
+## Autoridade da fonte: geodata/roads/UnifiedRoadNetwork2D.gd. Coordenadas e
+## larguras já chegam convertidas para metros pelo NativeRegion.
 
 const SOURCE_SCALE := 1.0 / 16.0
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
@@ -15,7 +15,7 @@ const SIDEWALK_MARGIN := 42.0 * SOURCE_SCALE
 const DASH_LENGTH := 28.0 * SOURCE_SCALE
 const DASH_GAP := 26.0 * SOURCE_SCALE
 const MIN_SEGMENT := 2.0 * SOURCE_SCALE
-# Conservative broad phase only: exact polygon clipping is unchanged.
+# Só fase ampla conservadora: o recorte exato de polígonos não muda.
 const CLIP_BOUNDS_PADDING := 0.001
 
 const ROAD_COLOR := Color("202932")
@@ -117,8 +117,8 @@ func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
 		_layer(ROAD_EDGE_COLOR, 4.0 * SOURCE_SCALE, 0.020),
 		_layer(ROAD_COLOR, 0.0, 0.026),
 	]
-	# Rural branches are real roads in the editor/traffic network. Their surface
-	# ends at the asphalt footprint, rather than painting over the junction.
+	# Ramais rurais são estradas reais na rede do editor/trânsito. A superfície deles
+	# termina na área do asfalto, em vez de pintar por cima do cruzamento.
 	for road in source_roads:
 		if road.get("surface","asphalt") != "earth": continue
 		var flat := PackedVector2Array()
@@ -140,7 +140,7 @@ func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
 
 
 func _prepare_clipping_bounds() -> void:
-	# Rebuilt after every configure, including surfaces=false and empty data.
+	# Reconstruído depois de todo configure, incluindo surfaces=false e dados vazios.
 	_earth_bounds = _polygon_bounds_list(_earth_polygons)
 	_crosswalk_white_bounds = _polygon_bounds_list(_crosswalk_white)
 	_crosswalk_tactile_bounds = _polygon_bounds_list(_crosswalk_tactile)
@@ -367,8 +367,8 @@ func _prepare_crosswalks() -> void:
 			if entry.stop_line:
 				var normal: Vector2 = entry.direction.orthogonal()
 				_crosswalk_stop.append(_quad(entry.stop_position+normal*entry.width*.25,entry.direction,3.0*SOURCE_SCALE,entry.width*.5))
-	# HarborSafety.gd authors exactly two unsignalized Ashbend crossings by
-	# road-relative fraction. They replace zebra fans at the ring topology seams.
+	# O HarborSafety.gd autora exatamente duas travessias sem semáforo na Ashbend por
+	# fração relativa à rua. Elas substituem leques de zebra nas emendas da topologia do anel.
 	_append_road_crossing("cobra_approach",0.78,26.0*SOURCE_SCALE,42.0*SOURCE_SCALE)
 	_append_road_crossing("cobra_court_northwest",0.90,26.0*SOURCE_SCALE,42.0*SOURCE_SCALE)
 
@@ -399,7 +399,7 @@ func _append_crossing(center: Vector2,direction: Vector2,road_width: float,depth
 		var tactile_offset:=minf(sidewalk_reach*.5,12.0*SOURCE_SCALE)
 		var pad_center: Vector2=center+normal*float(side)*(road_width*.5+tactile_offset)
 		if sidewalk_reach > .1: _crosswalk_tactile.append(_quad(pad_center,direction,depth,minf(sidewalk_reach,12.0*SOURCE_SCALE)))
-		# At a junction only the approaching lane stops, outside the crossing.
+		# Num cruzamento só a faixa que chega para, fora da travessia.
 		if not stops or (junction_crossing and side < 0): continue
 		var stop_center: Vector2=center+direction*float(side)*(depth*.5+16.0*SOURCE_SCALE)
 		stop_center += normal*float(side)*road_width*.25
@@ -571,9 +571,9 @@ func _road_mark_bounds(key: int, points: PackedVector2Array, reach: float) -> Re
 	return _mark_bounds[key]
 
 
-## Brazilian longitudinal paint: yellow separates opposing traffic, white separates
-## lanes of one direction. Follow the same inbound/outbound convention as the graph.
-## Curbed urban streets have no artificial shoulder line or parking prohibition.
+## Pintura longitudinal brasileira: amarelo separa sentidos opostos, branco separa
+## faixas do mesmo sentido. Segue a mesma convenção de entrada/saída do grafo.
+## Ruas urbanas com meio-fio não têm linha de acostamento artificial nem proibição de estacionar.
 func _marking_styles(road: Dictionary) -> Array[Dictionary]:
 	var styles: Array[Dictionary] = []
 	var road_id := String(road.id)
@@ -584,8 +584,8 @@ func _marking_styles(road: Dictionary) -> Array[Dictionary]:
 	if one_way:
 		if lanes >= 2: styles.append({"offset": 0.0, "white": true, "solid": false})
 	elif lanes >= 2:
-		# Double continuous centre line on four-lane undivided avenues. The
-		# parallel white broken lines retain the adjacent overtaking lanes.
+		# Linha central dupla contínua em avenidas de quatro faixas sem canteiro. As
+		# linhas brancas tracejadas paralelas mantêm as faixas vizinhas de ultrapassagem.
 		for side in [-1.0, 1.0]:
 			styles.append({"offset": side * 0.20, "white": false, "solid": true})
 			styles.append({"offset": side * width * 0.25, "white": true, "solid": false})
@@ -599,8 +599,8 @@ func _marking_styles(road: Dictionary) -> Array[Dictionary]:
 
 func _emit_mark(parent: Node3D, batches: Dictionary, rect: Rect2, tunnel_cuts: Array[Rect2], from: Vector2, to: Vector2, index: int, white: bool) -> int:
 	var midpoint := (from + to) * 0.5
-	# Test the actual offset lane, not only the road centre. Keep half-open
-	# chunk ownership and the bridge/tunnel surface owners from the old paint.
+	# Testa a faixa deslocada real, não só o centro da rua. Mantém a posse semiaberta
+	# de chunks e os donos das superfícies de ponte/túnel longe da pintura antiga.
 	if not rect.has_point(midpoint): return 0
 	for point in [from, midpoint, to]:
 		if UNIFIED_BRIDGE.owns_surface_point(point) or _marking_hits_junction(point): return 0
@@ -652,8 +652,8 @@ func _add_mark(parent: Node3D, from: Vector2, to: Vector2, index: int, same_dire
 	var paint := PlaneMesh.new()
 	paint.size = Vector2(DASH_WIDTH, delta.length())
 	mesh_instance.mesh = paint
-	# Road paint receives shadows, but has no raised sides to cast a crawling
-	# subpixel shadow onto itself/asphalt as the camera moves.
+	# A pintura da rua recebe sombras, mas não tem lados elevados para projetar uma sombra
+	# subpixel rastejante sobre si/o asfalto quando a câmera se move.
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mesh_instance.material_override = _material(CROSSWALK_COLOR if same_direction else LANE_COLOR)
 	mesh_instance.position = Vector3((from.x + to.x) * 0.5, DASH_Y, (from.y + to.y) * 0.5)
@@ -761,8 +761,8 @@ func _add_surface(parent: Node3D, label: String, polygons: Array[PackedVector2Ar
 	var instance := MeshInstance3D.new()
 	instance.name = label
 	instance.mesh = mesh
-	# Flat paving receives shadows but must not cast onto the neighbouring
-	# coplanar paving layers: their centimetre offsets produce moving shadow tiles.
+	# O calçamento plano recebe sombras mas não pode projetá-las nas camadas de calçamento
+	# coplanares vizinhas: os deslocamentos de centímetros produzem ladrilhos de sombra móveis.
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(instance)
 	if label.ends_with(ROAD_COLOR.to_html(false)):
@@ -826,8 +826,8 @@ func _coastal_asphalt_material() -> ShaderMaterial:
 		_coastal_material.set_shader_parameter("urban_wear",ROAD_WEAR.asphalt_amount())
 		_apply_coastal_reflection()
 		return _coastal_material
-	# Keep _material's StandardMaterial3D contract for bridges/tunnels and
-	# external consumers; the streamed Harbor road shares this planar receiver.
+	# Mantém o contrato StandardMaterial3D de _material para pontes/túneis e
+	# consumidores externos; a rua do Harbor em streaming divide este receptor planar.
 	var base := _material(ROAD_COLOR)
 	_coastal_material = ShaderMaterial.new()
 	_coastal_material.shader = preload("res://world/urban_detail/coastal_wet_asphalt.gdshader")
@@ -856,10 +856,10 @@ func _apply_coastal_reflection() -> void:
 
 func _apply_wetness(material: StandardMaterial3D) -> void:
 	material.albedo_color = Color.WHITE.darkened(_weather_wetness*.32)
-	# Keep rain-darkened aggregate predominant. Large roughness differences
-	# turned filtered sky reflections into bright contour lines across the road.
-	# A narrow, soft response leaves stronger reflections to lights and puddles.
-	# Dry aggregate has no wet film, preserving the approved matte dry look.
+	# Mantém predominante o agregado escurecido pela chuva. Diferenças grandes de rugosidade
+	# transformavam reflexos filtrados do céu em linhas de contorno claras atravessando a rua.
+	# Uma resposta estreita e suave deixa os reflexos mais fortes para luzes e poças.
+	# O agregado seco não tem película molhada, preservando o visual seco fosco aprovado.
 	material.roughness = lerpf(1.0,.56,_weather_wetness)
 	material.metallic_specular = smoothstep(.08,1.0,_weather_wetness)*.22
 	_road_end_blend.sync_material(material)
@@ -872,9 +872,9 @@ func _weather_roughness_texture() -> Texture2D:
 	noise.frequency = 1.0
 	for y in 128:
 		for x in 128:
-			# Periodic coordinates keep the four-metre UV tile continuous at
-			# road and chunk edges. The tiny range avoids drawing a noise pattern
-			# with the sky reflection: wet roughness stays between .532 and .56.
+			# Coordenadas periódicas mantêm o ladrilho de UV de quatro metros contínuo nas
+			# bordas de rua e de chunk. O intervalo minúsculo evita desenhar um padrão de ruído
+			# com o reflexo do céu: a rugosidade molhada fica entre .532 e .56.
 			var a := TAU*float(x)/128.0
 			var b := TAU*float(y)/128.0
 			var periodic := Vector3((2.0+cos(b))*cos(a),(2.0+cos(b))*sin(a),sin(b))
@@ -899,7 +899,7 @@ func _asphalt_texture() -> Texture2D:
 			var grain := noise.get_noise_3dv(periodic*9.0)
 			var aggregate := noise.get_noise_3dv(periodic*23.0+Vector3(29,0,11))
 			var wear := clampf(.80+grain*.085+aggregate*.045,.65,.94)
-			# Neutral charcoal lets warm sunlight and cool sky supply the hue.
+			# Carvão neutro deixa a luz quente do sol e o céu frio darem o matiz.
 			image.set_pixel(x,y,Color(.19*wear,.205*wear,.22*wear))
 	image.generate_mipmaps()
 	return ImageTexture.create_from_image(image)

@@ -19,11 +19,11 @@ static func scatter(parent: Node3D) -> MultiMeshInstance3D:
 	var colors: Array[Color] = []
 	for i in 15000:
 		var p := Vector2(rng.randf_range(-57,50),rng.randf_range(-44,44))
-		# Rejection is bounded; dense centre and loose, uneven peripheral grass.
+		# A rejeição é limitada; centro denso e grama periférica solta e irregular.
 		var central := p.length()<12.0
 		if not central and rng.randf()>.24: continue
 		if p.distance_to(Vector2(0,-1.875))<3.15: continue
-		# Aurora occupies this formerly empty roadside lot; keep its paving clear.
+		# A Aurora ocupa este terreno de beira de estrada antes vazio; mantém o calçamento livre.
 		var world_point := Vector2(parent.global_position.x+p.x,parent.global_position.z+p.y)
 		if Rect2(409,109,22,30).has_point(world_point): continue
 		if _on_paving(world_point,paving_grid.get(Vector2i(floori(world_point.x/8),floori(world_point.y/8)),[])): continue
@@ -72,15 +72,15 @@ static func scatter(parent: Node3D) -> MultiMeshInstance3D:
 	parent.add_child(display)
 	return display
 
-## Use the same outer road polygons as ground ownership: these include the
-## complete sidewalk and junction corners, not just asphalt width + 0.8 m.
-## Reserve the whole tuft footprint (maximum blade reach is 0.23 m).
+## Usa os mesmos polígonos externos de estrada da posse do chão: eles incluem a
+## calçada completa e as esquinas dos cruzamentos, não só a largura do asfalto + 0.8 m.
+## Reserva a área inteira do tufo (o alcance máximo da folha é 0.23 m).
 static func _paved_areas(parent: Node3D, margin: float = .3) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var area:=Rect2(Vector2(parent.global_position.x-59,parent.global_position.z-47),Vector2(111,92)).grow(margin)
 	var cut:=preload("res://world/urban_detail/GroundCut.gd")
-	# Composed render triangles are authoritative: source boxes and deleted pieces
-	# no longer describe the actual paths after the saved editor outlines apply.
+	# Os triângulos de render compostos são a autoridade: caixas fonte e peças apagadas
+	# não descrevem mais os caminhos reais depois que os contornos salvos do editor se aplicam.
 	for child in parent.find_children("*","MeshInstance3D",true,false):
 		if child.mesh==null or not child.is_visible_in_tree(): continue
 		var label:=str(child.get_meta("cobra_surface_label",child.get_meta("harbor_ground_label",child.name)))
@@ -99,8 +99,8 @@ static func _paved_areas(parent: Node3D, margin: float = .3) -> Array[Dictionary
 	if region.harbor_road_geometry!=null and not region.harbor_road_geometry._layers.is_empty():
 		for polygon in region.harbor_road_geometry._layers[0].polygons:
 			if cut.bounds(polygon).intersects(area): _append_paving(result,polygon,margin)
-	# Ground patches may belong to neighbouring chunks not loaded yet. Use the
-	# final runtime records and their replacement masks rather than source saves.
+	# Manchas de chão podem pertencer a chunks vizinhos ainda não carregados. Usa os
+	# registros finais de runtime e as máscaras de substituição deles em vez dos saves fonte.
 	if "records" in region:
 		var factory:=preload("res://world/editing/WorldGroundFactory.gd")
 		for rows in region.records.values():

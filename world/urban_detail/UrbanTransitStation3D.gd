@@ -1,9 +1,9 @@
 extends Node3D
 class_name UrbanTransitStation3D
 
-## Adapter for urban transit stations and regional coach terminals in native 3D.
-## Replaces the legacy SubViewport approach with native 3D instances.
-## Preserves metric geometry (PPM calibrated) without double scaling.
+## Adaptador para estações de trânsito urbano e terminais regionais de ônibus em 3D nativo.
+## Substitui a abordagem legada de SubViewport por instâncias 3D nativas.
+## Preserva a geometria métrica (calibrada por PPM) sem escala dupla.
 
 enum StationType {
 	TUBE_STOP,
@@ -47,7 +47,7 @@ func build_station() -> void:
 			station_model = coach_terminal
 
 func get_boarding_approach() -> Vector3:
-	# Local approach point for passengers (calibrated to rotated model geometry)
+	# Ponto de aproximação local para passageiros (calibrado pela geometria girada do modelo)
 	match station_type:
 		StationType.TUBE_STOP, StationType.TUBE_TERMINAL:
 			var pt: Vector2 = Vector2(123.0, 14.0).rotated(orientation_angle)

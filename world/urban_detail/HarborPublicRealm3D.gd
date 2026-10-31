@@ -1,9 +1,9 @@
 extends Node3D
 class_name HarborPublicRealm3D
 
-## Recognizable public-realm sets reconstructed from HarborDistrict and
-## HarborEastDistrict. Coordinates below are local metres after NativeRegion
-## places each set at its exact V1 anchor.
+## Conjuntos reconhecíveis de espaço público reconstruídos de HarborDistrict e
+## HarborEastDistrict. As coordenadas abaixo são metros locais depois que o NativeRegion
+## põe cada conjunto na âncora exata da V1.
 
 var zone_id := ""
 var materials := {}
@@ -83,8 +83,8 @@ func _disc(label: String, center: Vector3, radius: float, height: float, hex: St
 	return item
 
 func _build_union_plaza() -> void:
-	# HarborUrbanSurface3D owns the entire court and its aligned joints.
-	# V1 radii 60/51/40/13 px converted by 16 px/m.
+	# O HarborUrbanSurface3D é dono da quadra inteira e das juntas alinhadas.
+	# Raios da V1 60/51/40/13 px convertidos por 16 px/m.
 	_disc("UnionFountainBasin", Vector3(0, 0.30, 0), 3.75, 0.60, "7b8078", true)
 	_disc("UnionFountainPedestal", Vector3(0, 0.93, 0), 0.81, 0.62, "c4c4ad", true)
 	# Água, taça e jato: antes eram dois discos pintados (água e anel claro da V1 2D).
@@ -94,7 +94,7 @@ func _build_union_plaza() -> void:
 	add_child(piano)
 
 func _build_foundry_courtyard() -> void:
-	# Garden and courtyard share the district's single surface, including edging.
+	# Jardim e pátio dividem a superfície única do distrito, incluindo o arremate.
 	_bench(Vector3(-17.5, 0.08, -4.69), 0.0)
 	_bench(Vector3(-9.38, 0.08, -4.69), 0.0)
 	_disc("FoundryBirdbathBase", Vector3(-11.75, 0.28, -3.125), 0.44, 0.50, "8c8577")
@@ -114,7 +114,7 @@ func _service_box(label: String, center: Vector3, size: Vector3, hex: String) ->
 		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("dumpster" if "Dumpster" in label else "pallet",prop,self)
 
 func _build_promenade(east: bool) -> void:
-	# No independent promenade plate: the district pavement reaches the quay.
+	# Sem placa de passeio independente: o calçamento do distrito chega até o cais.
 	if not east:
 		_planter(Vector3(-39.06, 0.22, 0), Vector2(7.81, 4.06), 0)
 		_planter(Vector3(-5.78, 0.22, 0), Vector2(9.69, 3.88), 1)

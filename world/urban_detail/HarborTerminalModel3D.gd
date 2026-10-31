@@ -224,7 +224,7 @@ func _bench(point: Vector2) -> void:
 	seat.position = floor_from_local(point)
 	add_child(seat)
 	preload("res://world/urban_detail/BenchFinish.gd").add_collision(seat,"WaitingBench")
-	# Keep the terminal's original blocker dimensions, owned by this bench.
+	# Mantém as dimensões originais do bloqueio do terminal, pertencentes a este banco.
 	var collider: CollisionShape3D = seat.get_node("WaitingBench").get_child(0)
 	(collider.shape as BoxShape3D).size = Vector3(36.0/PPM,.86,10.0/(PPM*FLOOR_Y))
 	collider.position.y = .43
@@ -250,17 +250,17 @@ func _slab(rect: Rect2, s_height: float, thickness: float, mat_name: String) -> 
 	if mat_name in ["asphalt","concrete"] and s_height < .2: _ground_slabs.append(slab)
 	return slab
 
-## Preserve every terminal anchor and raised platform side; only remove
-## horizontal ground hidden by another slab, including the two asphalt aprons.
+## Preserva toda âncora do terminal e lado de plataforma elevada; só remove
+## chão horizontal escondido por outra laje, incluindo os dois pátios de asfalto.
 func _compose_ground() -> void:
 	_ground_slabs.sort_custom(func(a,b): return a.position.y+a.mesh.get_aabb().end.y>b.position.y+b.mesh.get_aabb().end.y)
 	var cover: Array[Rect2] = []
 	for slab in _ground_slabs:
 		var bounds := slab.mesh.get_aabb()
 		var rect := Rect2(Vector2(slab.position.x+bounds.position.x,slab.position.z+bounds.position.z),Vector2(bounds.size.x,bounds.size.z))
-		# Every apron is axis aligned. Rectangular subtraction preserves the
-		# original boundary coordinates; polygon boolean quantization otherwise
-		# leaves hairline slivers against the unquantized neighbouring slab.
+		# Todo pátio é alinhado aos eixos. A subtração retangular preserva as
+		# coordenadas originais da borda; senão a quantização booleana de polígonos
+		# deixa lascas finíssimas contra a laje vizinha não quantizada.
 		var pieces: Array[Rect2] = [rect]
 		for owner in cover:
 			var next: Array[Rect2] = []

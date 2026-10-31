@@ -2,9 +2,9 @@ extends UrbanBuildingBase
 class_name UrbanCobraHouse
 const FINISH := preload("res://world/urban_detail/CobraMaterials.gd")
 
-## Reconstructs the 8 residential bungalows of the Cobra gang quarter in East Harbor.
-## Features pitched corrugated tin/shingle roofs with overhanging eaves, covered wooden front porches,
-## timber support posts, residential steps, and domestic window frames.
+## Reconstrói os 8 bangalôs residenciais do bairro da gangue Cobra no East Harbor.
+## Tem telhados inclinados de zinco ondulado/telhas com beirais salientes, varandas de madeira cobertas na frente,
+## postes de apoio de madeira, degraus residenciais e molduras de janela domésticas.
 
 func build() -> void:
 	var painted := PaintedHarborHouses.style_for(building_id, building_kind)
@@ -47,8 +47,8 @@ func build() -> void:
 		preload("res://world/places/cobra_house/CobraLeaderEntrance.gd").install(self,house_front_z)
 
 func _build_authored_identity(house_center_z: float, house_front_z: float, house_depth: float) -> void:
-	# The V1 sites are deliberately not eight copies of one bungalow. Preserve
-	# their readable roof/plan distinctions while sharing the base construction.
+	# Os sítios da V1 de propósito não são oito cópias de um bangalô. Preserva as
+	# distinções legíveis de telhado/planta deles dividindo a construção base.
 	var dark := UrbanMaterials.trim_dark()
 	var metal := UrbanMaterials.metal_steel()
 	match building_id:
@@ -63,9 +63,9 @@ func _build_authored_identity(house_center_z: float, house_front_z: float, house
 			add_solid_box(visuals_root,"CourtyardWing",Vector3(-building_size.x*.38,1.45,house_center_z-house_depth*.18),Vector3(building_size.x*.36,2.9,house_depth*.68),UrbanMaterials.material_for_color(base_color.darkened(.08)))
 			add_mesh_box(visuals_root,"CourtyardWingRoof",Vector3(-building_size.x*.38,3.02,house_center_z-house_depth*.18),Vector3(building_size.x*.42,.18,house_depth*.76),UrbanMaterials.roof_shingle())
 		"TinRoofHouse":
-			pass # Corrugation now follows both roof slopes in the shared material.
+			pass # A ondulação agora segue as duas águas do telhado no material compartilhado.
 		"ShingleHouse":
-			pass # Courses are on the shingles, not floating horizontal bars.
+			pass # As fiadas ficam nas telhas, não em barras horizontais flutuando.
 		"PorchHouse":
 			add_mesh_box(visuals_root,"PorchHouseShade",Vector3(0,2.62,house_front_z+1.15),Vector3(building_size.x+.7,.14,2.25),FINISH.surface("metal",Color("514437")))
 		"CornerBungalow":
@@ -94,7 +94,7 @@ func _build_pitched_roof(center_z: float, depth: float, roof_mat: StandardMateri
 	# Ridge cap
 	add_mesh_box(visuals_root, "RoofRidge", Vector3(0, height + pitch_h + 0.04, center_z), Vector3(roof_w + 0.08, 0.10, 0.22), UrbanMaterials.metal_dark())
 	
-	# Triangular ends close the roof; rectangular fascia used to intersect it.
+	# Pontas triangulares fecham o telhado; a testeira retangular o atravessava.
 	for side in [-building_size.x * 0.5 - 0.02, building_size.x * 0.5 + 0.02]:
 		var tool := SurfaceTool.new()
 		tool.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -137,7 +137,7 @@ func _build_porch(house_front_z: float, porch_depth: float, wood_mat: StandardMa
 		var px := -porch_w * 0.5 + 0.25 + float(p) * post_step
 		add_mesh_box(porch, "PorchPost_%d" % p, Vector3(px, deck_h + post_h * 0.5, porch_depth - 0.15), Vector3(0.14, post_h, 0.14), post_mat)
 	
-	# Porch balustrade / railing (left and right of center steps)
+	# Balaustrada / guarda-corpo da varanda (à esquerda e à direita dos degraus centrais)
 	var rail_h := 0.75
 	var rail_y := deck_h + rail_h * 0.5
 	var half_pw := porch_w * 0.5

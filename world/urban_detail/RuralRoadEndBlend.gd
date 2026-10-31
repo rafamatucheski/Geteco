@@ -56,8 +56,8 @@ func material(base: Material) -> Material:
 	return result
 
 func sync_material(base: Material) -> void:
-	# The blend is a cached shader copy, so changing the shared asphalt alone
-	# left dry, bright rectangles at rural mouths after rain or save restore.
+	# A mistura é uma cópia de shader em cache, então mudar só o asfalto compartilhado
+	# deixava retângulos secos e claros nas bocas rurais depois de chuva ou restauração de save.
 	var key := base.get_instance_id()
 	if not materials.has(key): return
 	var result: ShaderMaterial = materials[key]

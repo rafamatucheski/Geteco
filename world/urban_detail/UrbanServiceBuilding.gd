@@ -33,10 +33,10 @@ func set_open_amount(amount: float) -> void:
 		police_door_visuals[i].rotation.y = -side * 1.2 * open_amount
 		police_door_bodies[i].rotation.y = police_door_visuals[i].rotation.y
 
-## Reconstructs emergency service buildings and municipal infrastructure:
-## - Fire Station: 3 appliance engine bays, hose-drying tower, siren, crossed-tool emblem.
-## - Police Precinct: Motor pool bay, secure entry, police shield, blue/white marker band.
-## - Motor Workshop: Open drive-in service bay with solid side and rear walls, overhead truss.
+## Reconstrói prédios de serviços de emergência e infraestrutura municipal:
+## - Quartel de bombeiros: 3 baias de viaturas, torre de secagem de mangueiras, sirene, emblema de ferramentas cruzadas.
+## - Delegacia: baia da frota, entrada segura, escudo da polícia, faixa de marcação azul/branca.
+## - Oficina mecânica: baia de serviço aberta para entrada de carro com paredes laterais e de fundo sólidas, treliça no alto.
 
 func build() -> void:
 	if building_kind == "fire_station" or building_id == "NorthFireStation":
@@ -70,7 +70,7 @@ func _build_fire_station() -> void:
 	var main_center_x := half_w - main_w * 0.5
 	var center_bay_w := (main_w - 2.2) / 3.0
 	var wing_w := (main_w - center_bay_w) * .5
-	# Central bay is a physical vestibule; the other two remain solid engine bays.
+	# A baia central é um vestíbulo físico; as outras duas continuam baias de viaturas sólidas.
 	for side in [-1.0, 1.0]:
 		add_solid_box(visuals_root, "FireHouseWing", Vector3(main_center_x + side * (center_bay_w + wing_w) * .5, height * .5, 0), Vector3(wing_w, height, building_size.y), wall_mat)
 	add_solid_box(visuals_root, "FireHouseRear", Vector3(main_center_x, height * .5, -.9), Vector3(center_bay_w, height, building_size.y - 1.8), wall_mat)
@@ -78,7 +78,7 @@ func _build_fire_station() -> void:
 	add_roof_parapet(visuals_root, height, 0.45, 0.25, trim_mat)
 	add_roof_gravel(visuals_root, height)
 	
-	# Left: Hose-drying tower (taller asymmetric silhouette as authored in ProceduralBuilding:430-441)
+	# Esquerda: torre de secagem de mangueiras (silhueta assimétrica mais alta como autorada em ProceduralBuilding:430-441)
 	var tower_w := building_size.x * 0.24
 	var tower_d := building_size.y * 0.45
 	var tower_h := height + 4.2
@@ -184,8 +184,8 @@ func _build_police_precinct() -> void:
 	var blue_mat := UrbanMaterials.police_blue()
 	var accent_mat := UrbanMaterials.police_accent()
 	
-	# Leave a short, physical vestibule behind the pedestrian doorway. The
-	# walk-in transition happens inside it, before the rear wall.
+	# Deixa um vestíbulo físico curto atrás da porta de pedestres. A
+	# transição de entrada a pé acontece dentro dele, antes da parede do fundo.
 	add_solid_box(visuals_root, "PrecinctBody", Vector3(0, height * 0.5, -0.75), Vector3(building_size.x, height, building_size.y - 1.5), wall_mat)
 	var front_wing_width := half_w - 1.3
 	for side in [-1.0, 1.0]:
@@ -271,12 +271,12 @@ func _build_police_precinct() -> void:
 			visuals_root.add_child(sign_node)
 
 func _build_motor_workshop() -> void:
-	# MotorWorkshop in Northgate is a Drive-In Service Bay!
-	# Reconciles strictly with HarborBuilding.gd:29-31:
-	# Left solid:  Rect2(-134, -104, 79, 208) -> width 4.9375m, depth 13.0m, center_x = -5.90625m
-	# Right solid: Rect2( 55,  -104, 79, 208) -> width 4.9375m, depth 13.0m, center_x =  5.90625m
-	# Rear solid:  Rect2(-55,  -104, 110, 40) -> width 6.875m (110px), depth 2.5m (40px), center_z = -5.25m
-	# Open drive-in bay: width 6.875m (110px), clear driveway from Z = -4.0m to Z = +6.5m.
+	# A MotorWorkshop na Northgate é uma baia de serviço de entrada de carro!
+	# Concilia à risca com HarborBuilding.gd:29-31:
+	# Sólido esquerdo:  Rect2(-134, -104, 79, 208) -> largura 4.9375m, profundidade 13.0m, center_x = -5.90625m
+	# Sólido direito: Rect2( 55,  -104, 79, 208) -> largura 4.9375m, profundidade 13.0m, center_x =  5.90625m
+	# Sólido do fundo:  Rect2(-55,  -104, 110, 40) -> largura 6.875m (110px), profundidade 2.5m (40px), center_z = -5.25m
+	# Baia aberta de entrada de carro: largura 6.875m (110px), entrada livre de Z = -4.0m a Z = +6.5m.
 	
 	var painted := building_id == "MotorWorkshop" and PaintedFacadeKit.enabled() and OS.get_environment("GETECO_PAINTED_MOTOR_WORKSHOP") != "0"
 	var wall_mat := UrbanMaterials.material_for_color(Color("6bd2b2").darkened(0.2), 0.86)
@@ -300,7 +300,7 @@ func _build_motor_workshop() -> void:
 	# Rear Solid Wall (110px wide x 40px deep)
 	var rear_visual := add_solid_box(visuals_root, "WorkshopRear", Vector3(0, height * 0.5, rear_cz), Vector3(rear_w, height, rear_d), wall_mat)
 	
-	# Overhead Roof & Steel Trusses (covering the structure above drive-in height)
+	# Telhado superior e treliças de aço (cobrindo a estrutura acima da altura da entrada de carro)
 	var roof_visual := add_solid_box(visuals_root, "WorkshopRoof", Vector3(0, height + 0.15, 0), Vector3(building_size.x + 0.3, 0.30, building_size.y + 0.3), roof_mat)
 	
 	if painted:

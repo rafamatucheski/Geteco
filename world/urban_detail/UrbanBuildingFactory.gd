@@ -1,9 +1,9 @@
 extends RefCounted
 class_name UrbanBuildingFactory
 
-## Central factory for native 3D urban buildings in Geteco V2.
-## Compatible with NativeRegion building data records.
-## Reuses authored 3D models where they exist, and reconstructs 2D procedurals into high-detail 3D geometry.
+## Fábrica central de prédios urbanos 3D nativos na Geteco V2.
+## Compatível com os registros de dados de prédio do NativeRegion.
+## Reaproveita modelos 3D autorados onde existem e reconstrói procedurais 2D em geometria 3D detalhada.
 
 const RESIDENCE_MODEL_PATH := "res://assets/regions/source/world/harbor/residences/ResidenceExterior3D.gd"
 const HOSPITAL_MODEL_PATH := "res://assets/regions/source/world/harbor/hospital/HarborHospitalModel3D.gd"
@@ -30,8 +30,8 @@ static var baked_enabled := OS.get_environment("GETECO_BAKED_BUILDINGS") != "0"
 static var _bake_pending: Array[String] = []
 static var _bake_requested := false
 const V1_HEIGHT_OVERRIDES := {
-	# HarborEastDistrict assigns these two silhouettes after instantiation.
-	# Keep their different skyline heights when converting 2D source pixels to metres.
+	# O HarborEastDistrict atribui estas duas silhuetas depois da instanciação.
+	# Mantém as alturas de skyline diferentes delas ao converter pixels fonte 2D para metros.
 	"ExchangeTower": 128.0 / 16.0,
 	"CivicTower": 95.0 / 16.0,
 }
@@ -102,7 +102,7 @@ static func build_building(data: Dictionary) -> Node3D:
 	var size: Vector2 = extract_size(data)
 	size.x = PaintedHarborHouses.footprint_width(building_id, size.x)
 	
-	# Store normalized coordinates back into data dictionary for downstream consumers
+	# Guarda as coordenadas normalizadas de volta no dicionário de dados para os consumidores seguintes
 	var norm_data: Dictionary = data.duplicate()
 	norm_data["position"] = point
 	norm_data["size"] = size
@@ -160,8 +160,8 @@ static func build_building(data: Dictionary) -> Node3D:
 	# 3. Native 3D Reconstructions for 2D Procedural Typologies
 	var building: UrbanBuildingBase = null
 
-	# Productive V1 landmarks whose positions and accesses already match the V2
-	# catalog. Keep their authored identity instead of the generic kind model.
+	# Marcos da V1 de produção cujas posições e acessos já batem com o catálogo
+	# da V2. Mantém a identidade autorada deles em vez do modelo genérico do tipo.
 	if building_id in ["NorthFrontage0", "NorthFrontage3", "NorthFrontage4"]:
 		building = LANDMARK_FRONTAGE.new()
 	else:
@@ -190,7 +190,7 @@ static func build_building(data: Dictionary) -> Node3D:
 				building = UrbanServiceBuilding.new()
 		
 			"garage":
-				# Northgate Motor Workshop has an open drive-in bay
+				# A oficina Northgate Motor Workshop tem uma baia aberta de entrada de carro
 				building = UrbanServiceBuilding.new()
 		
 			"cobra_house":
@@ -209,7 +209,7 @@ static func build_building(data: Dictionary) -> Node3D:
 	building.ready.connect(func(): finalize_building(building, norm_data))
 	return building
 
-## Synchronously mounts building into the chunk and performs post-tree-entry finalization.
+## Monta o prédio no chunk de forma síncrona e faz a finalização depois de entrar na árvore.
 ## Spans por sub-passo (30/10): `stream.harbor.record.building` de 20-31 ms (Clinic, CanalHomesWest,
 ## prédios do editor de mundo) e `record.original_facade` de 18-25 ms (quayside_house, sewer_market)
 ## não diziam se o custo era montar o nó, a geometria do _ready ou a colisão do acabamento.
@@ -225,8 +225,8 @@ static func populate_chunk(chunk: Node3D, data: Dictionary) -> Node3D:
 		finalize_building(building, data)
 	return building
 
-## Post-mount finalization: executes after child meshes have been constructed in _ready().
-## Generates trimesh collisions on layer 1, opens access doors, and sets proper name signage.
+## Finalização pós-montagem: roda depois que as malhas filhas foram construídas em _ready().
+## Gera colisões trimesh na camada 1, abre as portas de acesso e põe a placa com nome próprio.
 static func finalize_building(building: Node3D, data: Dictionary = {}) -> void:
 	if building == null:
 		return
@@ -245,7 +245,7 @@ static func finalize_building(building: Node3D, data: Dictionary = {}) -> void:
 		building.set_public_door_amount(1.0)
 	if building.has_method("set_door_amount"):
 		building.set_door_amount(1.0)
-	# The sewer hatch starts closed; its opening belongs to FullSession's entry.
+	# A escotilha do esgoto começa fechada; a abertura dela pertence à entrada do FullSession.
 	if building.has_method("set_open_amount") and building.get_script() != HARBOR_MANHOLE_EXTERIOR and data.get("place_id", "") not in ["harbor_ammunation", "harbor_police"]:
 		building.set_open_amount(1.0)
 	if building.has_method("set_door_open"):
@@ -254,7 +254,7 @@ static func finalize_building(building: Node3D, data: Dictionary = {}) -> void:
 	if door_node is Node3D:
 		door_node.rotation.y = -1.3
 	
-	# 2. Collision and layer setup for authored meshes created in _ready()
+	# 2. Configuração de colisão e camada para malhas autoradas criadas em _ready()
 	var collision_span := STALL_WORK.begin()
 	for mesh: MeshInstance3D in building.find_children("*", "MeshInstance3D", true, false):
 		mesh.layers = 1
@@ -288,9 +288,9 @@ static func _build_ammunation_facade(data: Dictionary, point: Vector3) -> Node3D
 	var art: Node3D = model_script.new()
 	art.name = str(data.get("id", "AmmunationFacade"))
 	art.position = point
-	# The reused authored facade is 8.7 x 4.7 m, while NorthFrontage2's V1
-	# parcel is 230 x 180 px. Keeping the raw model scale produced a tiny kiosk
-	# in the middle of the block; fit the proven facade to its authored parcel.
+	# A fachada autorada reaproveitada tem 8.7 x 4.7 m, e o lote da V1 de NorthFrontage2
+	# tem 230 x 180 px. Manter a escala bruta do modelo produzia um quiosque minúsculo
+	# no meio do quarteirão; ajusta a fachada comprovada ao lote autorado.
 	var authored_size: Vector2 = extract_size(data)
 	art.scale = Vector3(maxf(1.0,authored_size.x/8.7),1.0,maxf(1.0,authored_size.y/4.7))
 	art.set_meta("_urban_data", data)
@@ -324,8 +324,8 @@ static func _build_cemetery_facade(data: Dictionary, point: Vector3) -> Node3D:
 static func _apply_proper_name_to_labels(root: Node3D, data: Dictionary) -> void:
 	var b_id := str(data.get("id", root.name))
 	var raw_name := str(data.get("name", data.get("original_name", "")))
-	# Building id wins so catalog service labels cannot reintroduce categories
-	# such as "Fuel" over the canonical proper-name-only facade policy.
+	# O id do prédio vence para que rótulos de serviço do catálogo não reintroduzam categorias
+	# como "Fuel" por cima da política canônica de fachada só com nome próprio.
 	var proper := UrbanSignage.extract_proper_name(b_id, raw_name)
 	
 	for label: Label3D in root.find_children("*", "Label3D", true, false):
@@ -358,8 +358,8 @@ static func _create_mesh_collision_safe(mesh: MeshInstance3D) -> void:
 				child.collision_layer = 1
 				child.collision_mask = 0
 
-## Transit pose must come from the sampled V1 lane/Arrival adapter, not STOP_DEFS anchors.
-## Geometry is already metric; do not apply world /16 scale to the model itself.
+## A pose de trânsito precisa vir do adaptador de faixa amostrada da V1/Arrival, não das âncoras STOP_DEFS.
+## A geometria já é métrica; não aplica a escala /16 do mundo ao próprio modelo.
 static func populate_transit(chunk: Node3D, id: String, position: Vector3, station_type: int, orientation: float = 0.0) -> Node3D:
 	var station = preload("res://world/urban_detail/UrbanTransitStation3D.gd").new()
 	station.name = id

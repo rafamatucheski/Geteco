@@ -1,6 +1,6 @@
 extends RefCounted
-## Exact opaque floor footprints of existing Harbor facades. Only the underlying
-## city finish is cut; authored access heights and physical support stay intact.
+## Áreas de piso opacas exatas das fachadas existentes do Harbor. Só o acabamento
+## de cidade embaixo é cortado; alturas de acesso autoradas e apoio físico ficam intactos.
 const CUT := preload("res://world/urban_detail/GroundCut.gd")
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 
@@ -10,19 +10,19 @@ static func footprints() -> Array[PackedVector2Array]:
 		if definition.region != "harbor": continue
 		var rects: Array[Rect2] = []
 		if definition.id == "harbor_hospital":
-			# The two ambulance/public forecourt boxes in HarborHospitalModel3D.
+			# As duas caixas de pátio de ambulância/público no HarborHospitalModel3D.
 			var projection := Vector2(18.0, 18.0 * .76822128)
 			rects.append(Rect2(Vector2(30,6)/projection, Vector2(100,68)/projection))
 			rects.append(Rect2(Vector2(104,-19)/projection, Vector2(34,136)/projection))
 		elif definition.id == "harbor_ammunation":
-			# UrbanBuildingFactory fits this model to its authored 230x180 px lot.
+			# O UrbanBuildingFactory ajusta este modelo ao lote autorado de 230x180 px.
 			var stretch := Vector2(230.0/16.0/8.7,180.0/16.0/4.7)
 			rects.append(Rect2(Vector2(-4.35,1.975)*stretch,Vector2(8.7,1.35)*stretch))
 		elif definition.id == "cemetery_keeper":
 			rects.append(Rect2(-3.8,-2.95,7.6,5.9))
 			rects.append(Rect2(-.8,2.745,1.6,.65))
 		elif definition.id in ["westgate_garden", "quayside_house", "canal_north"]:
-			# Foundation includes the thin floor strip kept by WalkupFacadeDoor.
+			# A fundação inclui a faixa fina de piso mantida pelo WalkupFacadeDoor.
 			rects.append(Rect2(-4.7,-3.3,9.4,6.6))
 			rects.append(Rect2(-1.1,3.12,2.2,.9))
 			var offset := preload("res://world/places/ResidenceParking.gd").placement(int(definition.variant))

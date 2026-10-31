@@ -1,8 +1,8 @@
 extends UrbanBuildingBase
 class_name HarborManholeExterior3D
 
-## Interactive access hatch. The closed cover supports pedestrians and slides clear
-## while the actor enters the carved shaft.
+## Escotilha de acesso interativa. A tampa fechada apoia pedestres e desliza para o lado
+## enquanto o ator entra no poço escavado.
 
 const HATCH_SHIFT := Vector3(-1.42, 0.055, 0.0)
 const LADDER_Z := -0.48
@@ -38,13 +38,13 @@ func build() -> void:
 	var steel := UrbanSurfaces.material("manhole_steel", "metal", Color("6f7976"), 0.58, 0.5, 0.6)
 	var collar := _add_ring("ManholeCollar", 0.70, 0.82, 0.029, iron)
 	collar.scale.y = .15
-	# The bottom of the shaft is well below street level, leaving an actual dark
-	# opening between the rim and the sliding lid rather than another cast-iron cap.
+	# O fundo do poço fica bem abaixo do nível da rua, deixando uma abertura escura
+	# real entre a borda e a tampa deslizante em vez de outra tampa de ferro fundido.
 	var void_material := StandardMaterial3D.new()
 	void_material.albedo_color = Color("010304")
 	void_material.roughness = 1.0
 	void_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	# Darkness belongs at the bottom: a disc at street level hid the entire ladder.
+	# A escuridão pertence ao fundo: um disco no nível da rua escondia a escada inteira.
 	_add_disc("ShaftBottom", 0.79, 0.018, -1.85, void_material)
 	var shaft_wall := UrbanMaterials.material_for_color(Color("10191b"), 0.9)
 	for side in [-1.0, 1.0]:
@@ -73,8 +73,8 @@ func build() -> void:
 		step.position = Vector3(0.0, -0.02 - rung * 0.10, LADDER_Z)
 		step.material_override = ladder_material
 		visuals_root.add_child(step)
-	# Retractable upper section gives hands real rails above the street during
-	# entry. It folds into the shaft with the lid closed, leaving cars clear.
+	# A seção superior retrátil dá às mãos corrimãos reais acima da rua durante
+	# a entrada. Ela se recolhe no poço com a tampa fechada, deixando os carros livres.
 	ladder_handles = Node3D.new()
 	ladder_handles.name = "RetractableLadder"
 	visuals_root.add_child(ladder_handles)
@@ -106,7 +106,7 @@ func build() -> void:
 	cover = Node3D.new()
 	cover.name = "ManholeCover"
 	hatch_pivot.add_child(cover)
-	# Render above the road's 0.026 m surface, while support remains at physical ground.
+	# Renderiza acima da superfície de 0.026 m da rua, enquanto o apoio fica no chão físico.
 	_add_disc_to(cover, "CastIronLid", 0.66, 0.065, 0.0015, dark)
 	var lid_body := StaticBody3D.new()
 	lid_body.name = "ClosedCoverCollision"
@@ -117,7 +117,7 @@ func build() -> void:
 	lid_shape.radius = 0.66
 	lid_shape.height = 0.065
 	lid_collider.shape = lid_shape
-	# The cap supports the shaft at street height; its sides never form a curb.
+	# A tampa apoia o poço na altura da rua; os lados nunca formam um meio-fio.
 	lid_collider.position.y = -lid_shape.height * 0.5
 	lid_body.add_child(lid_collider)
 	cover.add_child(lid_body)

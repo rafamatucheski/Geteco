@@ -2,9 +2,9 @@
 extends RefCounted
 class_name HarborUrbanSurface3D
 
-## Harbor's exterior pavement partition, with inset planted beds.
-## Keep source rectangles stable for editor IDs and access reservations;
-## rebuild their visible union with shared finishes appropriate to each court.
+## Partição do calçamento externo do Harbor, com canteiros plantados embutidos.
+## Mantém os retângulos fonte estáveis para IDs do editor e reservas de acesso;
+## reconstrói a união visível deles com acabamentos compartilhados adequados a cada quadra.
 
 const SCALE := 1.0 / 16.0
 const GROUND := preload("res://assets/regions/source/world/harbor/UrbanGround.gd")
@@ -18,11 +18,11 @@ var _visible_surfaces: Array[Dictionary] = []
 var _materials: Dictionary = {}
 var _access_points := PackedVector2Array()
 
-## Footprints where a hand-placed raised slab elsewhere (HarborRouteDetail3D) used to sit
-## on top of this flat lot fill, producing a visible double sidewalk. That slab was removed
-## in favor of just showing this flat paving directly, so this list is intentionally empty
-## again; kept as the hook to use if a future zone ever needs a real raised platform (a curb
-## step, not a full-width slab, is the right tool for a driveway cut instead).
+## Áreas onde uma laje elevada posta à mão em outro lugar (HarborRouteDetail3D) ficava
+## em cima deste preenchimento plano de lote, produzindo uma calçada dupla visível. Essa laje foi removida
+## em favor de mostrar este calçamento plano diretamente, então esta lista está vazia de propósito
+## de novo; fica como o gancho a usar se uma zona futura precisar de uma plataforma elevada real (um degrau
+## de meio-fio, não uma laje de largura total, é a ferramenta certa para um rebaixo de garagem).
 const _RAISED_APRON_HOLES: Array[Rect2] = []
 
 
@@ -32,14 +32,14 @@ func configure(compose_visible := true) -> void:
 	_add_westgate()
 	_add_east()
 	_add_north()
-	# Catalog callers only read the authored rectangles. Composing their visible
-	# union here used to repeat the expensive merge for every paving validation.
+	# Quem chama o catálogo só lê os retângulos autorados. Compor a união visível
+	# aqui repetia a mesclagem cara a cada validação de calçamento.
 	if compose_visible: _compose_visible_surfaces()
 
 
-## V1 paints later rectangles over earlier ones. In 3D those faces must not
-## coexist at the same depth: retain only the exposed pieces of each finish.
-## Compose once, before streaming; keep original world UVs and floor height.
+## A V1 pinta retângulos posteriores sobre os anteriores. Em 3D essas faces não podem
+## coexistir na mesma profundidade: mantém só as partes expostas de cada acabamento.
+## Compõe uma vez, antes do streaming; mantém os UVs originais do mundo e a altura do piso.
 func _compose_visible_surfaces() -> void:
 	_visible_surfaces.clear()
 	for i in _surfaces.size():
@@ -64,8 +64,8 @@ func _compose_visible_surfaces() -> void:
 		for piece in pieces:
 			var kind := String(_surfaces[i].kind)
 			if kind == "grass":
-				# The edging belongs to the original garden perimeter, never to
-				# arbitrary pieces introduced by streets, access paths or streaming.
+				# O arremate pertence ao perímetro original do jardim, nunca a
+				# peças arbitrárias introduzidas por ruas, caminhos de acesso ou streaming.
 				var inner := (_surfaces[i].rect as Rect2).grow(-GARDEN_EDGE)
 				var lawn := piece.intersection(inner)
 				if lawn.has_area():
@@ -73,8 +73,8 @@ func _compose_visible_surfaces() -> void:
 				for border in _rect_difference(piece,inner):
 					_visible_surfaces.append({"rect":border,"kind":"edging","color":PAVING.EDGE_COLOR,"garden":_surfaces[i].get("boundary",_surfaces[i].rect),"neighbour":_surfaces[i].get("neighbour","concrete")})
 			else:
-				# Retire authored patch tints, while keeping deliberate new editor
-				# recolours functional. Old saved edits with the source tint migrate.
+				# Aposenta os tons de manchas autorados, mantendo funcionais as recolorações novas
+				# deliberadas do editor. Edições salvas antigas com o tom fonte migram.
 				var family := String(_surfaces[i].get("finish", "concrete"))
 				var finish: Color = PAVING.FINISH_COLORS[family] if _surfaces[i].color == _surfaces[i].get("authored_color",_surfaces[i].color) else _surfaces[i].color
 				_visible_surfaces.append({"rect":piece,"kind":family,"color":finish,"court":_surfaces[i].get("boundary",_surfaces[i].rect) if family != "concrete" else Rect2(),"neighbour":_surfaces[i].get("neighbour","concrete")})
@@ -92,12 +92,12 @@ func _rect_difference(rect: Rect2, cut: Rect2) -> Array[Rect2]:
 	return result
 
 
-## Dissolve obsolete access/lot seams before building meshes. Adjacent rectangles
-## are merged only when their union is rectangular, preserving all real openings.
+## Dissolve emendas obsoletas de acesso/lote antes de montar as malhas. Retângulos vizinhos
+## só são mesclados quando a união é retangular, preservando todas as aberturas reais.
 func _merge_neighbours() -> void:
-	# Different finish/court/garden groups cannot merge or influence one another.
-	# Keep the same first-pair rule inside each group, without restarting scans of
-	# every unrelated rectangle or shifting the whole array after every merge.
+	# Grupos de acabamento/quadra/jardim diferentes não podem se mesclar nem influenciar um ao outro.
+	# Mantém a mesma regra do primeiro par dentro de cada grupo, sem reiniciar varreduras de
+	# todo retângulo sem relação nem deslocar o array inteiro depois de cada mesclagem.
 	var groups := {}
 	for i in _visible_surfaces.size():
 		var source: Dictionary = _visible_surfaces[i]
@@ -162,9 +162,9 @@ func build_chunk(parent: Node3D, rect: Rect2, cover: Array[PackedVector2Array] =
 	return exposed
 
 
-## Round the authored perimeter in world space, never the streaming rectangle.
-## Its exact complement replaces the old sharp corner with neighbouring paving.
-## All parts share the original height, and are still cut by road/building cover.
+## Arredonda o perímetro autorado no espaço do mundo, nunca o retângulo de streaming.
+## O complemento exato substitui a antiga esquina viva por calçamento vizinho.
+## Todas as partes dividem a altura original e ainda são cortadas pela cobertura de rua/prédio.
 func _rounded_parts(source: Dictionary, clipped: Rect2) -> Array[Dictionary]:
 	var subject: Array[PackedVector2Array] = [GROUND_CUT.rect_polygon(clipped)]
 	var garden: Rect2 = source.get("garden",Rect2())
@@ -261,8 +261,8 @@ func _add_east() -> void:
 
 func _add_north() -> void:
 	_add(Rect2(4380,-2400,2380,2300), "concrete", Color("999789"))
-	# Historic "gravel" IDs stay in the editor catalog. The built northern
-	# station promenade receives the quay finish during composition.
+	# IDs históricos de "gravel" ficam no catálogo do editor. O passeio construído da
+	# estação norte recebe o acabamento do cais durante a composição.
 	_add(Rect2(5700,-4470,600,2120), "gravel", Color("82887d"))
 	for x in [5708.0,6250.0]: _add(Rect2(x,-4430,42,2030),"gravel",Color("b0ac96"))
 	_add(Rect2(5980,-4050,40,1650), "grass", Color("7d8b74"))
@@ -307,8 +307,8 @@ func _add(source_rect: Rect2, kind: String, color: Color) -> void:
 		_surfaces.append({"rect":Rect2(piece.position*SCALE,piece.size*SCALE),"kind":kind,"color":color,"authored_color":color,"finish":_finish_for_lot(source_rect,kind),"boundary":Rect2(source_rect.position*SCALE,source_rect.size*SCALE),"neighbour":neighbour})
 
 
-## Choose the use of the authored lot BEFORE carving or streaming it. The large
-## background stays a neutral sidewalk; individual courts replace its faces.
+## Escolhe o uso do lote autorado ANTES de esculpi-lo ou fazer streaming. O grande
+## fundo continua uma calçada neutra; quadras individuais substituem as faces dele.
 func _finish_for_lot(source: Rect2, kind: String) -> String:
 	var rect := Rect2(source.position*SCALE, source.size*SCALE)
 	if rect.get_area() > 5000.0: return "concrete"
@@ -327,8 +327,8 @@ func _finish_for_lot(source: Rect2, kind: String) -> String:
 	return "concrete"
 
 
-## Splits source_rect around any raised-apron hole it overlaps, so the flat
-## lot fill never draws under a purpose-built raised slab placed elsewhere.
+## Divide source_rect em volta de qualquer buraco de pátio elevado que ele sobreponha, para o
+## preenchimento plano do lote nunca desenhar sob uma laje elevada feita sob medida posta em outro lugar.
 func _carved(source_rect: Rect2) -> Array[Rect2]:
 	var pieces: Array[Rect2] = [source_rect]
 	var openings: Array[Rect2] = _RAISED_APRON_HOLES.duplicate()
@@ -368,8 +368,8 @@ func _add_group(parent: Node3D, group: Dictionary, cover: Array[PackedVector2Arr
 	var instance := MeshInstance3D.new()
 	instance.name="HarborSurface_%s"%String(group.kind)
 	instance.mesh=mesh
-	# This is a ground finish, not a raised slab. Receive object shadows without
-	# casting subpixel shadows onto the road and the underlying land.
+	# Isto é um acabamento de chão, não uma laje elevada. Recebe sombras de objetos sem
+	# projetar sombras subpixel na rua e no terreno embaixo.
 	instance.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(instance)
 
@@ -385,8 +385,8 @@ func _material(kind: String, color: Color) -> StandardMaterial3D:
 		return _materials[key]
 	var material := StandardMaterial3D.new()
 	material.albedo_color=color
-	# The source normal map amplifies albedo derivatives sixfold. A scale of
-	# two made Harbor's lawns look like folded fabric in the gameplay camera.
+	# O mapa normal fonte amplifica as derivadas do albedo em seis vezes. Uma escala de
+	# dois fazia os gramados do Harbor parecerem tecido dobrado na câmera do jogo.
 	GROUND.bind(material,kind,.22 if kind == "grass" else .35)
 	# Triplanar em mundo: o mesh não tem tangentes e normal map precisa delas no UV plano.
 	material.uv1_triplanar=true

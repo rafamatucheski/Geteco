@@ -56,7 +56,7 @@ func _facade(key: String, at: Vector3, width: float, pitch: float, sideways: boo
 		if _blocked(pos,sideways,window_width,window_height): continue
 		var frame_size := Vector3(.12,window_height+.16,window_width+.16) if sideways else Vector3(window_width+.16,window_height+.16,.12)
 		_detail(pos,frame_size,UrbanMaterials.trim_dark())
-		# Pane is centered on the facade with visible faces beyond the frame.
+		# O vidro fica centrado na fachada com faces visíveis além da moldura.
 		var pane_size := Vector3(.135,window_height,window_width) if sideways else Vector3(window_width,window_height,.135)
 		_detail(pos,pane_size,window_glass_material(key+str(column),.60))
 		if style != "glass":
@@ -151,7 +151,7 @@ func _slab() -> void:
 			_detail(Vector3(x,y,d*.43),Vector3(bay_w-.18,.17,d*.14),UrbanMaterials.trim_stone())
 			_detail(Vector3(x,y+.55,d*.495),Vector3(bay_w-.18,1.0,.10),UrbanMaterials.trim_stone())
 			_detail(Vector3(x-bay_w*.5+.12,y+.55,d*.43),Vector3(.10,1.0,d*.14),UrbanMaterials.trim_stone())
-	# Balcony slab/rail envelope is above street level and backed by solid rooms.
+	# O envelope de laje/guarda-corpo da sacada fica acima do nível da rua e tem cômodos sólidos atrás.
 	_plinth(Vector3(0,0,-d*.07),Vector3(w,0,d*.86))
 	_rooftop(Vector3(0,height+.03,-d*.07),Vector3(w,0,d*.86))
 
@@ -225,8 +225,8 @@ func _flush_details() -> void:
 		instance.name = "FacadeBatch"
 		instance.multimesh = multimesh
 		instance.material_override = batch.material
-		# The headless preview builder has a dummy renderer: MultiMesh reads
-		# lose their transforms. Carry the CPU copy to the editor snapshot.
+		# O construtor de pré-visualização headless tem um renderer dummy: leituras de MultiMesh
+		# perdem os transforms. Leva a cópia de CPU para o snapshot do editor.
 		if Engine.has_meta("geteco_live_preview_build"):
 			instance.set_meta("preview_instance_transforms",batch.transforms)
 		visuals_root.add_child(instance)

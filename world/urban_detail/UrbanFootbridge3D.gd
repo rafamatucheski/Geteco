@@ -51,7 +51,7 @@ func build() -> void:
 	var rise := DECK_HEIGHT / float(STEPS + 1)
 
 	# Tabuleiro: laje de concreto, piso escuro e vigas laterais pintadas.
-	# Concrete rim and paving share one height; the structural underside remains.
+	# A borda de concreto e o calçamento dividem uma altura; a face estrutural de baixo continua.
 	var opening := Rect2(-width * .5 + .15,-half_deck + .05,width - .3,half_deck * 2.0 - .1)
 	var slab := MeshInstance3D.new()
 	slab.name = "DeckStructure"

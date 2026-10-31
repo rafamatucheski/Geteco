@@ -1,5 +1,5 @@
 extends "res://world/urban_detail/UrbanSkylineBuilding.gd"
-## Exterior-only houses and warehouses using the same static detail batching.
+## Casas e armazéns só externos usando o mesmo lote de detalhe estático.
 func build() -> void:
 	_openings.clear()
 	# Patrol Court (porto): casa pintada inteira; ver PaintedHarborHouses.
@@ -120,8 +120,8 @@ func _roof(origin: Vector3, width: float, depth: float, rise: float, shed: bool)
 	else:
 		vertices = PackedVector3Array([Vector3(-width*.5,0,-depth*.5),Vector3(width*.5,0,-depth*.5),Vector3(0,rise,-depth*.5),Vector3(-width*.5,0,depth*.5),Vector3(width*.5,0,depth*.5),Vector3(0,rise,depth*.5)])
 	var indices := [0,2,1,3,4,5,0,1,4,0,4,3,1,2,5,1,5,4,2,0,3,2,3,5]
-	# Godot's front faces use clockwise winding; swapping extrusion axes
-	# for the shed reverses the prism orientation.
+	# As faces da frente no Godot usam sentido horário; trocar os eixos de extrusão
+	# do galpão inverte a orientação do prisma.
 	if not shed: indices.reverse()
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
