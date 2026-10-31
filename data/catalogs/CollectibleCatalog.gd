@@ -64,6 +64,17 @@ const ENTRIES := {
 	"vicente_letter_08": {"name": "Carta de Vicente nº 8", "region": "Motel Oásis, Estrada do Sal"},
 	"vicente_letter_09": {"name": "Carta de Vicente nº 9", "region": "Capela da Estrada, deserto"},
 	"vicente_letter_10": {"name": "Carta de Vicente nº 10", "region": "Arquibancada da reta, deserto"},
+	# Fitas do piloto (data/catalogs/PilotTapes.gd): as dez liberam o galpão do Pátio dos Armazéns.
+	"pilot_tape_01": {"name": "Fita do piloto nº 1", "region": "Garagem do Chefe, porto sul"},
+	"pilot_tape_02": {"name": "Fita do piloto nº 2", "region": "Quartel Northgate, Harbor"},
+	"pilot_tape_03": {"name": "Fita do piloto nº 3", "region": "Jardim de Westgate, Harbor"},
+	"pilot_tape_04": {"name": "Fita do piloto nº 4", "region": "Boca do esgoto, Harbor"},
+	"pilot_tape_05": {"name": "Fita do piloto nº 5", "region": "Cume Branco, serra"},
+	"pilot_tape_06": {"name": "Fita do piloto nº 6", "region": "Cabana do Cavaleiro, serra"},
+	"pilot_tape_07": {"name": "Fita do piloto nº 7", "region": "Abrigo dos Lenhadores, serra"},
+	"pilot_tape_08": {"name": "Fita do piloto nº 8", "region": "Torre de rádio, deserto"},
+	"pilot_tape_09": {"name": "Fita do piloto nº 9", "region": "Ferro-velho do Nonato, deserto"},
+	"pilot_tape_10": {"name": "Fita do piloto nº 10", "region": "Salinas Estrada do Sal, deserto"},
 }
 
 const FIND_CASH := 50

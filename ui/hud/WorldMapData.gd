@@ -42,6 +42,7 @@ func collect(controller, prepare_relief := true) -> void:
 	if regions.has("desert"): _desert_markers()
 	_forge_markers(controller.state,regions)
 	if regions.has("desert"): _roadside_markers(controller.state)
+	if regions.has("harbor"): _pilot_hideout_marker(controller.state)
 	for station in preload("res://runtime/regional/RegionalCoachRoute.gd").stations():
 		if regions.has(station.region): add_marker("coach_"+str(station.id),str(station.label),station.arrival,"bus",str(station.region))
 	if "--railway-baseline" not in OS.get_cmdline_user_args(): _railway_markers(controller.state)
@@ -219,6 +220,13 @@ func _roadside_markers(state) -> void:
 	for entry in preload("res://runtime/desert/roadside/RoadsideSecrets.gd").map_markers(state.world_state,state.economy):
 		add_marker(str(entry.id),str(entry.title),entry.point,str(entry.kind),"desert")
 		markers.back().detail=str(entry.detail)
+
+## Galpão do piloto: só aparece depois das dez fitas (PilotTapes.HIDEOUT_RECEIPT).
+func _pilot_hideout_marker(state) -> void:
+	if not state is Object or state.get("economy") == null: return
+	var tapes := preload("res://data/catalogs/PilotTapes.gd")
+	if not tapes.hideout_open(state.economy): return
+	add_marker("pilot_hideout",tapes.HIDEOUT_NAME,tapes.HIDEOUT_POINT,"place","harbor")
 
 func _railway_markers(state) -> void:
 	if not state is Object or not state.campaign is Object: return
