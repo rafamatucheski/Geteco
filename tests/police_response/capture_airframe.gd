@@ -1,5 +1,5 @@
 extends SceneTree
-## Geometry inspection; integrated behavior is covered by capture_air_k9.
+## Inspeção de geometria; o comportamento integrado é coberto por capture_air_k9.
 const ART := preload("res://gameplay/police_response/air_k9/PoliceHelicopterArt.gd")
 var folder := "res://evidence/police-response-20260928/airframe"
 

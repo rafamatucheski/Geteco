@@ -1,6 +1,6 @@
 extends SceneTree
-## Visual review only, inside Main with real streamed geometry. Does not benchmark.
-## Run rendered with -- --no-save --skip-arrival --output=D:/.../air-k9
+## Só revisão visual, dentro do Main com geometria real em streaming. Não é benchmark.
+## Rode renderizado com -- --no-save --skip-arrival --output=D:/.../air-k9
 var world: Node3D
 var folder := "res://evidence/police-response-20260928/air-k9"
 
@@ -13,8 +13,8 @@ func wait_until(predicate: Callable, limit: int) -> bool:
 	return false
 
 func capture(label: String) -> void:
-	# Let camera transforms reach RenderingServer before reading the next image.
-	# A post_draw signal alone can still describe the camera from this frame.
+	# Deixa as transformações da câmera chegarem ao RenderingServer antes de ler a próxima imagem.
+	# Só o sinal post_draw ainda pode descrever a câmera deste quadro.
 	await process_frame
 	await process_frame
 	if not label.begins_with("rappel-sequence"):
@@ -50,13 +50,13 @@ func run() -> void:
 		fail("Could not exit initial interior through normal session transition")
 		return
 	var gameplay: Node3D = world.gameplay
-	# skip_dispatch removes vehicles; suppress the legacy foot-only fallback as
-	# well so this visual fixture observes exactly the transported squad.
+	# skip_dispatch remove os veículos; suprime também o fallback legado só a pé
+	# para que esta fixture visual observe exatamente o esquadrão transportado.
 	gameplay.dispatch_owned = true
 	var director: Node3D = gameplay.police_air
 	director.set_physics_process(false)
 	gameplay.clear_wanted()
-	# Public street near the original harbor start; keep the live map/traffic.
+	# Rua pública perto do início original no porto; mantém o mapa/trânsito vivos.
 	var anchor: Vector3 = world.player.global_position
 	world.production.region.set_focus(anchor)
 	for index in 90: await physics_frame
@@ -80,8 +80,8 @@ func run() -> void:
 	heli.set_physics_process(false)
 	print("AIR_K9_CAPTURE zone=", zone.center, " officers=", heli.rappellers.size())
 	await capture("rappel-gameplay-camera")
-	# Explicit inspection camera: the normal screenshot above remains evidence
-	# of play framing; this second view verifies depth and the four moving ropes.
+	# Câmera de inspeção explícita: a captura normal acima continua como evidência
+	# do enquadramento de jogo; esta segunda vista confere profundidade e as quatro cordas em movimento.
 	var review := Camera3D.new()
 	review.projection = Camera3D.PROJECTION_ORTHOGONAL
 	review.size = 30.0
@@ -134,7 +134,7 @@ func run() -> void:
 			await capture("departure-banking-turn")
 			heli.set_physics_process(true)
 	for index in 10: await physics_frame
-	# Deployment uses the same offscreen+capsule+handler checks as gameplay.
+	# O desembarque usa as mesmas checagens offscreen+cápsula+handler da jogabilidade.
 	review.global_position += Vector3(100, 0, 100)
 	review.look_at(zone.center + Vector3(100, 0, 100))
 	director._try_deploy_dog()

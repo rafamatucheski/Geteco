@@ -68,7 +68,7 @@ func run() -> void:
 	check(is_equal_approx(dog.visual.rotation.z, PI * 0.5) and not dog.is_physics_processing(), "corpse settles and stops animation updates")
 	world.queue_free()
 	await process_frame
-	# Give the audio mixer time to release the stopped bark before engine exit.
+	# Dá tempo ao mixer de áudio para liberar o latido parado antes de o motor sair.
 	await create_timer(0.1).timeout
 	print("K9_ANIMATION failures=", failures.size())
 	quit(0 if failures.is_empty() else 1)

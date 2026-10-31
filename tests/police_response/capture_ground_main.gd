@@ -1,6 +1,6 @@
 extends SceneTree
-## Inspection in rendered Main, with real road/terrain/materials and camera.
-## Requires --no-save. Does not read/write player saves or certify frame time.
+## Inspeção no Main renderizado, com rua/terreno/materiais e câmera reais.
+## Exige --no-save. Não lê/grava saves do jogador nem certifica tempo de quadro.
 const MODELS := preload("res://gameplay/police_response/ground/PoliceGroundModels.gd")
 const BLOCK := preload("res://gameplay/police_response/ground/PoliceRoadblock.gd")
 const OUTPUT := "res://evidence/police-response-20260928/"

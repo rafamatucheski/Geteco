@@ -1,6 +1,6 @@
 extends SceneTree
-## Focused physical contracts. Run headless for policy/collision, then with
-## --capture for native interior depth evidence; neither certifies frame time.
+## Contratos físicos focados. Rode headless para política/colisão e depois com
+## --capture para evidência de profundidade do interior nativo; nenhum dos dois certifica tempo de quadro.
 const OFFICER := preload("res://gameplay/PoliceAgent.gd")
 const TACTICS := preload("res://gameplay/police_response/tactics/PoliceTactics.gd")
 const PURSUIT := preload("res://gameplay/police_response/tactics/PoliceInteriorPursuit.gd")

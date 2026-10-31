@@ -47,7 +47,7 @@ func run() -> void:
 	for variant in EXPECTED_SCALES.size():
 		var expected_scale: float = EXPECTED_SCALES[variant]
 		var lane := -6.0 + float(variant) * 4.0
-		# Keep clear/blocked positions on opposite sides of the actual wall face.
+		# Mantém as posições livre/bloqueada em lados opostos da face real da parede.
 		var front_offset: float = (DOG.BODY_CENTER.z - DOG.BODY_SIZE.z * 0.5) * expected_scale
 		var clear_point := Vector3(lane, 0.05, -1.9 - front_offset + 0.08)
 		var blocked_point := clear_point + Vector3.FORWARD * 0.16
@@ -91,7 +91,7 @@ func run() -> void:
 		var progressive: bool = dog.visual.rotation.z > 0.0 and dog.visual.rotation.z < PI * 0.5
 		dog._animate_death(0.6)
 		var settled: Transform3D = dog.visual.transform
-		# Ending the pursuit must not reset a settled corpse into the ground.
+		# Encerrar a perseguição não pode reposicionar um cadáver assentado para dentro do chão.
 		dog.begin_withdrawal()
 		var normalized_settle: Vector3 = dog.visual.position / expected_scale
 		if variant == 0: settled_reference = normalized_settle
