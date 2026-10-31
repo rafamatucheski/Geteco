@@ -4,6 +4,9 @@ extends Node
 const NETWORK := preload("res://world/railway/RailwayNetwork.gd")
 const MODEL := preload("res://world/railway/TrainModel.gd")
 const GATE := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
+const FARES := preload("res://runtime/railway/RailwayFares.gd")
+## Fração do percurso em que o alto-falante anuncia a próxima estação.
+const ANNOUNCE_AT := .82
 const CRUISE_SPEED := 20.0
 const ACCELERATION := 4.0
 const BOARD_RADIUS := 4.2
@@ -43,6 +46,10 @@ var _ambient_initialized := false
 var _next_desert := false
 var _arrival_retry := 0.0
 var _arrival_notice_sent := false
+## Cada abertura do painel é um embarque; o bilhete pago fica preso a ele (RailwayFares.buy).
+var _trip_serial := 0
+var _ticket: Dictionary = {}
+var _announced := false
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -125,6 +132,7 @@ func perform(target: String) -> bool:
 func try_interact() -> bool:
 	if not can_interact(): return false
 	origin_id = str(_nearby_station().id)
+	_trip_serial += 1
 	_menu_locked = session.world.player.input_locked
 	_menu_mouse = Input.mouse_mode
 	menu_open = true
@@ -145,6 +153,7 @@ func destinations(from_id: String) -> Array[Dictionary]:
 		var available := station_available(station) and points.size() >= 2
 		result.append({"id": str(station.id), "name": str(station.label), "label": str(station.label),
 			"available": available, "locked_reason": "Conclua a última missão da cidade 1." if not available else "",
+			"fare": FARES.fare(from_id, str(station.id)),
 			"duration_seconds": ceili(total / CRUISE_SPEED + CRUISE_SPEED / ACCELERATION + 2.0)})
 	return result
 
@@ -172,6 +181,11 @@ func travel_to(target: String, instant := false) -> bool:
 		return false
 	var points := NETWORK.get_route(str(source.id), target)
 	if points.size() < 2: return false
+	# Cobra só depois de toda recusa barata: estação travada ou rota vazia não custam nada.
+	var receipt := FARES.buy(session.state.economy, str(source.id), target, _trip_serial, _ticket)
+	if not bool(receipt.ok):
+		notice.emit(str(receipt.reason))
+		return false
 	close_station_menu()
 	origin_id = str(source.id)
 	destination_id = target
@@ -191,6 +205,7 @@ func travel_to(target: String, instant := false) -> bool:
 	_ui_clock = 0.0
 	_arrival_retry = 0.0
 	_arrival_notice_sent = false
+	_announced = false
 	camera_mode = 1
 	_parked_station = ""
 	var actor = session.world.player
@@ -210,6 +225,7 @@ func travel_to(target: String, instant := false) -> bool:
 	train.show()
 	train.set_doors_open(false)
 	trip_started.emit(get_trip_state())
+	notice.emit("Bilhete R$ %d · Linha Geteco para %s. Boa viagem!" % [int(_ticket.get("amount", 0)), str(destination.label)])
 	if instant:
 		_update_train_pose()
 		_boarding = false
@@ -325,6 +341,9 @@ func _physics_process(delta: float) -> void:
 	if _ui_clock >= .1:
 		_ui_clock = 0.0
 		trip_updated.emit(get_trip_state())
+	if not _announced and distance >= route_length * ANNOUNCE_AT:
+		_announced = true
+		notice.emit("Próxima estação: %s." % str(NETWORK.get_station(destination_id).get("label", "")))
 	if remaining <= .12: _arrive(destination_id)
 
 func _process(_delta: float) -> void:
@@ -511,7 +530,7 @@ func _arrive(target_id: String) -> void:
 	session.world.camera._process(1.0)
 	session._sync_location_presentation()
 	trip_finished.emit(target_id)
-	notice.emit(str(destination.label))
+	notice.emit("Estação %s. Desembarque pela plataforma." % str(destination.label))
 	session.save_game()
 
 func _safe_arrival(station: Dictionary) -> Vector3:

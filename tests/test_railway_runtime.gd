@@ -102,8 +102,12 @@ func run() -> void:
 	check(not world.session.modal and not world.player.input_locked and not transit.busy() and not ui.is_station_open(), "closing selector releases modal, player and UI together")
 	# Os saves seguintes só podem mirar o caminho de fixture único já validado.
 	world.production.no_save = false
+	# Save novo começa sem dinheiro; o bilhete (RailwayFares) precisa de saldo para embarcar.
+	check(world.session.state.economy.collect_loose_cash(300), "fare cash granted")
+	var balance_before: int = world.session.state.economy.balance
 	check(await ride("harbor_north", false, true), "normal outward city ride completes without skip or fixture movement")
 	if not failures.is_empty(): finish(); return
+	check(world.session.state.economy.balance == balance_before - 15, "city ride debits one same-zone ticket")
 	check(await ride("harbor_central", false, false), "normal return city ride completes without skip")
 	if not failures.is_empty(): finish(); return
 	check(await ride("mountain_pines", true, false), "fast travel reaches mountain before final city mission")

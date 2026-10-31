@@ -257,6 +257,8 @@ func select_destination(station_id: String) -> void:
 	else:
 		var seconds := ceili(float(selected.get("duration_seconds", 0.0)))
 		_status.text = String(TranslationServer.translate("Viagem · %s")) % _duration(seconds) if seconds > 0 else ""
+		var fare := int(selected.get("fare", 0))
+		if fare > 0: _status.text += ("  ·  " if not _status.text.is_empty() else "") + "Bilhete R$ %d" % fare
 	_status.add_theme_color_override("font_color", STYLE.MUTED if available else STYLE.MONEY)
 	_wire_station_focus()
 

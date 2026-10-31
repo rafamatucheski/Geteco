@@ -62,3 +62,15 @@ const ROADSIDE_TRUCK_HELP := 200
 const ROADSIDE_TRUCK_CASHBOX := Vector2i(120, 240)
 ## Bloqueio de bandidos: o que sobra na picape depois da briga (dinheiro solto).
 const ROADSIDE_ROADBLOCK_LOOT := Vector2i(220, 300)
+
+## Bilhete do trem de passageiros (RailwayFares, 31/10/2026). Por zona e não por metro: o jogador
+## decide pela placa da estação, e preço redondo cabe na cabeça. Barato perto de uma faixa do
+## guincho para o trem ser útil desde cedo; o deserto custa mais para não virar atalho de graça.
+## Cobrado com Economy.charge_fee, sem recibo: viagem é repetível e um recibo por bilhete encheria
+## o livro de transações (MAX_OPAQUE_RECEIPTS). A mesma tarifa vale para "pular a viagem".
+const RAIL_FARE_SAME_ZONE := 15
+const RAIL_FARE_ZONES := {
+	"harbor|mountain": 25,
+	"desert|harbor": 40,
+	"desert|mountain": 35,
+}

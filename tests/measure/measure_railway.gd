@@ -177,6 +177,8 @@ func run() -> void:
 		world.camera.global_transform = saved_transform
 		world.camera.size = saved_size
 		world.camera.set_process(true)
+		# Medição não testa a carteira: o bilhete (RailwayFares) não pode recusar o embarque.
+		world.session.state.economy.cheat_infinite_money = true
 		for destination in ["harbor_north", "harbor_central"]:
 			var railway = world.session.railway
 			var origin_id := "harbor_central" if destination == "harbor_north" else "harbor_north"
@@ -203,6 +205,7 @@ func run() -> void:
 	if "--railway-trip" in args:
 		var railway=world.session.get("railway")
 		if railway==null: push_error("No railway installed"); quit(1); return
+		world.session.state.economy.cheat_infinite_money = true
 		var network=load("res://world/railway/RailwayNetwork.gd")
 		var origin: Dictionary=network.get_station(station)
 		world.player.teleport(origin.arrival)
