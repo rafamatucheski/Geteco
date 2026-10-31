@@ -21,6 +21,16 @@ const WORKPLACE_REACTION := preload("res://gameplay/civilian_reactions/Workplace
 const DIALOGUE_CARD := preload("res://ui/dialogue/DialogueCard.gd")
 const DIALOGUE_CAPTION := preload("res://ui/dialogue/DialogueCaption.gd")
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
+## Blocos extraídos em 31/10 para o arquivo caber na leitura (ver o cabeçalho de cada um). O estado segue
+## aqui; as funções antigas ficam como delegações de uma linha para não mudar quem chama por nome.
+const SESSION_MENUS := preload("res://runtime/SessionMenus.gd")
+var _menus: SESSION_MENUS = SESSION_MENUS.new(self)
+const SESSION_SAVING := preload("res://runtime/SessionSaving.gd")
+var _saving: SESSION_SAVING = SESSION_SAVING.new(self)
+const SESSION_RECOVERY := preload("res://runtime/SessionRecovery.gd")
+var _recovery: SESSION_RECOVERY = SESSION_RECOVERY.new(self)
+const SESSION_REWARDS := preload("res://runtime/SessionRewards.gd")
+var _rewards: SESSION_REWARDS = SESSION_REWARDS.new(self)
 var world
 var controller
 var weather
@@ -2356,366 +2366,40 @@ func _update_world_indicator() -> void:
 	arrow.position = Vector2(clampf(screen.x,40,1220),clampf(screen.y,90,610))
 	arrow.rotation = (screen-Vector2(640,360)).angle()+PI/2
 
-func _menu(title: String) -> void:
-	if is_instance_valid(room) and room.has_method("dismiss_game") and room.get("game_active") == true:
-		room.dismiss_game()
-		if menu_closed == Callable(room,"dismiss_game"): menu_closed = Callable()
-	if is_instance_valid(equipment_wheel): equipment_wheel.cancel()
-	if building_social != null and building_social.active: building_social.close()
-	if arcade != null and arcade.active: arcade.close()
-	clear_speech()
-	if is_instance_valid(dialogue_card): dialogue_card.hide()
-	if is_instance_valid(dialogue_voice): dialogue_voice.stop()
-	if panel.has_meta("modal_preferred_size"): panel.remove_meta("modal_preferred_size")
-	if panel.has_meta("modal_dock_right"): panel.remove_meta("modal_dock_right")
-	var previous_map: Node = world.hud.get_node_or_null("MapUI")
-	if is_instance_valid(previous_map):
-		previous_map.queue_free()
-		menu_closed = Callable()
-	if field_inventory != null and field_inventory.ui.visible:
-		field_inventory.dismiss()
-		menu_closed = Callable()
-	_service_menu_open = false
-	if storefronts != null and storefronts.is_open(): storefronts.dismiss()
-	for child in column.get_children():
-		column.remove_child(child)
-		child.queue_free()
-	modal = true
-	dialogue_open = false
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	world.player.input_locked = true
-	if world.driving.occupied: world.driving.car.input_locked = true
-	panel.show()
-	panel.custom_minimum_size = Vector2(620,440)
-	# Compact conversation screens release this legacy minimum only for themselves.
-	column.get_parent().custom_minimum_size = Vector2(580,400)
-	column.get_parent().horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	column.get_parent().focus_mode = Control.FOCUS_NONE
-	column.get_parent().follow_focus = false
-	var label := Label.new()
-	label.text = title
-	label.add_theme_font_size_override("font_size",26)
-	column.add_child(label)
-func _button(text: String, action: Callable) -> void:
-	var button := Button.new()
-	button.text = text
-	button.custom_minimum_size.y = 36
-	button.focus_mode = Control.FOCUS_ALL
-	button.pressed.connect(action)
-	var previous: Button = null
-	for child in column.get_children():
-		if child is Button: previous = child
-	column.add_child(button)
-	if previous != null:
-		previous.focus_neighbor_bottom = previous.get_path_to(button)
-		previous.focus_next = previous.get_path_to(button)
-		button.focus_neighbor_top = button.get_path_to(previous)
-		button.focus_previous = button.get_path_to(previous)
-	else:
-		_focus_menu_button.call_deferred(weakref(button))
-func _focus_menu_button(reference: WeakRef) -> void:
-	var button := reference.get_ref() as Control
-	if not is_instance_valid(button) or button.is_queued_for_deletion(): return
-	if modal and button.is_inside_tree() and button.get_parent() == column and button.is_visible_in_tree():
-		button.grab_focus()
-func close_menu() -> void:
-	if dialogue_voice != null: dialogue_voice.stop()
-	_dialogue_source.clear()
-	if is_instance_valid(dialogue_card): dialogue_card.hide()
-	clear_speech()
-	_service_menu_open = false
-	if storefronts != null and storefronts.is_open(): storefronts.dismiss()
-	if menu_closed.is_valid(): menu_closed.call()
-	menu_closed = Callable()
-	modal = false
-	dialogue_open = false
-	panel.hide()
-	Input.mouse_mode = Input.MOUSE_MODE_CONFINED_HIDDEN
-	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (desert != null and desert.busy()) or (passenger_transport != null and passenger_transport.riding) or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
-	if fishing != null and fishing.controls_locked(): world.player.input_locked = true
-	if amusement_park != null and amusement_park.active: world.player.input_locked = true
-	if is_instance_valid(world.driving.car): world.driving.car.input_locked = is_transition_blocked() or (desert != null and desert.controls_locked())
-func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void:
-	lines = dialogue_lines.duplicate(true)
-	dialogue_done = on_done
-	_advance_dialogue()
+func _menu(title: String) -> void: _menus._menu(title)
+func _button(text: String, action: Callable) -> void: _menus._button(text, action)
+func _focus_menu_button(reference: WeakRef) -> void: _menus._focus_menu_button(reference)
+func close_menu() -> void: _menus.close_menu()
+func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void: _menus.show_dialogue(dialogue_lines, on_done)
 
-func interrupt_dialogue() -> void:
-	# Recovery discards unfinished words without completing their mission callback.
-	lines.clear()
-	dialogue_done = Callable()
-	dialogue_open = false
-	_dialogue_source.clear()
-	if is_instance_valid(dialogue_voice): dialogue_voice.stop()
-	if is_instance_valid(dialogue_card): dialogue_card.hide()
-	clear_speech()
-	if arrival != null: arrival.cancel_dialogue()
-func _advance_dialogue() -> void:
-	if dialogue_voice != null: dialogue_voice.stop()
-	if lines.is_empty():
-		close_menu()
-		if dialogue_done.is_valid(): dialogue_done.call()
-		return
-	var line: Dictionary = lines.pop_front()
-	var continuing_service := _service_menu_open
-	_menu(str(line.get("speaker","")))
-	_service_menu_open = continuing_service
-	dialogue_open = true
-	_dialogue_source = line.duplicate(true)
-	_present_current_dialogue(true)
+func interrupt_dialogue() -> void: _menus.interrupt_dialogue()
+func _advance_dialogue() -> void: _menus._advance_dialogue()
 
-func _present_current_dialogue(restart_audio: bool) -> void:
-	var line := _dialogue_source.duplicate(true)
-	var speaker := str(line.get("voice_persona", str(line.get("speaker", "")).to_lower().split(" · ")[0]))
-	var shown := VOICE.presentation(str(line.get("voice_text", line.get("message", ""))), speaker, "", "", str(line.get("character_id", "")), str(line.get("voice_section", "")))
-	line["message"] = str(shown.message)
-	if dialogue_voice != null and not (arrival != null and arrival.active):
-		if restart_audio:
-			dialogue_voice.stop()
-			dialogue_voice.stream = shown.stream
-			dialogue_voice.volume_db = VOICE.playback_volume(dialogue_voice.stream, -8.0 if speaker in ["maciota", "caller"] else 0.0)
-			if dialogue_voice.stream != null: dialogue_voice.play()
-	_present_dialogue_line(line)
+func _present_current_dialogue(restart_audio: bool) -> void: _menus._present_current_dialogue(restart_audio)
 
-func _present_dialogue_line(line: Dictionary) -> void:
-	panel.hide()
-	if not is_instance_valid(dialogue_card):
-		dialogue_card = DIALOGUE_CARD.new()
-		world.hud.add_child(dialogue_card)
-		dialogue_card.advance_requested.connect(_advance_dialogue)
-	dialogue_card.configure(str(line.get("speaker","")), str(line.get("message","")), get_node_or_null("/root/GameInput"))
-	dialogue_card.focus_advance.call_deferred()
+func _present_dialogue_line(line: Dictionary) -> void: _menus._present_dialogue_line(line)
 
-func cancel_mission() -> bool:
-	if state.campaign.active_id.is_empty(): return false
-	if not mission_world.cancel_attempt():
-		show_message("Libere uma área para descarregar o guincho antes de cancelar.")
-		save_game()
-		return false
-	close_menu()
-	save_game()
-	return true
+func cancel_mission() -> bool: return _menus.cancel_mission()
 
-func show_maciota_menu() -> void:
-	_menu("Maciota")
-	_compact_menu_size(Vector2(360, 310))
-	_button("Ver missões", show_journal)
-	_button("Informações", show_journal_information)
-	_button("Encerrar conversa", close_menu)
-	_menu_information("Guia do HUD em Configurações → Ajuda.", 13)
-	_fit_compact_menu(column.get_child(0), Vector2(360, 310))
+func show_maciota_menu() -> void: _menus.show_maciota_menu()
 
-func _compact_menu_size(extent: Vector2) -> void:
-	panel.set_meta("modal_preferred_size", extent)
-	column.get_parent().custom_minimum_size = Vector2.ZERO
-	column.get_parent().horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	column.get_parent().follow_focus = true
-	panel.custom_minimum_size = extent
-	panel.size = extent
+func _compact_menu_size(extent: Vector2) -> void: _menus._compact_menu_size(extent)
 
-func _fit_compact_menu(identity: Node, maximum: Vector2) -> void:
-	# Wait for wrapping at the new width. Bound the result, keeping the existing
-	# scroller for long records; short menus should not reserve empty space.
-	await get_tree().process_frame
-	await get_tree().process_frame
-	if not is_instance_valid(identity) or identity.get_parent() != column or not panel.visible: return
-	# Shared panel/margin chrome is 84 px; allow 16 px for focus and final wrap.
-	var extent := Vector2(maximum.x, minf(maximum.y, column.get_combined_minimum_size().y + 100.0))
-	panel.set_meta("modal_preferred_size", extent)
-	panel.custom_minimum_size = extent
-	panel.size = extent
-	panel.position = ((panel.get_viewport_rect().size - panel.size) * .5).round()
+func _fit_compact_menu(identity: Node, maximum: Vector2) -> void: await _menus._fit_compact_menu(identity, maximum)
 
-## Read-only text must never look or behave like a mission action.
-func _menu_information(text: String, font_size := 16, parent: Node = null) -> Label:
-	var label := Label.new()
-	label.text = text
-	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", preload("res://ui/GameStyle.gd").TEXT if font_size >= 16 else preload("res://ui/GameStyle.gd").MUTED)
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if parent != null:
-		label.focus_mode = Control.FOCUS_ALL
-		var reading_focus := StyleBoxFlat.new()
-		reading_focus.bg_color = Color.TRANSPARENT
-		reading_focus.border_color = preload("res://ui/GameStyle.gd").ACCENT
-		reading_focus.border_width_left = 2
-		label.add_theme_stylebox_override("focus", reading_focus)
-	(parent if parent != null else column).add_child(label)
-	return label
+func _menu_information(text: String, font_size := 16, parent: Node = null) -> Label: return _menus._menu_information(text, font_size, parent)
 
-func show_journal_information() -> void:
-	_menu("Informações")
-	_compact_menu_size(Vector2(480, 360))
-	column.get_parent().follow_focus = true
-	var records := VBoxContainer.new()
-	records.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	records.add_theme_constant_override("separation", 14)
-	column.add_child(records)
-	var village: Dictionary = {}
-	if urban_operations != null and is_instance_valid(urban_operations.village_quest): village = urban_operations.village_quest.data
-	var entries: Array = JOURNAL_ARCS.lines(state.world_state, state.campaign.snapshot(), village)
-	for line in entries: _menu_information(str(line), 16, records)
-	if entries.is_empty(): _menu_information("Nenhuma informação registrada ainda.", 16, records)
-	var secret_file: Variant = urban_operations.get("secret_file") if urban_operations != null else null
-	if is_instance_valid(secret_file) and secret_file.available():
-		_button("Arquivo de Vicente", secret_file.open_from_journal)
-	_button("Ver missões", show_journal)
-	_button("Fechar", close_menu)
-	# Read the first record before navigating the actions below the records.
-	var scroll: ScrollContainer = column.get_parent()
-	if records.get_child_count() > 0: records.get_child(0).grab_focus.call_deferred()
-	scroll.set_deferred("scroll_vertical", 0)
-	_fit_compact_menu(column.get_child(0), Vector2(480, 360))
+func show_journal_information() -> void: _menus.show_journal_information()
 
-func show_journal() -> void:
-	if mountain_activities != null and mountain_activities.busy():
-		mountain_activities.show_journal()
-		return
-	_menu("Missões")
-	_compact_menu_size(Vector2(480, 360))
-	if mountain_activities != null: _button("Atividades da montanha", mountain_activities.show_journal)
-	if state.campaign.active_id != "":
-		_menu_information("OBJETIVO ATUAL", 13)
-		_menu_information(mission_world.objective())
-		_button("Cancelar missão",cancel_mission)
-	else:
-		for id in state.campaign.available_missions():
-			_button(str(MISSIONS.MISSIONS[id].title),func():
-				if state.intro.stage != "complete": show_message("Converse primeiro com Maciota."); close_menu(); return
-				if not mission_world.begin(id):
-					close_menu()
-					return
-				if not dialogue_open: close_menu())
-	# Cadeia da Helena: escolher a linha põe objetivo e marcador nela. As histórias de JournalArcs e o
-	# arquivo de Vicente ficam em "Informações" (show_journal_information).
-	if helena_act1 != null and state.campaign.active_id == "":
-		for entry in helena_act1.journal_entries():
-			var act1_id: String = entry.id
-			_button(entry.text, func():
-				helena_act1.focus(act1_id)
-				close_menu())
-	_button("Informações", show_journal_information)
-	_button("Voltar",close_menu)
-	_fit_compact_menu(column.get_child(0), Vector2(480, 360))
-func show_inventory() -> void:
-	if field_inventory != null:
-		field_inventory.open()
-		return
-	_menu(String(TranslationServer.translate("Inventário · R$ %d"))%state.economy.balance)
-	for id in WEAPONS.ORDER:
-		if state.owns_weapon(id):
-			var stored: bool = not state.economy.can_carry_weapon(id)
-			_button(str(WEAPONS.WEAPONS[id].label)+(" · No porta-malas" if stored else ""),func():
-				if not state.economy.can_carry_weapon(id):
-					close_menu()
-					show_message("Selecione esta arma no porta-malas da Monaliza.")
-					return
-				close_menu()
-				state.equip_weapon(id))
-	if state.economy.inventory.get("first_aid",0)>0:
-		_button("Usar primeiros socorros",func():
-			if world.gameplay.heal(40): state.economy.consume_item("first_aid")
-			close_menu(); save_game())
-	_button("Configurações",show_settings)
-	_button("Voltar",close_menu)
-func show_services(service: String) -> void:
-	if _service_threatened(): return
-	_show_services_available(service)
-	_service_menu_open = modal
-	if modal and panel.visible: preload("res://ui/ShopPresentation.gd").apply(panel)
+func show_journal() -> void: _menus.show_journal()
+func show_inventory() -> void: _menus.show_inventory()
+func show_services(service: String) -> void: _menus.show_services(service)
 
-func _show_services_available(service: String) -> void:
-	if service == "supermarket":
-		preload("res://runtime/SupermarketShop.gd").open(self)
-		return
-	if service == "ski_rental":
-		mountain_progression.show_services()
-		return
-	if services.perform(service): return
-	if service in ["weapons","ammunation","gunshop"]:
-		if state.place_id == "harbor_ammunation" and storefronts.open_weapons(): return
-		_show_shop("weapon")
-		return
-	if service == "clothing":
-		if state.place_id == "harbor_clothing" and storefronts.open_clothing(): return
-		_show_shop("outfit")
-		return
-	# Vehicle repair belongs to its physical service. Maciota is handled above
-	# by Services.perform(); Northgate admits the occupied car in its exterior
-	# bay. This fallback must never charge or clear wanted state remotely.
-	if service == "garage":
-		show_message("Use a bancada da garagem para cuidar da Monaliza.")
-		return
-	if service == "auto_service":
-		show_message("Leve o veículo até a baia externa da Northgate.")
-		return
-func _show_shop(category: String) -> void:
-	_menu("R$ %d"%state.economy.balance)
-	for item in state.economy.storefront(category):
-		if category == "weapon" and item.id == "katana" and not item.unlocked: continue
-		var label := str(item.get("name",item.get("label",item.id)))
-		_button(label+(" · Equipar" if item.owned else " · R$ %d"%item.price),func():
-			if not item.owned:
-				var result: Dictionary = state.economy.purchase(category,item.id,_transaction())
-				if not result.ok: show_message("Compra indisponível: "+str(result.reason)); close_menu(); return
-			if category == "weapon": state.equip_weapon(item.id)
-			else: preload("res://runtime/OutfitDisguise.gd").equip(self, item.id, true)
-			close_menu(); save_game())
-	if category == "weapon":
-		_button("Personalizar arma equipada",_show_customization)
-		_button("Munição para arma equipada",func():
-			var purchased: bool = state.economy.buy_ammo(state.equipped_weapon,30,_transaction())
-			show_message("Munição comprada." if purchased else "Compra indisponível.")
-			close_menu(); save_game())
-		if world.gameplay.armor >= 100:
-			_button("Proteção completa",func():
-				show_message("O colete já está completo.")
-				close_menu())
-		else:
-			_button("Colete · R$ 500",func():
-				var result: Dictionary = state.economy.purchase_body_armor(world.gameplay.armor,100,_transaction())
-				if result.ok:
-					world.gameplay.armor = int(result.armor)
-					show_message("Colete equipado.")
-				else:
-					show_message("Proteção completa." if result.reason == "protection_full" else "Compra indisponível.")
-				close_menu()
-				if result.ok: save_game())
-	_button("Voltar",close_menu)
-	preload("res://ui/ShopPresentation.gd").apply(panel)
-func _show_customization() -> void:
-	var catalog = preload("res://gameplay/WeaponCustomization.gd")
-	var id: String = state.equipped_weapon
-	if id == "katana":
-		_show_saber_customization()
-		return
-	_menu("Personalizar · "+str(WEAPONS.WEAPONS[id].label))
-	for part in catalog.PARTS:
-		if not catalog.supports(id,part): continue
-		var data: Dictionary = catalog.PARTS[part]
-		var owned: bool = catalog.owns(world.gameplay.customization,id,part)
-		var selected: bool = catalog.selected(world.gameplay.customization,id,data.slot) == part
-		var suffix := " · Remover" if selected else (" · Instalar" if owned else " · R$ %d"%data.price)
-		_button(str(data.label)+suffix,func():
-			var ok: bool = world.gameplay.install_attachment(id,part,false) if selected else world.gameplay.buy_attachment(id,part)
-			if not ok: show_message("Personalização indisponível.")
-			save_game()
-			_show_customization())
-	_button("Voltar",func(): _show_shop("weapon"))
-	preload("res://ui/ShopPresentation.gd").apply(panel)
-func _show_saber_customization() -> void:
-	_menu("Katana")
-	panel.hide()
-	var custom_panel := preload("res://runtime/TakeshiSaberPanel.gd").new()
-	custom_panel.configure(self)
-	world.hud.add_child(custom_panel)
-	custom_panel.closed.connect(func(): _show_shop("weapon"))
-	menu_closed = func():
-		if is_instance_valid(custom_panel): custom_panel.queue_free()
-func _transaction() -> String:
-	action_serial += 1
-	return "%d_%d_%d"%[Time.get_unix_time_from_system(),Time.get_ticks_usec(),action_serial]
+func _show_services_available(service: String) -> void: _menus._show_services_available(service)
+func _show_shop(category: String) -> void: _menus._show_shop(category)
+func _show_customization() -> void: _menus._show_customization()
+func _show_saber_customization() -> void: _menus._show_saber_customization()
+func _transaction() -> String: return _menus._transaction()
 func apply_outfit() -> void:
 	# Palette integration is applied by the original Dante outfit shader adapter.
 	var outfit: String = state.economy.outfit
@@ -2747,63 +2431,12 @@ func advance_residence_minutes(minutes: int) -> bool:
 	state.world_state.time = target
 	weather._update()
 	return true
-func show_settings() -> void:
-	close_menu()
-	world.pause_panel.pause_game()
-	world.pause_panel.open_settings()
-func show_controls() -> void:
-	show_settings()
-	world.pause_panel.settings._select_tab(2)
-func show_map() -> void:
-	_menu("Mapa")
-	var map = preload("res://ui/v2/WorldMap.gd").new()
-	map.controller = controller
-	world.hud.add_child(map)
-	panel.hide()
-	menu_closed = map.queue_free
-func _update_reward() -> void:
-	if room == null or room == world.maciota_place: return
-	for point in room.reward_points:
-		var data: Dictionary = point.get("reward",{})
-		if not data.is_empty(): room.set_reward_available(not state.world_state.rewards.has(data.id),data.id)
-func _collect_reward(source: Node3D) -> void:
-	if not is_instance_valid(source) or not source.is_visible_in_tree() or world.gameplay.health <= 0: return
-	for reward in source.reward_points:
-		var data: Dictionary = reward.get("reward",{})
-		if data.is_empty(): continue
-		if state.world_state.rewards.has(data.id):
-			source.set_reward_available(false,data.id)
-			continue
-		var point: Vector3 = reward.get("position",Vector3.ZERO)
-		if world.player.global_position.distance_to(point) > .8: continue
-		if _reward_failures.has(data.id): continue
-		var result: Dictionary = state.economy.grant_world_reward(data)
-		if not result.ok:
-			var reason := str(result.get("reason","grant_failed"))
-			var item_name := str(WEAPONS.WEAPONS.get(str(data.get("item", "")), {}).get("label", "Item")) if data.get("kind", "") == "weapon" else "Recompensa"
-			var explanation: String = {"already_owned":"Você já possui esta arma.", "wallet_full":"Carteira cheia.", "inventory_full":"Inventário cheio.", "ammo_full":"Munição no limite.", "invalid_reward":"Não foi possível coletar este item: dados inválidos.", "transaction_conflict":"Coleta bloqueada por conflito no registro da recompensa."}.get(reason, "Não foi possível concluir a coleta.")
-			show_message("%s: %s" % [item_name, explanation])
-			_reward_notice_id = str(data.id)
-			_reward_failures[data.id] = {"source":weakref(source), "position":point, "region":state.region_id, "place":state.place_id}
-			continue
-		if not state.world_state.rewards.has(data.id): state.world_state.rewards.append(data.id)
-		if result.get("changed",true):
-			REWARD_AUDIO.play(self,REWARD_AUDIO.kind_for_reward(str(data.get("kind",""))))
-		source.set_reward_available(false,data.id,true)
-		# Coleta sem aviso na tela (como os drops de combate); só a falha avisa.
-		save_game()
-func _refresh_reward_feedback() -> void:
-	# Uma falha por aproximação; não renove o aviso a cada tick nem após sair.
-	for id in _reward_failures.keys():
-		var failure: Dictionary = _reward_failures[id]
-		var source = failure.source.get_ref()
-		if is_instance_valid(source) and source.is_visible_in_tree() and failure.region == state.region_id and failure.place == state.place_id and not world.driving.occupied and world.player.global_position.distance_to(failure.position) <= .8: continue
-		_reward_failures.erase(id)
-		if _reward_notice_id == id:
-			_reward_notice_id = ""
-			notice_time = 0.0
-			notice.text = ""
-			notice.hide()
+func show_settings() -> void: _menus.show_settings()
+func show_controls() -> void: _menus.show_controls()
+func show_map() -> void: _menus.show_map()
+func _update_reward() -> void: _rewards._update_reward()
+func _collect_reward(source: Node3D) -> void: _rewards._collect_reward(source)
+func _refresh_reward_feedback() -> void: _rewards._refresh_reward_feedback()
 ## M06-C "Turno da noite" (VerticeNightShift), filho da Vértice em PortLogistics.
 func _vertice_night() -> Node:
 	if urban_operations == null or not is_instance_valid(urban_operations.cargo_handling): return null
@@ -2812,444 +2445,35 @@ func _vertice_night() -> Node:
 	var shift: Variant = depot.get("night_shift")
 	return shift if is_instance_valid(shift) else null
 
-func save_block_reason() -> String:
-	if world.player.get_meta("player_air_busy", false): return "Aguarde terminar o salto ou a queda para salvar."
-	if world.get_meta("developer_mode_active",false): return "Desligue o modo desenvolvedor para salvar."
-	if upside_world != null and upside_world.busy(): return "Aguarde a visão passar."
-	if arcade != null and arcade.active: return "Saia do fliperama para salvar."
-	if amusement_park != null and amusement_park.active: return "Termine o passeio para salvar."
-	if fishing != null:
-		var fishing_reason: String = fishing.save_block_reason()
-		if not fishing_reason.is_empty(): return fishing_reason
-	if coastal_lookout != null and coastal_lookout.active: return "Saia do binóculo para salvar."
-	if building_entrance != null and building_entrance.falling: return "Aguarde chegar ao chão."
-	if service_roofs != null and service_roofs.falling: return "Aguarde chegar ao chão."
-	if regional_coach != null:
-		var coach_reason: String = regional_coach.save_block_reason()
-		if not coach_reason.is_empty(): return coach_reason
-	if railway != null:
-		var railway_reason: String = railway.save_block_reason()
-		if not railway_reason.is_empty(): return railway_reason
-	if armored_transport != null:
-		var armored_reason: String = armored_transport.save_block_reason()
-		if not armored_reason.is_empty(): return armored_reason
-	if mountain_activities != null:
-		var pack_reason: String = mountain_activities.save_block_reason()
-		if not pack_reason.is_empty(): return pack_reason
-	if mining != null:
-		var mining_reason: String = mining.save_block_reason()
-		if not mining_reason.is_empty(): return mining_reason
-	if desert != null:
-		var desert_reason: String = desert.save_block_reason()
-		if not desert_reason.is_empty(): return desert_reason
-	if jessica != null and jessica.riding: return "Aguarde Jessica estacionar para salvar."
-	var vertice_night: Node = _vertice_night()
-	if vertice_night != null:
-		var night_reason: String = vertice_night.save_block_reason()
-		if not night_reason.is_empty(): return night_reason
-	if skate != null and skate.controls_locked(): return "Desça do skate e se recupere para salvar."
-	if controller.save_invalid: return controller.save_block_text()
-	if is_instance_valid(room) and room.has_method("start_game") and room.get("game_active") == true: return "Encerre a partida para salvar."
-	if motocross != null and motocross.mounted: return "Termine a corrida ou desça da moto para salvar."
-	if world.gameplay.health <= 0: return "Salvar indisponível enquanto o jogador estiver morto."
-	if world.gameplay.stars > 0: return "Perca todas as estrelas da polícia para salvar."
-	if not state.campaign.active_id.is_empty() or state.intro.stage not in ["meet_maciota", "complete"]:
-		return "Conclua ou encerre a missão para salvar um checkpoint."
-	if activities != null and not activities.can_rest(): return "Encerre a corrida ou o contrato de guincho para salvar."
-	if mountain_progression != null and not mountain_progression.race.mode.is_empty(): return "Encerre a prova de esqui para salvar."
-	if urban_operations != null:
-		var quest = urban_operations.get("village_quest")
-		if is_instance_valid(quest) and quest.data.started and not quest.data.completed:
-			return "Conclua a missão de Tonico para salvar um checkpoint."
-	if urban_operations != null and urban_operations.freight != null and urban_operations.freight.active_bay >= 0:
-		return "Encerre a entrega de carga para salvar."
-	if is_transition_blocked(): return "Conclua a chegada, o resgate ou a transição para salvar."
-	if passenger_transport != null and passenger_transport.riding: return "Aguarde o desembarque para salvar."
-	return ""
+func save_block_reason() -> String: return _saving.save_block_reason()
 
-func _queue_checkpoint() -> void:
-	if controller.no_save or controller.save_invalid: return
-	if _checkpoint_retry == null:
-		_checkpoint_retry = Timer.new()
-		_checkpoint_retry.process_mode = Node.PROCESS_MODE_PAUSABLE
-		_checkpoint_retry.wait_time = 1.0
-		_checkpoint_retry.one_shot = true
-		add_child(_checkpoint_retry)
-		_checkpoint_retry.timeout.connect(func(): save_game())
-	# Only one pending request; capture fresh state once saving becomes safe.
-	if _checkpoint_retry.is_stopped(): _checkpoint_retry.start()
+func _queue_checkpoint() -> void: _saving._queue_checkpoint()
 
-func _save_indicator() -> Control:
-	var indicator := get_node_or_null("SaveFeedback/Indicator")
-	if indicator == null:
-		var feedback := CanvasLayer.new()
-		feedback.name = "SaveFeedback"
-		feedback.layer = 125
-		add_child(feedback)
-		indicator = preload("res://ui/SaveIndicator.gd").new()
-		indicator.name = "Indicator"
-		feedback.add_child(indicator)
-	return indicator
+func _save_indicator() -> Control: return _saving._save_indicator()
 
-## Autosave tem ~170 chamadores e cada gravação faz ~25 snapshots e quatro validações completas:
-## o span dá nome ao pico no log de quadros lentos (antes aparecia sem dono).
-func save_game(manual := false) -> bool:
-	var began := STALL_WORK_READY.begin()
-	var saved := _save_game(manual)
-	STALL_WORK_READY.finish_slow("session.save_game", began, 4000, self)
-	return saved
+func save_game(manual := false) -> bool: return _saving.save_game(manual)
 
-func _save_game(manual: bool) -> bool:
-	var blocked := save_block_reason()
-	if not blocked.is_empty():
-		if manual: _save_indicator().reject(blocked)
-		else: _queue_checkpoint()
-		return false
-	state.world_state.erase("pedestrian")
-	# Menus hold input too; a supported, free on-foot position remains saveable.
-	if state.place_id.is_empty() and not world.driving.occupied and position_clear(world.player.position):
-		var point: Vector3 = world.player.position
-		state.world_state.pedestrian = {"region":state.region_id,"position":[point.x,point.y,point.z]}
-	if personal_car != null: personal_car.refresh()
-	if activities != null: activities.refresh_achievements()
-	if desert != null: desert.write_snapshot()
-	if mining != null: mining.write_snapshot()
-	controller.capture_player_vehicle()
-	if desert!=null and is_instance_valid(desert.drag) and is_instance_valid(desert.drag.loaner_controller): desert.drag.loaner_controller.prepare_save()
-	if cold != null: state.world_state.cold = cold.snapshot()
-	if wine != null: state.world_state.wine_cellar = wine.snapshot()
-	if garage_rewards != null: state.world_state.garage_rewards = garage_rewards.snapshot()
-	if arrival != null: state.world_state.arrival = arrival.snapshot()
-	if robberies != null: state.world_state.robberies = robberies.snapshot()
-	if services != null: state.world_state.services = services.snapshot()
-	if activities != null: state.world_state.activities = activities.snapshot()
-	if motocross != null: state.world_state.motocross = motocross.snapshot()
-	if skate != null: state.world_state.skate = skate.snapshot()
-	if mountain_progression != null: state.world_state.mountain_progression = mountain_progression.snapshot()
-	if mountain_activities != null: mountain_activities.write_snapshot()
-	if mission_world != null: state.world_state.mission_world = mission_world.snapshot()
-	if jessica != null: state.world_state.jessica_vehicle = jessica.vehicle_snapshot()
-	if urban_operations != null:
-		var urban_snapshot: Dictionary = urban_operations.snapshot()
-		# Estado urbano no meio de uma troca: recusa só esta gravação; o próximo pedido de
-		# salvar tenta de novo. Antes um único instante assim desligava o salvamento pelo
-		# resto da sessão, em silêncio. Sem fila de 1 s: cada tentativa refaz todos os snapshots.
-		if not preload("res://gameplay/urban_v1/UrbanOperations.gd").validate_snapshot(urban_snapshot):
-			last_save_error = "Estado urbano incompleto; salvamento adiado."
-			push_warning(last_save_error)
-			if manual: _save_indicator().reject(last_save_error)
-			return false
-		state.world_state.urban_operations = urban_snapshot
-	if controller.no_save: return true
-	state.combat_state = world.gameplay.snapshot()
-	var result: Error = controller.store.save(state)
-	if _checkpoint_retry != null: _checkpoint_retry.stop()
-	if result != OK:
-		last_save_error = String(TranslationServer.translate("Não foi possível salvar (%d).")) % result
-		_save_indicator().reject(last_save_error)
-		return false
-	last_save_error = ""
-	_save_indicator().acknowledge()
-	return true
-func load_game() -> void:
-	if upside_world != null and upside_world.busy() and upside_world._released:
-		show_message("Aguarde a conclusão da transição para carregar.")
-		return
-	# Ilusão, pesca, mirante e parque terminam antes das recusas abaixo, como sempre foi.
-	_cancel_for(&"load_1")
-	if desert != null and desert.busy(): show_message("Encerre a prova para carregar."); return
-	if jessica != null and jessica.riding:
-		show_message("Aguarde Jessica estacionar para carregar."); return
-	if is_transition_blocked():
-		show_message("Aguarde a conclusão da transição para carregar."); return
-	if passenger_transport != null and passenger_transport.riding:
-		show_message("Aguarde o desembarque para carregar."); return
-	if world.driving.occupied: show_message("Saia do veículo para carregar."); return
-	_cancel_for(&"load_2")
-	var result := get_tree().reload_current_scene()
-	if result != OK: show_message(String(TranslationServer.translate("Não foi possível carregar o jogo (%d).")) % result)
-func return_to_main_menu() -> void:
-	if upside_world != null and upside_world.busy() and upside_world._released:
-		show_message("Aguarde a conclusão da transição.")
-		return
-	# Deserto e mineração já são cancelados quando o menu recusa abaixo, como sempre foi.
-	_cancel_for(&"menu_1")
-	if is_transition_blocked() or (passenger_transport != null and passenger_transport.riding):
-		show_message("Aguarde a conclusão da chegada, do resgate ou da transição.")
-		return
-	_cancel_for(&"menu_2")
-	var launch = get_node_or_null("/root/V2Launch")
-	if launch != null: launch.direct_start_consumed = true
-	var was_paused := get_tree().paused
-	get_tree().paused = false
-	var result := get_tree().change_scene_to_file("res://ui/MainMenu.tscn")
-	if result != OK:
-		get_tree().paused = was_paused
-		show_message("Não foi possível abrir o menu principal.")
+func _save_game(manual: bool) -> bool: return _saving._save_game(manual)
+func load_game() -> void: _saving.load_game()
+func return_to_main_menu() -> void: _saving.return_to_main_menu()
 
-func _show_v1_death_presentation() -> void:
-	if is_instance_valid(death_presentation): death_presentation.queue_free()
-	death_presentation = CanvasLayer.new()
-	death_presentation.name = "WastedPresentation"
-	death_presentation.layer = 120
-	var audio := AudioStreamPlayer.new()
-	audio.name = "WastedAudio"
-	audio.stream = V1_DEATH_AUDIO.stream()
-	audio.volume_db = 0.0
-	death_presentation.add_child(audio)
-	var tint := ColorRect.new()
-	tint.name = "DeathTint"
-	tint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	tint.color = Color(0.48,0.035,0.055,0.0)
-	tint.mouse_filter = Control.MOUSE_FILTER_STOP
-	death_presentation.add_child(tint)
-	var label := Label.new()
-	label.name = "WastedLabel"
-	label.text = "SE FODEU"
-	if bank_death_loss>0: label.text+=String(TranslationServer.translate("\n− R$ %d · Saque perdido"))%bank_death_loss
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	label.add_theme_font_size_override("font_size",42)
-	label.add_theme_color_override("font_color",Color(1.0,0.94,0.87))
-	label.add_theme_color_override("font_outline_color",Color(0.08,0.01,0.015))
-	label.add_theme_constant_override("outline_size",5)
-	label.add_theme_color_override("font_shadow_color",Color.BLACK)
-	label.add_theme_constant_override("shadow_offset_x",3)
-	label.add_theme_constant_override("shadow_offset_y",3)
-	label.modulate.a = 0.0
-	death_presentation.add_child(label)
-	get_tree().root.add_child(death_presentation)
-	audio.play()
-	label.pivot_offset = get_viewport().get_visible_rect().size*.5
-	label.scale = Vector2(1.35,1.35)
-	var intro := create_tween().set_ignore_time_scale(true).set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	intro.tween_property(tint,"color:a",.66,.35)
-	intro.tween_property(label,"modulate:a",1.0,.35)
-	intro.tween_property(label,"scale",Vector2.ONE,.35)
-	await _hold_recovery_presentation(death_presentation)
+func _show_v1_death_presentation() -> void: await _recovery._show_v1_death_presentation()
 
-func _show_v1_arrest_presentation() -> void:
-	if is_instance_valid(death_presentation): death_presentation.queue_free()
-	death_presentation = CanvasLayer.new()
-	death_presentation.name = "ArrestPresentation"
-	death_presentation.layer = 120
-	var tint := ColorRect.new()
-	tint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	tint.color = Color(0.1,0.2,0.8,0.45)
-	tint.mouse_filter = Control.MOUSE_FILTER_STOP
-	death_presentation.add_child(tint)
-	var label := Label.new()
-	label.name = "ArrestLabel"
-	label.text = "PRESO"
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	label.add_theme_font_size_override("font_size",46)
-	label.add_theme_color_override("font_color",Color(0.2,0.6,1.0))
-	label.add_theme_color_override("font_shadow_color",Color.BLACK)
-	label.add_theme_constant_override("shadow_offset_x",3)
-	label.add_theme_constant_override("shadow_offset_y",3)
-	death_presentation.add_child(label)
-	get_tree().root.add_child(death_presentation)
-	label.modulate.a = 0.0
-	var intro := create_tween().set_ignore_time_scale(true)
-	intro.tween_property(label, "modulate:a", 1.0, 0.35)
-	await _hold_recovery_presentation(death_presentation)
+func _show_v1_arrest_presentation() -> void: await _recovery._show_v1_arrest_presentation()
 
-func _hold_recovery_presentation(presentation: CanvasLayer) -> void:
-	if not _recovery_slow_motion:
-		_recovery_time_scale = Engine.time_scale
-		_recovery_slow_motion = true
-	Engine.time_scale = _recovery_time_scale * 0.2
-	# Wall-clock timing keeps the message readable despite the slowed world.
-	await get_tree().create_timer(2.4, false, false, true).timeout
-	if not is_instance_valid(presentation) or presentation != death_presentation: return
-	var blackout := ColorRect.new()
-	blackout.name = "RecoveryBlackout"
-	blackout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	blackout.color = Color(0, 0, 0, 0)
-	blackout.mouse_filter = Control.MOUSE_FILTER_STOP
-	presentation.add_child(blackout)
-	var fade := create_tween().set_ignore_time_scale(true)
-	fade.tween_property(blackout, "color:a", 1.0, 0.8)
-	await fade.finished
-	if presentation != death_presentation: return
-	_restore_recovery_time_scale()
+func _hold_recovery_presentation(presentation: CanvasLayer) -> void: await _recovery._hold_recovery_presentation(presentation)
 
-func _restore_recovery_time_scale() -> void:
-	if not _recovery_slow_motion: return
-	Engine.time_scale = _recovery_time_scale
-	_recovery_slow_motion = false
+func _restore_recovery_time_scale() -> void: _recovery._restore_recovery_time_scale()
 
-func _finish_recovery_presentation() -> void:
-	_restore_recovery_time_scale()
-	var presentation := death_presentation
-	if not is_instance_valid(presentation): return
-	# Remove the message behind the opaque cover, then reveal the settled camera.
-	for child in presentation.get_children():
-		if child is Control and child.name != "RecoveryBlackout": child.hide()
-	await get_tree().create_timer(0.3, false, false, true).timeout
-	if not is_instance_valid(presentation) or presentation != death_presentation: return
-	var fade := create_tween().set_ignore_time_scale(true)
-	fade.tween_property(presentation.get_node("RecoveryBlackout"), "color:a", 0.0, 1.0)
-	await fade.finished
-	if is_instance_valid(presentation) and presentation == death_presentation:
-		death_presentation = null
-		presentation.queue_free()
+func _finish_recovery_presentation() -> void: await _recovery._finish_recovery_presentation()
 
 func _exit_tree() -> void:
 	_restore_recovery_time_scale()
 	if is_instance_valid(death_presentation): death_presentation.queue_free()
 
 
-func _on_arrest() -> void:
-	if arrest_pending or rescue_pending: return
-	_cancel_for(&"arrest_1")
-	arrest_pending = true
-	# Gameplay's arrest signal already owns this lock; illusion cleanup must
-	# not release it while the custody presentation is running.
-	world.player.input_locked = true
-	_cancel_for(&"arrest_2")
-	prompt.text = ""
-	_cancel_for(&"arrest_3")
-	# Service/mission teardown may restore an earlier input snapshot.
-	# Custody takes final ownership before yielding to the presentation.
-	world.player.input_locked = true
-	await _show_v1_arrest_presentation()
-	if not arrest_pending or not is_inside_tree(): return
-	await _respawn()
+func _on_arrest() -> void: await _recovery._on_arrest()
 
-func _on_death() -> void:
-	_cancel_for(&"death_1")
-	if rescue_pending: return
-	_cancel_for(&"death_2")
-	# Fora do registro: a resposta é o saque perdido, mostrado no "SE FODEU".
-	bank_death_loss = robberies.player_died() if robberies != null else 0
-	# The old arrest coroutine must not select custody or consume this rescue.
-	arrest_pending = false
-	# Um resgate que não é desta morte pode estar em curso: o _respawn da própria prisão (delegacia
-	# escolhida, cortina abrindo; a rendição não para as balas de civis hostis) ou o da chegada.
-	# Ele terminava depois desta morte, limpava rescue_pending, cobrava a multa e deixava o corpo
-	# morto e travado na delegacia; esta morte via rescue_pending falso e pulava o próprio resgate.
-	# Soltar a transição dele o faz parar no próximo _owns_transition, sem mexer nas bandeiras nem
-	# cobrar nada, e deixa o _respawn desta morte começar (morte prevalece, como na apresentação).
-	if respawn_busy:
-		respawn_busy = false
-		if transition_kind == "rescue": _finish_transition(transition_generation)
-	# Falling out of the world and an invalid restored position reach this path
-	# directly, without damage_player. Establish the same dead state before any
-	# boarding cleanup or death presentation reads it.
-	world.gameplay.health = 0
-	_cancel_for(&"death_3")
-	world.player.input_locked = true
-	world.player.on_player_death()
-	# Damage may have posed death before Driving restored the on-foot capsule.
-	# Reassert the dead body's collision after cancelling that presentation.
-	world.player.collision_layer = 0
-	world.player.collision_mask = 0
-	world.player.set_physics_process(false)
-	world.gameplay.changed.emit()
-	var from_interior: bool = not state.place_id.is_empty() or is_instance_valid(room)
-	rescue_camera_heading = saved_heading if from_interior else world.camera.heading
-	rescue_camera_size = saved_size if from_interior else world.camera.target_size
-	rescue_pending = true
-	prompt.text = ""
-	world.hud.refresh_from_state()
-	_cancel_for(&"death_4")
-	await _show_v1_death_presentation()
-	if not rescue_pending or not is_inside_tree(): return
-	await _respawn()
+func _on_death() -> void: await _recovery._on_death()
 
-func _respawn() -> void:
-	_cancel_for(&"rescue_1")
-	if respawn_busy: return
-	var token := _begin_transition("rescue")
-	if token < 0:
-		show_message("Aguarde a transição atual e tente novamente.")
-		return
-	respawn_busy = true
-	var arrested := arrest_pending
-	var fallback: Vector3 = controller.region.spawn_position+Vector3.UP*.1
-	var destination := fallback
-	# Morte acorda na porta do Bay Medical, prisão sai pela delegacia (RecoveryPenalty).
-	var recovery_place: Dictionary = PLACES.get_definition(RECOVERY_PENALTY.place_for(state.region_id, arrested))
-	if not recovery_place.is_empty(): destination = recovery_place.return_position+Vector3.UP*.1
-	controller.region.set_focus(destination)
-	# Na serra o ponto de resgate é o spawn_position, no tabuleiro da ponte: o piso é da conexão.
-	controller.prepare_connection_at(destination)
-	if cold != null: cold.prepare_collision_at(destination)
-	for i in 3:
-		await get_tree().physics_frame
-		if not _owns_transition(token): return
-	if not position_clear(destination) and destination != fallback:
-		# Porta ocupada (ambulância, viatura estacionada): usa o ponto de resgate da região.
-		destination = fallback
-		controller.region.set_focus(destination)
-		controller.prepare_connection_at(destination)
-		if cold != null: cold.prepare_collision_at(destination)
-		for i in 3:
-			await get_tree().physics_frame
-			if not _owns_transition(token): return
-	if not position_clear(destination):
-		respawn_busy = false
-		_finish_transition(token)
-		_restore_recovery_time_scale()
-		if is_instance_valid(death_presentation): death_presentation.queue_free()
-		death_presentation = null
-		_menu("Local de custódia ocupado. Aguarde e tente novamente." if arrest_pending else "Local de resgate ocupado. Aguarde e tente novamente.")
-		_button("Tentar novamente",_respawn)
-		return
-	if world.driving.occupied:
-		world.driving.occupied = false
-		if is_instance_valid(world.driving.car):
-			world.driving.car.controlled = false
-			world.driving.car.external_input = false
-			world.driving.car.throttle_input = 0
-	_cancel_for(&"rescue_2")
-	if is_instance_valid(room):
-		if room == world.maciota_place: room.set_interior_active(false)
-		else: room.queue_free()
-	_clear_service_npcs()
-	room = null
-	state.set_location(state.region_id)
-	world.gameplay.respawn()
-	world.player.respawn_player()
-	_cancel_for(&"rescue_3")
-	sync_dispatch_location()
-	if cold != null: cold.recover_after_rescue()
-	if wine != null: wine.recover()
-	world.player.teleport(destination)
-	_sync_location_presentation()
-	world.player.collision_layer = 2
-	world.player.collision_mask = 7
-	world.player.show()
-	world.player.set_physics_process(true)
-	world.camera.target = world.player
-	world.camera.offset = world.camera.EXTERIOR_OFFSET
-	world.camera.heading = rescue_camera_heading
-	world.camera.target_size = rescue_camera_size
-	world.camera.size = rescue_camera_size
-	world.camera.locked = false
-	world.camera.initialized = false
-	world.camera._process(1)
-	_refresh_routine_context()
-	world.player.input_locked = true
-	await _finish_recovery_presentation()
-	if not _owns_transition(token): return
-	rescue_pending = false
-	arrest_pending = false
-	respawn_busy = false
-	_finish_transition(token)
-	close_menu()
-	# Só depois do resgate concluído: "Tentar novamente" não pode cobrar duas vezes.
-	var notices: Array[String] = []
-	if bank_death_loss>0:
-		notices.append(String(TranslationServer.translate("Assalto fracassado: − R$ %d"))%bank_death_loss)
-		bank_death_loss=0
-	var penalty_text := RECOVERY_PENALTY.message(RECOVERY_PENALTY.apply(state.economy, arrested), arrested)
-	if not penalty_text.is_empty(): notices.append(penalty_text)
-	if not notices.is_empty():
-		show_message(" · ".join(notices))
-		world.gameplay.changed.emit()
-	save_game()
+func _respawn() -> void: await _recovery._respawn()
