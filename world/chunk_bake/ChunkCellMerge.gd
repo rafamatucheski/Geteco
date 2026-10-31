@@ -614,7 +614,7 @@ static func _surface_format(mesh: Mesh, surface: int) -> int:
 	if mesh is ArrayMesh: return (mesh as ArrayMesh).surface_get_format(surface)
 	var key := "%d:%d" % [mesh.get_instance_id(), surface]
 	if _formats.has(key): return _formats[key]
-	var arrays := mesh.surface_get_arrays(surface)
+	var arrays := MESH_ARRAYS.arrays_of(mesh, surface)
 	var format := 0
 	for index in arrays.size():
 		if arrays[index] != null: format |= 1 << index

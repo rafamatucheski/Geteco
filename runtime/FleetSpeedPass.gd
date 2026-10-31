@@ -3,6 +3,7 @@ extends RefCounted
 ## 1) corrige o enrolamento invertido do casco quando o flanco está sendo descartado pelo
 ##    Godot (carro "sem laterais" de lado); 2) junta peças de roda e peças fixas por material.
 ## Não mexe em peças com meta (roda/porta), luz, vidro ou tinta. Cada fusão confere a caixa.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const SMOOTH_ANGLE := 62.0
 static var _hulls: Dictionary = {}
 
@@ -29,7 +30,7 @@ static func _fix_hull(id: String, model: Node3D) -> void:
 	if radii.x < 0.2 or radii.y < 0.05 or radii.z < 0.5:
 		_hulls[id] = null
 		return
-	var arrays := hull.mesh.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(hull.mesh, 0)
 	var v: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var idx: Variant = arrays[Mesh.ARRAY_INDEX]
 	var order := PackedInt32Array()
@@ -73,7 +74,7 @@ static func _find_hull(model: Node3D) -> MeshInstance3D:
 	return best
 
 static func _rebuilt(source: Mesh, center: Vector3, radii: Vector3) -> ArrayMesh:
-	var arrays := source.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(source, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var indices: Variant = arrays[Mesh.ARRAY_INDEX]
 	var order := PackedInt32Array()
@@ -193,7 +194,7 @@ static func merge_parts(model: Node3D, id := "") -> void:
 		for part: MeshInstance3D in parts:
 			# Rotating an AABB includes empty corners. Compare the actual vertices
 			# with the merged mesh, in the same space, to detect geometry loss.
-			var vertices: PackedVector3Array = part.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+			var vertices: PackedVector3Array = MESH_ARRAYS.arrays_of(part.mesh, 0)[Mesh.ARRAY_VERTEX]
 			for vertex in vertices:
 				var point: Vector3 = part.transform * vertex
 				expected = AABB(point, Vector3.ZERO) if first_vertex else expected.expand(point)
@@ -201,7 +202,7 @@ static func merge_parts(model: Node3D, id := "") -> void:
 			var source: Mesh = part.mesh
 			if not source is ArrayMesh:
 				var converted := ArrayMesh.new()
-				converted.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, source.surface_get_arrays(0))
+				converted.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, MESH_ARRAYS.arrays_of(source, 0))
 				source = converted
 			st.append_from(source, 0, part.transform)
 		var merged := st.commit()
@@ -233,8 +234,8 @@ static func _door_lines(id: String, model: Node3D) -> void:
 		if hull == null: return
 		var row: Dictionary = specs.row(id)
 		if not (row.has("zf") and row.has("zr") and row.has("sill") and row.has("belt")): return
-		var v: PackedVector3Array = hull.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
-		var idx: Variant = hull.mesh.surface_get_arrays(0)[Mesh.ARRAY_INDEX]
+		var v: PackedVector3Array = MESH_ARRAYS.arrays_of(hull.mesh, 0)[Mesh.ARRAY_VERTEX]
+		var idx: Variant = MESH_ARRAYS.arrays_of(hull.mesh, 0)[Mesh.ARRAY_INDEX]
 		var tris := PackedVector3Array()
 		if idx != null and (idx as PackedInt32Array).size() > 0:
 			for i in idx: tris.append(hull.transform * v[i])

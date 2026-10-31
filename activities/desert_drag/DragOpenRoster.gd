@@ -1,5 +1,6 @@
 extends RefCounted
 ## Visitors belong to the open meet, never to campaign/ranking progression.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const IDS := ["open_bruno", "open_celia", "open_ivo", "open_mara", "open_denis", "open_luna"]
 const CARS := {
 	"open_bruno":{"name":"Bruno","car":"desert_faisca","distance":800.0,"reaction":.25,"mistake":.06,"number":41},
@@ -40,7 +41,7 @@ static func attach_number(car: Node3D, number: int) -> void:
 		var local := car.global_transform.affine_inverse()*part.global_transform
 		for surface in part.mesh.get_surface_count():
 			if not interior._is_glass(part,surface,part.get_active_material(surface)): continue
-			var arrays := part.mesh.surface_get_arrays(surface)
+			var arrays := MESH_ARRAYS.arrays_of(part.mesh, surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 			var count := indices.size() if not indices.is_empty() else vertices.size()

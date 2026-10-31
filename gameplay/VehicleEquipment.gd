@@ -252,7 +252,9 @@ func _car_points(entry: Dictionary) -> PackedVector3Array:
 	for surface in mesh.get_surface_count():
 		var arrays: Array
 		if not rest.is_empty(): arrays = rest[surface]
-		elif _cab_rest_arrays and mesh is PrimitiveMesh: arrays = MESH_ARRAYS.arrays_of(mesh, surface)
+		# Fora do cache do amassado (ArrayMesh ainda não batida, primitiva) a leitura vem do MeshArrayCache:
+		# no máximo uma leitura da GPU por malha, não uma por carro (HOW-TO-DEVELOP).
+		elif _cab_rest_arrays: arrays = MESH_ARRAYS.arrays_of(mesh, surface)
 		else: arrays = mesh.surface_get_arrays(surface)
 		if arrays.is_empty() or arrays[Mesh.ARRAY_VERTEX] == null: continue
 		result.append_array((entry.xf as Transform3D) * (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array))

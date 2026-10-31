@@ -1,6 +1,7 @@
 extends RefCounted
 ## Reuse CPU arrays for ordinary boxes instead of reading every uploaded mesh.
 ## Other geometry keeps SurfaceTool's original path and format.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var unit_box: BoxMesh
 static var unit_arrays: Array = []
 
@@ -15,7 +16,7 @@ static func append_from(tool: SurfaceTool, mesh: Mesh, surface: int, pose: Trans
 			if cylinder.cap_top and cylinder.top_radius > 0.0: count += cylinder.radial_segments+2
 			if cylinder.cap_bottom and cylinder.bottom_radius > 0.0: count += cylinder.radial_segments+2
 			return vertex_offset+count
-		return vertex_offset+mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX].size()
+		return vertex_offset+MESH_ARRAYS.arrays_of(mesh, surface)[Mesh.ARRAY_VERTEX].size()
 	if unit_arrays.is_empty():
 		unit_box = BoxMesh.new()
 		unit_box.size = Vector3.ONE

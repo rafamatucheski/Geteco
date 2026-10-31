@@ -1,5 +1,6 @@
 extends Node3D
 ## Real geometry for the port's cached orthographic model views.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const CONTAINER := preload("res://assets/regions/source/prototypes/harbor_art_pack/props/PortContainer40ft3D.gd")
 const PORT_SHIP_PAINT := preload("res://world/regions/PortShipMaterials3D.gd")
 const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
@@ -71,7 +72,7 @@ func _restore_batches(data: Dictionary) -> void:
 
 func _preserve_hard_edges(batch: MeshInstance3D) -> void:
 	# Average only indexed neighbours, never unrelated faces at the same position.
-	var arrays: Array = batch.mesh.surface_get_arrays(0)
+	var arrays: Array = MESH_ARRAYS.arrays_of(batch.mesh, 0).duplicate()
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
 	var reference: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]

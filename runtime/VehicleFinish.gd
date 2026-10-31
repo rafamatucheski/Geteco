@@ -1,6 +1,7 @@
 extends RefCounted
 ## Shared generation pass over the baked fleet. Never edits the source scenes.
 ## Geometry/materials are cached; no additional lights, viewports or frame loop.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const PAINT := preload("res://runtime/VehiclePaint.gd")
 const CABINS := {
@@ -169,7 +170,7 @@ static func _remove_glass_surfaces(part: MeshInstance3D, removed: Array) -> void
 	if not _filtered.has(source):
 		var mesh := ArrayMesh.new()
 		for i in source.get_surface_count():
-			if i not in removed: mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,source.surface_get_arrays(i))
+			if i not in removed: mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,MESH_ARRAYS.arrays_of(source, i))
 		_filtered[source] = mesh
 	for i in source.get_surface_count(): part.set_surface_override_material(i,null)
 	part.mesh = _filtered[source]

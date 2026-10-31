@@ -1,5 +1,6 @@
 extends Node3D
 ## Courier variant identified by persisted vehicle_id, including garage/save restore.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const PREFIX := "street_icecream_"
 const GROUP := &"icecream_vans"
 const KIT := preload("res://world/city_look/CityPropKit.gd")
@@ -72,7 +73,7 @@ static func _paint_top(root: Node3D) -> float:
 			node = node.get_parent()
 		for surface in part.mesh.get_surface_count():
 			if SURFACES.key(part,surface) != "paint": continue
-			var vertices: PackedVector3Array = to_root * (part.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX] as PackedVector3Array)
+			var vertices: PackedVector3Array = to_root * (MESH_ARRAYS.arrays_of(part.mesh, surface)[Mesh.ARRAY_VERTEX] as PackedVector3Array)
 			for vertex in vertices:
 				if vertex.y > height: height = vertex.y
 	return height
@@ -165,7 +166,7 @@ func _roof_height() -> float:
 		for surface in part.mesh.get_surface_count():
 			if SURFACES.key(part,surface) != "paint": continue
 			# Transformação do array inteiro em código nativo; o laço só compara alturas.
-			var vertices: PackedVector3Array = to_car * (part.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX] as PackedVector3Array)
+			var vertices: PackedVector3Array = to_car * (MESH_ARRAYS.arrays_of(part.mesh, surface)[Mesh.ARRAY_VERTEX] as PackedVector3Array)
 			for vertex in vertices:
 				if vertex.y > height: height = vertex.y
 	height = height if height > 1.2 else 2.10
@@ -176,7 +177,7 @@ static func _livery_for_roof(height: float) -> ArrayMesh:
 	var key := roundi(height*1000.0)
 	if _roof_liveries.has(key): return _roof_liveries[key]
 	var original := livery_mesh()
-	var arrays := original.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(original, 0).duplicate()
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX].duplicate()
 	var offset := height-2.10
 	for i in vertices.size():

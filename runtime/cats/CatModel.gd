@@ -2,6 +2,7 @@ extends Node3D
 ## Small native 3D cat. The owning actor controls distance, lifetime and animation.
 ## Forward is -Z; feet rest at y=0. No physics, timers, lights or per-cat viewport.
 
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const COATS := [
 	[Color("d98138"), Color("814524"), Color("f0d3a4"), Color("b7d076")], # Ginger tabby.
 	[Color("232630"), Color("15191e"), Color("232630"), Color("d6b85b")], # Black.
@@ -274,7 +275,7 @@ static func _bake(parts: Array) -> ArrayMesh:
 		var color: Color = part[2]
 		var normal_basis := part_transform.basis.inverse().transposed()
 		for surface_index in range(mesh.get_surface_count()):
-			var arrays := mesh.surface_get_arrays(surface_index)
+			var arrays := MESH_ARRAYS.arrays_of(mesh, surface_index)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 			var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()

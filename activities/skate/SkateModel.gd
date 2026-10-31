@@ -1,5 +1,6 @@
 extends Node3D
 ## Street setup: 8.5 x 32 inch popsicle deck, seven plies and 54 mm wheels.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const WIDTH := .2159
 const LENGTH := .8128
 const DECK_HEIGHT := .10
@@ -206,7 +207,7 @@ func _cylinder(surface: SurfaceTool, at: Vector3, radius: float, height: float, 
 	_append_primitive(surface, mesh, at, tint, orientation)
 
 func _append_primitive(surface: SurfaceTool, mesh: Mesh, at: Vector3, tint: Color, orientation := Basis.IDENTITY) -> void:
-	var arrays := mesh.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(mesh, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
 	for index in indices:

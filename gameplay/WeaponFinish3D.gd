@@ -1,5 +1,6 @@
 extends RefCounted
 ## Small, shared model finishing pass. Gameplay anchors and moving parts stay intact.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const GEO = preload("res://gameplay/WeaponPresentation3D.gd")
 static var _muzzle_mesh: ArrayMesh
 
@@ -238,7 +239,7 @@ static func _batch_static(root: Node3D) -> void:
 				branch_st.set_material(material)
 				batches[key] = branch_st
 			var st: SurfaceTool = batches[key]
-			var arrays: Array = child.mesh.surface_get_arrays(surface)
+			var arrays: Array = MESH_ARRAYS.arrays_of(child.mesh, surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 			var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()

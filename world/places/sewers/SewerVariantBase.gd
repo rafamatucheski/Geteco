@@ -2,6 +2,7 @@ extends Node3D
 ## Base dos esgotos novos. A sala fica centrada na origem, em metros (o Esgoto da V1 usa pixels de origem).
 ## `solid_rects` (id -> Rect2 no plano XZ) vira colisão no `NativePlace`; cada peça com `solid` entra ali.
 ## Subclasses definem REWARDS e RESIDENTS (lidos por `SewerNetwork.decorate`) e implementam `_build()`.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 var solid_rects: Dictionary = {}
 var half := Vector2(8, 5)
 var _palette: Dictionary = {}
@@ -196,7 +197,7 @@ func walls(back_height := 2.8, side_height := 1.0, front_height := 0.35, color :
 	for bounds in [AABB(Vector3(-half.x-t,0,half.y),Vector3(half.x*2.0+t*2.0,2.8,t)), AABB(Vector3(-half.x-t,0,-half.y),Vector3(t,2.8,half.y*2.0)), AABB(Vector3(half.x,0,-half.y),Vector3(t,2.8,half.y*2.0))]:
 		var blocker := box(bounds.get_center(), bounds.size, color)
 		var shadow_mesh := ArrayMesh.new()
-		shadow_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, blocker.mesh.surface_get_arrays(0))
+		shadow_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, MESH_ARRAYS.arrays_of(blocker.mesh, 0))
 		blocker.mesh = shadow_mesh
 		blocker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 	box(Vector3(0, back_height * 0.5, -half.y - t * 0.5), Vector3(half.x * 2.0 + t * 2.0, back_height, t), color, false, "BackWall")

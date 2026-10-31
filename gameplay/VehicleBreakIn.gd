@@ -1,5 +1,6 @@
 extends RefCounted
 ## One temporary presentation for a locked civilian car. No idle work per parked car.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const AUDIO := preload("res://gameplay/VehicleEquipmentAudio.gd")
 const STREET := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const ALARM_SECONDS := 7.5
@@ -47,7 +48,7 @@ static func closed_layout(car: CharacterBody3D, side: int) -> Dictionary:
 				if keys.is_empty() and part.material_override is BaseMaterial3D:
 					pane = part.material_override.cull_mode == BaseMaterial3D.CULL_DISABLED
 				if not pane: continue
-				var vertices: PackedVector3Array = part.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
+				var vertices: PackedVector3Array = MESH_ARRAYS.arrays_of(part.mesh, surface)[Mesh.ARRAY_VERTEX]
 				for vertex in vertices:
 					pane_center += car.to_local(part.to_global(vertex))
 					pane_vertices += 1

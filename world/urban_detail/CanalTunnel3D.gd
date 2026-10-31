@@ -17,6 +17,7 @@ extends RefCounted
 ## Rampa de 12,5 %: entre a warehouse_way e o meio-fio da quay_boulevard há só 40 m;
 ## a 10 % o vão livre sob o cais ficaria abaixo de 3 m. 12,5 % dá 3,6 m na boca oeste.
 
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const WALL_SHADER := preload("res://world/urban_detail/canal_tunnel_wall.gdshader")
 const WATER_DEPTH_SHADER := preload("res://world/urban_detail/canal_tunnel_water_depth.gdshader")
 const CITY := preload("res://world/city_look/CityLookMaterials.gd")
@@ -325,7 +326,7 @@ static func _carved_mesh(source: Mesh, to_global: Transform3D, cuts: Array[Rect2
 	for surface in source.get_surface_count():
 		if source is ArrayMesh and (source as ArrayMesh).surface_get_primitive_type(surface) != Mesh.PRIMITIVE_TRIANGLES: return source
 	for surface in source.get_surface_count():
-		var arrays := source.surface_get_arrays(surface)
+		var arrays := MESH_ARRAYS.arrays_of(source, surface).duplicate(true)
 		var channels := {}
 		var indices := PackedInt32Array()
 		if arrays[Mesh.ARRAY_INDEX] != null: indices = arrays[Mesh.ARRAY_INDEX]

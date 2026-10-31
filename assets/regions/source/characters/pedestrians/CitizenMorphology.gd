@@ -1,6 +1,7 @@
 extends RefCounted
 ## Build-time shaping: garments, seams and accessories share the same torso
 ## deformation, so a fuller abdomen doesn't poke through a flat shirt.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static func profile(y: float, body: int) -> Vector3:
 	var belly := exp(-pow((y+.075)/.16,2))
 	var hip := exp(-pow((y+.25)/.10,2))
@@ -23,7 +24,7 @@ static func deform_torso(torso: Node3D, body: int) -> void:
 		var from_normal:=local.basis.inverse().transposed()
 		var to_normal:=local.basis.transposed()
 		for surface in source.get_surface_count():
-			var arrays:=source.surface_get_arrays(surface)
+			var arrays:=MESH_ARRAYS.arrays_of(source, surface).duplicate(true)
 			var vertices: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
 			var normals: PackedVector3Array=arrays[Mesh.ARRAY_NORMAL]
 			for i in vertices.size():

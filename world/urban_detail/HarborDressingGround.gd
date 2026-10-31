@@ -1,5 +1,6 @@
 extends RefCounted
 ## Authored district ground is composed once, as adjacent surfaces, never stacked boxes.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const CUT := preload("res://world/urban_detail/GroundCut.gd")
 
 static func footprints(zone: String, origin: Vector2) -> Array[PackedVector2Array]:
@@ -106,7 +107,7 @@ static func compose(parent: Node3D, zone: String) -> void:
 static func _render_faces(mesh: Mesh) -> PackedVector3Array:
 	var result := PackedVector3Array()
 	for surface in mesh.get_surface_count():
-		var arrays := mesh.surface_get_arrays(surface)
+		var arrays := MESH_ARRAYS.arrays_of(mesh, surface)
 		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 		if indices.is_empty(): result.append_array(vertices)

@@ -2,6 +2,7 @@ extends RefCounted
 ## Acabamento do Aurora Executive L (sedã executivo, `assets/fleet/aurora_executive.scn`).
 ## Roda em `FleetCatalog.create`, depois dos outros acabamentos, só para este modelo.
 ## Cada etapa é independente e cacheada por classe: criar 40 carros custa a mesma coisa que 1.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var _hull_mesh: ArrayMesh
 ## Quantos triângulos do casco tiveram o enrolamento corrigido (para teste).
 static var flipped_triangles := 0
@@ -65,7 +66,7 @@ static func _smooth_hull(model: Node3D) -> void:
 	hull.mesh = _hull_mesh
 
 static func _rebuilt(source: Mesh) -> ArrayMesh:
-	var arrays := source.surface_get_arrays(0)
+	var arrays := MESH_ARRAYS.arrays_of(source, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var indices: Variant = arrays[Mesh.ARRAY_INDEX]
 	var order := PackedInt32Array()
@@ -171,7 +172,7 @@ static func _add_details(model: Node3D) -> void:
 
 static func _collect_hull_triangles(model: Node3D) -> PackedVector3Array:
 	for part: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
-		if part.mesh == _hull_mesh: return (_hull_mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array)
+		if part.mesh == _hull_mesh: return (MESH_ARRAYS.arrays_of(_hull_mesh, 0)[Mesh.ARRAY_VERTEX] as PackedVector3Array)
 	return PackedVector3Array()
 
 ## x do casco no ponto (y, z) do lado `side` (+1/-1): o primeiro triângulo que um raio
@@ -284,7 +285,7 @@ static func _merge_parts(model: Node3D) -> void:
 			var source: Mesh = part.mesh
 			if not source is ArrayMesh:
 				var converted := ArrayMesh.new()
-				converted.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, source.surface_get_arrays(0))
+				converted.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, MESH_ARRAYS.arrays_of(source, 0))
 				source = converted
 			st.append_from(source, 0, part.transform)
 		var merged := st.commit()

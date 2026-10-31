@@ -1,6 +1,7 @@
 extends RefCounted
 ## Visual ownership of the authored forecourts, plus physical road/soil ownership.
 ## Visual clipping leaves collision intact; compose_collision handles that separately.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const CUT := preload("res://world/urban_detail/GroundCut.gd")
 const DETAIL := preload("res://world/desert/DesertSurfaceDetail.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
@@ -102,7 +103,7 @@ static func clip_visual(node: MeshInstance3D, cover: Array[PackedVector2Array]) 
 	var mesh := ArrayMesh.new()
 	var removed_area := 0.0
 	for surface in node.mesh.get_surface_count():
-		var source := node.mesh.surface_get_arrays(surface)
+		var source := MESH_ARRAYS.arrays_of(node.mesh, surface)
 		var vertices: PackedVector3Array=source[Mesh.ARRAY_VERTEX]
 		var source_normals: PackedVector3Array=source[Mesh.ARRAY_NORMAL]
 		var has_colors: bool=source[Mesh.ARRAY_COLOR]!=null and not source[Mesh.ARRAY_COLOR].is_empty()
