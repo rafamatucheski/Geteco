@@ -1,9 +1,9 @@
 extends Node3D
 class_name StaticSawmillWorkTruck3D
 
-## Static scenery counterpart of the work pickup mounted by V1
-## MountainSceneryBuilder.build_detailed_sawmill(). It deliberately does not
-## create a drivable Vehicle or run vehicle simulation.
+## Contraparte de cenário estático da picape de trabalho montada pelo
+## MountainSceneryBuilder.build_detailed_sawmill() da V1. De propósito não
+## cria um Vehicle dirigível nem roda simulação de veículo.
 
 const ARCHETYPE := "lumber_pickup_4x4"
 const SOURCE_COLOR := Color("576574")
