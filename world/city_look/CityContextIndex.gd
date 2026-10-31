@@ -38,8 +38,8 @@ func configure(geometry: RefCounted, buildings: Array) -> void:
 	var building_bounds: Array[Rect2] = []
 	for building in buildings:
 		var center := Vector2(building.position.x, building.position.z)
-		# Edited facades rotate their real footprint. Street dressing must use
-		# that same envelope, or alley bins can be generated inside the rooms.
+		# Fachadas editadas giram a área real. O mobiliário de rua precisa usar
+		# esse mesmo envelope, senão lixeiras de beco podem ser geradas dentro dos cômodos.
 		var yaw := float(building.get("editor_rotation",0.0))
 		var size: Vector2 = building.size
 		var rotated_size := Vector2(absf(cos(yaw))*size.x+absf(sin(yaw))*size.y,absf(sin(yaw))*size.x+absf(cos(yaw))*size.y)

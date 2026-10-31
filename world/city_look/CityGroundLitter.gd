@@ -1,6 +1,6 @@
 extends RefCounted
-## Small, opaque ground decoration. Built once, owned/unloaded by its chunk.
-## Two shared meshes/material, no scripts on the instances, physics or shadows.
+## Decoração de chão pequena e opaca. Montada uma vez, pertence ao chunk e é descarregada com ele.
+## Duas malhas/material compartilhados, sem scripts nas instâncias, física ou sombras.
 const CANAL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
@@ -12,7 +12,7 @@ const LIFT := .003
 ## Pegada no chão das peças do StreetJunk (m), para folha e papel não boiarem sobre elas.
 const JUNK_RADIUS := {"bag_single":.4,"bag_pile":.8,"bag_torn":.8,"cardboard":.75,"refuse_heap":1.2,"wood_crates":.75,"fish_crates":.75,"rusty_barrels":.8,
 	"rope_coil":.75,"fishing_net":.9,"loose_tires":.7,"rubble":.95,"rubble_skip":1.8,"beach_parasol":.6,"beach_parasol_b":.6,"beach_chairs":.95,"plastic_chairs":.65,"bar_table":1.15}
-# Used by the rendered A/B harness; production always starts enabled.
+# Usado pelo harness A/B renderizado; em produção sempre começa ligado.
 static var enabled := true
 static var render_visible := true
 static var _leaf: ArrayMesh
@@ -25,16 +25,16 @@ static func build_chunk(chunk: Node3D, context: Dictionary, furniture: Dictionar
 	step(job,INF)
 
 
-## Prepare cheap candidates; footprint checks are resumed by the streaming
-## owner with a 0.5 ms slice budget instead of occupying a whole frame.
+## Prepara candidatos baratos; as checagens de área são retomadas pelo dono do
+## streaming com orçamento de fatia de 0.5 ms em vez de ocupar um quadro inteiro.
 static func begin(chunk: Node3D, context: Dictionary, furniture: Dictionary, exclusions: Array) -> Dictionary:
 	if not enabled or chunk.has_node("CityGroundLitter"): return {"done":true}
 	var geometry = context.geometry
 	if geometry == null or geometry._layers.is_empty(): return {"done":true}
 	var began := Time.get_ticks_usec()
 	var job := {"done":false,"chunk":chunk,"index":0,"candidates":[],"segments":[],"context":context,"exclusions":exclusions,"leaves":[],"papers":[],"leaf_colors":[],"paper_colors":[],"supports":[],"crossings":[],"doors":[],"occupied":[]}
-	# Support comes from the polygons actually rendered as sidewalks. The same
-	# width overrides, curves and endpoints therefore govern these tiny pieces.
+	# O apoio vem dos polígonos realmente renderizados como calçada. Assim as mesmas
+	# sobreposições de largura, curvas e pontas governam estas peças minúsculas.
 	var layer: Dictionary = geometry._layers[0]
 	for index in layer.polygons.size():
 		if (context.rect as Rect2).grow(.5).intersects(layer.bounds[index]):
@@ -46,7 +46,7 @@ static func begin(chunk: Node3D, context: Dictionary, furniture: Dictionary, exc
 		var point: Vector3 = entry.get("exterior_position", entry.get("position", Vector3.INF))
 		if not point.is_finite(): continue
 		if (context.rect as Rect2).grow(3.0).has_point(Vector2(point.x,point.z)): job.doors.append(Vector2(point.x,point.z))
-	# Decoration must not float over the feet of the existing street furniture.
+	# A decoração não pode flutuar sobre os pés do mobiliário de rua existente.
 	for kind in ["trash_can","dumpster","trash_bags","planter","bench_seat","phone_booth","hydrant","news_box","mailbox","bollard","signal_pole","stop_sign"]:
 		for placement: Transform3D in furniture.get(kind,[]):
 			job.occupied.append({"point":Vector2(placement.origin.x,placement.origin.z),"radius":1.4 if kind in ["dumpster","bench_seat","phone_booth"] else .65})
@@ -69,8 +69,8 @@ static func begin(chunk: Node3D, context: Dictionary, furniture: Dictionary, exc
 			if length < .1: continue
 			var tangent := (b-a)/length
 			var normal := Vector2(tangent.y,-tangent.x)
-			# Only sample the part near this chunk; slot/seed belong to the road,
-			# not to clipping, so adjacent chunks and reloads keep the same layout.
+			# Só amostra a parte perto deste chunk; slot/semente pertencem à rua,
+			# não ao recorte, para que chunks vizinhos e recargas mantenham o mesmo arranjo.
 			var rect: Rect2 = (context.rect as Rect2).grow(float(road.width)*.5+reach+1.0)
 			var low := INF
 			var high := -INF
@@ -86,8 +86,8 @@ static func begin(chunk: Node3D, context: Dictionary, furniture: Dictionary, exc
 					var curb_distance := rng.randf_range(.6,minf(1.15,reach-.3))
 					var anchor: Vector2 = a+tangent*distance+normal*float(side)*(float(road.width)*.5+curb_distance)
 					_cluster(job,anchor,rng,3+rng.randi_range(0,3),rng.randf()<.32)
-	# Authored trees use their actual world placement; only their neighbouring
-	# sidewalk is eligible, keeping raised beds and unsupported lawns untouched.
+	# Árvores autoradas usam a posição real no mundo; só a calçada vizinha
+	# é elegível, deixando canteiros elevados e gramados sem apoio intactos.
 	for trunk: Node3D in chunk.find_children("TreeTrunk*","MeshInstance3D",true,false):
 		var point := Vector2(trunk.global_position.x,trunk.global_position.z)
 		var rng := _rng("tree/%.3f/%.3f"%[point.x,point.y])
@@ -176,8 +176,8 @@ static func _cluster(job: Dictionary, anchor: Vector2, rng: RandomNumberGenerato
 
 static func _allowed(job: Dictionary, point: Vector2, radius: float) -> bool:
 	var context: Dictionary = job.context
-	# The origin has a single owner at a chunk boundary. Its whole footprint
-	# is checked against support/reservations; it may slightly cross that seam.
+	# A origem tem um único dono na borda do chunk. A área inteira
+	# é checada contra apoio/reservas; ela pode cruzar um pouco essa emenda.
 	if not (context.rect as Rect2).has_point(point): return false
 	if CANAL.reserves(point,radius+.15) or CONNECTION.reserves_approach_for_driving(point): return false
 	if SKATE.enabled() and SKATE.FOOTPRINT.grow(radius).has_point(point): return false
@@ -195,7 +195,7 @@ static func _allowed(job: Dictionary, point: Vector2, radius: float) -> bool:
 		var width := 0.0
 		for index in junction.roads: width = maxf(width,float(context.geometry._roads[int(index)].width))
 		if point.distance_to(junction.position)<width*.68+3.0+radius: return false
-	# Test an enclosing square, rather than only the centre, for curb/end caps.
+	# Testa um quadrado envolvente, e não só o centro, para meio-fio/pontas.
 	for offset in [Vector2.ZERO,Vector2(-radius,-radius),Vector2(radius,-radius),Vector2(radius,radius),Vector2(-radius,radius)]:
 		var probe := point+Vector2(offset)
 		if CONNECTION.reserves_approach_for_driving(probe): return false
@@ -270,7 +270,7 @@ static func _paper_mesh() -> ArrayMesh:
 	var center := Vector3(0,.001,0)
 	for index in outline.size():
 		_face(tool,center,outline[index],outline[(index+1)%outline.size()],[Color.WHITE,Color(.88,.87,.83),Color(.94,.93,.9)])
-	# Two muted printed marks, baked into this shared mesh; no text or texture.
+	# Duas marcas impressas discretas, embutidas nesta malha compartilhada; sem texto nem textura.
 	for z in [-.055,-.023]:
 		var a := Vector3(-.058,.002,z)
 		var b := a+Vector3(.098,0,0)

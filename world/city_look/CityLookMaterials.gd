@@ -163,9 +163,9 @@ static func window_unlit(index: int) -> StandardMaterial3D:
 	return material
 
 
-## Exterior glazing with a dark room behind it. Keep an opaque, single-pass
-## surface, but preserve glass roughness so the shared sky supplies reflection.
-## flat() intentionally adds plaster detail and cannot represent this role.
+## Vidraça externa com um cômodo escuro atrás. Mantém uma superfície opaca de passo
+## único, mas preserva a rugosidade do vidro para o céu compartilhado dar o reflexo.
+## flat() acrescenta detalhe de reboco de propósito e não representa este papel.
 static func window_glass_dark() -> StandardMaterial3D:
 	if _cache.has("window_glass_dark"): return _cache["window_glass_dark"]
 	var material := StandardMaterial3D.new()

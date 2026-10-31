@@ -34,9 +34,9 @@ static func decorate(building: UrbanBuildingBase) -> MeshInstance3D:
 	var joints := SurfaceTool.new()
 	panes.begin(Mesh.PRIMITIVE_TRIANGLES)
 	joints.begin(Mesh.PRIMITIVE_TRIANGLES)
-	# Same spacing as PoliceStationDressing._facade; solid masonry remains at
-	# every pilaster, the cornice and both side elevations. Ground-floor doors,
-	# collision, security windows and bars keep their original geometry.
+	# Mesmo espaçamento de PoliceStationDressing._facade; alvenaria sólida continua em
+	# cada pilastra, na cornija e nas duas elevações laterais. Portas do térreo,
+	# colisão, janelas de segurança e grades mantêm a geometria original.
 	var count := maxi(1, int(building.building_size.x / 2.2))
 	var span := (building.building_size.x - .3) / float(count)
 	var first := -building.building_size.x * .5 + .15
@@ -54,18 +54,18 @@ static func decorate(building: UrbanBuildingBase) -> MeshInstance3D:
 			_append_box(joints, Vector3(x, y, front + .013), Vector3(width, .025, .016), mullion_color)
 		for y in [bottom, top]:
 			_append_box(joints, Vector3(x, y, front + .013), Vector3(width, .04, .016), mullion_color)
-		# Reveals occupy only the existing 4.5cm gap from glazing to pilaster.
-		# Their exposed side faces give actual depth, without thickening/replacing
-		# the original columns or changing the front-facing reflection plane.
+		# Os recuos ocupam só o vão existente de 4.5cm entre vidraça e pilastra.
+		# As faces laterais expostas dão profundidade real, sem engrossar/substituir
+		# as colunas originais nem mudar o plano de reflexo frontal.
 		for side in [-1.0, 1.0]:
 			_append_box(joints, Vector3(x + side * (width * .5 + .0225), (bottom + top) * .5, front + .044), Vector3(.045, top - bottom, .088), reveal_color)
 		_append_box(joints, Vector3(x, top + .015, front + .044), Vector3(width + .09, .06, .088), reveal_color)
 		_append_box(joints, Vector3(x, bottom - .02, front + .06), Vector3(width + .09, .08, .12), reveal_color)
 	var visual := _install(finish, "FrontGlazing", panes, glass)
 	_install(finish, "GlazingMullions", joints, frame)
-	# All three transforms below visuals_root are identity. Metadata is LOCAL
-	# to the registered MeshInstance3D, so a selector can use its global_transform
-	# for both point and normal, including building rotation/entrance mirroring.
+	# Os três transforms abaixo de visuals_root são identidade. O metadado é LOCAL
+	# ao MeshInstance3D registrado, então um seletor pode usar o global_transform dele
+	# para ponto e normal, incluindo rotação do prédio/espelhamento da entrada.
 	visual.set_meta("coastal_reflection_plane_normal", Vector3.FORWARD * -1.0)
 	visual.set_meta("coastal_reflection_plane_point", Vector3(0, 0, front))
 	visual.set_meta("coastal_reflection_panes", count)
@@ -78,8 +78,8 @@ static func _append_box(surface: SurfaceTool, center: Vector3, size: Vector3, ti
 	if tint == Color.WHITE:
 		surface.append_from(box, 0, Transform3D(Basis.IDENTITY, center))
 		return
-	# Different matte finishes share one surface/material instead of adding a
-	# draw mesh for each frame. This construction runs only when its chunk loads.
+	# Acabamentos foscos diferentes dividem uma superfície/material em vez de somar uma
+	# malha de desenho por quadro. Esta construção só roda quando o chunk carrega.
 	var arrays := MESH_ARRAYS.arrays_of(box, 0).duplicate()
 	var colors := PackedColorArray()
 	colors.resize((arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size())

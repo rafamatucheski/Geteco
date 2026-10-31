@@ -1,6 +1,6 @@
 extends RefCounted
-## Local, matte finish for the authored Police wall boxes. Two shared maps are
-## built once; tint variation is deliberately absent from the relief field.
+## Acabamento local e fosco para as caixas de parede autoradas da Polícia. Dois mapas
+## compartilhados são montados uma vez; variação de tom fica de fora do campo de relevo de propósito.
 const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
 const MAP_SIZE := 256
 const WALL_COLOR := Color("4f6878")
@@ -12,9 +12,9 @@ static func decorate(building: UrbanBuildingBase) -> void:
 	var body := root.get_node_or_null("PrecinctBody") as MeshInstance3D
 	var wing := root.get_node_or_null("PrecinctFrontWing") as MeshInstance3D
 	var vestibule := root.get_node_or_null("PrecinctVestibuleSide") as MeshInstance3D
-	# Direct children only: never reach interiors or the separate facade dressing.
-	# add_solid_box repeats wing/vestibule names. Godot may give the second box
-	# an anonymous name, so identify its exact mirrored authored dimensions too.
+	# Só filhos diretos: nunca alcança interiores nem o mobiliário de fachada separado.
+	# add_solid_box repete nomes de ala/vestíbulo. O Godot pode dar à segunda caixa
+	# um nome anônimo, então identifica também as dimensões autoradas espelhadas exatas.
 	for child in root.get_children():
 		var wall := child as MeshInstance3D
 		if wall == null or not wall.mesh is BoxMesh: continue
@@ -39,8 +39,8 @@ static func _material() -> StandardMaterial3D:
 	relief_rng.seed = 91327
 	for y in MAP_SIZE:
 		for x in MAP_SIZE:
-			# 4m repeat, 2m by 1.33m panels. Periodic distance and
-			# smooth profiles avoid a hard seam at the texture boundary.
+			# Repetição de 4m, painéis de 2m por 1.33m. Distância periódica e
+			# perfis suaves evitam emenda dura na borda da textura.
 			var dx := float(mini(x % 128, 128 - x % 128))
 			var panel_y := fposmod(float(y), float(MAP_SIZE)/3.0)
 			var dy := minf(panel_y, float(MAP_SIZE)/3.0-panel_y)
@@ -51,13 +51,13 @@ static func _material() -> StandardMaterial3D:
 			var v := TAU * float(y) / float(MAP_SIZE)
 			var tone := 1.0 + .014 * sin(u + .7) * cos(v - .4) \
 				+ .008 * sin(2.0 * u - v) + tint_rng.randf_range(-.012, .012)
-			# Keep panel separation readable at gameplay scale; the first 7%
-			# trial disappeared after minification. No baked directional light.
+			# Mantém a separação dos painéis legível na escala do jogo; o primeiro teste
+			# de 7% sumia depois da minificação. Sem luz direcional embutida.
 			var tint := WALL_COLOR * (tone + float(panel_tone) - joint * .22)
 			tint.a = 1.0
 			albedo.set_pixel(x, y, tint)
-			# Only fine aggregate and recessed joints affect the normals;
-			# broad color mottling remains flat, avoiding embossed stains.
+			# Só agregado fino e juntas rebaixadas afetam as normais;
+			# manchas amplas de cor ficam planas, evitando nódoas em relevo.
 			heights[y * MAP_SIZE + x] = .5 - joint * .08 + relief_rng.randf_range(-.006, .006)
 	albedo.generate_mipmaps()
 	var material := StandardMaterial3D.new()

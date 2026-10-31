@@ -1,6 +1,6 @@
 extends RefCounted
-## Street clutter respects the calibrated, edited tube-stop footprint.
-## Architecture and collision remain owned by UrbanTransitPresentation.
+## A bagunça de rua respeita a área calibrada e editada da parada do tubo.
+## Arquitetura e colisão continuam pertencendo a UrbanTransitPresentation.
 
 static func build() -> Array[Rect2]:
 	var result: Array[Rect2] = []
