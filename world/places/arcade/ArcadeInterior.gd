@@ -52,8 +52,8 @@ func _ready() -> void:
 	set_physics_process(false)
 
 func _wall_lighting() -> void:
-	# Two fixed wall fixtures light the aisle and real actor rigs at night.
-	# NativePlace owns their visibility/lifetime; screens remain emissive art.
+	# Duas luminárias fixas de parede iluminam o corredor e os rigs reais dos atores à noite.
+	# O NativePlace é dono da visibilidade/tempo de vida delas; as telas continuam arte emissiva.
 	for side in [-1,1]:
 		var x: float = side*5.56
 		box("WallLampBack%d"%side,Vector3(side*5.69,2.74,0),Vector3(.10,.40,1.04),"37343e","","metal")
@@ -73,7 +73,7 @@ func _wall_lighting() -> void:
 func _shell() -> void:
 	box("FloorSurface",Vector3(0,-.026,0),Vector3(12,.05,10),"54505a","","shell_stone")
 	box("Carpet",Vector3(0,.012,-.45),Vector3(9.70,.021,7.4),"44374e","","shell_cloth")
-	# Repeated short ribbons give the carpet an arcade identity without signs.
+	# Fitas curtas repetidas dão ao carpete identidade de fliperama sem placas.
 	for row in 10:
 		for col in 12:
 			var x := -4.45+col*.8
@@ -104,7 +104,7 @@ func _upright(id: String, at: Vector3, yaw: float, accent: String, screen_kind: 
 	_part(id+"Marquee",at,basis,Vector3(0,1.975,-.05),Vector3(width+.07,.23,.78),accent,id)
 	_part(id+"ScreenFrame",at,basis,Vector3(0,1.48,.205),Vector3(width-.16,.76,.045),"10121c")
 	_part(id+"Screen",at,basis,Vector3(0,1.49,.235),Vector3(width-.29,.60,.015),"17293a","","screen")
-	# Side stripes, recessed coin door and ventilation carry the same trim.
+	# Faixas laterais, porta de moedas rebaixada e ventilação levam o mesmo acabamento.
 	for side in [-1,1]:
 		_bit(at,basis,Vector3(side*(width*.5+.004),1.01,-.05),Vector3(.018,1.89,.55),accent)
 		_bit(at,basis,Vector3(side*(width*.5+.015),1.16,.24),Vector3(.012,1.15,.048),"d8bc85","metal")
@@ -192,14 +192,14 @@ func _lounge() -> void:
 	detail(Vector3(-5.09,1.18,-1.354),Vector3(.035,.18,.018),"d4bd83","metal")
 
 func _wall_details() -> void:
-	# Abstract chrome stars and framed game art, with no descriptive signage.
+	# Estrelas abstratas cromadas e arte de jogos emoldurada, sem sinalização descritiva.
 	for x in [-3.03,0,3.03]:
 		box("RearFrame",Vector3(x,2.65,-4.70),Vector3(1.55,.62,.07),"9a7652","","metal")
 		box("RearPrint",Vector3(x,2.65,-4.65),Vector3(1.41,.49,.028),"243d47")
 		for side in [-1,1]:
 			detail(Vector3(x+side*.34,2.65,-4.625),Vector3(.09,.31,.016),"ab92b9","screen",Vector3(0,0,side*.48))
 			detail(Vector3(x+side*.34,2.65,-4.613),Vector3(.25,.058,.016),"e0bc83","screen")
-	# Visible speaker casings have no lights or processors of their own.
+	# As caixas de som visíveis não têm luzes nem processadores próprios.
 	for side in [-1,1]:
 		box("RearSpeaker",Vector3(side*5.44,2.64,-4.56),Vector3(.48,.67,.36),"262732")
 		for y in [2.48,2.76]: detail(Vector3(side*5.44,y,-4.365),Vector3(.21,.035,.21),"535261","paint",Vector3(PI*.5,0,0),true)

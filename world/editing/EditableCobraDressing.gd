@@ -1,6 +1,6 @@
 extends "res://world/urban_detail/HarborAreaDressing3D.gd"
-## Editor adapter: preserve the authored constructor, then give coherent pieces
-## their own transform. Shared meshes/materials and source scripts stay intact.
+## Adaptador do editor: preserva o construtor autorado e depois dá às peças coerentes
+## um transform próprio. Malhas/materiais compartilhados e scripts fonte ficam intactos.
 const PIECES := preload("res://world/editing/WorldEditPieces.gd")
 var _piece_depth := 0
 var _pieces: Array[Dictionary] = []
@@ -14,8 +14,8 @@ func _ready() -> void:
 		if child.name == "CobraWildGrass": _track_piece("Vegetação", [child], [])
 		if str(child.name).begins_with("CobraPathCorners"): _track_piece(str(child.name),[child],[])
 	_publish_pieces()
-	# Capture editable outlines while the original primitive and its authored
-	# pivot still exist. Runtime applies saved changes before final composition.
+	# Captura contornos editáveis enquanto a primitiva original e o pivô
+	# autorado ainda existem. O runtime aplica as mudanças salvas antes da composição final.
 	for piece in PIECES.collect(self):
 		var info := PIECES.shape_info(piece)
 		if not info.is_empty(): piece.set_meta("world_edit_shape_info",info)
@@ -138,8 +138,8 @@ static func tag_route(zone: Node3D, p_zone_id: String) -> void:
 	for index in zone.get_child_count():
 		var child := zone.get_child(index) as Node3D
 		if child == null: continue
-		# Retired paving keeps its positional slot solely for saved IDs; an
-		# empty anchor is not an editable/selectable street furnishing.
+		# Pavimento aposentado mantém o slot de posição só por causa dos IDs salvos; uma
+		# âncora vazia não é mobiliário de rua editável/selecionável.
 		if child.get_meta("district_ground_owned",false): continue
 		var label := str(child.name)
 		if label.begins_with("@") and child.get_child_count() > 0: label = str(child.get_child(0).name)

@@ -1,7 +1,7 @@
 extends RefCounted
-## Temporary presentation roots have explicit ownership even while their
-## coroutines are suspended. Cancellation also works during tree shutdown,
-## when no following process_frame may arrive to resume those coroutines.
+## Raízes de apresentação temporárias têm posse explícita mesmo enquanto as
+## corrotinas estão suspensas. O cancelamento também funciona no desligamento da árvore,
+## quando pode não chegar nenhum process_frame seguinte para retomar essas corrotinas.
 static func track(token: Dictionary, node: Node) -> void:
 	if token.is_empty(): return
 	if not token.has("roots"): token.roots=[]

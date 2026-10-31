@@ -1,7 +1,7 @@
 extends Node3D
-## Reversible presentation cut for railway structures in front of an occupied
-## building. Railway collisions, train motion and geometry outside its sightlines stay
-## owned by their original systems. Work occurs on floor/streaming changes only.
+## Corte de apresentação reversível para estruturas ferroviárias em frente a um prédio
+## ocupado. Colisões da ferrovia, movimento do trem e geometria fora das linhas de visão continuam
+## com os sistemas originais. O trabalho só acontece em mudanças de andar/streaming.
 const ACCESS = preload("res://world/places/harbor_buildings/HarborBuildingExteriorAccess.gd")
 const CAMERA = preload("res://world/places/harbor_buildings/HarborBuildingCamera.gd")
 var _moving := preload("res://world/places/harbor_buildings/HarborBuildingMovingSightline.gd").new()
@@ -22,13 +22,13 @@ func configure(definition: Dictionary, index: int, rooftop := false) -> void:
 	var size: Vector2 = definition.size
 	var floor_y: float = float(index)*float(definition.storey_height)
 	global_transform = Transform3D(Basis(Vector3.UP,float(definition.get("exterior_rotation",0.0))),definition.exterior_position)
-	# Shear elevated geometry onto the occupied floor along the orthographic
-	# camera rays. An axis-aligned cut in this frame is a narrow inclined prism
-	# in the world, rather than a wide hole through the surrounding railway.
+	# Cisalha a geometria elevada sobre o andar ocupado ao longo dos raios da câmera
+	# ortográfica. Um corte alinhado aos eixos neste referencial é um prisma inclinado estreito
+	# no mundo, em vez de um buraco largo atravessando a ferrovia em volta.
 	var slope := Vector2(direction.x,direction.z)/direction.y
 	_projection = Transform3D(Basis(Vector3.RIGHT,Vector3(-slope.x,1,-slope.y),Vector3.BACK),Vector3(slope.x*floor_y,0,slope.y*floor_y))
-	# Include upright actors at the rear/side edges: their heads project beyond
-	# the floor footprint even when their feet are safely inside the room.
+	# Inclui atores em pé nas bordas do fundo/laterais: as cabeças se projetam além
+	# da área do andar mesmo quando os pés estão com segurança dentro do cômodo.
 	var occupied := AABB(Vector3(-size.x*.5-.35,floor_y,-size.y*.5-.35),Vector3(size.x+.70,2.2,size.y+2.20))
 	var projected: AABB = _projection*occupied
 	_cut = AABB(Vector3(projected.position.x,floor_y+.10,projected.position.z),Vector3(projected.size.x,80.0,projected.size.z))
@@ -36,7 +36,7 @@ func configure(definition: Dictionary, index: int, rooftop := false) -> void:
 	_tree_ref = get_tree()
 	_tree_ref.node_added.connect(_node_added)
 	for group: Node in _tree_ref.get_nodes_in_group("railway_geometry"):
-		# Railway batches are direct children of their chunk/station group.
+		# Os lotes da ferrovia são filhos diretos do grupo de chunk/estação.
 		for child: Node in group.get_children():
 			if child is MultiMeshInstance3D: _capture_batch(child,_generation)
 	_capture_local_canopies(str(definition.get("id","")))
@@ -94,8 +94,8 @@ func _capture_moving(reference: WeakRef, generation: int) -> void:
 	if is_instance_valid(node): _moving.capture_added(node)
 
 func _capture_local_canopies(place_id: String) -> void:
-	# HarborProp3D owns separate crown meshes and a trunk collider. Limit the
-	# entry-time search to the building chunk and its eight loaded neighbors.
+	# O HarborProp3D é dono de malhas de copa separadas e de um colisor de tronco. Limita a
+	# busca na entrada ao chunk do prédio e aos oito vizinhos carregados.
 	for access: Node in _tree_ref.get_nodes_in_group("harbor_building_facade"):
 		if str(access.definition.get("id",""))!=place_id or not is_instance_valid(access.facade): continue
 		var chunk: Node = access.facade.get_parent()
@@ -122,8 +122,8 @@ func _capture_local_canopies(place_id: String) -> void:
 
 func _is_street_canopy(node: MeshInstance3D) -> bool:
 	var prop := node.get_parent()
-	# The authored tree has only one wood mesh; the remaining MeshInstances
-	# are crown lobes. Godot may replace duplicate TreeCanopy names internally.
+	# A árvore autorada tem só uma malha de madeira; os MeshInstances restantes
+	# são lóbulos da copa. O Godot pode trocar internamente nomes TreeCanopy duplicados.
 	return prop is HarborProp3D and str(prop.definition.get("kind",""))=="tree" and not str(node.name).begins_with("TreeTrunk")
 
 func _capture_canopy(node: MeshInstance3D, generation: int) -> void:
@@ -158,7 +158,7 @@ func _capture_batch(batch: MultiMeshInstance3D, generation: int) -> void:
 		hidden.basis = Basis.from_scale(Vector3.ZERO)
 		clipped_multimesh.set_instance_transform(index,hidden)
 		if remaining==null: continue
-		# Preserve instance attributes as well as the batch material and layers.
+		# Preserva os atributos de instância e também o material e as camadas do lote.
 		var one := MultiMesh.new()
 		one.transform_format = MultiMesh.TRANSFORM_3D
 		one.use_colors = source.use_colors

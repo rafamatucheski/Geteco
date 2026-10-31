@@ -1,12 +1,12 @@
 extends RefCounted
-## Static glider mesh. One surface, 38 triangles, original 1.70 m wingspan.
-## Local +Z is forward: the existing circular-flight basis points +Z tangentially.
+## Malha estática do planador. Uma superfície, 38 triângulos, envergadura original de 1.70 m.
+## +Z local é a frente: a base de voo circular existente aponta +Z na tangente.
 
 static func build() -> ArrayMesh:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
-	# Connected broad inner wing, elbow and three separated primary-feather tips.
-	# A shallow dihedral preserves the original tip height instead of enlarging it.
+	# Asa interna larga e conectada, cotovelo e três pontas de penas primárias separadas.
+	# Um diedro raso preserva a altura original da ponta em vez de aumentá-la.
 	var wing := PackedVector3Array([
 		Vector3(.075,.025,-.10), Vector3(.32,.045,-.14),
 		Vector3(.62,.085,-.08), Vector3(.85,.12,.055),
@@ -20,8 +20,8 @@ static func build() -> ArrayMesh:
 			var b := Vector3(wing[i].x*side,wing[i].y,-wing[i].z)
 			var c := Vector3(wing[i+1].x*side,wing[i+1].y,-wing[i+1].z)
 			_face(vertices,normals,a,b,c,Vector3.UP)
-	# Small closed volumes give the silhouette a thorax, neck and head in oblique
-	# views. No eye, feather material, animation, extra surface or instance needed.
+	# Volumes pequenos fechados dão à silhueta tórax, pescoço e cabeça em vistas
+	# oblíquas. Sem olho, material de pena, animação, superfície extra ou instância.
 	_octahedron(vertices,normals,Vector3(0,.035,.03),Vector3(.095,.105,.28))
 	_octahedron(vertices,normals,Vector3(0,.072,.28),Vector3(.065,.065,.10))
 	var beak := PackedVector3Array([
@@ -34,7 +34,7 @@ static func build() -> ArrayMesh:
 		var b: Vector3=beak[indices[1]]
 		var c: Vector3=beak[indices[2]]
 		_face(vertices,normals,a,b,c,(a+b+c)/3.0-beak_center)
-	# Fan tail attaches to the body, rather than a detached floating triangle.
+	# A cauda em leque se prende ao corpo, em vez de um triângulo solto flutuando.
 	var tail := PackedVector3Array([Vector3(-.035,.018,-.20),Vector3(.035,.018,-.20),Vector3(.14,0,-.44),Vector3(-.14,0,-.44)])
 	_face(vertices,normals,tail[0],tail[1],tail[2],Vector3.UP)
 	_face(vertices,normals,tail[0],tail[2],tail[3],Vector3.UP)

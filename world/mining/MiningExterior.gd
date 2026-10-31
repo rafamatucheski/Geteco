@@ -1,6 +1,6 @@
 extends RefCounted
-## Remote open-pit industrial site, owned by the desert's existing chunk lifetime.
-## Access/floor and benches are admitted before actors; props have no frame loops.
+## Sítio industrial remoto a céu aberto, pertencente ao ciclo de vida de chunks existente do deserto.
+## Acesso/piso e bancadas são admitidos antes dos atores; os props não têm laços por quadro.
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const BATCH := preload("res://world/mining/MiningBatch.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
@@ -44,9 +44,9 @@ static func build_surfaces(parent: Node3D, rect: Rect2) -> void:
 		prototype.free()
 	var ground: Node3D=(_surface_scenes[rect] as PackedScene).instantiate()
 	parent.add_child(ground)
-	# Attach the live height provider after cached-scene instantiation; vehicle
-	# support must use these exact terrain/road faces, without storing a callable
-	# in the reusable PackedScene or granting support to decorative mine props.
+	# Anexa o provedor de altura vivo depois de instanciar a cena em cache; o apoio de
+	# veículos precisa usar exatamente estas faces de terreno/estrada, sem guardar um callable
+	# no PackedScene reutilizável nem dar apoio aos props decorativos da mina.
 	for body in ground.find_children("QuarryBenchCollision","StaticBody3D",true,false):
 		body.set_meta("desert_continuous_ground",true)
 		body.set_meta("desert_ground_height",surface_height)
@@ -124,15 +124,15 @@ static func _build_basefill(parent: Node3D,rect: Rect2) -> void:
 
 static func _ground_outline() -> PackedVector2Array:
 	if not _outline.is_empty(): return _outline
-	# Exact clipped outline, independent of the 3 m terrain grid/chunk borders.
+	# Contorno recortado exato, independente da grade de 3 m do terreno e das bordas de chunk.
 	for i in 72:
 		var angle := float(i)*TAU/72.0
 		var south := maxf(sin(angle),0)
 		var sectors := [0.0,9.0,-5.0,4.0,12.0,-7.0,5.0,-9.0,8.0,-4.0,11.0,-3.0]
 		var sector := float(i) / 6.0
 		var cut := lerpf(sectors[int(sector)%12],sectors[(int(sector)+1)%12],fposmod(sector,1.0))
-		# Stronger broken excavation outline to the north; retain the authored
-		# southern apron, access and parking clearance.
+		# Contorno de escavação quebrado mais forte ao norte; mantém o pátio
+		# sul autorado, o acesso e a folga do estacionamento.
 		var roughness := (sin(angle*5)*1.7+sin(angle*9)*1.2) + cut*(1.0-south)
 		var radius := Vector2(136-36*south+roughness,136+17*south+roughness)
 		_outline.append(LAYOUT.PIT_CENTER+Vector2(cos(angle),sin(angle))*radius)
@@ -142,8 +142,8 @@ static func bench_height(point: Vector2) -> float:
 	return LAYOUT.terrain_height(point)
 
 static func surface_height(point: Vector2) -> float:
-	## Physical height of the very triangles emitted above, including the bench
-	## transitions crossing the grid. This is available to camera/restore queries.
+	## Altura física dos mesmos triângulos emitidos acima, incluindo as transições
+	## de bancada que cruzam a grade. Isto fica disponível a consultas de câmera/restauração.
 	if not LAYOUT.enabled() or not OWNED_GROUND.has_point(point): return 0.0
 	var road := _road_height(point)
 	if is_finite(road): return road
@@ -228,8 +228,8 @@ static func _build_access(parent: Node3D,rect: Rect2) -> void:
 			for index in Geometry2D.triangulate_polygon(part):
 				var point: Vector2=part[index]
 				faces.append(Vector3(point.x,_triangle_height(point,row.faces),point.y))
-	# Compacted pale gravel separates the usable spiral from the raw benches.
-	# Color belongs to the same physical mesh: no floating overlay or z-fighting.
+	# Cascalho claro compactado separa a espiral usável das bancadas brutas.
+	# A cor pertence à mesma malha física: sem sobreposição flutuante nem z-fighting.
 	if _road_material == null:
 		_road_material = _surface(false).duplicate() as ShaderMaterial
 		_road_material.set_shader_parameter("ground_color", Color("77766f"))
@@ -393,7 +393,7 @@ static func _guardhouse(b: RefCounted) -> void:
 	_gate(b)
 
 static func _gate(b: RefCounted) -> void:
-	# The raised gate reads as an operating worksite and never blocks access.
+	# A cancela levantada parece uma obra em funcionamento e nunca bloqueia o acesso.
 	for x in [-8.9,8.9]:
 		b.box("GateBollard",Vector3(x,.75,134),Vector3(.4,1.5,.4),"yellow",true)
 		b.box("GateBollardBand",Vector3(x,.87,134),Vector3(.42,.26,.42),"rubber")
@@ -412,12 +412,12 @@ static func _gate(b: RefCounted) -> void:
 	b.root.add_child(name_label)
 
 static func _parking(b: RefCounted) -> void:
-	# Employee vehicles are real fleet instances owned by MiningOperation.
+	# Os veículos dos funcionários são instâncias reais de frota pertencentes a MiningOperation.
 	for i in 7: b.box("WornParkingStripe",Vector3(-61+float(i)*4.7,.030,100),Vector3(.12,.018,7.2),"white")
 	for i in 6:
 		b.box("WheelStop",Vector3(-58.65+float(i)*4.7,.13,96.4),Vector3(2.2,.26,.3),"concrete",true)
 	b.box("ParkingFarEdge",Vector3(-46,.18,93.9),Vector3(34,.36,.35),"concrete",true)
-	# Bench and lockers are set behind the parking stops, outside car manoeuvres.
+	# Banco e armários ficam atrás dos batentes do estacionamento, fora das manobras dos carros.
 	b.box("BreakBenchSeat",Vector3(-64,.48,88),Vector3(3,.13,.65),"timber",true)
 	b.box("BreakBenchBack",Vector3(-64,.92,87.71),Vector3(3,.7,.08),"timber",true)
 	for x in [-65,-63]: b.box("BreakBenchLeg",Vector3(x,.23,88),Vector3(.16,.46,.5),"steel",true)
@@ -437,8 +437,8 @@ static func _crusher(b: RefCounted) -> void:
 		b.box("HopperRim",at+Vector3(side*3.45,5.75,0),Vector3(.28,1.2,6.7),"yellow",true,Vector3(0,0,side*.24))
 		b.box("HopperEnd",at+Vector3(0,5.75,side*3.15),Vector3(7,1.2,.28),"yellow",true,Vector3(-side*.24,0,0))
 	b.cylinder("CrusherDriveMotor",at+Vector3(-3.32,2.45,0),1.1,1.2,"steel",true,Vector3(0,0,PI*.5))
-	# Gear housing, jaw ribs and bolted inspection plates make the machinery
-	# readable at human scale. All ornament hugs its existing solid envelope.
+	# Caixa de engrenagens, nervuras da mandíbula e placas de inspeção aparafusadas deixam o maquinário
+	# legível em escala humana. Todo ornamento abraça o envelope sólido existente.
 	for x in [-2.45,-1.75,-1.05,-.35,.35,1.05,1.75,2.45]:
 		b.box("CrusherJawRib",at+Vector3(x,3.15,2.83),Vector3(.12,3.1,.06),"rust")
 	for side in [-1.0,1.0]:
@@ -447,8 +447,8 @@ static func _crusher(b: RefCounted) -> void:
 			for z in [-.43,1.03]: b.box("CrusherPlateBolt",at+Vector3(side*2.91,y,z),Vector3(.08,.11,.11),"cream")
 		for y in [1.6,1.95,2.3,2.65,3.0,3.35,3.7]:
 			b.box("MotorCoolingRib",at+Vector3(-3.32,y,side*.77),Vector3(1.14,.055,.10),"rubber")
-	# Guarded maintenance ladder is physically on the crusher, away from the
-	# floor aisle; narrow rungs sit against its already solid front face.
+	# A escada de manutenção com guarda fica fisicamente no britador, longe do
+	# corredor do piso; os degraus estreitos encostam na face frontal já sólida.
 	for x in [-.63,.63]: b.box("CrusherLadderRail",at+Vector3(x,2.75,2.9),Vector3(.075,4.5,.075),"steel")
 	for index in 13: b.box("CrusherLadderRung",at+Vector3(0,.65+float(index)*.33,2.93),Vector3(1.26,.075,.075),"steel")
 	# A diagonal ore belt ties the crusher to a stockpile, leaving the floor
@@ -477,7 +477,7 @@ static func _crusher(b: RefCounted) -> void:
 	for i in 10:
 		var angle := float(i)*2.399
 		b.rock("ConveyorStockpile",end+Vector3(cos(angle)*3.7,-6.2+float(i%3)*.65,sin(angle)*2.7),Vector3(4.4,3.1,3.8),"ore",true,angle)
-	# Sorting tables are deliberately outside the main machines' turning square.
+	# As mesas de triagem ficam de propósito fora do quadrado de manobra das máquinas principais.
 	b.box("OreSampleBench",at+Vector3(-9.4,.84,11),Vector3(2.2,.14,1.2),"steel",true)
 	for x in [-10.2,-8.6]: b.box("SampleBenchLeg",at+Vector3(x,.41,11),Vector3(.15,.82,1),"steel",true)
 	for i in 5: b.rock("SortedOre",at+Vector3(-10.2+float(i)*.36,1.01,11),Vector3(.28,.24,.35),"ore_light",false)
@@ -502,8 +502,8 @@ static func _service_corner(b: RefCounted) -> void:
 
 static func _hidden_adit(b: RefCounted) -> void:
 	var at := LAYOUT.SECRET_EXTERIOR-LAYOUT.CENTER
-	# Real 2.8 m clear opening with solid sides and lintel. The dark back lies
-	# beyond the NativePlace transition point; no solid hides beneath the entry.
+	# Abertura livre real de 2.8 m com lados e verga sólidos. O fundo escuro fica
+	# além do ponto de transição do NativePlace; nenhum sólido se esconde sob a entrada.
 	for side in [-1.0,1.0]:
 		b.box("OldAditTimber",at+Vector3(side*1.64,1.58,0),Vector3(.37,3.16,.48),"timber",true)
 		b.rock("AditRockShoulder",at+Vector3(side*3.7,1.45,-1.1),Vector3(4,3.4,4.6),"ore_dark",true,side*.4)
@@ -518,16 +518,16 @@ static func _hidden_adit(b: RefCounted) -> void:
 	for z in [-2.7,-1.4,.1]:
 		b.box("BuriedMineSleeper",at+Vector3(0,.039,z),Vector3(2.0,.07,.18),"timber")
 	for side in [-1.0,1.0]: b.box("OldMineRail",at+Vector3(side*.58,.07,-.6),Vector3(.08,.1,5.1),"rust")
-	# A half-buried cart and irregular pile obscure the opening obliquely;
-	# the full southern approach and return point remain unobstructed.
+	# Um carrinho meio enterrado e uma pilha irregular encobrem a abertura na diagonal;
+	# toda a aproximação sul e o ponto de retorno continuam desobstruídos.
 	b.box("AbandonedOreCart",at+Vector3(-4.8,.74,3.0),Vector3(1.7,1.3,2.3),"rust",true,Vector3(0,.32,.12))
 	b.box("CartCoal",at+Vector3(-4.8,1.37,3),Vector3(1.42,.10,2.04),"coal")
 	for side in [-1.0,1.0]:
 		for z in [2.4,3.55]:
 			b.cylinder("AbandonedCartWheel",at+Vector3(-4.8+side*.85,.3,z),.29,.12,"steel",false,Vector3(0,0,PI*.5))
 		b.box("CartSideBrace",at+Vector3(-4.8+side*.84,.8,3),Vector3(.06,.10,2.12),"steel",false,Vector3(0,.32,.12))
-	# Rivets, splintered timber and repair straps stay on the portal frame;
-	# the return marker and the full opening keep their existing free space.
+	# Rebites, madeira lascada e cintas de reparo ficam na moldura do portal;
+	# o marcador de retorno e a abertura inteira mantêm o espaço livre existente.
 	for side in [-1.0,1.0]:
 		for y in [.45,1.7,2.7]:
 			b.box("AditTimberRepairStrap",at+Vector3(side*1.64,y,.25),Vector3(.39,.13,.025),"steel")
@@ -553,12 +553,12 @@ static func _dress_ore(b: RefCounted, rect: Rect2) -> void:
 		var p := LAYOUT.PIT_CENTER+Vector2(cos(angle),sin(angle))*radius
 		if not rect.has_point(p) or LAYOUT.SECRET_RESERVE.grow(3).has_point(p): continue
 		if LAYOUT.haul_sample(p).x<13.0: continue
-		# Keep the hauler floor open, including the shared loading test square.
+		# Mantém o piso do caminhão aberto, incluindo o quadrado de teste de carga compartilhado.
 		if p.length()<43: continue
 		var size := Vector3(rng.randf_range(1.6,4.8),rng.randf_range(1,3),rng.randf_range(1.7,4.2))
 		b.rock("BlastedOreBoulder",Vector3(p.x,bench_height(p)+size.y*.42,p.y),size,["ore","ore_dark","ore_light"][i%3],true,angle)
-	# Compact dirt stains, scattered timber and pebbles make the apron worn;
-	# no tiny physical obstructions are scattered on the driveable aisle.
+	# Manchas de terra compactada, madeira espalhada e pedrinhas deixam o pátio gasto;
+	# nenhuma obstrução física minúscula é espalhada no corredor dirigível.
 	for i in 32:
 		var p := Vector2(rng.randf_range(-74,77),rng.randf_range(52,126))
 		if not rect.has_point(p): continue
@@ -577,8 +577,8 @@ static func _fence(b: RefCounted, rect: Rect2) -> void:
 			var q := a.lerp(c,float(i+1)/float(pieces))
 			if not rect.has_point((p+q)*.5): continue
 			b.box("PerimeterPost",Vector3(p.x,1.25,p.y),Vector3(.12,2.5,.12),"steel",true)
-			# Wire strands leave the site legible from outside; two beams provide
-			# explicit physical boundary rather than a transparent collision wall.
+			# Os fios de arame deixam o sítio legível de fora; duas vigas dão um limite
+			# físico explícito em vez de uma parede de colisão transparente.
 			for y in [.56,1.28,2.02]: b.beam("PerimeterCable",Vector3(p.x,y,p.y),Vector3(q.x,y,q.y),.04,"cable",y<1.3)
 			for j in 5:
 				var v := p.lerp(q,float(j)/5.0)

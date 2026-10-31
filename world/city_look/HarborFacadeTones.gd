@@ -1,7 +1,7 @@
 extends RefCounted
-## Harbor-only replacement finish. Existing vertices carry a whole-building
-## palette; three shared albedos use baked face UVs, not triplanar/normal samples.
-## No overlay meshes, additional surfaces, lights or per-frame work.
+## Acabamento substituto só do Harbor. Os vértices existentes levam uma paleta do
+## prédio inteiro; três albedos compartilhados usam UVs de face embutidos, não amostras triplanares/normais.
+## Sem malhas de sobreposição, superfícies extras, luzes ou trabalho por quadro.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const TEXTURES := {
 	"brick": preload("res://assets/materials/harbor_facades/brick.png"),
@@ -72,8 +72,8 @@ static func apply(chunk: Node3D) -> void:
 		for surface in result.get_surface_count(): instance.set_surface_override_material(surface,null)
 		instance.set_meta("harbor_facade_tone",true)
 
-## Skyline/lowrise details already arrive in MultiMeshes. Replace their shared
-## stone finish too, preserving per-instance colours and the existing batching.
+## Os detalhes de skyline/prédios baixos já chegam em MultiMeshes. Substitui também o
+## acabamento de pedra compartilhado, preservando as cores por instância e o lote existente.
 static func _apply_batched_trim(chunk: Node3D) -> void:
 	var stone := UrbanMaterials.trim_stone()
 	var cream := UrbanMaterials.trim_cream()

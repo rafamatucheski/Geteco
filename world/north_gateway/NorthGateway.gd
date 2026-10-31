@@ -1,6 +1,6 @@
 extends Node3D
-## The existing regional connection owns this site's lifetime. The campaign
-## can be read during startup, before FullSession or its HUD has been mounted.
+## A conexão regional existente é dona do tempo de vida deste sítio. A campanha
+## pode ser lida durante o início, antes de o FullSession ou o HUD dele estarem montados.
 const POLICY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
 const LAYOUT := preload("res://world/north_gateway/NorthGatewayLayout.gd")
 const SCENERY := preload("res://world/north_gateway/NorthGatewayScenery.gd")
@@ -35,8 +35,8 @@ func reconcile() -> void:
 	if not is_instance_valid(production): return
 	var state = production.get("state")
 	if state == null: return
-	# Completion is monotonic within one world. Loading an earlier save creates
-	# another world; transient invalid state must not pull a deck from under a car.
+	# A conclusão é monotônica dentro de um mundo. Carregar um save anterior cria
+	# outro mundo; um estado inválido transitório não pode tirar um tabuleiro de baixo de um carro.
 	var should_open: bool = not production.save_invalid and POLICY.campaign_completed(state.campaign.snapshot())
 	if should_open and not completed:
 		completed = true
@@ -73,8 +73,8 @@ func _parked_vehicle_needs_support(production) -> bool:
 	for car in production.vehicles:
 		if not is_instance_valid(car) or car.is_queued_for_deletion(): continue
 		if not car.visible or car.collision_layer == 0: continue
-		# Streaming-suspended cars retain their request: they need this deck to
-		# pass ProductionWorld's ground check and resume after loading a save.
+		# Carros suspensos pelo streaming mantêm o pedido: precisam deste tabuleiro para
+		# passar na checagem de chão do ProductionWorld e retomar depois de carregar um save.
 		if not car.is_physics_processing() and not car.has_meta("awaiting_ground"): continue
 		if footprint.has_point(Vector2(car.global_position.x,car.global_position.z)): return true
 	return false

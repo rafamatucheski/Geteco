@@ -47,8 +47,8 @@ static func turnaround() -> PackedVector3Array:
 	return points
 
 static func paths() -> Array[Dictionary]:
-	# Approach doors from their open side. The cave trail ends on the dry bank;
-	# its existing stepping stones and automatic threshold own the last metres.
+	# Aproxima-se das portas pelo lado aberto. A trilha da caverna termina na margem seca;
+	# as pedras de passagem existentes e a soleira automática são donas dos últimos metros.
 	var authored := [
 		["cave_trail",1.6,[Vector2(6120,320),Vector2(5910,220),Vector2(5850,20),Vector2(5890,-160),Vector2(6020,-215),Vector2(6130,-200),Vector2(6200,-240)]],
 		["forest_shop_walk",1.8,[Vector2(6030,380),Vector2(5860,490),Vector2(5860,710),Vector2(5980,719),Vector2(5980,703)]],

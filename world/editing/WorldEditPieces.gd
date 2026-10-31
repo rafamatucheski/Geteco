@@ -1,5 +1,5 @@
 extends RefCounted
-## Stable editor groups keep visual geometry and collision under the same transform.
+## Grupos estáveis do editor mantêm geometria visual e colisão sob o mesmo transform.
 const SHAPE := preload("res://world/editing/WorldPieceShape.gd")
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 
@@ -61,8 +61,8 @@ static func collect(root: Node) -> Array[Node3D]:
 ## `ground` (opcional) devolve a altura do chão num ponto XZ: a peça acompanha o relevo ao
 ## ser movida, preservando a distância que ela tinha do chão original.
 static func apply(root: Node, changes: Dictionary, ground := Callable()) -> void:
-	# Copy before deleting or transforming the source. Authored groups use this path too,
-	# including places whose pieces were already marked by their constructor.
+	# Copia antes de apagar ou transformar a fonte. Grupos autorados também usam este caminho,
+	# incluindo lugares cujas peças já foram marcadas pelo construtor.
 	for node in collect(root): spawn_clones(node,changes,ground)
 	for node in collect(root): apply_one(node,changes,ground)
 	if is_instance_valid(root) and root.has_method("refresh_ground_after_edit"): root.refresh_ground_after_edit()
@@ -119,8 +119,8 @@ static func spawn_clones(group: Node3D, changes: Dictionary, ground := Callable(
 		# Sem scripts, grupos nem sinais: a cópia é cenário puro (um terraço duplicado com script
 		# reconstruiria os filhos e se registraria como um segundo terraço funcional).
 		var copy := group.duplicate(0) as Node3D
-		# duplicate() also duplicates metadata. Cached geometry holds Node references
-		# into the source tree and must be rebuilt against the copied tree.
+		# duplicate() também duplica metadados. A geometria em cache guarda referências de Node
+		# na árvore fonte e precisa ser reconstruída contra a árvore copiada.
 		_clear_clone_state(copy)
 		for key in group.get_meta_list():
 			if key not in [&"record_cache_key",&"world_edit_origin",&"world_edit_geometry",&"world_edit_shape_info",&"world_edit_clones_spawned",&"editor_id"]: copy.set_meta(key,group.get_meta(key))
@@ -137,8 +137,8 @@ static func spawn_clones(group: Node3D, changes: Dictionary, ground := Callable(
 static func _clear_clone_state(node: Node, root := true) -> void:
 	for key in [&"record_cache_key",&"world_edit_origin",&"world_edit_geometry",&"world_edit_shape_info",&"world_edit_clones_spawned",&"editor_id"]:
 		if node.has_meta(key): node.remove_meta(key)
-	# The copied group owns its full static subtree. Nested source identities would
-	# make 3D picking and later edits address the original instead of the copy.
+	# O grupo copiado é dono da subárvore estática inteira. Identidades fonte aninhadas
+	# fariam a seleção 3D e edições posteriores apontarem para o original em vez da cópia.
 	if not root and node.has_meta("world_edit_piece_id"): node.remove_meta("world_edit_piece_id")
 	for child in node.get_children(): _clear_clone_state(child,false)
 

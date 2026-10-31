@@ -1,5 +1,5 @@
 extends "res://world/places/NativePlace.gd"
-## The mine uses the ordinary place admission, return, rewards and save contract.
+## A mina usa o contrato comum de admissão, retorno, recompensas e save de lugar.
 const ART := preload("res://world/mining/coal/CoalMineModel.gd")
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const PLACE_ID := "remote_coal_mine"
@@ -93,8 +93,8 @@ func restore_secret(revealed: bool) -> void:
 	secret_revealed = revealed
 	if not is_instance_valid(model): return
 	model.reveal_secret(false, revealed)
-	# FullSession collects published points even when their visual is hidden.
-	# Keep the reward entirely out of that collection list until the lever opens it.
+	# O FullSession coleta pontos publicados mesmo quando o visual está escondido.
+	# Mantém a recompensa totalmente fora dessa lista de coleta até a alavanca abri-la.
 	reward_points.assign(_authored_rewards if revealed else [])
 	for point in _authored_rewards:
 		point.visual.set_available(revealed and not _reward_claimed, false)

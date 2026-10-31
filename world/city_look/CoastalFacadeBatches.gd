@@ -1,10 +1,10 @@
 extends RefCounted
-## Cached capture-only subset of a mixed-side MultiMesh. Build once per source
-## and selected plane; the owner invalidates it when that source/plane changes.
-## Attach the returned node DIRECTLY beneath source with its identity transform:
-## source.add_child(proxy). Source transform and visibility then remain inherited.
-## The shared reflection owner excludes captureLayer from gameplay cameras and
-## skips nodes with coastal_reflection_proxy metadata during registration.
+## Subconjunto em cache, só de captura, de um MultiMesh de lados mistos. Monta uma vez por fonte
+## e plano escolhido; o dono o invalida quando essa fonte/plano muda.
+## Anexa o nó devolvido DIRETAMENTE sob a fonte com transform identidade:
+## source.add_child(proxy). Transform e visibilidade da fonte continuam herdados.
+## O dono compartilhado do reflexo exclui captureLayer das câmeras do jogo e
+## pula nós com metadado coastal_reflection_proxy durante o registro.
 const PLANE_TOLERANCE := .08
 
 static func build(source: MultiMeshInstance3D, plane_normal: Vector3, plane_point: Vector3, capture_layer: int) -> MultiMeshInstance3D:
@@ -21,8 +21,8 @@ static func build(source: MultiMeshInstance3D, plane_normal: Vector3, plane_poin
 	for index in count:
 		var transform := source.global_transform * original.get_instance_transform(index)
 		var entirely_in_front := true
-		# Test the transformed mesh corners directly, avoiding the extra empty
-		# corners introduced by a world-axis-aligned box around a rotated prop.
+		# Testa direto os cantos transformados da malha, evitando os cantos vazios
+		# extras de uma caixa alinhada aos eixos do mundo em volta de um prop girado.
 		for corner in 8:
 			if normal.dot(transform * mesh_bounds.get_endpoint(corner) - plane_point) < -PLANE_TOLERANCE:
 				entirely_in_front = false
@@ -42,7 +42,7 @@ static func build(source: MultiMeshInstance3D, plane_normal: Vector3, plane_poin
 		if original.use_custom_data: subset.set_instance_custom_data(target, original.get_instance_custom_data(index))
 	var proxy := MultiMeshInstance3D.new()
 	proxy.name = "CoastalFacadeBatch"
-	# Source getters provide the displayed pose; do not interpolate it again.
+	# Os getters da fonte dão a pose exibida; não interpola de novo.
 	proxy.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	proxy.multimesh = subset
 	proxy.material_override = source.material_override
@@ -57,10 +57,10 @@ static func build(source: MultiMeshInstance3D, plane_normal: Vector3, plane_poin
 	proxy.set_physics_process(false)
 	return proxy
 
-## Poll only existing reflection subsets. Both buffer and instance getters
-## expose the rendered cache when source physics interpolation is enabled,
-## not the pending physics state. build() reads instance transforms first,
-## making the RD CPU cache local; compare that cache natively between captures.
+## Só consulta subconjuntos de reflexo existentes. Os getters de buffer e de instância
+## expõem o cache renderizado quando a interpolação de física da fonte está ligada,
+## não o estado de física pendente. build() lê primeiro os transforms das instâncias,
+## deixando o cache de CPU do RD local; compara esse cache nativamente entre capturas.
 static func sync(source: MultiMeshInstance3D, proxy: MultiMeshInstance3D, normal: Vector3, point: Vector3) -> bool:
 	var original := source.multimesh
 	if original == null:

@@ -1,5 +1,5 @@
 extends Node3D
-## Static, batched bridge. Progression and animated workers belong to the owner.
+## Ponte estática em lote. A progressão e os operários animados pertencem ao dono.
 const Layout := preload("res://world/north_gateway/NorthGatewayLayout.gd")
 const KIT := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
 const LEGACY := preload("res://world/north_gateway/NorthGatewayLegacyScenery.gd")
@@ -200,7 +200,7 @@ func _road_half_width(point: Vector3) -> float:
 	return lerpf(Layout.ROAD_HALF_WIDTH, 5.0, clampf((-343.0 - point.z) / 30.5, 0.0, 1.0))
 
 func _build_supports() -> void:
-	# Real abutment and piled bents meet the underside; no floating thin plane.
+	# Encontro real e cavaletes com estacas encontram a face de baixo; sem plano fino flutuando.
 	# A cabeceira sustenta o intradorso: seu topo no piso zero criava um segundo
 	# chão coplanar sob o asfalto, mesmo depois de recortar os donos regionais.
 	_box("concrete", Vector3(356.0, -THICKNESS - 0.40, -255.7), Vector3(2.0, 0.8, 9.5), Basis(Vector3.UP, -0.30), true)
@@ -211,8 +211,8 @@ func _build_supports() -> void:
 	for z in [-292.0, -307.0, -325.0, -343.0, -360.0, -370.5]:
 		var p := Vector3(Layout.TERMINAL.x, Layout.DECK_HEIGHT, z)
 		_pier(p, Vector3.RIGHT, Layout.deck_half_width(p))
-	# Longitudinal girders continue through the unfinished opening below road
-	# level. They are visual construction steel, not a traversable road surface.
+	# As longarinas continuam pela abertura inacabada abaixo do nível da
+	# estrada. São aço visual de obra, não uma superfície de estrada transitável.
 	for x in [-3.8, 3.8]:
 		_box("dark_steel", Vector3(342.5 + x, 1.02, -323.0), Vector3(0.32, 1.05, 100.8))
 
@@ -238,19 +238,19 @@ func _build_works() -> void:
 		_box("steel", gate + Vector3.UP * y, Vector3(17.0, 0.065, 0.07))
 	for x in range(17):
 		_box("orange" if x % 2 == 0 else "white", gate + Vector3(-8.0 + x, 0.46, 0.347), Vector3(0.97, 0.27, 0.022))
-	# Separate caps protect the unfinished gap even if a player reaches it from
-	# an unusual direction; completion removes all these work barriers together.
+	# Tampas separadas protegem o vão inacabado mesmo que o jogador chegue por uma
+	# direção incomum; a conclusão remove todas essas barreiras de obra juntas.
 	for z in [Layout.GAP_SOUTH + 0.45, Layout.GAP_NORTH - 0.45]:
 		var center := Vector3(342.5, Layout.DECK_HEIGHT, z)
 		_box("orange", center + Vector3.UP * 0.55, Vector3(9.8, 1.1, 0.55), Basis.IDENTITY, true)
 		for x in range(10):
 			_box("white", center + Vector3(-4.5 + x, 0.57, 0.288), Vector3(0.38, 0.58, 0.024))
-	# Exposed deck bars, anchored at the actual two unfinished faces.
+	# Barras expostas do tabuleiro, ancoradas nas duas faces inacabadas reais.
 	for z in [Layout.GAP_SOUTH - 0.45, Layout.GAP_NORTH + 0.45]:
 		for x in range(13):
 			_box("rust", Vector3(338.9 + x * 0.6, 2.16, z), Vector3(0.028, 0.028, 1.35))
-	# Compact fixed crane and material stack on the workshop shoulders. No
-	# physics simulation, lights, particles, or per-frame construction scripts.
+	# Guindaste fixo compacto e pilha de material nos acostamentos da obra. Sem
+	# simulação física, luzes, partículas ou scripts de construção por quadro.
 	_box("orange", Vector3(336.3, 2.85, -295.1), Vector3(1.9, 0.9, 2.0), Basis.IDENTITY, true)
 	_box("yellow", Vector3(336.3, 6.35, -295.1), Vector3(0.42, 6.5, 0.42), Basis.IDENTITY, true)
 	_box("yellow", Vector3(336.3, 9.4, -297.8), Vector3(0.40, 0.44, 9.1))

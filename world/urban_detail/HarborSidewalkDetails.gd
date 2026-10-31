@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
-## Flush, streamed pavement details. Source coordinates are already in metres.
-## No collision, lights, frame callbacks or changes to pedestrian/traffic routes.
+## Detalhes de calçamento rentes, em streaming. As coordenadas fonte já estão em metros.
+## Sem colisão, luzes, callbacks por quadro ou mudanças em rotas de pedestres/trânsito.
 
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const BRIDGE := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
@@ -24,7 +24,7 @@ func configure(roads: Array[Dictionary], crossing_layout: Array[Dictionary]) -> 
 	_road_masks.clear()
 	for opening in CATALOG.sewer_openings():
 		_mask(_rect_polygon(Rect2(opening.position / 16.0, opening.size / 16.0)))
-	# Deferred load avoids the tunnel -> road-geometry dependency at parse time.
+	# O carregamento adiado evita a dependência túnel -> geometria de estrada na hora do parse.
 	for cut in load("res://world/urban_detail/CanalTunnel3D.gd").open_cuts():
 		_mask(_rect_polygon((cut as Rect2).grow(0.25)))
 	if BRIDGE.enabled():
@@ -40,8 +40,8 @@ func configure(roads: Array[Dictionary], crossing_layout: Array[Dictionary]) -> 
 			if not bool(entry.get("enabled", false)): continue
 			_mask(_quad(entry.position, entry.direction, float(entry.depth) + 1.2,
 				float(entry.width) + 2.0 * float(entry.sidewalk) + 0.5))
-	# Every road footprint is an exclusion, including dirt/service approaches.
-	# Thus decoration cannot continue across a T junction or another carriageway.
+	# Toda área de estrada é uma exclusão, incluindo acessos de terra/serviço.
+	# Assim a decoração não continua atravessando um cruzamento em T ou outra pista.
 	for road_index in roads.size():
 		var road: Dictionary = roads[road_index]
 		var points := _flat_points(road)
@@ -77,7 +77,7 @@ func configure(roads: Array[Dictionary], crossing_layout: Array[Dictionary]) -> 
 					var curb: Vector2 = start + direction * step + normal * float(side) * (half + 0.19)
 					_queue(_quad(curb, direction, 0.028, 0.22), 0, 0.018, road_index)
 				step += 2.4
-			# Utility access covers are infrequent; no decorative text or raised rim.
+			# Tampas de acesso a serviços são raras; sem texto decorativo nem borda elevada.
 			step = ceilf((travelled + end_margin + 1.0) / 23.0) * 23.0 - travelled
 			while step < length - end_margin - 1.0:
 				for side in [-1.0, 1.0]:
@@ -89,7 +89,7 @@ func configure(roads: Array[Dictionary], crossing_layout: Array[Dictionary]) -> 
 						for offset in [-0.18, 0.18]:
 							_store(_quad(center + direction * offset, direction, 0.025, 0.09), 2, 0.0155)
 				step += 23.0
-			# Storm drains sit flush in the curb strip, clear of the walking band.
+			# Bocas de lobo ficam rentes na faixa do meio-fio, longe da faixa de caminhada.
 			step = ceilf((travelled + end_margin + 1.0) / 18.0) * 18.0 - travelled
 			while step < length - end_margin - 1.0:
 				for side in [-1.0, 1.0]:
@@ -147,7 +147,7 @@ func _flat_points(road: Dictionary) -> PackedVector2Array:
 
 
 func _mask_authored_crossing(road: Dictionary, points: PackedVector2Array) -> void:
-	# The two Ashbend crossings are authored outside WorldCrossingLayout.
+	# As duas travessias da Ashbend são autoradas fora do WorldCrossingLayout.
 	var id := str(road.get("id", "")).get_file()
 	if id not in ["cobra_approach", "cobra_court_northwest"] or not bool(road.get("crossings", true)): return
 	var total := 0.0

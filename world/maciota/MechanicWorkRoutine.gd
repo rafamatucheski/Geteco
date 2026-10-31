@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## A real swept body: the resident never slides through furniture or Dante.
+## Um corpo varrido de verdade: o morador nunca desliza através dos móveis nem do Dante.
 var model: Node3D
 var place: Node3D
 var phase := 0
@@ -33,7 +33,7 @@ func _ready() -> void:
 
 func _hands() -> Array:
 	if not working or not is_instance_valid(workpiece): return [null,null]
-	# One palm steadies the real part; the other grips the wrench handle.
+	# Uma palma firma a peça real; a outra segura o cabo da chave.
 	return [workpiece.to_global(Vector3(.12,.16,.15)),tool.to_global(Vector3(0,0,-.17))]
 
 func _at_station(target: Vector3) -> bool:
@@ -42,7 +42,7 @@ func _at_station(target: Vector3) -> bool:
 func _sync_tool() -> void:
 	tool.visible = working
 	if not working: return
-	# Pivot at the nut: rotation never lifts the jaw away from its physical contact.
+	# Pivô na porca: a rotação nunca afasta a boca da chave do contato físico.
 	tool.global_transform = Transform3D(Basis(Vector3.UP,PI*.5+sin(elapsed*4.5)*.32),work_contact.global_position)
 
 func _physics_process(delta: float) -> void:

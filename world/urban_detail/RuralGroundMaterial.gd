@@ -1,6 +1,6 @@
 extends RefCounted
-## Offline albedos shared by native woodland, access roads and their shoulders.
-## One owner per surface; no procedural texture workers or extra finish planes.
+## Albedos offline compartilhados pelo bosque nativo, estradas de acesso e acostamentos.
+## Um dono por superfície; sem workers de textura procedural nem planos de acabamento extras.
 static var _material: ShaderMaterial
 static func material() -> ShaderMaterial:
 	if _material != null: return _material

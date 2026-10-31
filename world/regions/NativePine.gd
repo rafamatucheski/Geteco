@@ -187,7 +187,7 @@ static func _material(key: String, color: Color, vertex_colors: bool, double_sid
 	material.albedo_color = color
 	material.roughness = 1.0
 	material.vertex_color_use_as_albedo = vertex_colors
-	# Palette hex values are authored in sRGB; keep deep fir after chunk merging.
+	# Os valores hex da paleta são autorados em sRGB; mantém o abeto escuro depois da mesclagem de chunks.
 	material.vertex_color_is_srgb = true
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 	if double_sided: material.cull_mode = BaseMaterial3D.CULL_DISABLED

@@ -205,9 +205,9 @@ static func _sum(report: Dictionary, merged: Dictionary) -> void:
 	report.batches += merged.batches
 
 static func _scope_allowed(scope: Node3D, relax_reveal := false, reveal_scopes: Dictionary = {}) -> bool:
-	# A registered prop may be a plain Node3D with several mesh children (saguaro).
-	# Starting traversal at its children bypassed _protected(root), leaving a fixed
-	# batch standing after FragileProps hid the source and spawned the falling pieces.
+	# Um prop registrado pode ser um Node3D simples com vários filhos de malha (saguaro).
+	# Começar a travessia pelos filhos pulava _protected(root), deixando um lote
+	# fixo em pé depois que FragileProps escondia a fonte e gerava os pedaços caindo.
 	if scope.has_meta("street_fragile_registered"): return false
 	if scope.has_meta(BATCH) or scope.get_node_or_null("BuildingAccess") != null: return false
 	if scope.has_meta("place_id") and not str(scope.get_meta("place_id", "")).is_empty(): return false

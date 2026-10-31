@@ -1,5 +1,5 @@
 extends RefCounted
-## Shared metre-scale finishes. No generated texture or material work after prewarm.
+## Acabamentos compartilhados em escala de metro. Sem textura gerada nem trabalho de material depois do pré-aquecimento.
 const URBAN := preload("res://assets/urban_detail/UrbanMaterials.gd")
 const SHOP := preload("res://world/places/ShopInteriorMaterials.gd")
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")

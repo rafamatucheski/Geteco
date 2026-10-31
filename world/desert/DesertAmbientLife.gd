@@ -1,6 +1,6 @@
 extends Node3D
-## One bounded emitter pair and one distant flock per resident desert.
-## Caller must suspend when the resident region becomes quiet or releases chunks.
+## Um par limitado de emissores e um bando distante por deserto residente.
+## Quem chama precisa suspender quando a região residente fica quieta ou libera chunks.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const WIND := preload("res://runtime/atmosphere/WindField.gd")
 const WIND_DUST_MAX := 32
@@ -58,7 +58,7 @@ func set_active(enabled: bool) -> void:
 func suspend() -> void:
 	set_active(false)
 	_wake_age=10.0
-	# GPU simulation sleeps with the region, not merely hidden transparent quads.
+	# A simulação de GPU dorme com a região, não só esconde quads transparentes.
 	if _wind!=null: _wind.speed_scale=0.0
 	if _wake!=null: _wake.speed_scale=0.0
 
@@ -72,8 +72,8 @@ func set_activity_position(point: Vector3, speed_mps: float, on_sand: bool) -> v
 func _physics_process(delta: float) -> void:
 	_elapsed+=delta
 	_wake_age+=delta
-	# Three gliders move on physics ticks so engine interpolation sees coherent
-	# previous/current poses. The more expensive emitter work remains at 10 Hz.
+	# Três planadores andam em ticks de física para a interpolação do motor ver poses
+	# anterior/atual coerentes. O trabalho mais caro dos emissores continua a 10 Hz.
 	for i in (9 if _drag_view else 3):
 		var angle := _elapsed*.095+float(i)*.36
 		var radius := 18.0+float(i)*5.0

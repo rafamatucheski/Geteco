@@ -1,6 +1,6 @@
 extends RefCounted
-## Joint origins preserve the authored transport silhouette. Each moving link
-## stays a separate material batch so its mesh and physical volume agree.
+## As origens das juntas preservam a silhueta de transporte autorada. Cada elo móvel
+## fica num lote de material separado para a malha e o volume físico baterem.
 static func create(root: Node3D, art: Script, key: String, paint: Color) -> void:
 	var swing := _pivot(root,"RearExcavator",Vector3(0,1.10,1.55))
 	var boom := _pivot(swing,"Boom",Vector3.ZERO)

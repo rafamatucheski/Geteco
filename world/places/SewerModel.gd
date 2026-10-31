@@ -60,7 +60,7 @@ func _build() -> void:
 			if x + 21 > 108 and x < 170: continue
 			var tones := ["#566159", "#60665a", "#515d59", "#626958"]
 			_box(Rect2(x, y, 21, 15), 0.09, -0.09, tones[rng.randi_range(0, 3)])
-	# Recessed water and masonry sides; dry stone overhangs the channel.
+	# Água rebaixada e lados de alvenaria; pedra seca avança sobre o canal.
 	_box(Rect2(112, -100, 54, 234), 0.03, -0.20, "#123a3c", true)
 	for x in [105, 166]: _box(Rect2(x, -100, 7, 234), 0.15, -0.04, "#747d68")
 	# Full rear masonry gives depth; low front/side caps preserve visibility.
@@ -86,7 +86,7 @@ func _build() -> void:
 	_mesh(valve, Vector2(44, -80), 0.80, "#a15c35", true)
 	_pipe(Vector2(37, -80), Vector2(51, -80), 0.80, 0.03, "#b78052")
 	_pipe(Vector2(44, -87), Vector2(44, -73), 0.80, 0.03, "#b78052")
-	# Small ladder rather than the previous oversized circular landing graphic.
+	# Escada pequena em vez do antigo gráfico circular de patamar grande demais.
 	_box(Rect2(-13, -36, 26, 39), 0.03, 0, "#182728")
 	for x in [-6, 6]:
 		var rail := CylinderMesh.new()
@@ -96,13 +96,13 @@ func _build() -> void:
 		rail.radial_segments = 10
 		_mesh(rail, Vector2(x, -5), 1.0, "#b0a276", true)
 	for rung in range(7): _pipe(Vector2(-6, -5), Vector2(6, -5), 0.17 + rung * 0.29, 0.032, "#c6b37f")
-	# Raised cabinet with door seams, vents, handle and an exposed cable run.
+	# Armário elevado com emendas de porta, respiros, puxador e um cabo exposto.
 	_box(Rect2(-98, 38, 29, 28), 0.65, 0, "#455e55", true)
 	_box(Rect2(-96, 39, 25, 23), 0.025, 0.65, "#748473", true)
 	for y in range(43, 54, 3): _box(Rect2(-92, y, 17, 0.7), 0.004, 0.678, "#293c38")
 	_box(Rect2(-75, 55, 1, 4), 0.03, 0.68, "#c2af6e", true)
 	_pipe(Vector2(-84, -95), Vector2(-84, 37), 0.04, 0.026, "#222e2d")
-	# Shelves with upright legs and individually modelled cans.
+	# Prateleiras com pés verticais e latas modeladas uma a uma.
 	for x in [213, 281]: _box(Rect2(x, -56, 2, 30), 0.7, 0, "#43554e", true)
 	_box(Rect2(212, -56, 72, 29), 0.055, 0.32, "#706750")
 	_box(Rect2(212, -56, 72, 29), 0.055, 0.75, "#857b5e")
@@ -133,8 +133,8 @@ func _build() -> void:
 			band.rings = 16
 			band.ring_segments = 6
 			_mesh(band, p, height, "#8a9788", true)
-	# Only two local lights, rendered once with the architecture.
-	# Damp mineral patches and debris break up the clean stone without labels.
+	# Só duas luzes locais, renderizadas uma vez com a arquitetura.
+	# Manchas minerais úmidas e detritos quebram a pedra limpa sem etiquetas.
 	for i in range(28):
 		var p := Vector2(rng.randf_range(-103, 300), -90 if i % 2 == 0 else 121)
 		if p.x > 103 and p.x < 178: continue

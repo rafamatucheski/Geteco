@@ -61,11 +61,11 @@ func _ready() -> void:
 	for side in [-1,1]: _checkout(side)
 	_armor_display()
 	box("EntryMat",Vector3(0,.018,5.95),Vector3(2.0,.025,1.5),"354c43")
-	# Basket stand uses a complete collision footprint, including the handles.
+	# O suporte de cestas usa uma área de colisão completa, incluindo as alças.
 	box("BasketStand",Vector3(-1.65,.35,5.8),Vector3(.7,.7,.7),"315e49",true)
 	for layer in 5:
 		for side in [-1,1]: piece("box",Vector3(-1.65+side*.31,.23+layer*.12,5.8),Vector3(.025,.09,.62),"d2a34e")
-	# Fixtures have a stable emissive diffuser; only two broad local sources.
+	# As luminárias têm um difusor emissivo estável; só duas fontes locais amplas.
 	for x in [-4.8,-1.6,1.6,4.8]:
 		for z in [-3.5,1.5]:
 			box("Pendant",Vector3(x,3.2,z),Vector3(.24,.10,1.6),"45514c",false,true)

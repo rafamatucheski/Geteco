@@ -1,6 +1,6 @@
 extends Node3D
-## Real illumination for the existing fittings; spatial lookup at 4 Hz.
-## One reusable pool, no shadows or scans of the complete scene tree.
+## Iluminação real para as luminárias existentes; busca espacial a 4 Hz.
+## Um pool reutilizável, sem sombras nem varreduras da árvore de cena inteira.
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 const ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
 const SOURCE_GROUP := &"city_local_light_source"
@@ -126,8 +126,8 @@ func apply_sources(sources: Array[Dictionary], focus: Vector3, night: float) -> 
 			for index in lights.size():
 				if index not in assignments.values(): assignments[item.id] = index; break
 		var light := lights[assignments[item.id]]
-		# Orthographic harbor camera sits farther than the old 50 m fade cutoff.
-		# The existing focus-ranked pool already culls these authored fittings.
+		# A câmera ortográfica do porto fica mais longe que o antigo corte de fade de 50 m.
+		# O pool existente, ordenado por foco, já descarta estas luminárias autoradas.
 		light.distance_fade_enabled = not bool(item.get("camera_safe",false))
 		light.global_position = item.point
 		light.omni_range = item.get("range",14.0)

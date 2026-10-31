@@ -36,9 +36,9 @@ static func floor_from_local(point: Vector2) -> Vector3:
 	return Vector3(point.x / PPM, 0, point.y / (PPM * FLOOR_Y))
 
 func _ground() -> void:
-	# Native terrain supplies continuous snow and physical support. Two raised
-	# snow polygons used to leave an abrupt artificial border around the village.
-	# Keep the built paving, plaza and bus berth as deliberate hard surfaces.
+	# O terreno nativo fornece neve contínua e apoio físico. Dois polígonos de neve
+	# elevados deixavam uma borda artificial abrupta em volta do vilarejo.
+	# Mantém o calçamento construído, a praça e a baia de ônibus como superfícies duras deliberadas.
 	var paths: Array = [LAYOUT.BUS_TO_PLAZA, LAYOUT.PLAZA_TO_SHOP, LAYOUT.PLAZA_TO_WAIT]
 	for i in 4:
 		paths.append(LAYOUT.cabin_route(i))
@@ -53,7 +53,7 @@ func _ground() -> void:
 		_ground_line(Vector2(x, -1618), Vector2(x, -1523), 0.8, "stone")
 	for y in range(-1618, -1520, 16):
 		_ground_line(Vector2(7597, y), Vector2(7694, y), 0.8, "stone")
-	# Exactly one marked coach berth. No parked coach is part of the village art.
+	# Exatamente uma baia de ônibus marcada. Nenhum ônibus estacionado faz parte da arte do vilarejo.
 	for y in [-1783.0, -1737.0]:
 		_ground_line(Vector2(7416, y), Vector2(7584, y), 2.2, "gold")
 	for x in [7416.0, 7584.0]:
@@ -267,8 +267,8 @@ func _solid(rect: Rect2,label: String) -> void:
 	solids.append({"name":label,"polygon":polygon,"mountain_rect":rect})
 
 func _record_volume(index: int, first_mesh: int) -> void:
-	# Preserve floor occupancy and add the actual rotated structural mesh bounds.
-	# Low steps and suspended porch canopies remain available to pedestrians.
+	# Preserva a ocupação do piso e soma os limites reais da malha estrutural girada.
+	# Degraus baixos e coberturas suspensas de varanda continuam disponíveis aos pedestres.
 	var vertices: PackedVector3Array = solids[index].polygon.duplicate()
 	for child_index in range(first_mesh,get_child_count()):
 		var child := get_child(child_index)
@@ -343,7 +343,7 @@ func _sign(value: String,point: Vector2,height: float,size: Vector2,font_size: i
 	_text(value,point+Vector2(0,1),height,font_size,"white",size)
 
 func _install_native_solids() -> void:
-	# Per mesh native geometry: porch posts and benches do not become one filled canopy box.
+	# Geometria nativa por malha: postes e bancos da varanda não viram uma caixa de cobertura cheia.
 	for mesh in find_children("*","MeshInstance3D",true,false):
 		if not mesh.mesh is BoxMesh: continue
 		var bounds: AABB = mesh.mesh.get_aabb()

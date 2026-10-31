@@ -1,6 +1,6 @@
 extends Node3D
-## A real locked side room. The original lockpicking interaction consumes one
-## carried tool only on success and records the opened door independently of loot.
+## Um cômodo lateral trancado de verdade. A interação original de arrombar fechadura consome uma
+## ferramenta carregada só no sucesso e registra a porta aberta independente do saque.
 const CONTENT := preload("res://world/places/harbor_buildings/HarborBuildingContent.gd")
 const MATERIALS := preload("res://world/places/harbor_buildings/HarborBuildingMaterials.gd")
 const LOCKPICK := preload("res://runtime/BankLockpick.gd")
@@ -39,8 +39,8 @@ func _build() -> void:
 	_solid("SecretRearPartition", Vector3(point.x, .61, (rear + door_start) * .5), Vector3(.13, 1.22, door_start - rear), "b0ad9d")
 	_solid("SecretFrontPartition", Vector3(point.x, .61, (door_end + front) * .5), Vector3(.13, 1.22, front - door_end), "b0ad9d")
 	_solid("SecretRoomFront", Vector3((left + point.x) * .5, .60, front), Vector3(point.x - left, 1.20, .14), "b0ad9d")
-	# A visible masonry return closes the exact T-joint. Jolt can miss the
-	# degenerate collinear seam of two thin boxes during one large body sweep.
+	# Um retorno de alvenaria visível fecha exatamente a junta em T. O Jolt pode perder a
+	# emenda colinear degenerada de duas caixas finas durante uma varredura grande de corpo.
 	_solid("SecretCornerPost", Vector3(point.x, .625, front), Vector3(.28, 1.25, .28), "b0ad9d")
 	door_bounds = AABB(point + Vector3(-.08, 0, -.60), Vector3(.16, 2.13, 1.20))
 	door = _mesh(point + Vector3(0, 1.065, 0), Vector3(.10, 2.13, 1.18), "695d4d", "wood")
@@ -65,8 +65,8 @@ func reconcile() -> void:
 func set_active(value: bool) -> void:
 	_active = value
 	if value or not is_instance_valid(lockpick): return
-	# CanvasLayer is independent of the room's 3D visibility. Cancel explicitly
-	# before a sleeping room disables the child callback that normally does it.
+	# O CanvasLayer é independente da visibilidade 3D do cômodo. Cancela explicitamente
+	# antes de um cômodo dormindo desligar o callback do filho que normalmente faz isso.
 	if lockpick.active: lockpick.finish(false)
 	lockpick.hide()
 	_cancelled()
@@ -120,7 +120,7 @@ func _cancelled() -> void:
 func _open(animate: bool) -> void:
 	if opened: return
 	opened = true
-	# A pocket door slides into its solid partition, never across the approach.
+	# Uma porta de correr entra na divisória sólida, nunca atravessa a aproximação.
 	if animate:
 		var tween := create_tween()
 		tween.tween_property(door, "position:z", door.position.z - 1.30, .32)

@@ -1,7 +1,7 @@
 extends Node3D
-## Shared, non-regional structure for the authored Harbor -> Mountain route.
-## Regional road chunks own the asphalt. This node owns only the bridge deck,
-## margins, barriers, abutment and tunnel shell so neither region duplicates it.
+## Estrutura compartilhada e não regional para a rota autorada Harbor -> Mountain.
+## Os chunks de estrada regionais são donos do asfalto. Este nó só é dono do tabuleiro da ponte,
+## das margens, barreiras, encontro e casca do túnel, para nenhuma região duplicá-los.
 
 const UNIT := 1.0 / 16.0
 const HARBOR_OCEAN := preload("res://world/regions/HarborOcean.gd")
@@ -34,7 +34,7 @@ static func unified_bridge_enabled() -> bool:
 static func tunnel_camera_weight(point: Vector3) -> float:
 	if absf(point.z-CENTER_Z) > TUNNEL_CLEAR_HALF_WIDTH or point.y > 4.4: return 0.0
 	var approach := maxf(TUNNEL_START_X-point.x,point.x-TUNNEL_END_X)
-	# Lower the camera before the portal; keep it low until clear of the roof.
+	# Baixa a câmera antes do portal; mantém-na baixa até passar do teto.
 	return 1.0-smoothstep(8.0,24.0,approach)
 
 var _materials: Dictionary = {}
@@ -119,7 +119,7 @@ static func logical_region(point: Vector3) -> String:
 	return "mountain" if point.x >= SEAM.x and point.z < LOGICAL_NORTH_LIMIT_Z else "harbor"
 
 static func mountain_weight(point: Vector3) -> float:
-	# Streaming starts over the sea; the climate starts on the eastern shore.
+	# O streaming começa sobre o mar; o clima começa na costa leste.
 	var climate_start := TUNNEL_END_X+12.0 if UNIFIED_BRIDGE.enabled() else BRIDGE_END_X
 	var climate_end := TUNNEL_END_X+60.0 if UNIFIED_BRIDGE.enabled() else MOUNTAIN_BLEND_END_X
 	return smoothstep(climate_start, climate_end, point.x) * (1.0 - smoothstep(MOUNTAIN_NORTH_FADE.x, MOUNTAIN_NORTH_FADE.y, point.z))
@@ -132,9 +132,9 @@ static func reserves_approach_for_driving(point: Vector2) -> bool:
 	return point.x >= HARBOR_CONNECTOR_X and point.x <= SEAM.x and absf(point.y-CENTER_Z) <= 11.0
 
 static func traffic_connectors() -> Array[Dictionary]:
-	# V1 transfers the two separated Harbor lanes to MountainPassRoad at this
-	# exact head. In 3D they remain short directed graph edges; no vehicle is
-	# removed, reparented or teleported at the join.
+	# A V1 transfere as duas faixas separadas do Harbor para MountainPassRoad nesta
+	# cabeça exata. Em 3D elas continuam arestas curtas e direcionadas do grafo; nenhum veículo é
+	# removido, trocado de pai ou teleportado na junção.
 	return [
 		{"id":"continuous_bridge_outbound","width":3.875,"points":PackedVector3Array([
 			Vector3(7300.0,0.0,-4529.0)*UNIT, Vector3(TRAFFIC_MERGE_X,0.0,CENTER_Z)])},
@@ -155,8 +155,8 @@ func _ready() -> void:
 		if look_enabled: _build_bridge_look()
 		else: _build_bridge()
 		_build_tunnel()
-	# The northern worksite shares this connection's streaming owner. It never
-	# contributes an edge to the eastern mountain traffic connectors above.
+	# A obra do norte divide o dono de streaming desta conexão. Ela nunca
+	# contribui com aresta para os conectores de trânsito da montanha leste acima.
 	var owner_world := get_parent() as Node3D
 	if is_instance_valid(owner_world) and is_instance_valid(owner_world.get("production")) and not NORTH_GATEWAY_POLICY.baseline_disabled():
 		var gateway := NORTH_GATEWAY.new()
@@ -208,8 +208,8 @@ const PAVEMENT_UPPER := 0.07
 const PAVEMENT_EDGE_RUN := 0.40
 const PAVEMENT_END_RUN := 0.60
 
-## [low, top, base] of the bevelled pavement; shared by the visual, the convex
-## body and the bridge finish so all three keep the exact same vertices.
+## [low, top, base] do calçamento chanfrado; compartilhado pelo visual, pelo corpo
+## convexo e pelo acabamento da ponte para os três manterem exatamente os mesmos vértices.
 static func _pavement_shape(x0: float, x1: float, inner_z: float, outer_z: float, bottom: float, start_run := PAVEMENT_END_RUN, end_run := PAVEMENT_END_RUN) -> Array[PackedVector3Array]:
 	var side := signf(outer_z-inner_z)
 	var low := PackedVector3Array([
@@ -236,9 +236,9 @@ static func _pavement_body(low: PackedVector3Array, top: PackedVector3Array, bas
 	body.add_child(collision)
 	return body
 
-## A square vehicle hull catches even a 7 cm vertical paving lip. Keep the
-## original footprint and level, but bevel its road edge and both ends. One
-## convex body and the visible faces share the exact same vertices.
+## Uma carcaça de veículo quadrada enrosca até numa borda vertical de calçamento de 7 cm. Mantém a
+## área e o nível originais, mas chanfra a borda da rua e as duas pontas. Um
+## corpo convexo e as faces visíveis dividem exatamente os mesmos vértices.
 func _pavement(label: String, x0: float, x1: float, inner_z: float, outer_z: float, material: StandardMaterial3D, bottom := -0.10) -> void:
 	var side := signf(outer_z-inner_z)
 	var lower := PAVEMENT_LOWER
@@ -272,7 +272,7 @@ func _pavement_face(surface: SurfaceTool, points: PackedVector3Array, normal: Ve
 		var triangle := PackedVector3Array([points[0],points[index],points[index+1]])
 		var cross := (triangle[1]-triangle[0]).cross(triangle[2]-triangle[0])
 		if cross.length_squared()<0.000000000001: continue
-		# Godot's visible front is clockwise when viewed from the outward normal.
+		# A frente visível no Godot é horária vista a partir da normal para fora.
 		if cross.dot(normal)>0.0:
 			triangle.reverse()
 		for point in triangle:
@@ -356,15 +356,15 @@ func _build_bridge() -> void:
 	var edge := _material("bridge_edge",Color("a7aaa0"))
 	var steel := _material("bridge_steel",Color("83999a"),.58,.32)
 	var asphalt: StandardMaterial3D = preload("res://world/urban_detail/HarborRoadGeometry3D.gd").new()._material(Color("202932"))
-	# HarborMountainConnector: the divided city approach from the north highway
-	# to the shared seam, including its wide two-lane deck and tapered rails.
+	# HarborMountainConnector: a aproximação dividida da cidade a partir da rodovia norte
+	# até a emenda compartilhada, incluindo o tabuleiro largo de duas faixas e os guarda-corpos afunilados.
 	_box("HarborConnectorAbutment",Vector3((HARBOR_ABUTMENT_X+HARBOR_CONNECTOR_X)*.5,-.28,CENTER_Z),Vector3(HARBOR_CONNECTOR_X-HARBOR_ABUTMENT_X,.56,23.0),edge,true)
 	_box("HarborConnectorDeck",Vector3((HARBOR_CONNECTOR_X+SEAM.x)*.5,-.38,CENTER_Z),Vector3(SEAM.x-HARBOR_CONNECTOR_X,.76,22.0),concrete,true)
-	# Productive V1 follows the real inner edges of both curved lanes here. A
-	# rectangular/tapered concrete deck alone exposes a pale wedge between them.
-	# Keep the structural deck below, but close only the true gap with asphalt;
-	# the collision polygon stops at the asphalt edges and therefore does not
-	# duplicate either road collider.
+	# A V1 de produção segue aqui as bordas internas reais das duas faixas curvas. Um
+	# tabuleiro de concreto retangular/afunilado sozinho expõe uma cunha clara entre elas.
+	# Mantém o tabuleiro estrutural embaixo, mas fecha só o vão real com asfalto;
+	# o polígono de colisão para nas bordas do asfalto e por isso não
+	# duplica nenhum colisor de estrada.
 	_build_inner_gap(asphalt)
 	for side in [-1.0,1.0]:
 		_beam_between("HarborConnectorRail",Vector3(HARBOR_CONNECTOR_X,.68,CENTER_Z+side*10.5),Vector3(SEAM.x,.68,CENTER_Z+side*6.5),.20,1.18,steel,true)
@@ -374,16 +374,16 @@ func _build_bridge() -> void:
 			_box("HarborConnectorPylon",Vector3(x,1.5,CENTER_Z+side*11.2),Vector3(1.75,3.0,1.75),concrete,true)
 			_pier_in_water(Vector3(x,0,CENTER_Z+side*11.2),1.75,concrete)
 	var length := BRIDGE_END_X-SEAM.x
-	# The Mountain road slab ends at y=0. Keep the structural deck just below
-	# it so their coplanar faces cannot alternate in the depth buffer.
+	# A laje da estrada da Mountain termina em y=0. Mantém o tabuleiro estrutural logo abaixo
+	# dela para as faces coplanares não se alternarem no buffer de profundidade.
 	_box("ContinuousBridgeDeck",Vector3((SEAM.x+BRIDGE_END_X)*.5,-.40,CENTER_Z),Vector3(length,.74,BRIDGE_HALF_WIDTH*2.0),concrete,true)
 	for side in [-1.0,1.0]:
-		# Continue Harbor's sidewalk edges before settling onto the wider bridge.
+		# Continua as bordas da calçada do Harbor antes de assentar na ponte mais larga.
 		var shoulder := PackedVector2Array([
 			Vector2(SEAM.x,CENTER_Z+side*4.5), Vector2(TRAFFIC_MERGE_X,CENTER_Z+side*5.0),
 			Vector2(TRAFFIC_MERGE_X,CENTER_Z+side*BRIDGE_HALF_WIDTH), Vector2(SEAM.x,CENTER_Z+side*6.5)])
 		_polygon_mesh("BridgeMarginJoin",shoulder,.07,edge)
-		# The underside meets the deck without duplicating its exterior face.
+		# A face de baixo encontra o tabuleiro sem duplicar a face externa dele.
 		_pavement("BridgeMargin",TRAFFIC_MERGE_X,BRIDGE_END_X,CENTER_Z+side*5.0,CENTER_Z+side*BRIDGE_HALF_WIDTH,edge,-.03)
 		_beam_between("BridgeRailJoin",Vector3(SEAM.x,.68,CENTER_Z+side*6.5),Vector3(TRAFFIC_MERGE_X,.68,CENTER_Z+side*BRIDGE_HALF_WIDTH),.20,1.18,steel,true)
 		_box("BridgeGuardRail",Vector3((TRAFFIC_MERGE_X+TUNNEL_START_X)*.5,.68,CENTER_Z+side*BRIDGE_HALF_WIDTH),Vector3(TUNNEL_START_X-TRAFFIC_MERGE_X,1.18,.18),steel,true)
@@ -391,7 +391,7 @@ func _build_bridge() -> void:
 			var post_x := float(x)/4.0
 			var rail_width := lerpf(6.5,BRIDGE_HALF_WIDTH,clampf((post_x-SEAM.x)/(TRAFFIC_MERGE_X-SEAM.x),0.0,1.0))
 			_box("BridgeRailPost",Vector3(post_x,.48,CENTER_Z+side*rail_width),Vector3(.16,.95,.22),steel)
-	# Authored pylon positions: local x=3500 and 4060 in MountainPass.
+	# Posições autoradas dos pilones: x local=3500 e 4060 no MountainPass.
 	for source_x in [7800.0,8360.0]:
 		var x: float = float(source_x)*UNIT
 		for side in [-1.0,1.0]:
@@ -403,7 +403,7 @@ func _build_bridge() -> void:
 	for side in [-1.0,1.0]:
 		_box("HarborConnectorGirder",Vector3((HARBOR_CONNECTOR_X+SEAM.x)*.5,-1.35,CENTER_Z+side*10.3),Vector3(SEAM.x-HARBOR_CONNECTOR_X,1.2,.9),concrete)
 		_box("BridgeGirder",Vector3((SEAM.x+BRIDGE_END_X)*.5,-1.35,CENTER_Z+side*(BRIDGE_HALF_WIDTH-.6)),Vector3(length,1.2,.9),concrete)
-	# East shore/access between the authored bridge end and tunnel portal.
+	# Costa/acesso leste entre o fim autorado da ponte e o portal do túnel.
 	_box("MountainAbutment",Vector3((BRIDGE_END_X+TUNNEL_START_X)*.5,-.30,CENTER_Z),Vector3(TUNNEL_START_X-BRIDGE_END_X,.54,18.0),edge,true)
 
 ## Os pilares começavam em y=0, fora do tabuleiro: ficavam pendurados 0,94 m acima
@@ -437,8 +437,8 @@ func _build_bridge_lamps(steel: StandardMaterial3D) -> void:
 		var rail_width := lerpf(6.5,BRIDGE_HALF_WIDTH,clampf((x-SEAM.x)/(TRAFFIC_MERGE_X-SEAM.x),0.0,1.0))
 		if UNIFIED_BRIDGE.enabled(): rail_width = UNIFIED_BRIDGE.east_deck_half_width(x)-.18
 		var rail_z := CENTER_Z+side*rail_width
-		# The pole grows from the guard rail; its head hangs above the outer
-		# shoulder, leaving the whole driving lane clear.
+		# O poste nasce do guarda-corpo; a cabeça fica sobre o acostamento
+		# externo, deixando a faixa de rolamento inteira livre.
 		var pole_bottom := UNIFIED_BRIDGE.WALK_HEIGHT if UNIFIED_BRIDGE.enabled() else 1.22
 		_box("BridgeLampPole",Vector3(x,(4.22+pole_bottom)*.5,rail_z),Vector3(.12,4.22-pole_bottom,.12),steel)
 		_box("BridgeLampArm",Vector3(x,4.20,rail_z-side*.40),Vector3(.12,.10,.82),steel)
@@ -801,14 +801,14 @@ func _build_tunnel() -> void:
 	var length := TUNNEL_END_X-TUNNEL_START_X
 	var road_half_width := 140.0 * UNIT * .5
 	for side in [-1.0,1.0]:
-		# The rural shoulder continues underneath this structure. Cover it up to
-		# the lining with a supported, walkable pavement, flush with bridge margins.
+		# O acostamento rural continua embaixo desta estrutura. Cobre-o até o
+		# revestimento com um calçamento apoiado e caminhável, rente às margens da ponte.
 		if not UNIFIED_BRIDGE.enabled():
 			_pavement("TunnelSidewalk",TUNNEL_START_X-.575,TUNNEL_END_X+.575,CENTER_Z+side*road_half_width,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH,paving)
 		_box("TunnelWall",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,2.2,CENTER_Z+side*(TUNNEL_CLEAR_HALF_WIDTH+.55)),Vector3(length,4.4,1.1),rock,true)
 		_box("TunnelCurb",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,.22,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH),Vector3(length,.44,.45),lining,true)
 	_box("TunnelRoof",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,4.65,CENTER_Z),Vector3(length,.5,TUNNEL_CLEAR_HALF_WIDTH*2.0+2.2),lining,true)
-	# Continuous enclosure; the gameplay camera follows the actor inside it.
+	# Invólucro contínuo; a câmera do jogo segue o ator dentro dele.
 	var rib_count := ceili(length/11.0)
 	for index in rib_count+1:
 		var x := lerpf(TUNNEL_START_X,TUNNEL_END_X,float(index)/rib_count)
@@ -816,7 +816,7 @@ func _build_tunnel() -> void:
 		rib.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		if index > 0 and index < rib_count:
 			for side in [-1.0,1.0]:
-				# Crossbeams bear on the curb through their vertical supports.
+				# As travessas se apoiam no meio-fio pelos suportes verticais.
 				_box("TunnelRibSupport",Vector3(x,2.42,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH),Vector3(.20,3.96,.30),steel,true)
 	var glass := _material("tunnel_lamp",Color("e8dec4"))
 	glass.emission_enabled = true

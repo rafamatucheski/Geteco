@@ -1,5 +1,5 @@
 extends RefCounted
-## The authoritative mission ledger owns the bridge. No duplicate save flag.
+## O registro autoritativo de missões é dono da ponte. Sem flag de save duplicada.
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const CAMPAIGN := preload("res://systems/campaign/CampaignRuntime.gd")
 static var _baseline_disabled: bool = "--north-gateway-baseline" in OS.get_cmdline_user_args()
@@ -11,5 +11,5 @@ static func campaign_completed(snapshot: Variant) -> bool:
 	return snapshot.completed.has(str(MISSIONS.ORDER.back()))
 
 static func baseline_disabled() -> bool:
-	# Diagnostic comparison only; production always installs the construction site.
+	# Só comparação de diagnóstico; a produção sempre instala o canteiro de obras.
 	return _baseline_disabled

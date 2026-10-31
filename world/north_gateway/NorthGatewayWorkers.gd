@@ -1,9 +1,9 @@
 extends Node3D
-## Four stationary construction workers, with one 30 Hz presentation clock.
-## NorthGateway owns proximity, bridge completion and load/unload.
-## Local +Z is the working direction. Reserve X[-.7,.7], Z[-.4,.9] per station.
-## set_active(false) freezes presentation. The owner hides/frees the completed
-## construction site; physical bodies remain while this group is visible.
+## Quatro operários de obra parados, com um relógio de apresentação de 30 Hz.
+## O NorthGateway é dono da proximidade, da conclusão da ponte e de carga/descarga.
+## +Z local é a direção de trabalho. Reserva X[-.7,.7], Z[-.4,.9] por posto.
+## set_active(false) congela a apresentação. O dono esconde/libera o canteiro
+## concluído; os corpos físicos ficam enquanto este grupo está visível.
 const MODEL := preload("res://world/north_gateway/NorthGatewayWorkerModel.gd")
 const GEAR := preload("res://world/north_gateway/NorthGatewayWorkerGeometry.gd")
 const COUNT := 4

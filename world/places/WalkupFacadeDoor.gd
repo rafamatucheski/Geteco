@@ -1,5 +1,5 @@
 extends Node3D
-## Adapts the authored exterior once at chunk construction; no per-frame scans.
+## Adapta o exterior autorado uma vez na construção do chunk; sem varreduras por quadro.
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 var open_amount := 0.0
 var hinge: Node3D
@@ -32,7 +32,7 @@ func _build(art: Node3D, family: String) -> void:
 	var leaves: Array[Node3D] = []
 	match family:
 		"cabin":
-			# The source's unnamed meshes are identified by its authored door bounds.
+			# As malhas sem nome da fonte são identificadas pelos limites autorados da porta.
 			for node in art.get_children():
 				if node is MeshInstance3D and absf(node.position.x) < .45 and node.position.z >= 1.87 and node.position.z <= 1.98 and node.position.y > .3 and node.position.y < 2.0:
 					leaves.append(node)
@@ -57,7 +57,7 @@ func _build(art: Node3D, family: String) -> void:
 			_cut_named(art, ["StoneFoundation", "StoneStep"], 1.12, 2.28, 1.0, true)
 			var original: Node3D = art.get_node("HingedDoor")
 			original.rotation.y = 0.0
-			# Leave its empty source pivot alive so an existing factory tween remains harmless.
+			# Deixa o pivô fonte vazio vivo para um tween de fábrica existente continuar inofensivo.
 			for node in original.get_children():
 				if node is Node3D: leaves.append(node)
 		"bunker":
@@ -104,7 +104,7 @@ func _named_parts(art: Node3D, names: Array) -> Array[Node3D]:
 	var parts: Array[Node3D] = []
 	for node in art.get_children():
 		if node is MeshInstance3D:
-			# Repeated generated names are auto-renamed by Godot; position covers panels.
+			# Nomes gerados repetidos são renomeados automaticamente pelo Godot; a posição cobre os painéis.
 			if str(node.name) in names or ("DoorPanel" in names and node.mesh is BoxMesh and node.mesh.size.is_equal_approx(Vector3(.84, .64, .04))): parts.append(node)
 	return parts
 
@@ -116,7 +116,7 @@ func _cut_named(art: Node3D, names: Array, width: float, ceiling: float, rear_z:
 				_cut_box(node, width, ceiling, rear_z, floor_strip)
 
 func _cut_box(source: MeshInstance3D, width: float, ceiling: float, rear_z: float, floor_strip := false) -> void:
-	# Partition the original solid, retaining its exact material and exterior silhouette.
+	# Divide o sólido original, mantendo exatamente o material e a silhueta externa.
 	var size: Vector3 = source.mesh.size
 	var low := source.position - size * .5
 	var high := source.position + size * .5

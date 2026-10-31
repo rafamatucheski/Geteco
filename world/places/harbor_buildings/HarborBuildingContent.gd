@@ -1,6 +1,6 @@
 extends RefCounted
-## Stable content varies by storey, with persistent rewards in every building.
-## The catalog exposes ALL receipts, while only the active floor spawns them.
+## O conteúdo estável varia por andar, com recompensas persistentes em todo prédio.
+## O catálogo expõe TODOS os recibos, mas só o andar ativo os gera.
 ## Rework de variedade (15/10/2026): programa, planta, paleta, estações e
 ## pessoas saem de um gerador estável por prédio/andar (mesmo prédio sempre
 ## igual entre visitas e streaming); recompensas mantêm a fórmula original,
@@ -190,7 +190,7 @@ static func floor_spec(definition: Dictionary, floor_index: int) -> Dictionary:
 	worker.merge({"position":Vector3(x + work_dx, .03, back + .98), "yaw":PI, "activity":work_activity,
 		"activities":_choices(people, work_pool, work_activity, 3), "station":station_kind})
 	var occupants: Array[Dictionary] = [worker]
-	# A second human occupies the distinct front room in medium and large lots.
+	# Um segundo humano ocupa o cômodo da frente separado nos lotes médios e grandes.
 	if not compact and size.x >= 10.0 and size.y >= 10.5:
 		var pool: Array = VISITOR_POOLS[kind].duplicate()
 		if program not in BED_PROGRAMS: pool.erase("sleep")
@@ -218,7 +218,7 @@ static func floor_spec(definition: Dictionary, floor_index: int) -> Dictionary:
 				visitor.partner = partner.id
 				occupants.append(partner)
 				break
-	# Vacant flats, working shifts and occupied illicit storage coexist by lot.
+	# Apartamentos vagos, turnos de trabalho e depósitos ilícitos ocupados convivem por lote.
 	var abandoned := kind == "industrial" and seed_value % 5 == 0
 	if abandoned and floor_index % 2 == 1: occupants.clear()
 	elif floor_index > 0 and (seed_value + floor_index) % 7 == 0: occupants.clear()

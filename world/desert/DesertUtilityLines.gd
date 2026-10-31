@@ -1,6 +1,6 @@
 extends RefCounted
-## Static distribution network. Shared poles at branch junctions, visible ceramic
-## insulators and three continuous sagging conductors; no light or frame loop.
+## Rede de distribuição estática. Postes compartilhados nas junções de ramal, isoladores
+## cerâmicos visíveis e três condutores contínuos com catenária; sem luz nem laço por quadro.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const HEIGHT := 9.4
@@ -10,7 +10,7 @@ const WIRE_RADIUS := .038
 static func records() -> Array[Dictionary]:
 	var poles: Dictionary = {}
 	var spans: Array[Dictionary] = []
-	# Deliberate shared endpoints keep town and truck-stop feeds connected.
+	# Pontas compartilhadas de propósito mantêm ligados os ramais da cidade e do posto de caminhões.
 	var lines: Array[PackedVector2Array] = [
 		PackedVector2Array([Vector2(354.5,-466),Vector2(354.5,-478),Vector2(354.5,-527),Vector2(354.5,-860),Vector2(339.27,-896.77),Vector2(302.5,-912),Vector2(-1020,-912),Vector2(-1020,-888),Vector2(-1039.8,-879.8),Vector2(-1048,-860),Vector2(-1048,-764),Vector2(-1048,-724),Vector2(-1048,-580),Vector2(-1039.8,-560.2),Vector2(-1020,-552),Vector2(-1020,-527)]),
 		PackedVector2Array([Vector2(-1020,-527),Vector2(-377,-527),Vector2(-97,-527),Vector2(354.5,-527)]),
@@ -18,8 +18,8 @@ static func records() -> Array[Dictionary]:
 		PackedVector2Array([Vector2(354.5,-478),Vector2(316,-478),Vector2(316,-517)]),
 	]
 	if preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").enabled():
-		# Keep both poles and the continuous conductors outside the new north
-		# carriageway. The old rounded-corner pole now stood inside its lane.
+		# Mantém os dois postes e os condutores contínuos fora da nova pista
+		# norte. O antigo poste da esquina arredondada ficava dentro da faixa.
 		lines[0][4]=Vector2(354.5,-912)
 	for line in lines:
 		var previous := ""
@@ -42,7 +42,7 @@ static func records() -> Array[Dictionary]:
 		var a: Dictionary = poles[span.from]
 		var b: Dictionary = poles[span.to]
 		result.append({"kind":"utility_span","position":(a.position+b.position)*.5,"a":a.position,"b":b.position,"axis_a":_crossarm(a.direction),"axis_b":_crossarm(b.direction)})
-	# Secondary feeds end at visible attachment brackets on occupied buildings.
+	# Ramais secundários terminam em suportes de fixação visíveis em prédios ocupados.
 	for service in [
 		{"pole":"31600:-51700","to":Vector3(284.6,3.2,-514.8)},
 		{"pole":"-9700:-65200","to":Vector3(-127.1,4.6,-621)},

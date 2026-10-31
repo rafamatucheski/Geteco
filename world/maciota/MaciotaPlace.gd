@@ -62,7 +62,7 @@ func _ready() -> void:
 	room.position = interior_origin
 	add_child(room)
 	_retract_lift_arms()
-	# The room exit repeats the exterior gate frame, without a decorative prompt.
+	# A saída do cômodo repete a moldura do portão externo, sem aviso decorativo.
 	var access_metal := DETAILS.material("e4b94c",.65,.35)
 	for x in [-2.1,2.1]:
 		DETAILS.box(room,"ExitGateJamb",Vector3(x,1.1,4.61),Vector3(.20,2.2,.24),access_metal)
@@ -78,8 +78,8 @@ func _ready() -> void:
 	mechanic_work_contact.name = "ServiceNutContact"
 	mechanic_work_contact.position = Vector3(0,.20,.14)
 	mechanic_workpiece.add_child(mechanic_work_contact)
-	# Legacy external apron existed to fill a projected viewport. Native V2
-	# keeps only the actual room footprint; collision remains independently intact.
+	# O pátio externo legado existia para preencher um viewport projetado. A V2 nativa
+	# mantém só a área real do cômodo; a colisão continua intacta de forma independente.
 	for detail in room.get_children():
 		if detail is MeshInstance3D:
 			if str(detail.name).begins_with("ApronJoint") or detail.name == "RearBuildingMass":
@@ -128,8 +128,8 @@ func _ready() -> void:
 	set_interior_active(false)
 
 func _retract_lift_arms() -> void:
-	# Park the original hinged arms parallel to their columns before deriving solids.
-	# The authored service pose places the pads under a raised chassis, across the bay.
+	# Estaciona os braços articulados originais paralelos às colunas antes de derivar os sólidos.
+	# A pose de serviço autorada põe as sapatas sob um chassi elevado, atravessando a baia.
 	for part in room.get_children():
 		if not part is MeshInstance3D: continue
 		var point: Vector3 = part.position
@@ -179,7 +179,7 @@ func _build_mesh_solids(parent: Node3D, prefix: String) -> void:
 		if not node is MeshInstance3D or not node.has_meta("interior_solid_id"): continue
 		var bounds: AABB = node.transform * node.get_aabb()
 		if bounds.position.y >= 2.1: continue
-		# Full furniture footprint extends to floor; walking under desks is forbidden.
+		# A área inteira dos móveis vai até o piso; é proibido andar sob as mesas.
 		bounds.size.y += maxf(bounds.position.y,0)
 		bounds.position.y = minf(bounds.position.y,0)
 		_add_solid(parent, "%s_%d" % [prefix,index], bounds)

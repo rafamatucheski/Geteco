@@ -1,6 +1,6 @@
 extends RefCounted
-## Shallow-water height field: bounded grid, fixed timestep, damped wave equation.
-## Rendered height/normals and buoyancy read the same field. No rigid body per drop.
+## Campo de altura de águas rasas: grade limitada, passo de tempo fixo, equação de onda amortecida.
+## Altura/normais renderizadas e flutuação leem o mesmo campo. Nenhum corpo rígido por gota.
 const SIZE := Vector2i(48, 32)
 const ORIGIN := Vector2(-30, -24)
 const EXTENT := Vector2(60, 40)

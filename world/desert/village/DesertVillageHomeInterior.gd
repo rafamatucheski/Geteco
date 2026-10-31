@@ -70,14 +70,14 @@ func _shell(layout: Dictionary) -> void:
 	_box(self,"TerracottaFloor",Vector3(0,-.05,0),Vector3(size.x,.06,size.y),Color("947455"),"","wood" if variant==1 else "plaster")
 	_box(self,"BackWall",Vector3(0,1.42,-size.y*.5+.12),Vector3(size.x,2.84,.24),wall,"BackWall","plaster")
 	for side in [-1.0,1.0]:
-		# A stepped cutaway opens the living zone to the aligned camera. Both parts
-		# share one physical wall group, retaining the full-height boundary.
+		# Um corte em degraus abre a área de estar para a câmera alinhada. As duas partes
+		# dividem um grupo de parede física, mantendo o limite de altura total.
 		_box(self,"SideWall",Vector3(side*(size.x*.5-.12),1.42,-size.y*.225),Vector3(.24,2.84,size.y*.55),wall,"SideWall%s"%side,"plaster")
 		_box(self,"LowSideWall",Vector3(side*(size.x*.5-.12),.45,size.y*.275),Vector3(.24,.90,size.y*.45),wall,"SideWall%s"%side,"plaster")
 		var width: float=size.x*.5-1.05
 		_box(self,"FrontWall",Vector3(side*(1.05+width*.5),1.42,size.y*.5-.12),Vector3(width,2.84,.24),wall,"FrontWall%s"%side,"plaster")
 		_box(self,"DoorJamb",Vector3(side*1.03,1.13,size.y*.5-.12),Vector3(.13,2.26,.28),Color("70503b"),"DoorJamb%s"%side,"wood")
-	# Exposed joinery follows the rear wall, leaving actors and furniture readable.
+	# A marcenaria exposta segue a parede do fundo, deixando atores e móveis legíveis.
 	_box(self,"RearLintel",Vector3(0,2.72,-size.y*.5+.27),Vector3(size.x-.48,.18,.16),Color("68543e"),"","wood")
 	for index in layout.partitions.size():
 		var rect: Rect2=layout.partitions[index]
@@ -212,7 +212,7 @@ func _finish(layout: Dictionary) -> void:
 	for side in [-1.0,1.0]:
 		_box(self,"Skirting",Vector3(side*(size.x*.5-.24),.10,0),Vector3(.035,.20,size.y-.48),Color("786249"),"SideWall%s"%side,"wood")
 	_box(self,"Skirting",Vector3(0,.10,-size.y*.5+.24),Vector3(size.x-.48,.20,.035),Color("786249"),"BackWall","wood")
-	# Different domestic crafts, mounted on the rear wall rather than blocking floor lanes.
+	# Artesanatos domésticos diferentes, presos na parede do fundo em vez de bloquear faixas do piso.
 	var center := Vector3(layout.bed.x,1.98,-size.y*.5+.29)
 	if variant in [0,2]:
 		for i in 3:
@@ -222,7 +222,7 @@ func _finish(layout: Dictionary) -> void:
 		_box(self,"PictureFrame",center,Vector3(1.25,.79,.06),Color("735840"),"","wood")
 		_box(self,"LandscapeCanvas",center+Vector3(0,0,.038),Vector3(1.10,.64,.015),Color("a7a189"),"","cloth")
 		_box(self,"LandscapeHorizon",center+Vector3(0,-.16,.050),Vector3(1.10,.26,.008),Color(layout.cloth).darkened(.18))
-	# Slatted joinery breaks the monolithic headboard into recognisable hand-made wood.
+	# Ripas de marcenaria quebram a cabeceira monolítica em madeira feita à mão reconhecível.
 	for i in 7:
 		_box(self,"HeadboardSlat",layout.bed+Vector3((i-3)*.22,.89,-1.025),Vector3(.13,.31,.025),Color("a4835b"),"BedHeadboard","wood")
 	var bolster := _cylinder(self,"BedBolster",layout.bed+Vector3(.57,.70,-.74),.105,.37,Color(layout.cloth).lightened(.24))
@@ -230,7 +230,7 @@ func _finish(layout: Dictionary) -> void:
 	bolster.material_override=_material(Color(layout.cloth).lightened(.24),"cloth")
 
 func _identity(layout: Dictionary) -> void:
-	# Each plan has a different useful living zone in addition to its own room divisions.
+	# Cada planta tem uma área de estar útil diferente, além das próprias divisões de cômodo.
 	match variant:
 		0:
 			_box(self,"KitchenWallShelf",Vector3(3.4,1.95,-4.14),Vector3(2.55,.13,.36),Color("8a6848"),"","wood")
@@ -247,7 +247,7 @@ func _identity(layout: Dictionary) -> void:
 			_box(self,"WorkBench",Vector3(5.85,.77,2.95),Vector3(.92,.15,2.1),Color("8c6b49"),"WorkBench","wood")
 			for z in [2.12,3.78]: _box(self,"BenchLeg",Vector3(5.85,.37,z),Vector3(.72,.74,.10),Color("705437"),"WorkBench","wood")
 			_box(self,"Toolbox",Vector3(5.85,.98,2.65),Vector3(.51,.28,.65),Color("7d5348"),"WorkBench")
-	# Small lived-in objects remain on solid supports, never in the entry/circulation routes.
+	# Pequenos objetos de uso ficam em apoios sólidos, nunca nas rotas de entrada/circulação.
 	var bed: Vector3=layout.bed
 	_box(self,"BedsideChest",bed+Vector3(-1.22,.28,-.57),Vector3(.55,.56,.60),Color("806447"),"BedsideChest","wood")
 	_box(self,"ChestDrawer",bed+Vector3(-1.22,.37,-.252),Vector3(.43,.19,.025),Color("9a7b54"),"BedsideChest","wood")

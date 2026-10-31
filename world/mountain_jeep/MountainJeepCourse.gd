@@ -61,13 +61,13 @@ static func sample(distance: float) -> Dictionary:
 	return {"position":_points[-1],"forward":_points[-2].direction_to(_points[-1]),"distance":s}
 
 static func rise(_distance: float) -> float:
-	# The loop uses the reserved terrain floor. Separate raised snow sheets
-	# looked detached from that floor; checkpoints must share its height too.
+	# O circuito usa o piso de terreno reservado. Folhas de neve elevadas separadas
+	# pareciam soltas desse piso; os checkpoints também precisam dividir a altura dele.
 	return 0.0
 
 static func checkpoints() -> Array[Dictionary]:
 	var gates: Array[Dictionary] = []
-	# Final gate precedes the paddock, leaving twelve metres for braking and exit.
+	# O portão final vem antes do paddock, deixando doze metros para frear e sair.
 	var finish := length()-12.0
 	for distance in range(28,int(finish-12.0),28): gates.append(sample(float(distance)))
 	gates.append(sample(finish))

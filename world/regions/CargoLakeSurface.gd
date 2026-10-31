@@ -1,8 +1,8 @@
 extends RefCounted
 const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 
-## Secret-lake surfaces only. NativeLake retains its original wet/dry domains.
-## Geometry and static noise belong to the streamed lake; no frame loop or lights.
+## Só superfícies do lago secreto. O NativeLake mantém os domínios molhado/seco originais.
+## Geometria e ruído estático pertencem ao lago em streaming; sem laço por quadro nem luzes.
 const SHADER := preload("res://world/regions/cargo_lake_surface.gdshader")
 const WATER_Y := 0.042
 const CAMP_Y := 0.08
@@ -58,9 +58,9 @@ func _terrain_height(point: Vector2) -> float:
 	var world := lake.to_global(Vector3(point.x, 0, point.y))
 	return float(terrain.surface_height_at(Vector2(world.x, world.z))) - lake.global_position.y
 
-## Local XZ; camp and island keep their complete authored footprints level.
-## Margin interpolation uses the actual visible/colliding triangles, rather than
-## an approximate height formula that could leave a rock floating over an edge.
+## XZ local; acampamento e ilha mantêm as áreas autoradas completas niveladas.
+## A interpolação da margem usa os triângulos reais visíveis/de colisão, em vez de
+## uma fórmula aproximada de altura que poderia deixar uma pedra flutuando sobre uma borda.
 func dry_height_at(point: Vector2) -> float:
 	if Geometry2D.is_point_in_polygon(point, camp):
 		return CAMP_Y
@@ -111,7 +111,7 @@ func _shore_height(point: Vector2) -> float:
 	# Relevo da margem baixo (era 7–10,5 cm): sem colisão própria (ver _shore_mesh), a
 	# roda do carro afunda no máximo isso no capim da margem.
 	var drift := 0.025 + 0.012 * sin(point.x * 0.37 + point.y * 0.15)
-	# The ramp approach and both sides of the original camp route stay low.
+	# O acesso da rampa e os dois lados da rota original do acampamento ficam baixos.
 	var ramp := smoothstep(2.8, 5.2, absf(point.x)) if point.y > 8.0 else 1.0
 	var result := lerpf(WATER_Y + 0.004, _terrain_height(point) + 0.004, weight)
 	result += sin(PI * weight) * drift * ramp

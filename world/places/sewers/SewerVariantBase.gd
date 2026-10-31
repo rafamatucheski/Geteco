@@ -26,8 +26,8 @@ func _ready() -> void:
 	_rng.seed = hash(str(get_script().resource_path))
 	_build()
 	var avoid_rects: Array = solid_rects.values()
-	# NativePlace consumes tagged, transformed bounds. Keep the authored footprints
-	# during dressing, then remove their duplicate bodies before room admission.
+	# O NativePlace consome limites marcados e transformados. Mantém as áreas autoradas
+	# durante o mobiliário e depois remove os corpos duplicados antes da admissão no cômodo.
 	for mesh in find_children("*", "MeshInstance3D", true, false):
 		if mesh.has_meta("source_solid_rect"): solid_rects.erase(mesh.get_meta("source_solid_rect"))
 	add_child(preload("res://audio/sewers/SewerAmbience.gd").new())
@@ -168,7 +168,7 @@ func _open_channel(rect: Rect2) -> void:
 	if not is_instance_valid(_floor_base): return
 	var material := _floor_base.material_override
 	_floor_base.hide()
-	# Basin bed below the water, dry banks at the original walking height.
+	# Leito da bacia abaixo da água, margens secas na altura original de caminhada.
 	var basin := box(Vector3(rect.get_center().x, -.46, rect.get_center().y), Vector3(rect.size.x,.12,rect.size.y), "#0b1412")
 	basin.name = "ChannelBed"
 	for part in _subtract_rect(_floor_area, rect):
@@ -207,7 +207,7 @@ func walls(back_height := 2.8, side_height := 1.0, front_height := 0.35, color :
 	# Faixas de tijolo mais claro no fundo, para o muro não ser um bloco liso.
 	for course in 3:
 		box(Vector3(0, 0.45 + course * 0.8, -half.y + 0.02), Vector3(half.x * 2.0, 0.06, 0.05), "#4a5143")
-	# Staggered masonry has actual relief, batched into one draw per room.
+	# Alvenaria desencontrada tem relevo real, em lote num draw por cômodo.
 	var masonry := MultiMesh.new()
 	masonry.transform_format = MultiMesh.TRANSFORM_3D
 	masonry.use_colors = true

@@ -1,5 +1,5 @@
 extends "res://world/places/WalkupFacadeDoor.gd"
-## Streamed with its facade; the shared access controller owns push and timing.
+## Entra em streaming com a fachada; o controlador de acesso compartilhado é dono do empurrão e do tempo.
 ## Casa pintada (PaintedFacadeKit) passa o tamanho do vão em "door_size" e o plano
 ## da parede em "door_z" para a folha ocupar o vão pintado em vez do da casa 3D.
 func _ready() -> void:

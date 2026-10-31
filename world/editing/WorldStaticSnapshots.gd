@@ -1,6 +1,6 @@
 @tool
 extends RefCounted
-## Immutable scenery assets. Capturing stages a draft; only explicit Save promotes it.
+## Assets de cenário imutáveis. Capturar prepara um rascunho; só o Save explícito o promove.
 const STAGING := "res://.godot/world_editor_snapshots/"
 const PUBLISHED := "res://world/editing/snapshots/"
 
@@ -33,8 +33,8 @@ static func capture(nodes: Array, pivot: Vector3) -> Dictionary:
 	if not bounds.has:
 		holder.free()
 		return {"error":"A seleção não contém geometria estática para copiar."}
-	# The destination click is the footprint's center, including authored objects
-	# whose original construction pivot sits at a corner or outside their mesh.
+	# O clique de destino é o centro da área, incluindo objetos autorados
+	# cujo pivô original de construção fica num canto ou fora da malha.
 	var footprint_center: Vector3 = (bounds.box as AABB).get_center()
 	footprint_center.y = 0
 	for child in holder.get_children():
@@ -46,8 +46,8 @@ static func capture(nodes: Array, pivot: Vector3) -> Dictionary:
 	error = DirAccess.make_dir_recursive_absolute(STAGING)
 	if error != OK: return {"error":"Não foi possível criar a pasta de rascunhos: "+error_string(error)}
 	var temporary := STAGING+"capture_%d_%d.scn" % [OS.get_process_id(),Time.get_ticks_usec()]
-	# Bundle dependencies so a staged preview file can be removed without breaking
-	# a later save, game launch, or transfer of this object to another map.
+	# Junta as dependências para que um arquivo de pré-visualização possa ser removido sem quebrar
+	# um save posterior, o início do jogo ou a transferência deste objeto para outro mapa.
 	error = ResourceSaver.save(packed,temporary,ResourceSaver.FLAG_BUNDLE_RESOURCES)
 	if error != OK: return {"error":"Não foi possível guardar a geometria no rascunho: "+error_string(error)}
 	var id := FileAccess.get_sha256(temporary)
@@ -74,8 +74,8 @@ static func _sanitize(node: Node, owner: Node) -> void:
 	if node is StaticBody3D:
 		node.collision_layer = layer
 		node.collision_mask = mask
-	# Disabling a CollisionObject3D removes it from the physics world by default.
-	# Scripts and active entities were stripped above; keep static physics alive.
+	# Desabilitar um CollisionObject3D o remove do mundo de física por padrão.
+	# Scripts e entidades ativas foram retirados acima; mantém a física estática viva.
 	node.process_mode = Node.PROCESS_MODE_INHERIT
 	node.set_process(false)
 	node.set_physics_process(false)
@@ -118,7 +118,7 @@ static func promote_document(document: Dictionary) -> String:
 				var id: Variant = row.get("snapshot_id","")
 				if not valid_id(id): return "Identidade da cópia estática inválida."
 				ids[id] = true
-	# Check all draft assets before publishing any, including integrity after recovery.
+	# Confere todos os assets do rascunho antes de publicar qualquer um, incluindo a integridade depois de recuperação.
 	for id in ids:
 		var source := path_for(id)
 		if not FileAccess.file_exists(source): return "Geometria da cópia estática ausente: "+id

@@ -1,12 +1,12 @@
 extends RefCounted
-## Shared ground contract for rendering, ocean subtraction, roads and navigation.
+## Contrato de chão compartilhado para render, subtração do oceano, ruas e navegação.
 const LAND := Rect2(3200, 3200, 2900, 2800)
 const WALKWAY := Rect2(3534, 2108, 72, 1132)
 const WALK_ROUTE := [Vector2(3570, 2070), Vector2(3570, 3260), Vector2(3570, 3500), Vector2(3670, 3500)]
 const ACCESS := [Vector2(3000, 2200), Vector2(3180, 2200), Vector2(3310, 2330), Vector2(3310, 3600), Vector2(3750, 3600)]
-# The road renderer already reserves 92px from the centreline (50px asphalt +
-# 42px sidewalk).  The shoreline needs a separate shoulder beyond that: using
-# the same 92px envelope put the physical seawall directly against the bend.
+# O renderer de ruas já reserva 92px a partir da linha central (50px de asfalto +
+# 42px de calçada).  A costa precisa de um acostamento separado além disso: usar
+# o mesmo envelope de 92px punha o quebra-mar físico encostado na curva.
 const ACCESS_LAND_HALF_WIDTH := 142.0
 const PIERS := [Rect2(6100, 3650, 230, 100), Rect2(6100, 4210, 230, 100)]
 const SHIP := Rect2(3950, 2730, 1710, 390)
@@ -53,7 +53,7 @@ static func surfaces() -> Array[PackedVector2Array]:
 	var result: Array[PackedVector2Array] = [rect_polygon(LAND), rect_polygon(WALKWAY)]
 	result.append_array(Geometry2D.offset_polyline(PackedVector2Array(ACCESS), ACCESS_LAND_HALF_WIDTH, Geometry2D.JOIN_ROUND, Geometry2D.END_SQUARE))
 	for pier in PIERS: result.append(rect_polygon(pier))
-	# Join to the quay before clipping: an isolated hull would create a water hole.
+	# Junta ao cais antes de recortar: uma carcaça isolada criaria um buraco na água.
 	var boarding := Geometry2D.merge_polygons(rect_polygon(SHIP_GANGWAY),ship_hull())
 	result.append_array(boarding)
 	return result

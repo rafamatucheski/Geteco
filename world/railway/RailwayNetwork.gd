@@ -1,6 +1,6 @@
 extends RefCounted
-## Authored metre coordinates. Geometry, journeys and maps use the same rails.
-## Junctions are not road graph vertices: the railway crosses roads above them.
+## Coordenadas autoradas em metros. Geometria, viagens e mapas usam os mesmos trilhos.
+## Junções não são vértices do grafo de ruas: a ferrovia cruza as ruas por cima.
 const TRACK_HEIGHT := 12.0
 const TRACK_WIDTH := 4.8
 const PLATFORM_OFFSET := 4.4
@@ -22,7 +22,7 @@ static func stations() -> Array[Dictionary]:
 static func get_stations() -> Array[Dictionary]: return stations()
 
 static func _station(id: String, label: String, point: Vector3, region: String, side: float) -> Dictionary:
-	# Northgate opens east over water; no staircase or platform occupies the highway.
+	# A Northgate abre para o leste sobre a água; nenhuma escada ou plataforma ocupa a rodovia.
 	var entry := point + Vector3(side * 12.0, -point.y + 0.12, 12.0)
 	return {"id":id, "label":label, "name":label, "position":point,
 		"arrival":point + Vector3(side * PLATFORM_OFFSET, PLATFORM_HEIGHT + 0.12, 0),
@@ -40,12 +40,12 @@ static func ground_landing_rect(id: String) -> Rect2:
 	var center: Vector2=Vector2(station.position.x,station.position.z)+Vector2(float(station.side)*10.65,11.5)
 	return Rect2(center-Vector2(2.8,2.75),Vector2(5.6,5.5))
 
-## On-foot restore only: old elevated platform/stair saves go to the new
-## supported entrance. Do not apply this to vehicles or arbitrary Harbor roofs.
+## Só restauração a pé: saves antigos em plataforma/escada elevada vão para a nova
+## entrada apoiada. Não aplica isto a veículos nem a telhados quaisquer do Harbor.
 static func restore_harbor_pedestrian(point: Vector3) -> Vector3:
 	if point.y<.5: return point
-	# Only migrate unsupported former surfaces; a save on an overlapping
-	# platform or retained landing keeps its exact position.
+	# Só migra superfícies antigas sem apoio; um save numa plataforma sobreposta
+	# ou num patamar mantido conserva a posição exata.
 	for old in [Vector3(-12,12,52),Vector3(386,12,-179),Vector3(386,12,-194)]:
 		var target := "harbor_central" if old.x < 0 else "harbor_north"
 		if (_on_access_surface(point,old,false) or _on_access_surface(point,old,true)) and not _on_access_surface(point,get_station(target).position,true,float(get_station(target).side)):
@@ -146,7 +146,7 @@ static func edges() -> Array[Dictionary]:
 
 static func _north_east_edge() -> Dictionary:
 	var points := PackedVector3Array()
-	# The curve starts beyond the platform and its full coach overhang.
+	# A curva começa além da plataforma e do balanço inteiro do vagão.
 	for i in 29:
 		var t := float(i)/28.0
 		var angle := PI+t*PI*.5
@@ -157,7 +157,7 @@ static func _north_east_edge() -> Dictionary:
 
 static func _coastal_edge() -> Dictionary:
 	var points := PackedVector3Array()
-	# A quarter circle begins eastbound, tangent to the common mountain throat.
+	# Um quarto de círculo começa sentido leste, tangente à garganta comum da montanha.
 	for i in 19:
 		var angle := -PI*.5+float(i)/18.0*PI*.5
 		points.append(Vector3(420.0+18.0*cos(angle),14,-227.0+18.0*sin(angle)))
@@ -165,7 +165,7 @@ static func _coastal_edge() -> Dictionary:
 		Vector3(430,14,45),Vector3(540,14,45),Vector3(540,14,162),Vector3(440,14,162),
 		Vector3(210,14,162),Vector3(-17,12,162),Vector3(-17,12,92)],18.0)
 	for i in range(1,tail.size()): points.append(tail[i])
-	# Ease back to the station after clearing the saved western infill block.
+	# Volta suavemente para a estação depois de passar o bloco de aterro oeste salvo.
 	for i in range(1,17):
 		var t := float(i)/16.0
 		points.append(Vector3(-17.0+5.0*smoothstep(0,1,t),12,92.0-16.0*t))

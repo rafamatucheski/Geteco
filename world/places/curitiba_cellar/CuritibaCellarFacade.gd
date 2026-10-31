@@ -1,6 +1,6 @@
 extends "res://world/places/curitiba_cellar/CellarGeometry.gd"
-## Single authored storefront in Harbor. Transfer-style entrance shares the
-## compact door marker; the front is only branded with the establishment name.
+## Uma única fachada de loja autorada no Harbor. A entrada no estilo de transferência divide o
+## marcador de porta compacto; a frente leva só o nome do estabelecimento.
 const PAINTED := preload("res://world/urban_detail/PaintedFacadeKit.gd")
 const PAINTED_STYLE := "curitiba-cellar"
 
@@ -26,8 +26,8 @@ func _ready() -> void:
 			box("WindowUpright",Vector3(side*4.15+edge*2.48,1.67,5.535),Vector3(.075,2.35,.07),"ac8b57","","metal")
 			box("WindowRail",Vector3(side*4.15,1.67+edge*1.135,5.535),Vector3(5.02,.07,.07),"ac8b57","","metal")
 		box("WindowMiddle",Vector3(side*4.15,1.67,5.535),Vector3(.055,2.26,.07),"ac8b57","","metal")
-		# Solid simulated window displays need no transparency pass or second
-		# viewport. Bottles stand at human scale behind a shallow brass rail.
+		# Vitrines simuladas sólidas não precisam de passo de transparência nem de segundo
+		# viewport. As garrafas ficam em escala humana atrás de um trilho raso de latão.
 		for tier in 2:
 			var y := .86+tier*.73
 			box("WindowShelf",Vector3(side*4.15,y,5.58),Vector3(4.6,.07,.23),"aa8354")
@@ -50,7 +50,7 @@ func _ready() -> void:
 	name_label.position = Vector3(0,3.18,5.624)
 	name_label.modulate = Color("dfc99c")
 	add_child(name_label)
-	# Burgundy fabric canopy with a slim brass lip, projecting less than 1 m.
+	# Toldo de tecido bordô com uma borda fina de latão, projetando menos de 1 m.
 	box("Canopy",Vector3(0,2.74,5.9),Vector3(13.05,.085,1.08),"552b3c","","cloth").rotation.x = .08
 	box("CanopyLip",Vector3(0,2.688,6.44),Vector3(13.05,.075,.055),"ad8c50","","metal")
 	for side in [-1,1]:
@@ -77,8 +77,8 @@ func _ready() -> void:
 		box("RoofParapet",Vector3(0,3.92,side*5.24),Vector3(13.7,.3,.23),"a59c83")
 	box("RooftopCooling",Vector3(-3.7,4.05,-2.45),Vector3(1.45,.49,1.03),"7c867b","","metal")
 	for i in 9: piece("box",Vector3(-4.26+i*.14,4.302,-2.45),Vector3(.054,.014,.86),"37433d","metal")
-	# These authored casings motivate the warm facade accents. No per-frame
-	# light spawning or individual emissive bottles is needed.
+	# Estas carcaças autoradas justificam os acentos quentes da fachada. Não precisa
+	# criar luz por quadro nem garrafas emissivas individuais.
 	for side in [-1,1]:
 		box("WallSconce",Vector3(side*1.43,2.00,5.60),Vector3(.16,.48,.15),"514c3c","","metal")
 		box("SconceDiffuser",Vector3(side*1.43,2.00,5.686),Vector3(.09,.32,.024),"e8bf7c","","glow")

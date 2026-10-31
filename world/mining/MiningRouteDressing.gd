@@ -32,20 +32,20 @@ static func build(parent: Node3D, local_rect: Rect2, height_at: Callable) -> voi
 			var planar := Vector2(point.x, point.z)
 			if not local_rect.has_point(planar): continue
 			if LAYOUT.SECRET_RESERVE.grow(4).has_point(planar): continue
-			# Do not put markers on another winding of the same road.
+			# Não põe marcadores em outra volta da mesma estrada.
 			if LAYOUT.haul_sample(planar).x < 7.25: continue
 			if batch == null: batch = BATCH.new(parent, "MineHaulRouteEdges", LAYOUT.CENTER)
 			point.y = float(height_at.call(planar + Vector2(LAYOUT.CENTER.x, LAYOUT.CENTER.z)))
 			batch.box("HaulEdgePost", point + Vector3.UP * .64, Vector3(.16, 1.28, .16), "yellow", true)
 			batch.box("HaulEdgeDarkBand", point + Vector3.UP * .72, Vector3(.175, .26, .175), "rubber")
-			# Reflective collars read from both descent and ascent, without lights.
+			# Colares refletivos aparecem tanto na descida quanto na subida, sem luzes.
 			batch.box("HaulEdgeReflector", point + Vector3.UP * 1.15, Vector3(.18, .18, .18), "white")
 			if index % 3 != 0 or point.y > -.8: continue
 			var berm: Vector3 = record.point + record.side * direction * 9.3
 			var berm_xz := Vector2(berm.x, berm.z)
 			if not local_rect.has_point(berm_xz) or LAYOUT.haul_sample(berm_xz).x < 8.5: continue
-			# Small blasted-rock berms sit outside the shoulder. Sample the full
-			# footprint, including the downhill flank of each excavated bench.
+			# Pequenas leiras de rocha detonada ficam fora do acostamento. Amostra a área
+			# inteira, incluindo o flanco morro abaixo de cada bancada escavada.
 			var tangent := Vector3(sin(float(record.yaw)), 0, cos(float(record.yaw)))
 			var base := INF
 			for end in [-1.0, 0.0, 1.0]:

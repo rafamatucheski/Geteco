@@ -1,6 +1,6 @@
 extends RefCounted
-## Persistent distance geometry: basin and asymmetric, eroded sandstone ranges.
-## Close ground, rocks and all physical boundaries remain owned by streamed cells.
+## Geometria persistente de distância: bacia e serras de arenito erodido assimétricas.
+## Chão próximo, rochas e todos os limites físicos continuam pertencendo às células em streaming.
 const L := preload("res://world/desert/DesertLayout.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")
 const MINING := preload("res://world/mining/MiningExterior.gd")
@@ -9,16 +9,16 @@ const LIFETIME := preload("res://world/desert/DesertPreparationLifetime.gd")
 static func build() -> Node3D:
 	var root := Node3D.new()
 	root.name="DesertHorizon"
-	# Never paint over Harbor's sea or the independent eastern mountain territory.
+	# Nunca pinta sobre o mar do Harbor nem o território independente da montanha a leste.
 	var rect := L.BOUNDS
-	# The visual horizon must have the same excavation cut as streamed ground.
-	# A single datum-height quad would occlude the entire physically valid mine.
+	# O horizonte visual precisa ter o mesmo corte de escavação do chão em streaming.
+	# Um único quad na altura de referência ocultaria a mina inteira fisicamente válida.
 	for remainder in MINING.ground_remainders(rect):
 		for untouched in preload("res://world/desert/canyon/DesertSmugglerLayout.gd").ground_remainders(remainder):
 			_basin(root,"DistantBasin",untouched,-.045)
 	if MINING_LAYOUT.enabled():
-		# Keep a distant backdrop below the lowest floor while nearby authored
-		# benches and road geometry remain owned by their existing stream chunks.
+		# Mantém um fundo distante abaixo do piso mais baixo enquanto bancadas autoradas
+		# próximas e geometria de estrada continuam pertencendo aos chunks de stream existentes.
 		_basin(root,"DistantQuarryFloor",rect.intersection(MINING.OWNED_GROUND),-MINING_LAYOUT.PIT_DEPTH-.045)
 	root.add_child(preload("res://world/desert/DesertHorizonRelief.gd").build())
 	root.add_child(preload("res://world/desert/DesertTerrainMesh.gd").build_visuals())

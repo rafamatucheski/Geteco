@@ -6,8 +6,8 @@ const ROCK:=preload("res://world/desert/DesertSurfaceRocks.gd")
 
 static func build_chunk(parent: Node3D, rect: Rect2, completed:=false) -> void:
 	if not L.enabled(): return
-	# One continuous cut on either side joins the work barrier and reaches the
-	# northern map boundary. Physical hulls are made from the actual mesh.
+	# Um corte contínuo de cada lado junta a barreira da obra e alcança o
+	# limite norte do mapa. As carcaças físicas são feitas da malha real.
 	for side in [-1,1]:
 		var inner: float=L.LEFT_INNER if side<0 else L.RIGHT_INNER
 		var outer: float=inner+float(side)*22.0
@@ -66,7 +66,7 @@ static func set_completed(gate: Node3D, completed: bool) -> void:
 		body.collision_layer=0 if completed else 1
 
 static func _cliff(parent: Node3D, label: String, area: Rect2, side: int) -> void:
-	# Global cut lines and functions keep height/silhouette exact at chunk seams.
+	# Linhas de corte e funções globais mantêm altura/silhueta exatas nas emendas de chunk.
 	var cuts: Array[float]=[area.position.y]
 	var cut:=ceilf(area.position.y/12.0)*12.0
 	while cut<area.end.y:
@@ -102,8 +102,8 @@ static func _cliff(parent: Node3D, label: String, area: Rect2, side: int) -> voi
 	node.add_child(body)
 
 static func _section(area: Rect2, z: float, side: int) -> PackedVector3Array:
-	# A steep low toe prevents climbing, while the broken crest recedes away
-	# from the road so the normal gameplay camera can see actors on shoulders.
+	# Um pé baixo e íngreme impede a escalada, e a crista quebrada recua para longe
+	# da estrada para a câmera normal do jogo ver atores nos acostamentos.
 	var height:=9.0+2.0*sin(z*.025)+sin(z*.13)
 	var profile: Array[Vector2]=[
 		Vector2(0,-.6),Vector2(.012,height*.28),Vector2(.08,height*.52),

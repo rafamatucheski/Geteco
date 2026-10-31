@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
-## Immutable brush field shared by terrain vertices, collision and height queries.
-## Nothing is applied to the saved world until the editor explicitly saves its document.
+## Campo de pincel imutável compartilhado por vértices do terreno, colisão e consultas de altura.
+## Nada é aplicado ao mundo salvo até o editor salvar o documento explicitamente.
 const CELL := 64.0
 const MOTOCROSS_BOUNDS := Rect2(-247,-147,155,112)
 const SURFACES := ["keep","grass","earth","sand","gravel","rock","snow","asphalt"]
@@ -107,7 +107,7 @@ func has_paint_in(rect: Rect2, track_only := false) -> bool:
 		if at.distance_to(at.clamp(rect.position,rect.end)) < float(row.radius): return true
 	return false
 
-## CPU-only data: safe for MountainTerrain3D's WorkerThreadPool task.
+## Dados só de CPU: seguro para a tarefa de WorkerThreadPool do MountainTerrain3D.
 func paint_maps(rect: Rect2, spacing := 2.0, track_only := false) -> Dictionary:
 	if not has_paint_in(rect,track_only): return {}
 	var columns := maxi(2,ceili(rect.size.x/spacing)+1)

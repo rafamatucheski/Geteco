@@ -1,6 +1,6 @@
 extends RefCounted
-## Digo-only finishes. Imported mipmapped tiles, one cached architectural batch,
-## the two authored shadowless lights, and no frame processing or extra viewport.
+## Acabamentos só do Digo. Ladrilhos importados com mipmaps, um lote arquitetônico em cache,
+## as duas luzes autoradas sem sombra e nenhum processamento por quadro nem viewport extra.
 const SHOP := preload("res://world/places/ShopInteriorMaterials.gd")
 const SURFACE_KINDS := ["steel","steel_dark","steel_brushed","enamel_red","enamel_green","wood","rubber","plastic","screen","paper"]
 static var _materials: Dictionary = {}
@@ -99,8 +99,8 @@ static func apply(room: Node3D) -> void:
 			for surface in mesh.mesh.get_surface_count():
 				var kind: String = mesh.mesh.surface_get_name(surface)
 				if kind in SURFACE_KINDS: mesh.set_surface_override_material(surface,material(kind))
-	# Keep the authored sources and their range. There is no additional light or
-	# shadow pass: the visible fluorescent housings below only motivate them.
+	# Mantém as fontes autoradas e o alcance delas. Não há luz adicional nem
+	# passo de sombra: as carcaças fluorescentes visíveis abaixo só as justificam.
 	var fixtures: Array[OmniLight3D] = []
 	for light: OmniLight3D in room.find_children("*","OmniLight3D",true,false):
 		light.light_color = Color("fff1dc")
@@ -115,8 +115,8 @@ static func apply(room: Node3D) -> void:
 	room.add_child(details)
 
 static func update_lighting(room: Node3D, night: float) -> void:
-	# The existing weather curve gradually brings up the same two fittings.
-	# Daylight keeps its authored finish; nighttime tuning keeps colors readable.
+	# A curva de clima existente acende aos poucos as mesmas duas luminárias.
+	# A luz do dia mantém o acabamento autorado; o ajuste noturno mantém as cores legíveis.
 	if not is_instance_valid(room) or not room.has_meta("digo_workshop_lights"): return
 	var energy := lerpf(.85,2.0,clampf(night,0.0,1.0))
 	for light: OmniLight3D in room.get_meta("digo_workshop_lights"):
@@ -129,22 +129,22 @@ static func _architectural_mesh() -> ArrayMesh:
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		batches[kind] = surface
-	# Luminaires sit above standing height and do not enter the service camera's
-	# free corridor. Their two real sources already belong to this room.
+	# As luminárias ficam acima da altura de uma pessoa em pé e não entram no corredor
+	# livre da câmera de serviço. As duas fontes reais já pertencem a este cômodo.
 	for z in [-4.0,3.0]:
 		_box(batches.steel_dark,Vector3(0,4.27,z),Vector3(3.6,.15,.42))
 		_box(batches.emitter,Vector3(0,4.184,z),Vector3(3.26,.018,.22))
 		_box(batches.steel_brushed,Vector3(0,4.17,z),Vector3(.055,.035,.24))
-	# Inset drainage reads through alternating open/recessed strips. All tops
-	# remain at floor level, outside the lift markings and away from spawn points.
+	# A drenagem embutida aparece em faixas alternadas abertas/rebaixadas. Todos os topos
+	# ficam no nível do piso, fora das marcações do elevador e longe dos pontos de spawn.
 	_box(batches.steel_dark,Vector3(0,-.005,6.2),Vector3(4.8,.006,.24))
 	for i in 60:
 		_box(batches.steel_brushed,Vector3(-2.36+float(i)*.08,.001,6.2),Vector3(.025,.006,.2))
 	for side in [-1.0,1.0]:
 		_box(batches.steel_dark,Vector3(side*12.27,.12,0),Vector3(.025,.24,17.5))
 	_box(batches.steel_dark,Vector3(0,.12,-8.76),Vector3(24.5,.24,.025))
-	# Conduits follow the rear wall above furniture rather than floating across
-	# the room or changing the clear route around the car.
+	# Os eletrodutos seguem a parede do fundo acima dos móveis em vez de flutuar pelo
+	# cômodo ou mudar a rota livre em volta do carro.
 	for y in [3.18,3.4]:
 		_pipe(batches.steel_brushed,Vector3(0,y,-8.735),24.0,.024,true)
 	_pipe(batches.steel_brushed,Vector3(-11.7,2.45,-8.735),1.9,.024,false)

@@ -1,6 +1,6 @@
 extends RefCounted
-## One composed ground: planted infield, paved circulation and a supported verge.
-## The old pavement is removed wherever another finish owns the same surface.
+## Um chão composto: gramado plantado, circulação pavimentada e uma margem apoiada.
+## O pavimento antigo é removido onde outro acabamento é dono da mesma superfície.
 const LAYOUT := preload("res://world/places/amusement_park/AmusementParkLayout.gd")
 const CLIP := preload("res://world/editing/WorldGroundFactory.gd")
 const SURFACES := preload("res://world/places/ShopInteriorMaterials.gd")
@@ -110,8 +110,8 @@ static func _finish_parts(streams: Dictionary,kind: String,polygon: PackedVector
 	for part in CLIP.uncovered(polygon,masks): _polygon(streams,kind,part)
 
 static func build(park: Node3D) -> void:
-	# The fairground owns its foundation independently of editable city ground.
-	# A removed underlying tile must not leave the rides over water or empty space.
+	# O parque é dono da própria fundação, independente do chão editável da cidade.
+	# Um ladrilho de baixo removido não pode deixar os brinquedos sobre água ou espaço vazio.
 	var foundation := MeshInstance3D.new()
 	foundation.name = "ParkFoundation"
 	var foundation_faces := _faces(LAYOUT.outline(),-.035)
@@ -237,9 +237,9 @@ static func world_cover() -> Array[PackedVector2Array]:
 	return _cover
 
 static func _approach(streams: Dictionary,faces: PackedVector3Array) -> void:
-	# The vehicle hull rests at street level: even the former 2.5 cm exposed
-	# triangle edge stopped its front bumper. Ease the last 2 m down to zero,
-	# using the same vertices for visible paving and physical support.
+	# A carcaça do veículo fica no nível da rua: até a antiga borda de triângulo exposta
+	# de 2.5 cm parava o para-choque dianteiro. Suaviza os últimos 2 m até zero,
+	# usando os mesmos vértices para o calçamento visível e o apoio físico.
 	var stations := PackedFloat32Array([40,49,49.25,49.5,49.75,50,50.25,50.5,50.75,51])
 	for index in range(stations.size()-1):
 		var x0 := stations[index]

@@ -52,7 +52,7 @@ static func emblem() -> ArrayMesh:
 	if cache.has("emblem"): return cache.emblem
 	var tool := SurfaceTool.new()
 	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-	# Large hood, coiled body and ivory fangs read clearly from gameplay height.
+	# Capelo grande, corpo enrolado e presas de marfim ficam claros na altura do jogo.
 	var ink := Color("a34a32")
 	var bone := Color("c4bb92")
 	var body := PackedVector2Array([Vector2(0,.05),Vector2(.9,.55),Vector2(1.2,1.3),Vector2(.55,1.95),Vector2(-.85,1.85),Vector2(-1.35,1.25),Vector2(-.7,.75),Vector2(.15,.8),Vector2(.55,1.25)])
@@ -64,7 +64,7 @@ static func emblem() -> ArrayMesh:
 		var b := Vector2(cos((i+1)*TAU/48),sin((i+1)*TAU/48))
 		_quad(tool,[a*2.75,a*2.61,b*2.61,b*2.75],ink)
 	_polygon(tool,PackedVector2Array([Vector2(0,-2.25),Vector2(-.6,-1.95),Vector2(-1.25,-1.75),Vector2(-1.6,-1.05),Vector2(-1.42,-.3),Vector2(-.65,.35),Vector2(0,.55),Vector2(.65,.35),Vector2(1.42,-.3),Vector2(1.6,-1.05),Vector2(1.25,-1.75),Vector2(.6,-1.95)]),ink)
-	# Layered marks are raised by 1 mm, so all triangles have unambiguous depth.
+	# As marcas em camadas sobem 1 mm, então todos os triângulos têm profundidade sem ambiguidade.
 	_polygon(tool,PackedVector2Array([Vector2(-.53,-1.75),Vector2(0,-1.93),Vector2(.53,-1.75),Vector2(.64,-1.08),Vector2(0,-.2),Vector2(-.64,-1.08)]),Color("202922"),.001)
 	for sign_value in [-1.0,1.0]:
 		_polygon(tool,PackedVector2Array([Vector2(.08*sign_value,-1.38),Vector2(.48*sign_value,-1.58),Vector2(.4*sign_value,-1.29)]),bone,.002)

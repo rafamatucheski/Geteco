@@ -13,8 +13,8 @@ static func definition_data() -> Dictionary:
 
 func _ready() -> void:
 	super._ready()
-	# This attraction uses first-person perspective. Restore the front-wall art
-	# after NativePlace's orthographic cutaway, keeping its original full solids.
+	# Esta atração usa perspectiva em primeira pessoa. Restaura a arte da parede da frente
+	# depois do corte ortográfico do NativePlace, mantendo os sólidos inteiros originais.
 	for side in [-1,1]:
 		var wall := model.get_node_or_null("FrontWall%d"%side) as MeshInstance3D
 		if wall != null:
@@ -26,6 +26,6 @@ func _ready() -> void:
 		door.position.y = 1.35
 
 func _box_solid(id: String, bounds: AABB, obstacle := true) -> void:
-	# The extension grows north; the original entrance/save coordinates stay put.
+	# A extensão cresce para o norte; as coordenadas originais de entrada/save não mudam.
 	if id == "Floor": bounds = AABB(Vector3(-9,-.22,-27.5),Vector3(18,.2,35))
 	super._box_solid(id,bounds,obstacle)

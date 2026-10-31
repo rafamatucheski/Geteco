@@ -1,9 +1,9 @@
 extends Node3D
 class_name LumberStack3D
 
-## High-detail 3D model of stacked, sawn lumber boards bound with galvanized steel packing bands.
-## Reconstructs the 2D outlines authored in SawmillYardDetails.gd into native 3D metric geometry.
-## Layer 1 native StaticBody3D collision.
+## Modelo 3D detalhado de tábuas serradas empilhadas, presas com fitas de aço galvanizado.
+## Reconstrói os contornos 2D autorados em SawmillYardDetails.gd em geometria métrica 3D nativa.
+## Colisão StaticBody3D nativa na camada 1.
 
 @export var stack_length: float = 3.375 # 54 px / 16
 @export var stack_width: float = 0.375   # 6 px / 16
@@ -59,7 +59,7 @@ func build() -> void:
 			for sx in [0.35, stack_length * 0.5, stack_length - 0.35]:
 				_add_box("Sticker", Vector3(sx, sy, stack_width * 0.5), Vector3(0.05, spacer_h, stack_width + 0.02), aged_mat)
 	
-	# Steel packing straps wrapping tightly around the stack (offsets matching 10px and 44px in V1)
+	# Fitas de aço bem apertadas em volta da pilha (deslocamentos batendo com 10px e 44px na V1)
 	for strap_x in [stack_length * 0.185, stack_length * 0.815]:
 		# Top strap
 		_add_box("StrapTop", Vector3(strap_x, stack_height + 0.08, stack_width * 0.5), Vector3(0.03, 0.015, stack_width + 0.01), strap_mat)

@@ -1,5 +1,5 @@
 extends RefCounted
-## Authored metre coordinates, north of the final-campaign bridge. No source-pixel offsets.
+## Coordenadas autoradas em metros, ao norte da ponte da campanha final. Sem deslocamentos em pixels da fonte.
 const ID := "desert"
 ## A real perimeter reduction: 1,524,570 m² versus the original 3,058,410 m².
 const BOUNDS := Rect2(-1340, -1230, 1780, 856.5)
@@ -37,8 +37,8 @@ static func surface_height(point: Vector2) -> float:
 	return 2.4 * (1.0 - smoothstep(373.5, 445.0, -point.y))
 
 static func roads() -> Array[Dictionary]:
-	# Every T/crossing is an explicit vertex, avoiding near-miss graph connections.
-	# The strip has its own access and is excluded from ambient traffic.
+	# Todo T/cruzamento é um vértice explícito, evitando ligações de grafo quase coincidentes.
+	# A pista tem acesso próprio e fica fora do trânsito ambiente.
 	return [
 		_road("desert_route_66", _rounded([Vector2(342.5,-373.5),Vector2(342.5,-445),Vector2(342.5,-490),Vector2(342.5,-540),Vector2(342.5,-900),Vector2(302.5,-900)],40), 10.0),
 		_road("desert_main_street", [Vector2(342.5,-540),Vector2(-110,-540),Vector2(-140,-540),Vector2(-210,-540),Vector2(-370,-540),Vector2(-620,-540),Vector2(-1020,-540)], 9.0),
@@ -114,8 +114,8 @@ static func buildings() -> Array[Dictionary]:
 
 static func place_definitions() -> Array[Dictionary]:
 	var bank := _place("desert_bank","Cobre",BANK,Vector2(20,14),"bank","res://world/desert/DesertBankInterior.gd",6.0,12.0)
-	# A legally parked car can occupy every point on the narrow centre approach.
-	# Authored side exits remain in the open forecourt, clear of columns/benches.
+	# Um carro estacionado legalmente pode ocupar qualquer ponto do acesso central estreito.
+	# Saídas laterais autoradas continuam no pátio aberto, longe de colunas/bancos.
 	bank.return_clearance_offsets=[Vector3(2.8,0,0),Vector3(-2.8,0,0)]
 	var workshop := _place("desert_digo","Digo",WORKSHOP,Vector2(25,18),"desert_tuning","res://world/desert/DesertWorkshopInterior.gd",8.0,15.0)
 	workshop["vehicle_spawn"] = Vector3(0,.04,0)

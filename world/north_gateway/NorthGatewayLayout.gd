@@ -1,5 +1,5 @@
 extends RefCounted
-## World coordinates. This spur is scenery/player access, never an NPC traffic road.
+## Coordenadas do mundo. Este ramal é cenário/acesso do jogador, nunca estrada de trânsito de NPC.
 const APPROACH := Vector3(364.55, 0.0, -254.0)
 const TERMINAL := Vector3(342.5, 2.4, -361.5)
 const WORK_POSITION := Vector3(342.5, 2.4, -282.8)
@@ -47,7 +47,7 @@ static func deck_half_width(point: Vector3) -> float:
 	if z >= -297.0: return 8.5
 	if z > -303.0: return lerpf(8.5, 5.0, (-297.0 - z) / 6.0)
 	if z > -343.0: return 5.0
-	# The former dead-end turnaround is now a through road into the desert.
+	# O antigo retorno sem saída agora é uma estrada de passagem para o deserto.
 	return lerpf(5.0,6.2,clampf((-343.0-z)/30.5,0.0,1.0))
 
 static func bounds() -> Rect2:
@@ -67,9 +67,9 @@ static func in_gap(point: Vector3) -> bool:
 	return point.z < GAP_SOUTH and point.z > GAP_NORTH
 
 static func shore_opening_polygon() -> PackedVector2Array:
-	# Only the first shoreline crossing. Does not reserve the mountain/return route.
-	# CoastalProtection must split its segments at this polygon before querying
-	# their midpoints; otherwise an entire long coast segment could be removed.
+	# Só a primeira travessia da costa. Não reserva a rota da montanha/retorno.
+	# O CoastalProtection precisa dividir os segmentos neste polígono antes de consultar
+	# os pontos médios; senão um segmento longo inteiro da costa poderia ser removido.
 	_prepare_shore()
 	return _shore_polygon
 
@@ -123,10 +123,10 @@ static func _prepare() -> void:
 	# O modo A/B preserva o piso original elevado; o novo nasce no físico da rua.
 	var start_height := 0.032 if OS.get_environment("GETECO_UNIFIED_BRIDGE") == "0" else APPROACH.y
 	for i in planar.size():
-		# Keep the junction and dry bank level; start the incline beyond the coast.
+		# Mantém o cruzamento e a margem seca nivelados; começa a subida além da costa.
 		var rise := smoothstep(9.0, planar_distance[-1], planar_distance[i])
 		_points.append(Vector3(planar[i].x, lerpf(start_height, DECK_HEIGHT, rise), planar[i].y))
-	# Include all width/gap boundaries exactly, then subdivide for curved guards.
+	# Inclui exatamente todos os limites de largura/vão e depois subdivide para guardas curvas.
 	var stops: Array[float] = [-281.0, WORK_POSITION.z, -286.8, -292.0, -297.0,
 		-303.0, GAP_SOUTH, GAP_NORTH, -330.0, -343.0, -352.0, TERMINAL.z, END_Z]
 	for stop in stops:

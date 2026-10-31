@@ -1,9 +1,9 @@
 extends UrbanBuildingBase
 class_name UrbanShopfrontBuilding
 
-## Reconstructs commercial retail storefronts, corner diners, groceries, and laundromats in native 3D.
-## Features glazed storefront display windows, striped awnings, wraparound corner canopies,
-## and visual identity communicated by appearance (e.g. washing machine drums for laundromat).
+## Reconstrói fachadas de comércio varejista, lanchonetes de esquina, mercearias e lavanderias em 3D nativo.
+## Tem vitrines envidraçadas, toldos listrados, coberturas de esquina envolventes
+## e identidade visual comunicada pela aparência (por exemplo, tambores de máquina de lavar na lavanderia).
 
 func build() -> void:
 	var painted := PaintedHarborHouses.style_for(building_id, building_kind)
@@ -73,7 +73,7 @@ func build() -> void:
 		var sign_w: float = minf(building_size.x * 0.6, 4.2)
 		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(sign_w, 0.60), 0.08, UrbanMaterials.trim_dark())
 		if sign_node != null:
-			# Placed neatly on the sign fascia board above the awning
+			# Posto com capricho na testeira do letreiro acima do toldo
 			sign_node.position = Vector3(0, minf(3.45,height-.35), front_z + 0.16)
 			visuals_root.add_child(sign_node)
 
@@ -85,14 +85,14 @@ func _build_storefront(front_z: float, is_corner: bool, door_center_x: float, do
 	var store_h: float = 2.9
 	var half_w: float = building_size.x * 0.5
 	
-	# Stone framing pilasters at ends of storefront
+	# Pilastras de moldura de pedra nas pontas da fachada da loja
 	for side: float in [-half_w + 0.25, half_w - 0.25]:
 		add_mesh_box(visuals_root, "StorePilaster", Vector3(side, store_h * 0.5, front_z + 0.06), Vector3(0.50, store_h + 0.2, 0.16), stone_trim)
 	
 	# Horizontal sign fascia board band above display windows
 	add_mesh_box(visuals_root, "SignFascia", Vector3(0, store_h + 0.25, front_z + 0.08), Vector3(building_size.x - 0.2, 0.70, 0.18), dark_trim)
 	
-	# Recessed customer entry door - sitting at the back of the open alcove
+	# Porta de entrada de clientes rebaixada - fica no fundo do nicho aberto
 	var alcove_back_z: float = front_z - recess_depth
 	var door_y: float = door_h * 0.5
 	
@@ -100,7 +100,7 @@ func _build_storefront(front_z: float, is_corner: bool, door_center_x: float, do
 	add_mesh_box(visuals_root, "AlcoveWallLeft", Vector3(door_center_x - recess_w * 0.5, door_y, front_z - recess_depth * 0.5), Vector3(0.06, door_h, recess_depth), dark_trim)
 	add_mesh_box(visuals_root, "AlcoveWallRight", Vector3(door_center_x + recess_w * 0.5, door_y, front_z - recess_depth * 0.5), Vector3(0.06, door_h, recess_depth), dark_trim)
 	
-	# Customer door with glass panel and brass handle inside the alcove
+	# Porta de clientes com painel de vidro e puxador de latão dentro do nicho
 	add_mesh_box(visuals_root, "ShopDoor", Vector3(door_center_x, door_y, alcove_back_z + 0.04), Vector3(door_w, door_h, 0.06), UrbanMaterials.wood_door_navy())
 	var door_glass := add_mesh_box(visuals_root, "DoorGlass", Vector3(door_center_x, door_y + 0.2, alcove_back_z + 0.06), Vector3(door_w * 0.65, door_h * 0.6, 0.02), glass_mat)
 	door_glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -144,8 +144,8 @@ func _build_display_bay(at: Vector3, size: Vector2, bay_name: String) -> void:
 			var px := at.x - size.x * 0.5 + float(p) * step
 			add_mesh_box(visuals_root, bay_name + "_Mullion_%d" % p, Vector3(px, win_y, at.z + 0.04), Vector3(0.06, win_h, 0.06), dark_trim)
 
-	# Productive corner shops show a counter and hanging lights through the
-	# glazing; these are volumes behind the glass, not facade decals.
+	# As lojas de esquina de produção mostram um balcão e luzes penduradas pela
+	# vidraça; são volumes atrás do vidro, não decals de fachada.
 	if building_kind in ["corner_shop","corner_diner"] or building_id.begins_with("Corner"):
 		add_mesh_box(visuals_root,bay_name+"_Counter",Vector3(at.x,.72,at.z-.38),Vector3(maxf(.8,size.x-.35),.18,.42),UrbanMaterials.get_mat("shop_counter",Color("765139"),.82))
 		for pendant_index in maxi(1,int(size.x/2.2)):

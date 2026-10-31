@@ -46,7 +46,7 @@ static func place_of(node: Node) -> Array:
 		script = script.get_base_script()
 	return []
 
-## A staged place can live inside a streamed chunk rather than directly in the region.
+## Um lugar em preparação pode viver dentro de um chunk em streaming em vez de direto na região.
 static func finalize_places(root: Node, area: String, rows: Dictionary) -> void:
 	var pending: Array = [root]
 	while not pending.is_empty():

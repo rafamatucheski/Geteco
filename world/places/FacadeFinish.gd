@@ -1,5 +1,5 @@
 extends RefCounted
-## Static facade components in metre units. No lights, physics or frame updates.
+## Componentes estáticos de fachada em metros. Sem luzes, física ou atualizações por quadro.
 
 static func gable(parent: Node3D, label: String, half_width: float, base_y: float, ridge_y: float, z: float, depth: float, material: Material) -> MeshInstance3D:
 	var vertices := [Vector3(-half_width, base_y, z-depth*.5), Vector3(half_width, base_y, z-depth*.5), Vector3(0, ridge_y, z-depth*.5), Vector3(-half_width, base_y, z+depth*.5), Vector3(half_width, base_y, z+depth*.5), Vector3(0, ridge_y, z+depth*.5)]
@@ -24,7 +24,7 @@ static func window(parent: Node3D, point: Vector3, yaw: float, width: float, hei
 	group.position = point
 	group.rotation.y = yaw
 	parent.add_child(group)
-	# Local +Z points outside; the origin is the external wall face.
+	# +Z local aponta para fora; a origem é a face externa da parede.
 	_piece(group, "WindowRecess", Vector3(0, 0, .025), Vector3(width, height, .05), frame)
 	_piece(group, "WindowGlass", Vector3(0, 0, .06), Vector3(width-.16, height-.16, .025), glass).set_meta("exterior_part", "window_glass")
 	for side in [-1.0, 1.0]:

@@ -1,10 +1,10 @@
 extends Node3D
-## One inhabited storey at its true facade elevation. Floor transfer owns the
-## session token; ground-floor admission remains a continuous walking passage.
+## Um andar habitado na elevação real da fachada. A transferência de andar é dona do
+## token de sessão; a admissão no térreo continua sendo uma passagem a pé contínua.
 signal floor_changed(index: int, rooftop: bool)
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const NATIVE = preload("res://world/places/NativePlace.gd")
-# Retain the shared model script before any street-side first admission.
+# Retém o script de modelo compartilhado antes de qualquer primeira admissão pelo lado da rua.
 const INTERIOR = preload("res://world/places/harbor_buildings/HarborBuildingInterior.gd")
 const CONTENT = preload("res://world/places/harbor_buildings/HarborBuildingContent.gd")
 const OCCUPANTS = preload("res://world/places/harbor_buildings/HarborBuildingOccupants.gd")
@@ -86,8 +86,8 @@ func _sync_floor_contract() -> void:
 	interaction_points["service"] = Vector3.INF
 
 func _mark_walkable_floor(next: Node3D) -> void:
-	# The raised finish clears exterior paving. Only its authored floor may
-	# be stepped onto; furniture keeps the shared actor's strict prohibition.
+	# O acabamento elevado passa acima do calçamento externo. Só o piso autorado dele pode
+	# ser pisado; os móveis mantêm a proibição estrita do ator compartilhado.
 	for body in next.solid_bodies:
 		if str(body.name) != "Floor": continue
 		body.set_meta("pedestrian_step",true)
@@ -175,8 +175,8 @@ func change_floor(next_index: int) -> bool:
 		return false
 	var old := floor_room
 	floor_room = next
-	# Shared traffic/physics caches can still hold resident references until
-	# the frame ends; keep their transforms in-tree until deferred disposal.
+	# Caches compartilhados de trânsito/física ainda podem guardar referências de moradores até
+	# o quadro acabar; mantém os transforms deles na árvore até o descarte adiado.
 	old.set_active(false)
 	old.queue_free()
 	occupants = null
@@ -216,7 +216,7 @@ func _owns_floor_transition(token: int) -> bool:
 	return is_instance_valid(session) and session._owns_transition(token) and session.room == self and session.world.gameplay.health > 0
 
 func _abort_stairs(token: int,was_locked: bool) -> void:
-	# A rescue that took the token also owns its curtain and actor lock.
+	# Um resgate que pegou o token também é dono da cortina e do bloqueio de ator.
 	if not is_instance_valid(session) or not session._owns_transition(token): return
 	await session.door_transition.fade_to(0.0,.20)
 	session._restore_transition_player_lock(was_locked,token)

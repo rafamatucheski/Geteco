@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
-## Edits retain original nodes and gameplay references. Meshes and their authored
-## physical solids share one permanent identity; NPCs and rewards remain gameplay.
+## Edições mantêm os nós originais e as referências de gameplay. Malhas e os sólidos
+## físicos autorados dividem uma identidade permanente; NPCs e recompensas continuam sendo gameplay.
 const SHAPES := preload("res://world/editing/WorldPieceShape.gd")
 const PROPS := preload("res://world/editing/WorldPropFactory.gd")
 const STATE := &"world_interior_editor_state"
@@ -335,8 +335,8 @@ static func validate_layout(place: Node3D, id: String, document: Dictionary) -> 
 				return "O objeto bloqueia a %s do interior. Mova-o antes de salvar." % point.label
 	return ""
 
-## This gate is deliberately conditional: old rooms/fixtures without an edited
-## physical floor keep their previous validation contract.
+## Este portão é condicional de propósito: cômodos/móveis antigos sem piso físico
+## editado mantêm o contrato de validação anterior.
 static func _validate_changed_floor_support(root: Node3D, changes: Dictionary, points: Array, validation: Dictionary) -> String:
 	if not root.has_meta(STATE): return ""
 	var state: Dictionary = root.get_meta(STATE)
@@ -380,7 +380,7 @@ static func _validate_changed_floor_support(root: Node3D, changes: Dictionary, p
 		# Do not introduce unrelated baseline failures where no original floor exists.
 		if original==null: continue
 		var supported := true
-		# The character's contact area must be supported, not just its centre over a hole.
+		# A área de contato do personagem precisa ter apoio, não só o centro sobre um buraco.
 		for offset in [Vector2.ZERO,Vector2(.24,0),Vector2(-.24,0),Vector2(0,.24),Vector2(0,-.24)]:
 			var sample := point+Vector3(offset.x,0,offset.y)
 			var previous: Variant = _support_height(baseline,sample,.2,-.5)
@@ -429,8 +429,8 @@ static func _support_height(shapes: Array, point: Vector3, ceiling: float, botto
 				var candidate: Variant = _triangle_floor(point,vertices[i],vertices[i+1],vertices[i+2])
 				if candidate!=null and float(candidate)<=ceiling and float(candidate)>=bottom and (height==null or float(candidate)>float(height)): height = candidate
 		elif shape is ConvexPolygonShape3D:
-			# A vertical slice's upper convex envelope is the maximum interpolated
-			# height among projected triples. This respects rotated/deformed slabs.
+			# O envelope convexo superior de uma fatia vertical é a maior altura interpolada
+			# entre as triplas projetadas. Isso respeita lajes giradas/deformadas.
 			var vertices: PackedVector3Array = record.points
 			var top: Variant = null
 			for a in vertices.size()-2:

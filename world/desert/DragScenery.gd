@@ -1,6 +1,6 @@
 extends Node3D
-## The same authored/generated rocks as the playable desert. Their visible
-## silhouettes live with the region; streamed cells retain the matching solids.
+## As mesmas rochas autoradas/geradas do deserto jogável. As silhuetas
+## visíveis vivem com a região; as células em streaming retêm os sólidos correspondentes.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const AREA := Rect2(-1012,-1230,1452,502)
 const FORMS=preload("res://world/desert/DesertHorizonRelief.gd")
@@ -19,8 +19,8 @@ func configure(region: Node3D) -> void:
 			var at := Vector3(center.x,region._ground_height(center),center.y)
 			FORMS.create_outcrop(self,at,28.0,23.0,absi(x*771+z*331),false)
 			outcrop_cells[key]=true
-	# The long gap between the strip and the distant escarpment needs a middle
-	# distance. Use flat, unreserved ground; roads, quests and the salt pan win.
+	# O longo vão entre a pista e a escarpa distante precisa de uma distância
+	# intermediária. Usa chão plano não reservado; estradas, missões e a salina têm prioridade.
 	for band in 8:
 		var placed := false
 		var radius := 22.0+float(band%3)*3.0

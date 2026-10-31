@@ -2,7 +2,7 @@ extends Node3D
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 const LOADING_TURBO := preload("res://runtime/LoadingTurbo.gd")
-## Native production geography. Geometry/physics load only near the player.
+## Geografia nativa de produção. Geometria/física só carregam perto do jogador.
 const MOUNTAIN_FACTORY := preload("res://world/mountain_detail/MountainDetailFactory.gd")
 const MOUNTAIN_FORGE := preload("res://world/mountain_detail/forge/MountainForge.gd")
 const FORGE_HERMIT := preload("res://world/mountain_detail/forge/ForgeHermitCabin.gd")
@@ -46,13 +46,13 @@ const PAINTED_MOUNTAIN := preload("res://world/mountain_detail/PaintedMountainPl
 const DATA_PATH := "res://world/regions/OriginalWorldData.json"
 const CELL := 64.0
 const SCALE := 1.0/16.0
-# Cell 5 contains the Harbor-side curved approach. Loading mountain terrain
-# there while both regions are resident creates an elevated wall across the lane.
+# A célula 5 contém a aproximação curva do lado do Harbor. Carregar o terreno da montanha
+# ali com as duas regiões residentes cria uma parede elevada atravessando a faixa.
 const MOUNTAIN_BRIDGE_VOID_CELLS := [Vector2i(5,-5),Vector2i(6,-5),Vector2i(7,-5),Vector2i(8,-5)]
-# Mountain terrain belongs to Mountain's logical territory (WorldConnection3D.logical_region):
-# east of the seam and north of Harbor's northern limit. Harbor owns the ground west of the seam,
-# where Mountain has no authored geography; building procedural hills there covered Harbor roads
-# (island_esplanade at 292.6,-114.2) whenever Mountain became resident near the bridge.
+# O terreno da montanha pertence ao território lógico da Mountain (WorldConnection3D.logical_region):
+# a leste da emenda e ao norte do limite norte do Harbor. O Harbor é dono do chão a oeste da emenda,
+# onde a Mountain não tem geografia autorada; montar morros procedurais ali cobria ruas do Harbor
+# (island_esplanade em 292.6,-114.2) sempre que a Mountain ficava residente perto da ponte.
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 var region_id := "harbor"
 var chunks: Dictionary = {}
@@ -147,11 +147,11 @@ func prewarm() -> void:
 		chunk.free()
 	chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift))
 
-## Warm shared resources using the existing streaming budget and resident cells.
-## The menu must keep drawing/input alive while these offscreen cells warm up.
+## Aquece recursos compartilhados usando o orçamento de streaming existente e as células residentes.
+## O menu precisa manter desenho/entrada vivos enquanto estas células fora da tela aquecem.
 func prewarm_incremental() -> void:
-	# Finish resident jobs first. Otherwise an offscreen warm-up cell could
-	# consume a pending resident key, then discard geometry the camera needs.
+	# Termina primeiro os trabalhos residentes. Senão uma célula de aquecimento fora da tela poderia
+	# consumir uma chave residente pendente e depois descartar geometria de que a câmera precisa.
 	while not is_streaming_idle():
 		await get_tree().process_frame
 	for key in records.keys():
@@ -387,8 +387,8 @@ func _prepare() -> void:
 		for distance in range(0,int(curve.get_baked_length()),64): points.append(CATALOG._at(curve.sample_baked(distance,true),region_id))
 		points.append(CATALOG._at(controls[-1],region_id))
 		_add_road("mountain_pass",points,140*SCALE)
-		# Service tracks meet the pass at its authored centreline; the dirt bed is
-		# visually clipped to the asphalt edge when its first segment is built.
+		# Os trilhos de serviço encontram o passo na linha central autorada; o leito de terra é
+		# recortado visualmente na borda do asfalto quando o primeiro segmento é montado.
 		for track in [
 			[Vector2(6250,340),Vector2(6850,690),Vector2(7350,620),Vector2(7850,580),Vector2(8350,480),Vector2(8700,460)],
 			[Vector2(6950,-250),Vector2(7150,-350),Vector2(7450,-320),Vector2(7750,-220)],
@@ -474,9 +474,9 @@ func _prepare() -> void:
 		reservations.append_array(entries)
 		var terrain_roads: Array[Dictionary] = roads + walkways
 		var site_clearings := _mountain_site_terrain(terrain_roads)
-		# These Harbor routes enter Mountain's resident terrain at the northbank
-		# gateway. Reserve the authored roadway so its hillside mesh/collider
-		# cannot rise into the approach while both regions are loaded.
+		# Estas rotas do Harbor entram no terreno residente da Mountain no portal
+		# da margem norte. Reserva a pista autorada para a malha/colisor da encosta
+		# não subir na aproximação enquanto as duas regiões estão carregadas.
 		for avenue in source_data.harbor_roads:
 			if avenue.id not in ["northbank_gateway_avenue","eastgate_drive","map2_highway_outbound"]: continue
 			var avenue_points := PackedVector3Array()
@@ -497,8 +497,8 @@ func map_routes() -> Array[Dictionary]:
 	return roads + walkways
 
 func _revise_mountain_routes() -> void:
-	# Generate the original forest first, then clear only the changed corridors.
-	# Rejection during seeded placement would move trees throughout the region.
+	# Gera primeiro a floresta original e depois limpa só os corredores mudados.
+	# Rejeitar durante o posicionamento com semente moveria árvores pela região inteira.
 	for key in records:
 		records[key] = records[key].filter(func(record): return record.kind != "road")
 	roads.clear()
@@ -539,8 +539,8 @@ func _record_path(path: Dictionary) -> void:
 
 func _add_road(id: String,points: PackedVector3Array,width: float,surface: String = "asphalt") -> void:
 	roads.append({"id":id,"points":points,"width":width,"surface":surface})
-	# A player-accessible dead end with parking, never an ambient bus/truck route.
-	# Kept here so the world-editor reconstruction preserves the same policy.
+	# Um beco sem saída acessível ao jogador com estacionamento, nunca rota ambiente de ônibus/caminhão.
+	# Mantido aqui para a reconstrução do editor de mundo preservar a mesma política.
 	if id==preload("res://world/places/fishing/FishingRuralLayout.gd").ROAD_ID:
 		roads[-1]["traffic"] = false
 		roads[-1]["crossings"] = false
@@ -556,7 +556,7 @@ func _add_road(id: String,points: PackedVector3Array,width: float,surface: Strin
 			if miter.is_zero_approx(): miter = next_normal
 			var reach := width*.5/maxf(.45,miter.dot(next_normal))
 			if id == "mountain_pass":
-				# Match the two 3.875 m Harbor lanes, easing to the authored pass width.
+				# Casa as duas faixas de 3.875 m do Harbor, suavizando até a largura autorada do passo.
 				var join := smoothstep(WORLD_CONNECTION.SEAM.x, WORLD_CONNECTION.TRAFFIC_MERGE_X, points[point_index].x)
 				reach *= lerpf(7.75 / width, 1.0, join)
 			edges.append({"left":points[point_index]+miter*reach,"right":points[point_index]-miter*reach})
@@ -591,15 +591,15 @@ func _set_focus(point: Vector3, complete_focus_chunk: bool) -> void:
 	current_cell = cell
 	_residency_dirty = true
 	pending.clear()
-	# The production streaming budget requests the occupied cell and its eight
-	# neighbours. retention_radius remains a wider grace band while moving.
+	# O orçamento de streaming de produção pede a célula ocupada e as oito
+	# vizinhas. retention_radius continua sendo uma faixa de tolerância maior em movimento.
 	for x in range(-1,2):
 		for z in range(-1,2):
 			var key := cell+Vector2i(x,z)
 			if not chunks.has(key): pending.append(key)
 	pending.sort_custom(func(a: Vector2i,b: Vector2i): return Vector2(a-cell).length_squared()<Vector2(b-cell).length_squared())
-	# The occupied cell gets collision before admission; records and dressing remain
-	# queued so crossing a cell boundary cannot synchronously build the whole chunk.
+	# A célula ocupada recebe colisão antes da admissão; registros e mobiliário ficam
+	# na fila para que cruzar uma borda de célula não monte o chunk inteiro de forma síncrona.
 	pending.erase(cell)
 	if complete_focus_chunk: _ensure_chunk(cell)
 	else: _ensure_chunk_surfaces(cell)
@@ -607,10 +607,10 @@ func _set_focus(point: Vector3, complete_focus_chunk: bool) -> void:
 	_trim_chunks(cell)
 
 func prepare_collision_at(point: Vector3) -> bool:
-	# Emergency vehicles are physical actors and may briefly take a neighbouring
-	# route while the player remains still.  Admit their occupied/next cell before
-	# physics instead of letting them drive over a road whose streamed floor is
-	# still absent.
+	# Veículos de emergência são atores físicos e podem pegar por um instante uma rota
+	# vizinha enquanto o jogador fica parado.  Admite a célula ocupada/seguinte deles antes
+	# da física em vez de deixá-los dirigir sobre uma rua cujo piso em streaming
+	# ainda não existe.
 	var key := _cell(point)
 	var had_chunk := chunks.has(key)
 	var collision_began := STALL_WORK.begin()
@@ -696,7 +696,7 @@ func _trim_chunks(cell: Vector2i) -> void:
 			_chairlift_cleanup_pending = true
 
 func _suspend_chunk_vehicles(key: Vector2i) -> void:
-	# Suspend before removing support; ProductionWorld resumes after its ground check.
+	# Suspende antes de remover o apoio; o ProductionWorld retoma depois da checagem de chão.
 	for car in get_tree().get_nodes_in_group("drivable"):
 		if car is CharacterBody3D and car.is_visible_in_tree() and car.is_physics_processing() and _cell(car.global_position) == key:
 			# Células de Harbor e Mountain se sobrepõem na costura: cada região só suspende o
@@ -911,8 +911,8 @@ func _retire_chunk(chunk: Node3D) -> void:
 	_detach_cached_records(chunk)
 	STALL_WORK.finish("retire.detach_cached_records", stall_began, {"region": region_id})
 	stall_began = STALL_WORK.begin()
-	# Leaf-by-leaf disposal spans frames. Retired rigs must stop animating
-	# before a joint is freed while its model still exists in the scene tree.
+	# O descarte folha a folha se espalha por quadros. Rigs aposentados precisam parar de animar
+	# antes de uma junta ser liberada enquanto o modelo ainda existe na árvore de cena.
 	chunk.process_mode = Node.PROCESS_MODE_DISABLED
 	chunk.hide()
 	# Fusão e casca de sombra em andamento param ao ver a marca (o trecho continua na árvore escondido).
@@ -1007,7 +1007,7 @@ func _tree_collision(tree: Node3D, chunk: Node3D) -> void:
 	var trunk := _box(tree,"TrunkSolid",Vector3(0,1.4,0),Vector3(.4,2.8,.4),Color("00000000"),true)
 	trunk.visible = false
 	if region_id in ["mountain","harbor"]:
-		# Keep only the physical trunk: its hidden proxy must not become a visible shard.
+		# Mantém só o tronco físico: o proxy escondido não pode virar um estilhaço visível.
 		trunk.get_child(0).reparent(tree)
 		trunk.free()
 		var radius := .4 * maxf(tree.global_basis.x.length(),tree.global_basis.z.length())
@@ -1053,8 +1053,8 @@ func _land_piece(chunk: Node3D, piece: Rect2, cover: Array[PackedVector2Array]) 
 	var land := MeshInstance3D.new()
 	land.name = "Land"
 	land.mesh = mesh
-	# Native clipped top replaces FreightOutskirts' old y=.001 overlay.
-	# Authored woodland land matches this rectangle, already split by chunk.
+	# O topo nativo recortado substitui a antiga sobreposição em y=.001 da FreightOutskirts.
+	# O terreno de bosque autorado bate com este retângulo, já dividido por chunk.
 	var woodland := Rect2(-430,-160,350,318).encloses(piece)
 	land.material_override = preload("res://activities/motocross/MotocrossGroundDetail.gd").ground_material() if woodland else _material(Color("737b69"))
 	if woodland: land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -1189,13 +1189,13 @@ func _build_road_surfaces(chunk: Node3D, rect: Rect2) -> void:
 			dirt.set_shader_parameter("surface_softness",.6)
 			mesh.material_override = dirt
 			mesh.set_instance_shader_parameter("uv_origin",(Vector2(by_color[color][0].x,by_color[color][0].z)/256.0).floor()*64.0)
-			# Preserve the authored support exactly; replace only the hard cutout
-			# with a wider visual shoulder that dissolves into the real ground.
+			# Preserva exatamente o apoio autorado; troca só o recorte duro
+			# por um acostamento visual mais largo que se dissolve no chão real.
 			mesh.hide()
 			if terrain == null: _build_soft_road_surface(chunk,rect,dirt)
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		chunk.add_child(mesh)
-		# Support uses the same outline as the surface, at terrain height.
+		# O apoio usa o mesmo contorno da superfície, na altura do terreno.
 		mesh.create_trimesh_collision()
 		mesh.get_child(0).position.y = -.026
 	chunk.remove_meta("road_surface_rows")
@@ -1220,7 +1220,7 @@ func _build_soft_road_surface(chunk: Node3D, rect: Rect2, material: ShaderMateri
 			if not ROUTE_GEOMETRY.bounds(shape).intersects(rect): continue
 			var pieces: Array[PackedVector2Array] = []
 			for part in Geometry2D.intersect_polygons(shape,boundary): pieces.append(part)
-			# Never paint loose soil over an asphalt lane or its intentional edge.
+			# Nunca pinta solo solto sobre uma faixa de asfalto nem sobre a borda intencional dela.
 			for footprint in route_geometry.footprints:
 				if not paved.has(footprint.id) or not footprint.bounds.intersects(rect): continue
 				var remaining: Array[PackedVector2Array] = []
@@ -1265,8 +1265,8 @@ func _build_soft_road_surface(chunk: Node3D, rect: Rect2, material: ShaderMateri
 	soft.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.add_child(soft)
 
-## The cemetery provides its own floor and collision at y=0. Harbor land has
-## the same top face there; drawing both causes depth fighting and light flicker.
+## O cemitério fornece o próprio piso e colisão em y=0. O terreno do Harbor tem
+## a mesma face de cima ali; desenhar os dois causa briga de profundidade e luz piscando.
 ## `_rect_outside` contra vários recortes (os bueiros), peça a peça.
 func _rects_outside_all(rect: Rect2, holes: Array[Rect2]) -> Array[Rect2]:
 	var pieces: Array[Rect2] = [rect]
@@ -1512,11 +1512,11 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		if done: job.erase("harbor_surfaces")
 		else: job["harbor_surfaces"] = state
 	else:
-		# These authored cells are the water spans of HarborMountainConnector and
+		# Estas células autoradas são os vãos de água do HarborMountainConnector e da
 		# HarborBridgeCrossing.
-		# WorldConnection3D supplies the shared deck/abutment while Harbor owns
-		# the water below. Building generic mountain terrain here would create a
-		# solid wall through the original bridge route when both regions reside.
+		# O WorldConnection3D fornece o tabuleiro/encontro compartilhado e o Harbor é dono
+		# da água embaixo. Montar terreno genérico de montanha aqui criaria uma
+		# parede sólida atravessando a rota original da ponte quando as duas regiões residem.
 		if _mountain_owns_terrain(key):
 			var shore_edges := preload("res://world/regions/MountainBridgeShore.gd").frontiers(key,MOUNTAIN_BRIDGE_VOID_CELLS,_mountain_owns_terrain)
 			terrain.build_chunk(chunk,rect,shore_edges,_surface_terrain_data)
@@ -1553,8 +1553,8 @@ func _harbor_surface_substep(state: Dictionary) -> bool:
 			if harbor_road_geometry != null:
 				harbor_road_geometry.build_chunk(chunk,rect)
 				ground_cover.append_array(harbor_road_geometry.chunk_cover)
-				# The opaque earth-to-grass strip already supplies its own finish.
-				# Reserve only the actual clipped triangles, never their bounding box.
+				# A faixa opaca de terra para grama já fornece o próprio acabamento.
+				# Reserva só os triângulos recortados reais, nunca a caixa envolvente deles.
 				var chunk_outline := GROUND_CUT.rect_polygon(rect)
 				for triangle in harbor_road_geometry._earth_verge_triangles:
 					if not GROUND_CUT.bounds(triangle.points).intersects(rect): continue
@@ -1566,8 +1566,8 @@ func _harbor_surface_substep(state: Dictionary) -> bool:
 				if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
 			for footprint in harbor_dressing_ground:
 				if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
-			# Santa Mare owns the visible deck. Land and authored surfaces keep their
-			# colliders, but must not render a second floor underneath the ship.
+			# O Santa Mare é dono do convés visível. O terreno e as superfícies autoradas mantêm os
+			# colisores, mas não podem renderizar um segundo piso embaixo do navio.
 			var santa_deck := PackedVector2Array()
 			for point in SOUTH_PORT_LAYOUT.ship_hull(): santa_deck.append(point*SCALE)
 			if GROUND_CUT.bounds(santa_deck).intersects(rect): ground_cover.append(santa_deck)
@@ -1653,9 +1653,9 @@ func _harbor_surface_substep(state: Dictionary) -> bool:
 		9:
 			var port_surface: Rect2 = state.port_surface
 			if port_surface.has_area():
-				# Visual finish only: OriginalSouthPort/land already own physical support.
-				# Keep the apron below every road finish. Its former .014 top was
-				# exactly coplanar with CURB_COLOR, causing flickering along the roads.
+				# Só acabamento visual: OriginalSouthPort/terreno já são donos do apoio físico.
+				# Mantém o pátio abaixo de todo acabamento de rua. O antigo topo de .014 era
+				# exatamente coplanar com CURB_COLOR, causando cintilação ao longo das ruas.
 				# Sem a área das ruas: antes o concreto inteiro ficava por baixo delas.
 				var apron_mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract([GROUND_CUT.rect_polygon(port_surface)],state.port_cover),.004,1.0)
 				if apron_mesh != null:
@@ -1788,10 +1788,10 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			var road_b: Vector3 = record.b
 			var mountain_pass_road: bool = record.get("road_id","") == "mountain_pass"
 			var bridge_join: bool = mountain_pass_road and road_a.distance_to(CATALOG._at(Vector2(3000,400),"mountain")) < 0.1
-			# MountainPass is authored at deck height. Lower its 5 cm road slab so
-			# every segment top is coplanar with the bridge and has no raised end lip.
-			# The first segment also overlaps the deck; the traffic curve still
-			# starts at the authored seam.
+			# O MountainPass é autorado na altura do tabuleiro. Baixa a laje de estrada de 5 cm para
+			# o topo de cada segmento ficar coplanar com a ponte e sem borda elevada na ponta.
+			# O primeiro segmento também sobrepõe o tabuleiro; a curva de trânsito ainda
+			# começa na emenda autorada.
 			if bridge_join:
 				road_a -= (road_b-road_a).normalized()*5.0
 			var offset: Vector3 = road_b-road_a
@@ -1806,14 +1806,14 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			var rows: Array = chunk.get_meta("road_surface_rows",[])
 			for piece in pieces: rows.append({"polygon":piece,"top":.026,"color":road_color})
 			chunk.set_meta("road_surface_rows",rows)
-			# Only the main two-lane pass needs a centre stripe.
+			# Só o passo principal de duas faixas precisa de faixa central.
 			if mountain_pass_road:
 				if unified_bridge.enabled(): _mountain_center_marking(chunk,center,offset)
 				else:
 					var line := _box(chunk,"CenterLine",center+Vector3(0,.034,0),Vector3(.09,.008,offset.length()*.64),Color("b6aa71"))
 					line.rotation.y = atan2(offset.x,offset.z)
-			# Rural pass/track shoulders are terrain. The generic 2.5 m sidewalks
-			# crossed junction asphalt and made wide floating ribbons on the bends.
+			# Os acostamentos rurais de passo/trilha são terreno. As calçadas genéricas de 2.5 m
+			# cruzavam o asfalto dos cruzamentos e faziam fitas largas flutuando nas curvas.
 		"building": _building(chunk,record.data)
 		"original_facade": _original_facade(chunk,record.data)
 		"container":
@@ -1849,10 +1849,10 @@ func _mountain_center_marking(chunk: Node3D, center: Vector3, offset: Vector3) -
 	chunk.add_child(clipped_line)
 
 func _mountain_owns_terrain(key: Vector2i) -> bool:
-	# MountainTerrain3D only builds whole 64 m cells. A cell is Mountain's when its centre is:
-	# "touches Mountain" also claimed row -2, whose Mountain share is a 3 m strip south of
-	# LOGICAL_NORTH_LIMIT_Z while the rest is Harbor. Column 7 keeps 8 m west of the seam, where
-	# Harbor authors no ground, road or sidewalk (tests/test_bridge_approach_terrain.gd).
+	# O MountainTerrain3D só monta células inteiras de 64 m. Uma célula é da Mountain quando o centro dela é:
+	# "toca a Mountain" também pegava a fileira -2, cuja parte da Mountain é uma faixa de 3 m ao sul de
+	# LOGICAL_NORTH_LIMIT_Z enquanto o resto é Harbor. A coluna 7 mantém 8 m a oeste da emenda, onde
+	# o Harbor não autora chão, estrada nem calçada (tests/test_bridge_approach_terrain.gd).
 	if key in MOUNTAIN_BRIDGE_VOID_CELLS: return false
 	var center := (Vector2(key)+Vector2.ONE*.5)*CELL
 	# Serra ilha: célula inteira a mais de 20 m mar adentro não tem terreno (antes ia sem fim para leste
@@ -1934,7 +1934,7 @@ func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := f
 		var a := vertices[indices[i]]
 		var b := vertices[indices[i+1]]
 		var c := vertices[indices[i+2]]
-		# Hole clipping may retain coincident bridge vertices before the cover cut.
+		# O recorte de buracos pode reter vértices coincidentes da ponte antes do corte de cobertura.
 		if (b-a).cross(c-a).length_squared() == 0.0: continue
 		surface.set_normal(Vector3.UP)
 		surface.set_uv(Vector2(a.x,a.z))
@@ -1954,8 +1954,8 @@ func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := f
 	mesh.create_trimesh_collision()
 	for body in mesh.get_children():
 		if body is StaticBody3D: body.collision_layer = 1; body.collision_mask = 0
-	# Support remains continuous under road/lot finishes; only exposed ground
-	# is rendered. The collider was built before replacing the visual mesh.
+	# O apoio continua contínuo sob os acabamentos de rua/lote; só o chão exposto
+	# é renderizado. O colisor foi montado antes de trocar a malha visual.
 	if not cover.is_empty():
 		var exposed := GROUND_CUT.flat_mesh(GROUND_CUT.subtract_exact([polygon],cover),0.0,1.0)
 		if exposed == null: mesh.visible = false
@@ -2003,7 +2003,7 @@ func _building(chunk: Node3D, data: Dictionary) -> void:
 		facade["entry_position"] = definition.entry_position
 		facade["return_position"] = definition.return_position
 		facade["variant"] = definition.variant
-		# The catalog is authoritative for replaced original facades and transition origins.
+		# O catálogo é a autoridade para fachadas originais substituídas e origens de transição.
 		facade.position = definition.exterior_position
 	var art := URBAN_FACTORY.populate_chunk(chunk,facade)
 	if art != null:
@@ -2054,7 +2054,7 @@ func _mountain_place(chunk: Node3D, data: Dictionary) -> void:
 	elif data.id in ["mountain_outfitters","mountain_boutique","mountain_village_outfitters","mountain_gunshop","mountain_mystery_cave"]:
 		_original_facade(chunk,data)
 	else:
-		# Remaining facades are deliberately absent until their original geometry is ported.
+		# As fachadas restantes estão ausentes de propósito até a geometria original delas ser portada.
 		var marker := Marker3D.new()
 		marker.name = data.id
 		marker.position = data.entry_position
@@ -2072,7 +2072,7 @@ func _mountain_place(chunk: Node3D, data: Dictionary) -> void:
 
 func _original_facade(chunk: Node3D,data: Dictionary) -> void:
 	if data.region == "harbor":
-		# Catalog-only residences/cemetery are not duplicated in harbor_buildings.
+		# Residências/cemitério só do catálogo não são duplicados em harbor_buildings.
 		var branch_art := URBAN_FACTORY.populate_chunk(chunk,data)
 		if branch_art != null:
 			branch_art.add_to_group("exterior_reveal_building")
@@ -2133,16 +2133,16 @@ func _prepare_forest() -> void:
 					for record in records.get(key+Vector2i(x,z),[]):
 						if record.kind == "road":
 							var nearest := Geometry3D.get_closest_point_to_segment(point,record.a,record.b)
-							# Keep the pre-migration5.625m exclusion for EastVale: widening its
-							# visual dirt bed by0.5m must not reroll unrelated groves.
+							# Mantém a exclusão de 5.625m de antes da migração para a EastVale: alargar o
+							# leito visual de terra dela em 0.5m não pode sortear de novo bosques sem relação.
 							var clearance: float = 5.625 if record.get("surface","")=="earth" else record.width*.5+4
 							if point.distance_to(nearest)<clearance: blocked=true
 						elif record.kind == "tree" and point.distance_to(record.position)<2.4: blocked=true
 			if blocked: continue
 			_record(point,{"kind":"tree","position":point,"variant":placed%8,"snow":grove.snow})
 			placed+=1
-	# Filter after deterministic generation: preserve every tree outside the authored clearing.
-	# Rejecting during RNG placement would reroll later groves across the whole mountain.
+	# Filtra depois da geração determinística: preserva toda árvore fora da clareira autorada.
+	# Rejeitar durante o posicionamento do RNG sortearia de novo bosques posteriores pela montanha inteira.
 	for key in records:
 		records[key] = records[key].filter(func(record):
 			if record.kind != "tree": return true
@@ -2170,8 +2170,8 @@ func _build_ship(chunk: Node3D) -> void:
 	deck.material_override = PORT_SHIP_PAINT.material("deck")
 	chunk.add_child(deck)
 	deck.create_trimesh_collision()
-	# Hull walls make the productive Northstar silhouette readable from the
-	# oblique game camera instead of leaving a paper-thin deck over water.
+	# As paredes do casco deixam a silhueta produtiva do Northstar legível da
+	# câmera oblíqua do jogo em vez de deixar um convés fino como papel sobre a água.
 	for index in outline.size():
 		var a: Vector2 = outline[index]
 		var b: Vector2 = outline[(index+1)%outline.size()]
@@ -2179,8 +2179,8 @@ func _build_ship(chunk: Node3D) -> void:
 		var wall := _box(chunk,"NorthstarHull",Vector3((a.x+b.x)*.5,-.65,(a.y+b.y)*.5),Vector3(.18,1.3,delta.length()),Color("35464b"),true)
 		wall.rotation.y = atan2(delta.x,delta.y)
 		wall.material_override = PORT_SHIP_PAINT.material("hull")
-	# End at the straight port hull edge: the deck supplies finish and support
-	# beyond x=3372. The former end at 3418 overlapped the deck.
+	# Termina na borda reta do casco do porto: o convés fornece acabamento e apoio
+	# além de x=3372. O antigo fim em 3418 sobrepunha o convés.
 	var gangway := Rect2(3130*SCALE,1742*SCALE,(3372-3130)*SCALE,40*SCALE)
 	_box(chunk,"NorthstarGangway",Vector3(gangway.get_center().x,-.03,gangway.get_center().y),Vector3(gangway.size.x,.06,gangway.size.y),Color("7c8073"),true)
 	for side in [1738,1782]:
@@ -2192,7 +2192,7 @@ func _build_ship(chunk: Node3D) -> void:
 			_ship_rail(chunk,Vector2(a.x,990*SCALE),Vector2(a.x,1738*SCALE))
 			_ship_rail(chunk,Vector2(a.x,1782*SCALE),Vector2(a.x,2070*SCALE))
 		elif is_equal_approx(a.y,2115*SCALE) and is_equal_approx(b.y,2115*SCALE):
-			# Preserve the authored south walkway, with rails on both sides of its mouth.
+			# Preserva o passeio sul autorado, com guarda-corpos dos dois lados da boca.
 			_ship_rail(chunk,Vector2(3400*SCALE,a.y),Vector2(3534*SCALE,a.y))
 			_ship_rail(chunk,Vector2(3606*SCALE,a.y),Vector2(3740*SCALE,a.y))
 		else: _ship_rail(chunk,a,b)
@@ -2245,7 +2245,7 @@ func _ship_rail(chunk: Node3D,a: Vector2,b: Vector2) -> void:
 	rail.rotation.y = atan2(delta.x,delta.y)
 
 static func _helipad_reserved(point: Vector2) -> bool:
-	# New landing apron and access corridor, including the pine canopy footprint.
+	# Novo pátio de pouso e corredor de acesso, incluindo a área da copa dos pinheiros.
 	if point.distance_to(Vector2(6180,-2832))<125: return true
 	var walk := PackedVector2Array([Vector2(6410,-2660),Vector2(6270,-2720),Vector2(6180,-2770),Vector2(6180,-2782.4)])
 	for i in range(walk.size()-1):
@@ -2254,7 +2254,7 @@ static func _helipad_reserved(point: Vector2) -> bool:
 
 static func _fort_exit_reserved(point: Vector2) -> bool:
 	var exit_position: Vector3 = preload("res://gameplay/urban_v1/fort/MountainFortExit3D.gd").WORLD_POSITION
-	# Reserve the formation and its full entrance approach before tree placement.
+	# Reserva a formação e a aproximação inteira da entrada antes de posicionar as árvores.
 	return Rect2(Vector2(exit_position.x-6.5,exit_position.z-6.5),Vector2(13.0,13.0)).has_point(point)
 ## Registra em `slow_stream_records` uma etapa do streaming que passou de `limit_usec`
 ## (só para diagnóstico com a sonda; não tem efeito sem a meta).

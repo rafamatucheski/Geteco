@@ -1,6 +1,6 @@
 extends RefCounted
-## Panorama-only continuation below streamed Harbor water. World-coordinate
-## wave phases and bridge depression match the existing sea, without physics.
+## Continuação só de panorama abaixo da água do Harbor em streaming. As fases de onda
+## em coordenadas do mundo e a depressão da ponte batem com o mar existente, sem física.
 const OCEAN = preload("res://world/regions/HarborOcean.gd")
 const DESERT = preload("res://world/desert/DesertLayout.gd")
 const CANAL = preload("res://world/urban_detail/CanalTunnel3D.gd")
@@ -17,10 +17,10 @@ static func build() -> MeshInstance3D:
 	var cuts: Array[Rect2] = [DESERT.BOUNDS, CANAL.WATER_CUT, Rect2(-413.25,85.35,6.10,3.30)]
 	if SKATE.enabled(): cuts.append(SKATE.FOOTPRINT)
 	for opening in PLACES.sewer_openings(): cuts.append(Rect2(opening.position/16.0,opening.size/16.0))
-	# A complete ocean extends past the optical far plane in every direction.
-	# The old four northern rows exposed an artificial edge at z=-1024.
-	# Coarse distant tiles preserve the shader's exact256m UV period; only
-	# the local depression needs dense geometry, as waves do not displace vertices.
+	# Um oceano completo se estende além do plano distante óptico em todas as direções.
+	# As quatro fileiras norte antigas expunham uma borda artificial em z=-1024.
+	# Ladrilhos distantes grosseiros preservam o período exato de UV de 256m do shader; só
+	# a depressão local precisa de geometria densa, já que as ondas não deslocam vértices.
 	for tile_z in range(-32,32):
 		for tile_x in range(-32,32):
 			var origin := Vector2(tile_x,tile_z)*256.0
@@ -36,8 +36,8 @@ static func build() -> MeshInstance3D:
 			for z in subdivisions:
 				for x in subdivisions:
 					var p := origin+Vector2(x,z)*stride
-					# Match both 4m samples and the original diagonal around the
-					# bridge depression. Coarse interpolation could rise above it.
+					# Casa as duas amostras de 4m e a diagonal original em volta da
+					# depressão da ponte. Uma interpolação grosseira poderia subir acima dela.
 					var divisions := int(stride/4.0) if Rect2(384,-368,192,160).has_point(p) else 1
 					var step := stride/float(divisions)
 					for sub_z in divisions:

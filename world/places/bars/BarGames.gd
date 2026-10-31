@@ -1,5 +1,5 @@
 extends RefCounted
-## Nine-dart practice and ten-shot pool. No money, inventory or campaign mutation.
+## Prática de nove dardos e sinuca de dez tacadas. Sem dinheiro, inventário nem mudança na campanha.
 const SEGMENTS := [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5]
 const SCRATCH_PENALTY := 50
 const POCKETS := [Vector2(0,0),Vector2(320,0),Vector2(640,0),Vector2(0,320),Vector2(320,320),Vector2(640,320)]
@@ -32,7 +32,7 @@ func reset(game_kind: String) -> void:
 	moving = false
 	status = ""
 	balls.append({"position":Vector2(170,160),"velocity":Vector2.ZERO,"sunk":false})
-	# Touching triangle (rows 17.5 apart, 20.2 across) so the break spreads the rack.
+	# Triângulo encostado (fileiras a 17.5 de distância, 20.2 na largura) para a quebra espalhar o conjunto.
 	for point in [Vector2(410,160),Vector2(427.5,149.9),Vector2(427.5,170.1),Vector2(445,139.8),Vector2(445,160),Vector2(445,180.2)]:
 		balls.append({"position":point,"velocity":Vector2.ZERO,"sunk":false})
 
@@ -64,7 +64,7 @@ func shoot() -> bool:
 
 func step(delta: float) -> void:
 	if not moving: return
-	# Bounded 240 Hz substeps prevent tunnelling at the strongest shot.
+	# Subpassos limitados de 240 Hz evitam tunelamento na tacada mais forte.
 	var steps := maxi(1,int(ceil(minf(delta,.1)*240)))
 	var dt := minf(delta,.1)/steps
 	for substep in steps:
@@ -119,7 +119,7 @@ func step(delta: float) -> void:
 		for ball in balls: ball.velocity = Vector2.ZERO
 		if balls[0].sunk:
 			balls[0].sunk = false
-			# Ball in hand: choose a clear point on the baulk line.
+			# Bola na mão: escolhe um ponto livre na linha de saída.
 			for y in [160,60,260,110,210]:
 				var free := true
 				for index in range(1,balls.size()):

@@ -1,9 +1,9 @@
 extends RefCounted
 class_name HarborV1BuildingProfile
 
-## Direct translation of ProceduralBuilding._palette and custom HarborBuilding
-## typologies. Height is deliberately not inferred here: V1 screen extrusion
-## is not world Y, while the two published skyline overrides retain /16.
+## Tradução direta de ProceduralBuilding._palette e das tipologias personalizadas de
+## HarborBuilding. A altura de propósito não é inferida aqui: a extrusão de tela da V1
+## não é Y do mundo, e as duas sobreposições publicadas de skyline mantêm /16.
 const SOURCE_SITE_ORDERS := [
 	["NorthFrontage0","NorthFrontage1","NorthFrontage2","NorthFrontage3","NorthFrontage4","NorthFrontage5","FoundryTerraceWest","FoundryTerraceEast","FoundryLofts","CornerDiner","Laundry","UnionWorkshop","MarketHall","ColdStorage","Garage","Police","Clinic","Apartments","FreightOffice","FreightDepot"],
 	["ExchangeTower","CivicTower","MaritimeMuseum","NorthbankHomes0","NorthbankHomes1","NorthbankHomes2","IslandGrocer","IslandCinema","Aquarium","PromenadeCafe","NorthbankFront0","NorthbankFront1","NorthbankFront2","NorthbankFront3"],
@@ -66,7 +66,7 @@ static func palette(kind: String, building_id: String, variant_seed: int, source
 		result={"roof":Color("455258"),"edge":Color("252f34"),"front":Color("6f7977"),"accent":Color("a89358"),"window":Color("5b8998"),"mortar":Color("586361")}
 	else:
 		result={"roof":Color("5a4840"),"edge":Color("302824"),"front":Color("776354"),"accent":Color("b3955c"),"window":Color("537d87"),"mortar":Color("5e5045")}
-	# HarborBuilding._palette replaces the generic accent with the authored site color.
+	# HarborBuilding._palette substitui o acento genérico pela cor autorada do sítio.
 	result.accent=source_accent
 	result["building_id"]=building_id
 	return result

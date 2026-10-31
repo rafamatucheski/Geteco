@@ -5,7 +5,7 @@ const PAVING := preload("res://world/urban_detail/HarborPaving.gd")
 const PAINTED_FINISHES := {"concrete":"concrete","asphalt":"service","pavers":"brick"}
 static var painted_enabled := OS.get_environment("GETECO_PAINTED_GROUND") != "0"
 const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
-const STEP := 4.0 # Same grid and triangle diagonal as MountainTerrain3D.
+const STEP := 4.0 # Mesma grade e diagonal de triângulo do MountainTerrain3D.
 const SURFACES := ["grass","earth","sand","gravel","concrete","asphalt","pavers"]
 const LABELS := ["Grama","Terra","Areia","Cascalho","Concreto","Asfalto","Piso de blocos"]
 const COLORS := ["5e7945","897053","c4b383","8a8b80","92958c","484e50","a09079"]
@@ -129,7 +129,7 @@ static func create(row: Dictionary, clip: Rect2, height: Callable = Callable(), 
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var uvs := PackedVector2Array()
-	# Clip to the base terrain triangles, preserving its exact piecewise height.
+	# Recorta pelos triângulos do terreno base, preservando a altura exata por partes.
 	for z in range(floori(rect.position.y/STEP),ceili(rect.end.y/STEP)):
 		for x in range(floori(rect.position.x/STEP),ceili(rect.end.x/STEP)):
 			var a := Vector2(x,z)*STEP

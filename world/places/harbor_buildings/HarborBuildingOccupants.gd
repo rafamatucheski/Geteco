@@ -1,5 +1,5 @@
 extends Node3D
-## Native bodies, real human rigs and work props live only with the active floor.
+## Corpos nativos, rigs humanos reais e props de trabalho vivem só com o andar ativo.
 ## A estação (posição, pessoa e atividades aceitas) vem da semente do prédio;
 ## a atividade desta visita e as reações a ameaça são sorteadas aqui.
 const CONTENT := preload("res://world/places/harbor_buildings/HarborBuildingContent.gd")
@@ -155,5 +155,5 @@ func notice_intrusion(origin: Vector3, owner_session) -> void:
 	var binding := preload("res://audio/VoiceActorBinding.gd").resolve(speaker, "building_warning")
 	var spoken := preload("res://audio/ActorDialogueVoice.gd").speak(speaker, canonical, binding)
 	owner_session.show_speech(str(speaker.social_snapshot().get("name", "")), str(spoken.get("message", canonical)), maxf(3.0, float(spoken.get("duration", 0.0))), false, str(binding.get("persona", "")), canonical, str(binding.get("character_id", "")), str(binding.get("section", "")))
-	# The visible break-in starts testimony; police only learn it after the call.
+	# O arrombamento visível inicia o testemunho; a polícia só fica sabendo depois da ligação.
 	if not illicit and is_instance_valid(gameplay): gameplay.report_observed_crime(12, origin, "burglary")

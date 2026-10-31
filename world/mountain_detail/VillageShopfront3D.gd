@@ -1,11 +1,11 @@
 extends Node3D
 class_name VillageShopfront3D
 
-## 3D exterior model of the Mountain Village winter outfitters ("Casacos da Vila").
-## Reconstructs the facade from MountainTransitArchitecture3D.gd while strictly obeying AGENTS.md rules:
+## Modelo 3D externo da loja de roupas de inverno do vilarejo da montanha ("Casacos da Vila").
+## Reconstrói a fachada de MountainTransitArchitecture3D.gd obedecendo à risca as regras do AGENTS.md:
 ## 1. Facade signage displays exclusively the proper name: "Casacos da Vila".
-## 2. Display window features mannequins with natural human proportions dressed in winter apparel.
-## 3. Native StaticBody3D collision on layer 1, mask 0, preserving open entrance steps.
+## 2. A vitrine tem manequins com proporções humanas naturais vestidos com roupas de inverno.
+## 3. Colisão StaticBody3D nativa na camada 1, máscara 0, preservando os degraus de entrada abertos.
 
 @export var shop_size: Vector2 = Vector2(10.1, 4.1) # ~162 x 66 px
 @export var shop_height: float = 3.8

@@ -1,5 +1,5 @@
 extends Node3D
-## Digo has a wide central vehicle bay, west tools and east tuning desk.
+## O Digo tem uma baia central larga para veículos, ferramentas a oeste e bancada de acerto a leste.
 const G := preload("res://world/desert/DesertGeometry.gd")
 var variant := 0
 func _ready() -> void:
@@ -35,8 +35,8 @@ func _ready() -> void:
 	preload("res://world/desert/DesertInteriorFinish.gd").apply(self,false)
 	preload("res://world/desert/DigoWorkshopProps.gd").install(self)
 	preload("res://world/desert/DigoWorkshopMaterials.gd").apply(self)
-	# The room ends beyond this real shutter. Admission opens it under the same
-	# owned driving transition as the exterior gate; speed never permits a fall.
+	# O cômodo termina além desta porta de enrolar real. A admissão a abre sob a mesma
+	# transição de direção possuída do portão externo; a velocidade nunca permite queda.
 	var exit_gate := preload("res://world/desert/DigoVehicleGate.gd").new()
 	exit_gate.name = "InteriorVehicleGate"
 	exit_gate.interior_gate = true

@@ -1,6 +1,6 @@
 extends RefCounted
-## Local rural extension. NativeRegion owns support/shore/streaming; the venue
-## runtime owns fishing props and anglers. Coordinates are Harbor metres.
+## Extensão rural local. O NativeRegion é dono de apoio/margem/streaming; o runtime
+## do local é dono dos props de pesca e dos pescadores. As coordenadas são metros do Harbor.
 const LOCATION := preload("res://runtime/FishingLocation.gd")
 const ROAD_ID := "sereno_woodland_access"
 const EXTENT := Rect2(-585,-128,155,203)
@@ -30,7 +30,7 @@ static func edge_distance(point: Vector2) -> float:
 	return distance
 
 static func tree_available(point: Vector2) -> bool:
-	# The full bank, casting silhouettes and southern gameplay camera remain clear.
+	# A margem inteira, as silhuetas de arremesso e a câmera sul do jogo ficam livres.
 	return on_extension(point) and edge_distance(point)>5.4 and not LOCATION.GROUNDS.grow(10).has_point(point) \
 		and LOCATION.road_distance(point)>LOCATION.ROAD_WIDTH*.5+5.0
 

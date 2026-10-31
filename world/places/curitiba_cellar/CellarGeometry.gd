@@ -45,7 +45,7 @@ func piece(shape: String, at: Vector3, size: Vector3, color: String, kind := "wo
 func bottle(at: Vector3, label_color := "eee4c8", glass_color := "253d27", foil_color := "702b3d", bottle_rotation := Vector3.ZERO) -> void:
 	bottle_count += 1
 	var bottle_basis := Basis.from_euler(bottle_rotation)
-	# A 750 ml bottle is ~31 cm tall, with separate shoulder, neck and capsule.
+	# Uma garrafa de 750 ml tem ~31 cm de altura, com ombro, gargalo e cápsula separados.
 	piece("round",at+bottle_basis*Vector3(0,.106,0),Vector3(.078,.212,.078),glass_color,"bottle",bottle_rotation)
 	piece("shoulder",at+bottle_basis*Vector3(0,.228,0),Vector3(.078,.043,.078),glass_color,"bottle",bottle_rotation)
 	piece("round",at+bottle_basis*Vector3(0,.278,0),Vector3(.030,.072,.030),glass_color,"bottle",bottle_rotation)
@@ -55,7 +55,7 @@ func bottle(at: Vector3, label_color := "eee4c8", glass_color := "253d27", foil_
 	piece("box",at+bottle_basis*Vector3(0,.092,.0405),Vector3(.045,.006,.0025),"a19780","paper",bottle_rotation)
 
 func glass(at: Vector3, filled := false) -> void:
-	# Opaque, pale thin bowls stay stable in the compatibility renderer.
+	# Taças finas claras e opacas ficam estáveis no renderer de compatibilidade.
 	piece("round",at+Vector3(0,.008,0),Vector3(.09,.016,.09),"c2c7bd","metal")
 	piece("round",at+Vector3(0,.08,0),Vector3(.014,.145,.014),"cbd2c7","metal")
 	piece("cup",at+Vector3(0,.181,0),Vector3(.09,.10,.09),"b9c9bd","bottle")

@@ -1,6 +1,6 @@
 extends Node3D
-## Static parts and work-in-progress bays. Shared textured finishes and merged
-## geometry keep the clutter independent of the worker's per-frame routine.
+## Peças estáticas e baias de trabalho em andamento. Acabamentos texturizados compartilhados e geometria
+## mesclada mantêm a bagunça independente da rotina por quadro do mecânico.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
 const FINISH := preload("res://world/places/ShopInteriorMaterials.gd")
@@ -21,8 +21,8 @@ func _project_bay() -> void:
 	yard.position=Vector3(-9,0,3)
 	yard.name="SecondProjectBay"
 	add_child(yard)
-	# Reuse the fully modelled stripped shell, its four stands, engine pallet
-	# and detached panels, but move both meshes AND solids of the scrap bins.
+	# Reaproveita a carcaça depenada totalmente modelada, os quatro cavaletes, o palete do motor
+	# e os painéis soltos, mas move as malhas E os sólidos das caçambas de sucata.
 	for child in yard.get_children():
 		if str(child.name).begins_with("SalvageBin"):
 			var index := int(str(child.name).trim_prefix("SalvageBin").left(1))
@@ -45,7 +45,7 @@ func _project_bay() -> void:
 		var wheel := G.cylinder(self,"JackCaster",Vector3(-10+side*.30,.12,-.13),.11,.09,Color("353936"))
 		wheel.rotation.z=PI*.5
 	_beam(Vector3(-10,.21,-.06),Vector3(-10,1.15,.40),.035,Color("454d49"))
-	# Wheels set out for the next job, within a reserved low rack.
+	# Rodas separadas para o próximo serviço, num rack baixo reservado.
 	_solid("WheelRack",Vector3(-12.8,.6,6),Vector3(3.7,1.2,.82))
 	for x in [-14.55,-11.05]: _box("WheelRackPost",Vector3(x,.6,6),Vector3(.06,1.2,.65),"metal",Color("565c54"))
 	for y in [.12,1.15]: _box("WheelRackRail",Vector3(-12.8,y,6),Vector3(3.7,.08,.70),"metal",Color("72664c"))
@@ -73,8 +73,8 @@ func _rear_storage() -> void:
 				else:
 					_box("PartsCarton",Vector3(xx,y+.22,9.15),Vector3(.60,.38,.68),"wood",Color("9c8462"))
 					_box("CartonTape",Vector3(xx,y+.42,9.15),Vector3(.08,.013,.67),"cloth",Color("c1ad83"))
-	# A second substantial bench carries real mechanical shapes at working
-	# height, while the west service aisle and customer parking stay free.
+	# Uma segunda bancada robusta carrega formas mecânicas reais na altura de
+	# trabalho, enquanto o corredor de serviço oeste e o estacionamento de clientes ficam livres.
 	_solid("EngineBench",Vector3(6.4,.52,6.1),Vector3(5.2,1.04,1.20))
 	for x in [4.05,8.75]:
 		for z in [5.63,6.57]: _box("BenchLeg",Vector3(x,.49,z),Vector3(.11,.98,.11),"metal",Color("56625b"))
@@ -98,7 +98,7 @@ func _mobile_tools() -> void:
 		_box("ToolCartUpright",Vector3(x,.45,-6),Vector3(.06,.75,.58),"metal",Color("7e4237"))
 		for z in [-6.23,-5.77]: G.cylinder(self,"CartCaster",Vector3(x,.07,z),.07,.07,Color("292e2c")).rotation.z=PI*.5
 	for i in 5: _box("CartSocket",Vector3(-7.45+float(i)*.17,.80,-6.03),Vector3(.05,.10,.07),"metal",Color("9ca8a2"))
-	# Coiled hoses lie against the compressor, never across the worker route.
+	# Mangueiras enroladas ficam encostadas no compressor, nunca atravessando a rota do mecânico.
 	var hose := Node3D.new()
 	hose.name="CoiledAirHose"
 	hose.position=Vector3(3.1,.07,2.4)
@@ -109,8 +109,8 @@ func _mobile_tools() -> void:
 			var b := TAU*float(segment+1)/18
 			var radius := .38+float(loop)*.065
 			_beam(hose.position+Vector3(cos(a)*radius,0,sin(a)*radius),hose.position+Vector3(cos(b)*radius,0,sin(b)*radius),.018,Color("393f35"))
-	# Small tins, rags and bolts remain on their work surfaces; ordinary foot
-	# traffic never receives an invisible ankle-height barrier from litter.
+	# Latinhas, panos e parafusos ficam nas superfícies de trabalho; a circulação comum
+	# a pé nunca ganha uma barreira invisível na altura do tornozelo por causa de lixo.
 	for i in 8:
 		var x := -5.6+float(i)*.31
 		G.cylinder(self,"BenchSocket",Vector3(x,1.06,2.18),.026,.065,Color("9aa39d"))

@@ -16,8 +16,8 @@ const CONTACT_KINDS := ["desert_shrub", "desert_shrub", "desert_stone", "desert_
 ## Distância da câmera (não do jogador): a ortográfica fica a ~36 m do chão e o canto da tela
 ## ultrawide a ~72 m. O cascalho some antes das moitas, que são o que dá a leitura de longe.
 const VISIBILITY := [115.0, 115.0, 105.0, 85.0, 90.0]
-## Only the retained drag-camera corridor needs a spatial fade. A hard limit on
-## an entire 96 m batch revealed rectangular holes during the side-on race.
+## Só o corredor retido da câmera da arrancada precisa de fade espacial. Um limite duro
+## num lote inteiro de 96 m revelava buracos retangulares na corrida vista de lado.
 const DRAG_CORRIDOR := Rect2(-916,-920,1248,192)
 const DRAG_BATCH_SIZE := 48.0
 static var _meshes: Array[ArrayMesh] = []
@@ -39,8 +39,8 @@ class Build:
 	var preview: Array = [[], [], [], [], []]
 	var preview_enabled := false
 	var committed := false
-	## The generator still visits the original 96 m rect once. Routing the finished
-	## row into a smaller buffer preserves RNG and chips crossing an internal edge.
+	## O gerador ainda visita o retângulo original de 96 m uma vez. Mandar a fileira
+	## pronta para um buffer menor preserva o RNG e as lascas que cruzam uma borda interna.
 	var parts: Array[Build] = []
 	var part_origin := Vector2.ZERO
 	var part_columns := 0
@@ -127,8 +127,8 @@ static func step(chunk: Node3D, rect: Rect2, state: Build, height: Callable, cle
 		if state.parts.is_empty():
 			state.committed = _commit(chunk, state, rect, "", budget_usec, began)
 		else:
-			# Do not turn four uploads/registrations into one larger final spike.
-			# Finite calls commit one 48 m part at a time until the same budget ends.
+			# Não transforma quatro uploads/registros num pico final maior.
+			# Chamadas finitas confirmam uma parte de 48 m por vez até o mesmo orçamento acabar.
 			while state.next_part<state.parts.size():
 				if worked and Time.get_ticks_usec()-began>=budget_usec: break
 				if not _commit(chunk,state.parts[state.next_part],rect,"_%d"%state.next_part,budget_usec,began): break
@@ -194,8 +194,8 @@ static func _add(state: Build, kind: int, p: Vector2, size: float, rng: RandomNu
 		var local := p-state.part_origin
 		var part := floori(local.y/DRAG_BATCH_SIZE)*state.part_columns+floori(local.x/DRAG_BATCH_SIZE)
 		target=state.parts[part]
-		# Bound the original geometry during the already budgeted generation.
-		# The upload need not synchronously ask the renderer to discover its AABB.
+		# Limita a geometria original durante a geração já orçada.
+		# O upload não precisa pedir de forma síncrona ao renderer que descubra o AABB.
 		var instance_bounds: AABB=Transform3D(basis,origin)*_mesh_bounds[kind]
 		target.bounds[kind]=target.bounds[kind].merge(instance_bounds) if target.has_bounds[kind] else instance_bounds
 		target.has_bounds[kind]=true
@@ -242,7 +242,7 @@ static func _upload(chunk: Node3D, state: Build, rect: Rect2, suffix: String) ->
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		node.visibility_range_end = VISIBILITY[kind]
 		if DRAG_CORRIDOR.intersects(rect): configure_drag_visibility(node,kind)
-		# Only non-interactive ground dressing; stones and breakable bushes keep their authored range.
+		# Só mobiliário de chão não interativo; pedras e arbustos quebráveis mantêm o alcance autorado.
 		if KINDS[kind] in ["gravel","tuft"] and not DRAG_CORRIDOR.intersects(rect):
 			preload("res://runtime/GraphicsOptions.gd").tag_detail(node)
 		if Engine.get_meta("geteco_live_preview_build", false):
@@ -255,14 +255,14 @@ static func _upload(chunk: Node3D, state: Build, rect: Rect2, suffix: String) ->
 	state.visuals = visuals
 
 static func configure_drag_visibility(node: MultiMeshInstance3D, kind: int) -> void:
-	# StandardMaterial's pixel dither works with Mobile; GeometryInstance HLOD
-	# fade does not. Instance transforms/colours and breakable indices stay intact.
+	# O dither por pixel do StandardMaterial funciona com Mobile; o fade de HLOD do
+	# GeometryInstance não. Transforms/cores das instâncias e índices quebráveis ficam intactos.
 	node.material_override=_drag_material(kind)
 	var bounds: AABB=node.multimesh.custom_aabb
 	if not bounds.has_volume(): bounds=node.get_aabb()
 	var radius: float=bounds.size.length()*.5
-	# Culling uses the batch centre. Its closest vertex is already fully faded
-	# before this bound, so streaming-sized rectangles cannot pop into view.
+	# O culling usa o centro do lote. O vértice mais próximo já está totalmente apagado
+	# antes deste limite, então retângulos do tamanho do streaming não aparecem de repente.
 	node.visibility_range_end=float(VISIBILITY[kind])+15.0+radius+2.0
 
 static func _drag_material(kind: int) -> StandardMaterial3D:
@@ -297,8 +297,8 @@ static func _prepare() -> void:
 	for kind in _meshes.size():
 		var mesh := _meshes[kind]
 		_mesh_bounds.append(mesh.get_aabb())
-		# Shared shards are prepared with the five source meshes, never fractured/read
-		# back from the GPU for every pebble struck during gameplay.
+		# Os estilhaços compartilhados são preparados com as cinco malhas fonte, nunca fraturados/lidos
+		# de volta da GPU para cada pedrinha atingida durante o jogo.
 		var source := MeshInstance3D.new()
 		source.mesh = mesh
 		source.material_override = _material
@@ -429,7 +429,7 @@ static func prewarm_draw(host: Node3D, curtain: CanvasLayer) -> void:
 		node.material_override = _material
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		stage.add_child(node)
-		# Warm the local drag corridor's dither variant under the same curtain.
+		# Aquece a variante de dither do corredor local da arrancada sob a mesma cortina.
 		var drag_node:=MultiMeshInstance3D.new()
 		drag_node.multimesh=batch
 		drag_node.material_override=_drag_material(kind)

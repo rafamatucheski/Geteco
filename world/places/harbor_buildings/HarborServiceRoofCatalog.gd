@@ -1,6 +1,6 @@
 extends RefCounted
-## Roof destinations for buildings whose ground floor has an existing owner.
-## These are additional floors, never duplicate service interiors or gate bypasses.
+## Destinos de telhado para prédios cujo térreo já tem dono.
+## São andares adicionais, nunca interiores de serviço duplicados nem desvios de portão.
 const PLACE_IDS := ["harbor_bank","harbor_supermarket","harbor_ammunation","harbor_clothing","harbor_fuel","maciota","harbor_police","harbor_hospital","harbor_fire_station","canal_north","cobra_leader_house","westgate_garden","quayside_house","cemetery_keeper","port_boss_garage"]
 const SOURCE_IDS := {"NorthFrontage0":"harbor_bank","NorthFrontage1":"harbor_supermarket","NorthFrontage2":"harbor_ammunation","NorthFrontage3":"harbor_clothing","NorthFrontage4":"harbor_fuel","Police":"harbor_police","Clinic":"harbor_hospital","NorthFireStation":"harbor_fire_station","CanalHomesWest":"canal_north","CourtyardHouse":"cobra_leader_house","MotorWorkshop":"northgate_auto_roof"}
 static var _cache: Array[Dictionary] = []
@@ -103,8 +103,8 @@ static func _append(id: String, place: String, center: Vector3, size: Vector2, h
 		"spawn":Vector3(-size.x*.5+2.80,0,1.45),"exit":Vector3(-size.x*.5+1.45,0,1.45),
 		"camera_target":Vector3(0,.65,0),"camera_size":clampf(maxf(size.x,size.y)*1.7,32.0,64.0),
 		"reward":{},"rewards":[],"npcs":[],"npc_model":"","npc_point":Vector3.ZERO})
-	# The fire station's authored emergency siren owns the southeast corner.
-	# Its roof exit is a separate bay to the left, preserving that solid detail.
+	# A sirene de emergência autorada do quartel de bombeiros é dona do canto sudeste.
+	# A saída do telhado é uma baia separada à esquerda, preservando esse detalhe sólido.
 	if id=="harbor_fire_station": _cache[-1].jump_x = maxf(.7,size.x*.5-3.8)
 
 ## Saída do telhado fora do canto oeste padrão: patamar em `stair`, chegada (spawn) 1,35 m

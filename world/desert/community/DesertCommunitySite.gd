@@ -1,6 +1,6 @@
 extends RefCounted
-## A compact physical pumping station in existing Santa Lua reserved ground.
-## Streamed with its terrain chunk; no lights, actors, animation or per-frame work.
+## Uma estação de bombeamento física e compacta em chão reservado existente de Santa Lua.
+## Entra em streaming com o chunk de terreno; sem luzes, atores, animação ou trabalho por quadro.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const ORIGIN := Vector3(-543,0,-444)
 const RADIO := ORIGIN+Vector3(0,0,1.55)

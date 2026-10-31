@@ -1,9 +1,9 @@
 extends UrbanBuildingBase
 class_name UrbanCommercialBuilding
 
-## Reconstructs commercial office buildings, civic structures, and urban towers in native 3D.
-## Features stepped roof penthouses, multi-story curtain window bands, entrance porticos,
-## rooftop HVAC chillers, and communication antennas.
+## Reconstrói prédios comerciais de escritório, estruturas cívicas e torres urbanas em 3D nativo.
+## Tem coberturas escalonadas no telhado, faixas de janelas cortina de vários andares, pórticos de entrada,
+## chillers de HVAC no telhado e antenas de comunicação.
 
 func build() -> void:
 	# Prédio alto pintado (piloto; GETECO_PAINTED_TALL=0 desliga; ver PaintedTallBuildings).
@@ -35,7 +35,7 @@ func build() -> void:
 	# Multi-story window grid
 	_build_commercial_windows(front_z)
 	
-	# Setback rooftop penthouse volume (as authored in ProceduralBuilding:296)
+	# Volume de cobertura recuado no telhado (como autorado em ProceduralBuilding:296)
 	var penthouse_w := building_size.x * 0.42
 	var penthouse_d := building_size.y * 0.35
 	var penthouse_h := 2.2
@@ -43,8 +43,8 @@ func build() -> void:
 	add_solid_box(visuals_root, "Penthouse", penthouse_pos, Vector3(penthouse_w, penthouse_h, penthouse_d), wall_mat)
 	add_mesh_box(visuals_root, "PenthouseCap", Vector3(penthouse_pos.x, height + penthouse_h + 0.06, penthouse_pos.z), Vector3(penthouse_w + 0.15, 0.12, penthouse_d + 0.15), trim_mat)
 	
-	# ProceduralBuilding._draw_roof_detail publishes only 1..3 seeded plant
-	# units here; antennas and access bulkheads were not part of the V1 source.
+	# ProceduralBuilding._draw_roof_detail publica aqui só 1..3 unidades de máquinas
+	# com semente; antenas e casas de acesso não faziam parte da fonte da V1.
 	var unit_count: int = 1 + posmod(variant_seed, 3)
 	for unit_index in unit_count:
 		var unit_x: float = lerpf(-half_w * 0.48, half_w * 0.18, float(unit_index) / maxf(1.0, float(unit_count - 1)))
@@ -104,7 +104,7 @@ func _build_commercial_windows(front_z: float) -> void:
 		# Continuous horizontal spandrel band under each window row
 		add_mesh_box(visuals_root, "SpandrelBand_%d" % f, Vector3(0, fy - win_h * 0.5 - 0.25, front_z + 0.04), Vector3(building_size.x - 0.4, 0.50, 0.10), spandrel_mat)
 		
-		# Windows in the row
+		# Janelas na fileira
 		for c in col_count:
 			var wx: float = -usable_w * 0.5 + col_step * 0.5 + float(c) * col_step
 			

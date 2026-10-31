@@ -1,6 +1,6 @@
 extends RefCounted
-## Permanent banks around the deliberately empty bridge cells. Streamed chunk
-## edges are not shorelines: only an explicit VOID neighbour admits this mesh.
+## Margens permanentes em volta das células da ponte deixadas vazias de propósito. Bordas de chunk
+## em streaming não são costas: só um vizinho VOID explícito admite esta malha.
 const CELL := 64.0
 const STEP := 4.0
 const BOTTOM := -5.5
@@ -23,7 +23,7 @@ static func frontiers(key: Vector2i, void_cells: Array, owns: Callable) -> Array
 		for endpoint in [-1,1]:
 			var peer: Vector2i = key+tangent*endpoint
 			var straight: bool = bool(owns.call(peer)) and peer+outward in void_cells
-			# A concave corner has land on the diagonal and VOID beside both banks.
+			# Uma esquina côncava tem terra na diagonal e VOID ao lado das duas margens.
 			var corner: bool = not straight and bool(owns.call(peer)) and bool(owns.call(peer+outward))
 			var suffix := "start" if endpoint < 0 else "end"
 			edge["corner_"+suffix] = corner
@@ -33,8 +33,8 @@ static func frontiers(key: Vector2i, void_cells: Array, owns: Callable) -> Array
 
 static func _reach(point: Vector2, outward: Vector2) -> float:
 	var reach := 7.5+.55*sin(point.x*.065+point.y*.027)+.35*sin(point.x*.171-point.y*.091)
-	# At the east abutment the closure stays below its existing deck; it never
-	# adds a sloping embankment across the reserved driving/walking corridor.
+	# No encontro leste o fechamento fica abaixo do tabuleiro existente; nunca
+	# acrescenta um aterro inclinado atravessando o corredor reservado de direção/caminhada.
 	if outward.x != 0.0: reach *= smoothstep(9.0,14.0,absf(point.y-BRIDGE_CENTER_Z))
 	return reach
 
@@ -55,7 +55,7 @@ static func _normal(terrain: RefCounted, edge: Dictionary, along: float, fractio
 	var corner_start: bool = edge.corner_start and is_zero_approx(along)
 	var corner_end: bool = edge.corner_end and is_equal_approx(along,float(edge.length))
 	if corner_start or corner_end:
-		# Both owners use the same corner normal, as well as the same vertex.
+		# Os dois donos usam a mesma normal de canto, assim como o mesmo vértice.
 		var outward: Vector2 = (edge.outward+edge.tangent*(1.0 if corner_start else -1.0)).normalized()
 		var drop: float = terrain.height_at(point)-BOTTOM
 		return Vector3(outward.x*drop,_reach(point,edge.outward)*sqrt(2.0),outward.y*drop).normalized()
@@ -129,8 +129,8 @@ static func build_chunk(parent: Node3D, rect: Rect2, terrain: RefCounted, edges:
 			var back_b := Vector3(top_b.x,BOTTOM,top_b.z)
 			var toe_a := point_at(terrain,edge,along,1.0)
 			var toe_b := point_at(terrain,edge,along+STEP,1.0)
-			# The protected abutment has zero outward reach. Its single vertical
-			# face already closes the bank; a reverse face would duplicate collision.
+			# O encontro protegido tem alcance zero para fora. A única face vertical
+			# já fecha a margem; uma face reversa duplicaria a colisão.
 			if toe_a.distance_squared_to(back_a)>.000001 or toe_b.distance_squared_to(back_b)>.000001:
 				_flat_quad(surface,top_a,top_b,back_b,back_a,-outward)
 				_flat_quad(surface,back_a,back_b,toe_b,toe_a,Vector3.DOWN)

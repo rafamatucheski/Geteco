@@ -1,5 +1,5 @@
 extends RefCounted
-## Opaque earth-to-grass ring, clipped with the same streaming tiles as roads.
+## Anel opaco de terra para grama, recortado com os mesmos ladrilhos de streaming das estradas.
 static func prepare(polygons: Array[PackedVector2Array]) -> Array:
 	var result := []
 	for polygon in polygons:

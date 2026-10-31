@@ -3,8 +3,8 @@ const BATCH := preload("res://world/desert/expansion/DesertRelicsBatch.gd")
 const BALLAST := preload("res://world/desert/expansion/DesertRelicsBallast.gd")
 const SMUGGLER := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const START_X := -1230.0
-# The western abandoned branch now ends at the gorge's eastern rock rim.
-# Keep the original curve phase for every retained metre of track.
+# O ramal abandonado oeste agora termina na borda de rocha leste do desfiladeiro.
+# Mantém a fase original da curva em cada metro de trilho que ficou.
 const GORGE_TERMINUS := -1060.0
 const END_X := -290.0
 const STEP := 4.0
@@ -43,8 +43,8 @@ static func build_chunk(parent: Node3D, rect: Rect2, world_seed: int, height: Ca
 		var h := float(height.call(point))
 		var yaw := -atan2(b.y-a.y,b.x-a.x)
 		var rotation := Vector3(0,yaw,0)
-		# The continuous ballast owns a gentle approach to both railheads; these
-		# narrow iron solids retain their own exact support and collision volumes.
+		# O lastro contínuo é dono de uma aproximação suave aos dois boletos; estes
+		# sólidos estreitos de ferro mantêm o próprio apoio exato e volumes de colisão.
 		for j in 4:
 			var index := i*4+j
 			if (index+world_seed)%23 == 0: continue
@@ -56,14 +56,14 @@ static func build_chunk(parent: Node3D, rect: Rect2, world_seed: int, height: Ca
 				for side in [-1.0,1.0]:
 					batch.box("TiePlate",Vector3(tie.x,tie_height+.054,tie.y+side*GAUGE*.5),Vector3(.29,.017,.22),"rust",false,rotation)
 		for side in [-1.0,1.0]:
-			# Deliberate lifted sections and stolen rail lengths break the perfect
-			# silhouette without leaving collision where the track is absent.
+			# Trechos levantados de propósito e pedaços de trilho roubados quebram a silhueta
+			# perfeita sem deixar colisão onde o trilho falta.
 			if (i+int(side)*3)%37 in [0,1] or i > 227 and i%3 == 0: continue
 			var rail := Vector3(point.x,h+.089,point.y+side*GAUGE*.5)
 			batch.box("Rail",rail,Vector3(STEP-.035,.076,.075),"rust",false,rotation)
 			batch.box("RailHead",rail+Vector3(0,.044,0),Vector3(STEP-.035,.018,.105),"steel",false,rotation)
-			# The support reaches the head's real visible top, h+.142, and its
-			# full width. Preserve collision while allowing the normal authored step.
+			# O apoio alcança o topo visível real do boleto, h+.142, e a
+			# largura total. Preserva a colisão permitindo o degrau autorado normal.
 			batch.rail_collision("Rail",rail+Vector3(0,.0075,0),Vector3(STEP-.035,.091,.105),rotation)
 		if i%24 == 7:
 			batch.box("DiscardedRail",Vector3(point.x,h+.06,point.y+3.2),Vector3(3.4,.12,.11),"rust",false,Vector3(0,.23,0))

@@ -113,8 +113,8 @@ func _quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, key: String) -> void:
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		surfaces[key] = surface
-	# Godot front faces are clockwise. Outward winding also makes the platform
-	# support capsules from above instead of catching them inside its underside.
+	# As faces da frente no Godot são horárias. O sentido para fora também faz a plataforma
+	# apoiar as cápsulas por cima em vez de prendê-las dentro da face de baixo.
 	for vertex in [a, c, b, a, d, c]:
 		surfaces[key].add_vertex(vertex)
 

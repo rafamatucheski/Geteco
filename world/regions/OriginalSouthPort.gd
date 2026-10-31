@@ -1,6 +1,6 @@
 extends RefCounted
-## Production source: HarborSouthPort, HarborSouthPortLayout and HarborPortDressing.
-## Reuses the original meshes without the V1 per-object viewport/camera.
+## Fonte de produção: HarborSouthPort, HarborSouthPortLayout e HarborPortDressing.
+## Reaproveita as malhas originais sem o viewport/câmera por objeto da V1.
 const L := preload("res://world/regions/OriginalSouthPortLayout.gd")
 const MODEL := preload("res://assets/regions/source/world/harbor/HarborPortModel3D.gd")
 const PORT_SHIP_DRESSING := preload("res://world/regions/PortShipDressing3D.gd")
@@ -102,12 +102,12 @@ static func mount(parent: Node3D, record: Dictionary) -> Node3D:
 	return art
 
 static func extra_surfaces(land_rects: Array = []) -> Array[PackedVector2Array]:
-	# LAND is already owned by OriginalWorldData. Access shoulders and piers were missing.
+	# O LAND já pertence ao OriginalWorldData. Faltavam os acostamentos de acesso e os píeres.
 	var result: Array[PackedVector2Array] = [L.rect_polygon(L.WALKWAY),L.ship_hull(),L.rect_polygon(L.SHIP_GANGWAY)]
 	for pier in L.PIERS: result.append(L.rect_polygon(pier))
 	result.append_array(Geometry2D.offset_polyline(PackedVector2Array(L.ACCESS),L.ACCESS_LAND_HALF_WIDTH,Geometry2D.JOIN_ROUND,Geometry2D.END_SQUARE))
-	# The access joins the city and the quay at y=0. Keep only the extension:
-	# drawing both owners at those joins creates coplanar faces and colliders.
+	# O acesso liga a cidade e o cais em y=0. Mantém só a extensão:
+	# desenhar os dois donos nessas junções cria faces e colisores coplanares.
 	var owners: Array[PackedVector2Array] = []
 	for rect in land_rects:
 		owners.append(L.rect_polygon(Rect2(rect[0],rect[1],rect[2],rect[3])))

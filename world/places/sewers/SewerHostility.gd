@@ -51,8 +51,8 @@ func active() -> bool:
 func provoke(victim: CharacterBody3D, source: Node3D) -> void:
 	if not active() or source != session.world.player: return
 	victim.engage(source)
-	# Spread through the neighbours present at the shout, before they run toward
-	# Dante and leave the next ally's hearing range. Each actor joins at most once.
+	# Espalha pelos vizinhos presentes no grito, antes de correrem em direção ao
+	# Dante e saírem do alcance de audição do próximo aliado. Cada ator entra no máximo uma vez.
 	var callers: Array[CharacterBody3D] = [victim]
 	while not callers.is_empty():
 		var caller: CharacterBody3D = callers.pop_front()

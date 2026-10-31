@@ -1,5 +1,5 @@
 extends Node3D
-## Outdoor fishing park in the western woodland, reached by a local dirt road.
+## Parque de pesca ao ar livre no bosque oeste, acessado por uma estrada de terra local.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const LOCATION := preload("res://runtime/FishingLocation.gd")
 const ANCHOR := LOCATION.ANCHOR
@@ -79,7 +79,7 @@ func entrance_position() -> Vector3:
 func approach_waypoints(index: int) -> PackedVector3Array:
 	var result := PackedVector3Array()
 	if index < 0 or index >= PLAYER_ANGLES.size(): return result
-	# Leave the counter to its west, then follow the clear bank path.
+	# Sai do balcão pelo oeste e depois segue o caminho livre da margem.
 	for point in [Vector3(3,.08,24),Vector3(0,.08,21)]: result.append(to_global(point))
 	var target: float = PLAYER_ANGLES[index]
 	for step in range(1,7):
@@ -124,7 +124,7 @@ func bind_gameplay(gameplay_node: Node) -> void:
 
 func _process(delta: float) -> void:
 	if water_dynamics != null: water_dynamics.update(delta)
-	# Only one new native rig per frame on first admission.
+	# Só um rig nativo novo por quadro na primeira admissão.
 	if _spawn_index < NAMES.size(): _spawn_angler()
 	_clock -= delta
 	if _clock > 0: return
@@ -200,7 +200,7 @@ func _build_pond() -> void:
 		var a := _shore(angle)
 		var b := _shore(next)
 		pond_polygon.append(Vector2(a.x, a.z))
-		# Concentric strips let the shared height field deform the actual surface.
+		# Faixas concêntricas deixam o campo de altura compartilhado deformar a superfície real.
 		var water_center := Vector3(0, WATER_Y, -4)
 		for radial in 24:
 			var inner := float(radial) / 24.0
@@ -217,7 +217,7 @@ func _build_pond() -> void:
 			_ring_quad("gravel", _shore(angle, .4), _shore(next, .4), _shore(angle, 3.7), _shore(next, 3.7), .065)
 			_ring_quad("earth", _shore(angle, 3.7), _shore(next, 3.7), _shore(angle, 4.15), _shore(next, 4.15), .035)
 			_ring_quad("grass", _shore(angle, 4.15), _shore(next, 4.15), _shore(angle, 5.2 + .4 * sin(angle * 7)), _shore(next, 5.2 + .4 * sin(next * 7)), .018)
-		# Continuous visible rail keeps pedestrians and vehicles off the water.
+		# O guarda-corpo visível contínuo mantém pedestres e veículos fora da água.
 		var side := b - a
 		var plank_basis := Basis(Vector3.UP, atan2(side.x, side.z))
 		var center := (a + b) * .5
@@ -238,7 +238,7 @@ func _build_pond() -> void:
 func _build_entrance() -> void:
 	var paving := PackedVector2Array([Vector2(-18, 22),Vector2(-15,19),Vector2(-4,19),Vector2(4,20),Vector2(16,20),Vector2(20,23),Vector2(19,31),Vector2(4,32),Vector2(4,32.5),Vector2(-4,32.5),Vector2(-4,32),Vector2(-18,31)])
 	if FINISH.previous_finish(): _polygon("gravel", paving, .04)
-	# The portal faces the final road approach, rather than the parking grid.
+	# O portal fica de frente para a aproximação final da estrada, não para a grade do estacionamento.
 	var road_outward: Vector2 = (LOCATION.ROAD_POINTS[-2] - LOCATION.ROAD_POINTS[-1]).normalized()
 	var portal_basis := Basis(Vector3.UP, atan2(road_outward.x, road_outward.y))
 	var portal_center := Vector3(0, 0, 30)
@@ -259,7 +259,7 @@ func _build_entrance() -> void:
 	for x in [-15.0,-10.4,-5.8]:
 		for edge in [-2.0,2.0]: _box("cream",Vector3(x+edge,marking_height,27),Vector3(.08,.012,5.3))
 		_box("wood",Vector3(x,.13,24.2),Vector3(3.2,.26,.18),true)
-	# Open outdoor counter: this venue has no interior transition.
+	# Balcão aberto ao ar livre: este local não tem transição de interior.
 	for x in [7.5,12.5]:
 		for z in [19.8,23.5]: _box("darkwood",Vector3(x,1.55,z),Vector3(.16,3.1,.16),true)
 	_box("roof",Vector3(10,3.12,21.65),Vector3(5.8,.18,4.5))
@@ -286,9 +286,9 @@ func _build_furniture() -> void:
 		var bucket := shore + outward * 1.8 + bench_basis.x * 1.10
 		_cylinder("metal",bucket+Vector3.UP*.23,.22,.44)
 		_add_solid("FishBucket",bucket+Vector3.UP*.22,Vector3(.44,.44,.44))
-	# Southern stations stay clear in the normal camera: their former foreground
-	# canopies hid Dante's rod pose. Those three trees shade the northern bank,
-	# with crowns inside the lot and no contact with the motocross terrain.
+	# Os postos do sul ficam livres na câmera normal: as antigas copas em primeiro
+	# plano escondiam a pose de vara do Dante. Essas três árvores sombreiam a margem norte,
+	# com as copas dentro do terreno e sem contato com o terreno do motocross.
 	for index in 7:
 		var angle := -.40 + float(index)*.62
 		var point := _shore(angle,7.0)

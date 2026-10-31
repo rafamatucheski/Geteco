@@ -1,5 +1,5 @@
 extends "res://assets/CivilianModel.gd"
-## Production human rig and hand IK. The parent owns the single update clock.
+## Rig humano de produção e IK das mãos. O pai é dono do único relógio de atualização.
 const GEAR := preload("res://world/north_gateway/NorthGatewayWorkerGeometry.gd")
 var job := 0
 var tool: Node3D
@@ -65,7 +65,7 @@ func sample_work(time: float, delta: float) -> void:
 			tool.position = Vector3(0,1.065,.6)
 			tool.rotation = Vector3(0,.34*sin(work_clock*1.9),0)
 	_pose(delta)
-	# A restrained downward glance keeps the action readable with planted feet.
+	# Um olhar contido para baixo mantém a ação legível com os pés plantados.
 	head_node.rotate_x(.12 if job==2 else .055)
 
 func _work_hands() -> Array:

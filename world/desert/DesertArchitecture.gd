@@ -8,7 +8,7 @@ const MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
 
 static func _box(parent: Node3D,id: String,at: Vector3,size: Vector3,color: Color,solid := false) -> MeshInstance3D:
 	var result := G.box(parent,id,at,size,color,solid)
-	# Duplicate Godot node names may be rewritten; finish selection must keep the authored identity.
+	# Nomes de nó duplicados no Godot podem ser reescritos; a escolha de acabamento precisa manter a identidade autorada.
 	result.set_meta("desert_part_id",id)
 	return result
 
@@ -43,14 +43,14 @@ static func building(data: Dictionary) -> Node3D:
 	var size: Vector3=data.size
 	var wall: Color=data.color
 	var entry_width := 5.4 if data.kind=="workshop" else 2.4
-	# Split front wall at the actual usable doorway. Transfer interiors retain the compact marker.
+	# Divide a parede da frente na porta realmente usável. Interiores de transferência mantêm o marcador compacto.
 	_box(root,"RearWall",Vector3(0,size.y*.5,-size.z*.5),Vector3(size.x,size.y,.4),wall,true)
 	for side in [-1.0,1.0]:
 		_box(root,"SideWall",Vector3(side*size.x*.5,size.y*.5,0),Vector3(.4,size.y,size.z),wall,true)
 		var segment := (size.x-entry_width)*.5
 		_box(root,"FrontWall",Vector3(side*(entry_width*.5+segment*.5),size.y*.5,size.z*.5),Vector3(segment,size.y,.4),wall,true)
 	_box(root,"DoorLintel",Vector3(0,size.y-.45,size.z*.5),Vector3(entry_width,.9,.45),wall)
-	# Digo's service bay is an actual opening; other buildings retain their door backstop.
+	# A baia de serviço do Digo é uma abertura real; os outros prédios mantêm o batente da porta.
 	if data.kind != "workshop":
 		_box(root,"DoorRecess",Vector3(0,1.2,size.z*.5-.35),Vector3(entry_width,2.4,.12),Color("3d4948"),true)
 	if data.id == "desert_digo":

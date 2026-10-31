@@ -57,14 +57,14 @@ func _physics_process(delta: float) -> void:
 		var node: Node3D=animal.node
 		var anchor: Vector2=animal.anchor
 		var phase: float=animal.phase
-		# Pause naturally; a creature never chases the player or leaves its reserved patch.
+		# Pausa de forma natural; uma criatura nunca persegue o jogador nem sai do trecho reservado.
 		var moving := sin(_clock*.29+phase)>-.22
 		if moving:
 			animal.travel=float(animal.travel)+delta*(.21 if animal.snake else .10)
 			animal.animation_time=float(animal.animation_time)+delta
 		var travel: float=animal.travel
 		var p := anchor+Vector2(sin(travel+phase),cos(travel*.79+phase))*1.05
-		# Placement reserves the entire 1.05 m territory plus the animal's body.
+		# A posição reserva o território inteiro de 1.05 m mais o corpo do animal.
 		if sample_ground:
 			animal.height_previous=animal.height_current
 			animal.height_target=float(_height.call(p))
@@ -76,7 +76,7 @@ func _physics_process(delta: float) -> void:
 
 func _place(animal: Dictionary, index: int) -> void:
 	var node: Node3D=animal.node
-	# Quantized origin keeps repeated streaming deterministic instead of scattering each frame.
+	# A origem quantizada mantém o streaming repetido determinístico em vez de espalhar a cada quadro.
 	var cell := Vector2i(floori(_focus.x/24.0),floori(_focus.z/24.0))
 	var rng := RandomNumberGenerator.new()
 	rng.seed=absi(_seed+cell.x*8171+cell.y*2971+index*157)
@@ -108,8 +108,8 @@ static func _clear(point: Vector2, radius: float) -> bool:
 	if _floor_route.is_empty():
 		_floor_route=FIELD.canyon_centerline(8.0)
 		_access_route=FIELD.plateau_access(6.0)
-	# Tiny harmless animals inhabit the sandy margins, never the ten-metre vehicle core
-	# or the entire sixteen-metre ascending road. They do not need to stand on a cliff.
+	# Bichos minúsculos e inofensivos habitam as margens de areia, nunca o miolo de dez metros dos veículos
+	# nem a estrada de subida inteira de dezesseis metros. Eles não precisam ficar num penhasco.
 	if _route_distance(point,_floor_route)<5.0+radius: return false
 	if _route_distance(point,_access_route)<FIELD.ACCESS_HALF_WIDTH+radius: return false
 	return FIELD.normal_at(point).y>.82

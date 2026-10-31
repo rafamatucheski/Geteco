@@ -1,6 +1,6 @@
 extends Node3D
-## V1-authored ground finish, vegetation and street furniture for the Harbor
-## districts that were previously represented only by their principal model.
+## Acabamento de chão, vegetação e mobiliário de rua autorados na V1 para os distritos
+## do Harbor que antes eram representados só pelo modelo principal.
 
 const SCALE := 1.0/16.0
 const GROUND := preload("res://assets/regions/source/world/harbor/UrbanGround.gd")
@@ -68,7 +68,7 @@ func _source_id() -> String:
 	return ""
 
 func _build_salvage() -> void:
-	# SalvageLocation.LAND and the exact V1 perimeter planting, local to (-750,550).
+	# SalvageLocation.LAND e o plantio exato do perímetro da V1, local a (-750,550).
 	# Gramado com textura e tufos 3D: antes era uma caixa de cor lisa (feedback de 25/09).
 	var meadow := _box("SalvageMeadow",Vector3(15*SCALE,.006,10*SCALE),Vector3(1270*SCALE,.012,1120*SCALE),Color("46553e"))
 	meadow.material_override = preload("res://world/urban_detail/HarborPaving.gd").lawn_material(Color("627156"))
@@ -76,7 +76,7 @@ func _build_salvage() -> void:
 	_box("SalvageWestWall",Vector3(-614*SCALE,.34,10*SCALE),Vector3(12*SCALE,.68,1120*SCALE),Color("9b9c8c"),true)
 	for index in 12:
 		var point: Vector2 = [Vector2(-500,-430),Vector2(-320,-465),Vector2(120,-460),Vector2(430,-465),Vector2(510,-410),Vector2(350,430),Vector2(440,430),Vector2(-565,-240),Vector2(-565,40),Vector2(575,-220),Vector2(575,80),Vector2(575,310)][index]
-		# Keep the two trees, west of Harbor Central's relocated stair landing.
+		# Mantém as duas árvores, a oeste do patamar realocado da escada do Harbor Central.
 		if index==5: point=Vector2(170,320)
 		elif index==6: point=Vector2(170,500)
 		_tree(point*SCALE,1.0+float(index%3)*.09,index%3==1)
@@ -94,8 +94,8 @@ func _build_salvage() -> void:
 	var landing: Rect2=railway.ground_landing_rect("harbor_central")
 	var entry: Vector3=railway.get_station("harbor_central").entry
 	var start := Vector2(-43.75,62.5)-origin
-	# Extend the diagonal end cap through the landing edge; composition clips
-	# it back exactly, leaving no triangular meadow wedge at either corner.
+	# Estende a tampa diagonal da ponta pela borda do patamar; a composição a recorta
+	# de volta exatamente, sem deixar cunha triangular de gramado em nenhuma esquina.
 	var end := Vector2(landing.position.x+.2,entry.z)-origin
 	var station_path := _beam("SalvageTrackStation",start,end,2.4,.008,Color("aaa9a1"),false,.016)
 	station_path.material_override=preload("res://world/urban_detail/HarborPaving.gd").material()
@@ -106,8 +106,8 @@ func _build_salvage() -> void:
 	GRASS.scatter(self,meadow_area,track_rects+[Rect2(-17.5,-13,35,26)],.8,7501)
 
 func _build_cemetery_edge() -> void:
-	# The cemetery owns its inner floor. These four strips restore only the V1
-	# green/tree context around it, avoiding a coplanar duplicate under graves.
+	# O cemitério é dono do piso interno. Estas quatro faixas restauram só o contexto
+	# verde/de árvores da V1 em volta dele, evitando uma duplicata coplanar sob os túmulos.
 	var outer := Vector2(990,900)*SCALE
 	var inner := Vector2(780,700)*SCALE
 	var border_x := (outer.x-inner.x)*.5
@@ -130,7 +130,7 @@ func _build_cemetery_edge() -> void:
 		_tree(point,.88+float(index%3)*.08,index%4==0)
 
 func _build_cobra() -> void:
-	# CobraNeighborhood.VISUAL_LAND, local to the authored roundabout centre.
+	# CobraNeighborhood.VISUAL_LAND, local ao centro autorado da rotatória.
 	var visual_center := (Vector2(7640,1685)-Vector2(7700,1700))*SCALE
 	var meadow:=_box("CobraDryMeadow",Vector3(visual_center.x,.006,visual_center.y),Vector3(1760*SCALE,.012,1450*SCALE),Color("64724f"))
 	meadow.material_override=COBRA_FINISH.ground()
@@ -238,7 +238,7 @@ func _build_cobra() -> void:
 		var a: Vector2 = (fence[0]-Vector2(7700,1700))*SCALE
 		var b: Vector2 = (fence[1]-Vector2(7700,1700))*SCALE
 		_beam("CobraYardFence",a,b,.28,1.05,Color("aaa082"),true,.55)
-	# Supporting marks at the approach: no labels, only the Cobra insignia.
+	# Marcas de apoio na aproximação: sem etiquetas, só a insígnia da Cobra.
 	for z in [-6.8,6.8]:
 		var panel := _box("CobraTerritoryPanel",Vector3(-26,2.05,z),Vector3(.12,2.5,2.2),Color("222b25"),true)
 		for offset in [-.85,.85]: _box("CobraPanelSupport",Vector3(-26,.75,z+offset),Vector3(.12,1.5,.12),Color("34352e"),true)
@@ -296,13 +296,13 @@ func _cobra_garden_gate() -> Vector2:
 	return Vector2(7700,1444)
 
 func _cobra_crossing_edge(road: Dictionary) -> float:
-	# Finish directly against the visible tactile paving, not an assumed verge.
+	# Termina direto contra o piso tátil visível, não contra uma margem suposta.
 	var sidewalk: float=road.sidewalk_width
 	return float(road.width)*.5+minf(sidewalk*.5,.75)+minf(sidewalk,.75)*.5-.025
 
 func _build_cobra_joints() -> void:
-	# Rounded, flush caps close the inside/outside corners of every joined strip.
-	# All caps share two meshes and world-space paving rather than separate props.
+	# Tampas arredondadas e rentes fecham os cantos internos/externos de toda faixa ligada.
+	# Todas as tampas dividem duas malhas e calçamento em espaço do mundo em vez de props separados.
 	for border in [true,false]:
 		var tool:=SurfaceTool.new()
 		tool.begin(Mesh.PRIMITIVE_TRIANGLES)

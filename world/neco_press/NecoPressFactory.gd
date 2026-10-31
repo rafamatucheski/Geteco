@@ -1,15 +1,15 @@
 extends RefCounted
 class_name NecoPressFactory
 
-## Factory for creating and placing instances of NecoPress3D.
-## Ensures standard instantiation, positioning, and rotation without direct scene coupling.
-## Keeps NecoPress3D completely modular and reusable across game modes or test scenes.
+## Fábrica para criar e posicionar instâncias de NecoPress3D.
+## Garante instanciação, posição e rotação padrão sem acoplamento direto à cena.
+## Mantém o NecoPress3D totalmente modular e reutilizável entre modos de jogo ou cenas de teste.
 
-## Default transform in Neco's Salvage Yard (matching V1 SalvageYard3D and V2 SalvageYardNative)
+## Transform padrão no ferro-velho do Neco (batendo com SalvageYard3D da V1 e SalvageYardNative da V2)
 const SALVAGE_YARD_PRESS_POSITION := Vector3(7.2, 0.0, -1.5)
 const SALVAGE_YARD_PRESS_ROTATION_Y := 0.0
 
-## Instantiates a new NecoPress3D component at the specified position and Y-rotation.
+## Instancia um novo componente NecoPress3D na posição e rotação Y indicadas.
 static func create_press(world_pos: Vector3 = Vector3.ZERO, rotation_y: float = 0.0) -> NecoPress3D:
 	var press := NecoPress3D.new()
 	press.name = "NecoPress3D"

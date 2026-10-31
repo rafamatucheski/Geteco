@@ -31,12 +31,12 @@ func _ready() -> void:
 func _helipad() -> void:
 	var helipad = preload("res://assets/regions/source/world/mountain_pass/MountainHelipad3D.gd").new()
 	helipad.name = "MountainHelipad"
-	# Separate landing clearance from the bunker entrance and road turnaround.
+	# Separa a folga de pouso da entrada do bunker e do retorno da estrada.
 	helipad.position = Vector3(-20,0,3.625)
 	add_child(helipad)
 	for mesh in helipad.find_children("*","MeshInstance3D",true,false):
 		if mesh.get_meta("interior_solid_id","") != "": mesh.create_trimesh_collision()
-	# The region's connected footpath owns the approach. No slabs across the road.
+	# A trilha conectada da região é dona da aproximação. Sem lajes atravessando a estrada.
 ## Só os equipamentos em volta do casco pintado: gerador e cabo na frente, mastro, radar e
 ## respiros na laje (dentro da pegada da pintura) e o heliponto ao lado.
 func _painted_props() -> void:

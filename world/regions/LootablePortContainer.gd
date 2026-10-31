@@ -1,5 +1,5 @@
 extends Node3D
-## Native 3D shell: the exact visible wall/crate boxes also build the physics.
+## Casca 3D nativa: as caixas visíveis exatas de parede/caixote também montam a física.
 const STATE := preload("res://gameplay/urban_v1/PortContainerState.gd")
 const OPTIMIZER := preload("res://assets/regions/source/prototypes/harbor_art_pack/PortMeshOptimizer.gd")
 const MATERIALS := preload("res://world/regions/PortContainerMaterials.gd")
@@ -111,11 +111,11 @@ func build(point: Vector3, size: Vector2) -> void:
 	if not _restore_static_part(roof,cache_key+"/roof"):
 		_box(roof,"Roof",Vector3(0,height,0),Vector3(w+.15,.14,d+.16),color.lightened(.07),false)
 		for i in 40:
-			# Sink the underside into the roof instead of sharing its exact top
-			# plane (height+.07). Coplanar faces also fight in the shadow pass.
+			# Afunda a face de baixo no teto em vez de dividir o plano exato do
+			# topo (height+.07). Faces coplanares também brigam no passo de sombra.
 			_box(roof,"RoofRib",Vector3(-w*.5+.25+i*(w-.5)/39,height+.09,0),Vector3(.11,.08,d),color.lightened(.13),false)
-		# The upper container remains scenery; it fades with the occupied ground roof
-		# because its underside would otherwise entirely occlude the same interior.
+		# O contêiner de cima continua cenário; ele faz fade com o teto do térreo ocupado
+		# porque a face de baixo dele senão ocultaria inteiramente o mesmo interior.
 		if posmod(int(point.x),3) == 0:
 			var upper := preload("res://assets/regions/source/prototypes/harbor_art_pack/props/PortContainer40ft3D.gd").new()
 			upper.color_theme = posmod(int(point.x)+1,5)
@@ -129,7 +129,7 @@ func build(point: Vector3, size: Vector2) -> void:
 		OPTIMIZER.optimize_hierarchy(roof)
 		_static_parts[cache_key+"/roof"] = _capture_static_children(roof)
 	_build_lockpick_marker()
-	# A chunk can stream in after session restoration. Restore before physics runs.
+	# Um chunk pode entrar em streaming depois da restauração da sessão. Restaura antes de a física rodar.
 	for service in get_tree().get_nodes_in_group("port_container_service"):
 		service.bind_container(self)
 
@@ -155,8 +155,8 @@ func _build_lockpick_marker() -> void:
 func _capture_static_children(parent: Node3D) -> Array:
 	var rows: Array = []
 	for child in parent.get_children():
-		# The optimizer queues its source meshes; only surviving batches and
-		# original collision bodies belong in a reusable part.
+		# O otimizador enfileira as malhas fonte; só os lotes que sobram e os
+		# corpos de colisão originais entram numa parte reutilizável.
 		if child.is_queued_for_deletion() or not child is Node3D: continue
 		var row := {"name":child.name,"transform":child.transform,"visible":child.visible,"type":"node","metadata":{},"children":_capture_static_children(child)}
 		for key in child.get_meta_list(): row.metadata[key] = child.get_meta(key)
@@ -270,7 +270,7 @@ func _arrange_cargo(cycle: int) -> void:
 	var variant := posmod(STATE.known_ids().find(cargo_id)+cycle,3)
 	var side := -1.0 if variant != 1 else 1.0
 	contents.position = Vector3([dimensions.x*.5-3.0,1.0,-dimensions.x*.5+4.0][variant],0,side*dimensions.y*.25)
-	# Each mesh and its matching body move together; the middle aisle stays clear.
+	# Cada malha e o corpo correspondente se movem juntos; o corredor do meio fica livre.
 	for part_name in ["RearCrate","RearCrateSolid","RearCrateBand"]:
 		get_node(NodePath(part_name)).position.z = side*dimensions.y*.25
 	if is_instance_valid(cargo_props):
@@ -321,11 +321,11 @@ func blocks_view(point: Vector3, direction: Vector3) -> bool:
 	return bounds.intersects_segment(point,point+direction*70) != null
 
 func _fade(node: Node, transparency: float) -> void:
-	# Interaction marker owns its visibility; shell fades must not revive it.
+	# O marcador de interação é dono da própria visibilidade; fades da casca não podem reavivá-lo.
 	if node == lockpick_marker: return
 	if node is MeshInstance3D:
-		# GeometryInstance3D.transparency is ignored by Mobile. Fade a private
-		# material, then return to opaque rendering outside; cached palettes stay intact.
+		# GeometryInstance3D.transparency é ignorado pelo Mobile. Faz fade de um material
+		# privado e depois volta ao render opaco fora; as paletas em cache ficam intactas.
 		if not node.has_meta("fade_material"):
 			node.material_override = node.material_override.duplicate()
 			node.set_meta("fade_material",true)

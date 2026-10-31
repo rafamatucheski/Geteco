@@ -1,5 +1,5 @@
 extends "res://world/places/NativePlace.gd"
-## Room owns the games and speaker; FullSession owns modal and resident lifetime.
+## O cômodo é dono dos jogos e da caixa de som; o FullSession é dono do modal e do tempo de vida dos moradores.
 var session
 var game_ui
 var game_active := false
@@ -11,8 +11,8 @@ func _ready() -> void:
 	super._ready()
 	for station in definition.get("bar_stations",{}):
 		interaction_points[station] = to_global(definition.bar_stations[station])
-	# The orthographic camera is over 25 m from the jukebox. Room-owned music
-	# must follow occupancy instead of fading against that remote listener.
+	# A câmera ortográfica fica a mais de 25 m da jukebox. A música do cômodo
+	# precisa seguir a ocupação em vez de apagar em relação a esse ouvinte distante.
 	speaker = AudioStreamPlayer.new()
 	speaker.name = "BarMusic"
 	speaker.volume_db = -15

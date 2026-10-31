@@ -44,7 +44,7 @@ static func build(site: Node3D) -> void:
 	rock.albedo_color = Color("485548")
 	rock.roughness = .91
 	_finish(site, stones, rock, "SerenoSubmergedStones")
-	# Sparse reeds stay inside the guard, away from each cast corridor.
+	# Juncos esparsos ficam dentro da guarda, longe de cada corredor de arremesso.
 	var reeds := SurfaceTool.new()
 	reeds.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for index in 22:

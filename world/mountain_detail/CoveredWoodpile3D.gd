@@ -1,10 +1,10 @@
 extends Node3D
 class_name MountainCoveredWoodpile3D
 
-## Rustic covered firewood and log storage shelter with snow roof and splitting stump.
-## Based on the original CoveredWoodpile3D setpiece used throughout Mountain Pass.
-## Reconstructed in clean native 3D geometry using cached MountainMaterials.
-## StaticBody3D collision on layer 1, mask 0.
+## Abrigo rústico coberto de lenha e toras, com telhado de neve e toco de rachar.
+## Baseado no setpiece CoveredWoodpile3D original usado por todo o Mountain Pass.
+## Reconstruído em geometria 3D nativa limpa usando MountainMaterials em cache.
+## Colisão StaticBody3D na camada 1, máscara 0.
 
 @export var shelter_size: Vector2 = Vector2(2.4, 1.4)
 @export var shelter_height: float = 1.85
@@ -26,7 +26,7 @@ func build() -> void:
 	var half_w := shelter_size.x * 0.5
 	var half_d := shelter_size.y * 0.5
 	
-	# Solid StaticBody3D for the woodpile
+	# StaticBody3D sólido para a pilha de lenha
 	var body := StaticBody3D.new()
 	body.name = "WoodpileCollision"
 	body.collision_layer = 1
@@ -88,7 +88,7 @@ func build() -> void:
 	var snow_slab := _add_box("RoofSnow", Vector3(0, roof_y + 0.08, 0), Vector3(roof_w + 0.06, 0.12, roof_d + 0.06), snow_mat)
 	snow_slab.rotation.x = -0.15
 	
-	# Splitting stump beside the pile with axe
+	# Toco de rachar ao lado da pilha com machado
 	var stump_pos := Vector3(half_w + 0.55, 0.25, half_d * 0.4)
 	_add_cylinder("SplittingStump", stump_pos, 0.24, 0.50, log_mat)
 	_add_box("StumpEnd", stump_pos + Vector3(0, 0.255, 0), Vector3(0.44, 0.01, 0.44), end_mat)
@@ -98,7 +98,7 @@ func build() -> void:
 	_add_box("AxeBlade", axe_pos, Vector3(0.03, 0.16, 0.22), iron_mat)
 	_add_box("AxeHandle", axe_pos + Vector3(0, 0.25, -0.22), Vector3(0.04, 0.70, 0.04), MountainMaterials.wood_pole(), Vector3(25, 0, 0))
 	
-	# Split firewood pieces on the ground near stump
+	# Pedaços de lenha rachada no chão perto do toco
 	for f in 3:
 		var f_pos := stump_pos + Vector3(-0.35 + float(f) * 0.25, 0.06, 0.35 + float(f % 2) * 0.12)
 		_add_box("FirewoodPiece", f_pos, Vector3(0.12, 0.12, 0.38), log_mat, Vector3(0, float(f) * 40.0, 0))

@@ -1,5 +1,5 @@
 extends "res://world/places/NativePlace.gd"
-## Walkable roof in the shared city world: no viewport, skybox or duplicate city.
+## Telhado caminhável no mundo compartilhado da cidade: sem viewport, skybox nem cidade duplicada.
 const MATERIALS = preload("res://world/places/ShopInteriorMaterials.gd")
 class RoofModel extends Node3D:
 	func create_reward_art(reward: Dictionary) -> Node3D:
@@ -29,10 +29,10 @@ func _ready() -> void:
 	var depth: float = definition.size.y
 	var half_w := width*.5
 	var half_d := depth*.5
-	# The slab's upper face is the actual roof datum used by the actor.
+	# A face de cima da laje é a referência real do telhado usada pelo ator.
 	_piece("RoofSlab",Vector3(0,-.11,0),Vector3(width,.22,depth),"stone","70736b",false)
 	_box_solid("RoofSupport",AABB(Vector3(-half_w,-.24,-half_d),Vector3(width,.24,depth)),false)
-	# Roofing seams and a drain make the surface read as built, not an empty pad.
+	# Emendas da cobertura e um ralo fazem a superfície parecer construída, não uma base vazia.
 	for seam in range(1,maxi(2,floori(width/1.25))):
 		var x := -half_w+float(seam)*width/float(maxi(2,floori(width/1.25)))
 		_piece("RoofSeam",Vector3(x,.008,0),Vector3(.018,.014,depth-.35),"metal","4f5651",false)
@@ -45,7 +45,7 @@ func _ready() -> void:
 	_guard("EastGuard",Vector3(half_w-.12,.52,0),Vector3(.24,1.04,depth-.24))
 	_guard("SouthGuardWest",Vector3((-half_w+gap_left)*.5,.52,half_d-.12),Vector3(gap_left+half_w,1.04,.24))
 	_guard("SouthGuardEast",Vector3((gap_right+half_w)*.5,.52,half_d-.12),Vector3(half_w-gap_right,1.04,.24))
-	# The rail remains solid: the player physically vaults it by moving outward.
+	# O guarda-corpo continua sólido: o jogador pula por cima fisicamente andando para fora.
 	_jump_gate_art = Node3D.new()
 	_jump_gate_art.name = "RoofJumpGate"
 	_jump_gate_art.position = Vector3(gap_left,0,half_d-.12)
@@ -55,7 +55,7 @@ func _ready() -> void:
 		if height>.9: rail.set_meta("functional_jump_gate",true)
 	_box_solid("RoofJumpGate",AABB(Vector3(gap_left,0,half_d-.24),Vector3(1.90,1.06,.24)))
 	_jump_gate = solid_bodies[-1]
-	# The stair exit shares its landing with every authored floor. Playtest de
+	# A saída da escada divide o patamar com todo andar autorado. Playtest de
 	# 29/10: o telhado visto da rua tinha casinhas sorteadas pelo enfeite (até três)
 	# e esta saída de pedra aparecia em outro lugar. Agora a saída é UMA casinha
 	# fechada, no mesmo lugar e com as cores da casinha que o CityChunkDressing põe
@@ -70,7 +70,7 @@ func _ready() -> void:
 		_piece("StairHouseCap",house+Vector3(0,HOUSE_SIZE.y+.08,.05),Vector3(HOUSE_SIZE.x+.2,.16,HOUSE_SIZE.z+.2),"metal","6e7577",false)
 		_piece("StairHouseDoor",house+Vector3(.4,.87,HOUSE_SIZE.z*.5+.012),Vector3(.82,1.74,.02),"wood","5a4a3c",false)
 		_piece("StairHouseWindow",house+Vector3(-.55,1.4,HOUSE_SIZE.z*.5+.012),Vector3(.52,.42,.02),"metal","2e3a40",false)
-	# A few useful roof objects, deliberately outside the landing and pickup.
+	# Alguns objetos úteis de telhado, de propósito fora do patamar e da coleta.
 	if width>=8.0 and depth>=8.0:
 		_piece("Planter",Vector3(half_w-1.0,.29,-half_d+1.25),Vector3(1.15,.58,1.4),"stone","817961",true)
 		_piece("PlanterSoil",Vector3(half_w-1.0,.59,-half_d+1.25),Vector3(1.04,.06,1.29),"stone","3e4031",false)
@@ -121,6 +121,6 @@ func _piece(id: String, at: Vector3, size: Vector3, material_kind: String, color
 	(parent if parent != null else model).add_child(node)
 	if solid:
 		node.set_meta("interior_solid_id",id)
-		# Full footprint blocks walking under benches/cabinets, as in the room.
+		# A área inteira bloqueia andar sob bancos/armários, como no cômodo.
 		_box_solid(id,AABB(Vector3(at.x-size.x*.5,0,at.z-size.z*.5),Vector3(size.x,at.y+size.y*.5,size.z)))
 	return node

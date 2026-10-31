@@ -215,8 +215,8 @@ func _refresh_silhouette() -> void:
 				geometry.material_overlay = material
 			# A silhueta existe para ver o alvo atrás do prédio: o occlusion culling não pode escondê-lo.
 			geometry.ignore_occlusion_culling = true
-	# One box encloses all visible pieces, so the rider cannot light up through
-	# the motorcycle and the motorcycle cannot light up through its rider.
+	# Uma caixa envolve todas as peças visíveis, para que o piloto não acenda através
+	# da moto e a moto não acenda através do piloto.
 	box = box.grow(.08)
 	for target in targets:
 		var material: ShaderMaterial = _silhouettes[target]
@@ -248,17 +248,17 @@ func _follow_silhouettes() -> void:
 	var transition_id := _silhouette_transition(world)
 	var player_visible := is_instance_valid(player) and player.is_visible_in_tree()
 	var inside := _uses_interior_depth()
-	# Context changes refresh once immediately; ordinary frames only update
-	# uniforms. Mesh scans remain at 4 Hz while the context stays the same.
-	# Boarding can hide, pose and show the same player without changing IDs.
-	# Its completion must include the seated body in the self-occlusion box.
+	# Mudanças de contexto atualizam uma vez na hora; quadros comuns só atualizam
+	# uniforms. Varreduras de malha ficam a 4 Hz enquanto o contexto não muda.
+	# Embarcar pode esconder, posar e mostrar o mesmo jogador sem mudar IDs.
+	# A conclusão precisa incluir o corpo sentado na caixa de auto-oclusão.
 	if inside != _silhouette_inside or player_id != _silhouette_player_id or vehicle_id != _silhouette_vehicle_id or player_visible != _silhouette_player_visible or transition_id != _silhouette_transition_id:
 		_refresh_silhouette()
 		return
 	if not is_instance_valid(_silhouette_reference): return
-	# Match the pose used to render the meshes. The current physics transform
-	# leads the interpolated body by up to one tick: at race speed the rear
-	# leaves its own exclusion box and the overlay flashes through the body.
+	# Acompanha a pose usada para renderizar as malhas. O transform de física atual
+	# fica até um tick à frente do corpo interpolado: em velocidade de corrida a traseira
+	# sai da própria caixa de exclusão e a sobreposição pisca através do corpo.
 	var inverse := Projection(_silhouette_reference.get_global_transform_interpolated().affine_inverse())
 	for target in _silhouettes:
 		if is_instance_valid(target):
@@ -271,8 +271,8 @@ func _uses_interior_depth() -> bool:
 		if session.building_entrance != null and session.building_entrance.on_rooftop(): return false
 		if session.service_roofs != null and session.service_roofs.is_active(): return false
 	if not String(controller.state.place_id).is_empty(): return true
-	# Continuous underground rooms keep the outdoor place id. Their active
-	# camera owns depth presentation, so the street outline must also yield.
+	# Cômodos subterrâneos contínuos mantêm o id do lugar externo. A câmera
+	# ativa deles é dona da apresentação de profundidade, então o contorno da rua também cede.
 	var camera := get_viewport().get_camera_3d()
 	return is_instance_valid(camera) and bool(camera.get_meta("uses_interior_depth",false))
 
@@ -314,8 +314,8 @@ func _orient_sun() -> void:
 	var angles: Vector3 = sun.rotation_degrees
 	angles.y = -135.0
 	if controller.state.region_id == "harbor":
-		# Weather owns the coastal solar angle. Re-clamping it every rendered
-		# frame used to fight Weather's slower updates and alternate shadows.
+		# O Weather é dono do ângulo solar costeiro. Limitá-lo de novo a cada quadro
+		# renderizado brigava com as atualizações mais lentas do Weather e alternava sombras.
 		if not (session != null and is_instance_valid(session.weather) and session.weather.get("coastal_look") != null and session.weather.coastal_look.installed):
 			angles.x = maxf(angles.x, -35.0)
 	elif controller.state.region_id == "mountain":

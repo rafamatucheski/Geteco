@@ -1,5 +1,5 @@
 extends RefCounted
-## A small occupied desert shelter. Shared terrain remains the only floor.
+## Um pequeno abrigo ocupado no deserto. O terreno compartilhado continua sendo o único piso.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const HM := preload("res://world/desert/DesertTerrainMesh.gd")
 const CENTER := Vector3(-1110,0,-1000)

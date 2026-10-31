@@ -1,6 +1,6 @@
 extends RefCounted
-## One authored metre-space contract for the tower, continuous helical climb,
-## open stairwell and upper gallery. All geometry is batched by the parent.
+## Um contrato autorado em espaço de metros para a torre, a subida helicoidal contínua,
+## o poço da escada aberto e a galeria superior. Toda a geometria vai em lote pelo pai.
 const BASE_CENTER := Vector3(303,10.2,-198)
 const GALLERY_Y := 24.2
 const GALLERY_RADIUS := 6.5
@@ -36,8 +36,8 @@ static func gallery_route_points() -> PackedVector3Array:
 	return result
 
 static func route_points() -> PackedVector3Array:
-	# Enter tangentially before the first riser instead of walking through the
-	# outer handrail at the SE start. Plaza benches stay outside this approach.
+	# Entra na tangente antes do primeiro espelho em vez de atravessar o
+	# corrimão externo no início SE. Os bancos da praça ficam fora desta aproximação.
 	var result := PackedVector3Array([_point(deg_to_rad(25),6.45,BASE_CENTER.y),
 		_point(deg_to_rad(34),STAIR_RADIUS,BASE_CENTER.y)])
 	result.append_array(climb_points())
@@ -88,8 +88,8 @@ func _tower() -> void:
 	for height in [BASE_CENTER.y+1.15,BASE_CENTER.y+6.6,BASE_CENTER.y+12.0]:
 		var radius := lerpf(2.84,2.4,(height-BASE_CENTER.y)/RISE)
 		_ring("lighthouse_coping",radius+.12,radius+.12,height,height+.14)
-	# Recessed, framed narrow windows on the shaft. They are fully closed and
-	# never pretend to be accessible openings or alter the tower collision.
+	# Janelas estreitas rebaixadas e emolduradas no fuste. São totalmente fechadas e
+	# nunca fingem ser aberturas acessíveis nem alteram a colisão da torre.
 	for row in 3:
 		var height := BASE_CENTER.y+3.1+float(row)*4.0
 		var radius := lerpf(2.84,2.4,(height-BASE_CENTER.y)/RISE)
@@ -114,8 +114,8 @@ func _staircase() -> void:
 		var outer_a := _point(a,STAIR_OUTER,h0)
 		var inner_b := _point(b,STAIR_INNER,h1)
 		var outer_b := _point(b,STAIR_OUTER,h1)
-		# Physics is a continuous 15-degree ramp. The stone tread has only 4.4 cm
-		# difference at either end, so feet never disappear into deep fake stairs.
+		# A física é uma rampa contínua de 15 graus. O piso de pedra tem só 4.4 cm
+		# de diferença em cada ponta, então os pés nunca somem em degraus falsos fundos.
 		_physical_quad(inner_a,outer_a,outer_b,inner_b)
 		var tread_y := (h0+h1)*.5-.018
 		var ia := Vector3(inner_a.x,tread_y,inner_a.z)
@@ -133,8 +133,8 @@ func _staircase() -> void:
 		if i%10==0:
 			var support := _point(a,2.72,h0-.78)
 			_site._beam("lighthouse_bronze",support,_point(a,STAIR_OUTER-.08,h0-.22),.085,.10)
-	# One solid flush landing at the start; no first-step threshold or rail
-	# across the mouth. The final edge is exactly the gallery's floor altitude.
+	# Um patamar sólido rente no início; sem soleira de primeiro degrau nem corrimão
+	# atravessando a boca. A borda final fica exatamente na altitude do piso da galeria.
 
 func _physical_quad(a: Vector3,b: Vector3,c: Vector3,d: Vector3) -> void:
 	# Match Godot clockwise front faces; kept separate from shallow tread art.
@@ -145,8 +145,8 @@ func _physical_quad(a: Vector3,b: Vector3,c: Vector3,d: Vector3) -> void:
 		else: _site._collision.append_array(PackedVector3Array(triangle))
 
 func _gallery() -> void:
-	# A ring, not a disk over the last climbing metres. The stairwell is open
-	# for 144 degrees with >=2.5 m clearance where the slab resumes overhead.
+	# Um anel, não um disco sobre os últimos metros de subida. O poço da escada fica aberto
+	# por 144 graus com folga >=2.5 m onde a laje volta por cima.
 	var count := 80
 	for i in count:
 		var a := START_ANGLE+TAU*float(i)/count
@@ -159,14 +159,14 @@ func _gallery() -> void:
 			_site._guard(_point(a,WELL_OUTER,GALLERY_Y),_point(b,WELL_OUTER,GALLERY_Y),"lighthouse_")
 		else: _gallery_sector(a,b,2.38,GALLERY_RADIUS)
 		_site._guard(_point(a,GALLERY_RADIUS,GALLERY_Y),_point(b,GALLERY_RADIUS,GALLERY_Y),"lighthouse_")
-	# Close only the low end of the stairwell. The high end remains walkable.
+	# Fecha só a ponta baixa do poço da escada. A ponta alta continua caminhável.
 	var start := START_ANGLE+TAU-WELL_ARC
 	_site._guard(_point(start,WELL_INNER,GALLERY_Y),_point(start,WELL_OUTER,GALLERY_Y),"lighthouse_")
-	# The corbel ring and individual brackets explain the cantilevered balcony.
+	# O anel de cachorros e os suportes individuais explicam a sacada em balanço.
 	_ring("lighthouse_coping",2.42,3.15,GALLERY_Y-1.0,GALLERY_Y-.30)
 	for i in 16:
 		var angle := TAU*i/16.0
-		# Avoid an intersecting bracket in the open final climb sector.
+		# Evita um suporte cruzando o setor aberto da subida final.
 		if fposmod(angle-START_ANGLE,TAU)>TAU-WELL_ARC: continue
 		_site._beam("lighthouse_bronze",_point(angle,2.5,GALLERY_Y-1.3),_point(angle,6.05,GALLERY_Y-.30),.14,.18)
 
@@ -193,7 +193,7 @@ func _lantern() -> void:
 		_site._beam("lighthouse_bronze",low_a+Vector3.UP*1.15,low_b+Vector3.UP*1.15,.045,.05)
 	_ring("lighthouse_roof",2.77,2.77,GALLERY_Y+2.91,GALLERY_Y+3.09)
 	_ring("lighthouse_roof",2.90,2.82,GALLERY_Y+3.10,GALLERY_Y+3.28)
-	# Copper-grey curved cap built from uneven-radius rings instead of a cone.
+	# Cúpula curva cinza-cobre feita de anéis de raios desiguais em vez de um cone.
 	var profile := [Vector2(2.82,3.28),Vector2(2.73,3.61),Vector2(2.35,4.07),Vector2(1.74,4.50),Vector2(.92,4.83),Vector2(.16,5.00)]
 	for i in range(profile.size()-1):
 		_ring("lighthouse_roof",profile[i].x,profile[i+1].x,GALLERY_Y+profile[i].y,GALLERY_Y+profile[i+1].y)
@@ -202,8 +202,8 @@ func _lantern() -> void:
 		for j in range(profile.size()-1):
 			_site._beam("lighthouse_bronze",_point(angle,profile[j].x+.015,GALLERY_Y+profile[j].y),_point(angle,profile[j+1].x+.015,GALLERY_Y+profile[j+1].y),.035,.035)
 	_site._cylinder("lighthouse_roof",Vector3(BASE_CENTER.x,GALLERY_Y+5.35,BASE_CENTER.z),.075,.80)
-	# Stationary Fresnel assembly and one contained maintenance lamp. There is
-	# no sweeping beam and no per-frame light movement or global light changes.
+	# Conjunto Fresnel parado e uma lâmpada de manutenção contida. Não há
+	# feixe girando, movimento de luz por quadro nem mudanças de luz global.
 	_site._cylinder("lighthouse_bronze",Vector3(BASE_CENTER.x,GALLERY_Y+.67,BASE_CENTER.z),.42,.35)
 	_site._cylinder("lighthouse_bronze",Vector3(BASE_CENTER.x,GALLERY_Y+1.08,BASE_CENTER.z),.18,.66)
 	_site._cylinder("lighthouse_lens",Vector3(BASE_CENTER.x,GALLERY_Y+1.78,BASE_CENTER.z),.74,1.35)
@@ -212,8 +212,8 @@ func _lantern() -> void:
 	_site._cylinder("lighthouse_bronze",Vector3(BASE_CENTER.x,GALLERY_Y+2.5,BASE_CENTER.z),.82,.09)
 	var lamp := OmniLight3D.new()
 	lamp.name = "LighthouseLanternLight"
-	# The glass Fresnel and glazing transmit this light (no opaque shadow);
-	# the tower, gallery, handrails and roof keep their full physical shadows.
+	# O Fresnel de vidro e as vidraças deixam passar esta luz (sem sombra opaca);
+	# a torre, a galeria, os corrimãos e o telhado mantêm as sombras físicas inteiras.
 	lamp.position = Vector3(BASE_CENTER.x,26.0,BASE_CENTER.z)
 	lamp.light_color = Color("ffe0a6")
 	lamp.light_energy = 1.65
@@ -229,7 +229,7 @@ func _ring(material: String,r0: float,r1: float,y0: float,y1: float,solid := fal
 		var a := TAU*i/64.0
 		var b := TAU*(i+1)/64.0
 		_site._quad(material,_point(a,r0,y0),_point(b,r0,y0),_point(b,r1,y1),_point(a,r1,y1),Vector3(cos((a+b)*.5),0,sin((a+b)*.5)),solid)
-	# Flat closure rings need actual caps to avoid seeing hollow cornices.
+	# Anéis de fechamento planos precisam de tampas reais para não se verem cornijas ocas.
 	if absf(y1-y0)<.45:
 		for i in 64:
 			var a := TAU*i/64.0

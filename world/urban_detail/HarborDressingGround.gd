@@ -1,5 +1,5 @@
 extends RefCounted
-## Authored district ground is composed once, as adjacent surfaces, never stacked boxes.
+## O chão autorado do distrito é composto uma vez, como superfícies vizinhas, nunca caixas empilhadas.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const CUT := preload("res://world/urban_detail/GroundCut.gd")
 
@@ -45,7 +45,7 @@ static func compose(parent: Node3D, zone: String) -> void:
 			polygons.append(CUT.counter_clockwise(triangle))
 			points.append_array(triangle)
 		if points.is_empty(): continue
-		# Boxes and cylinders have a convex top; joint batches contain separate discs.
+		# Caixas e cilindros têm topo convexo; lotes de junta contêm discos separados.
 		if node.mesh is BoxMesh or node.mesh is CylinderMesh:
 			var hull := Geometry2D.convex_hull(points)
 			if hull.size()>3 and hull[0].is_equal_approx(hull[-1]): hull.remove_at(hull.size()-1)
@@ -58,10 +58,10 @@ static func compose(parent: Node3D, zone: String) -> void:
 	if region != null and region.harbor_road_geometry != null:
 		cover.append_array(region.harbor_road_geometry._layers[0].polygons)
 	if zone == "salvage":
-		# The crane yard owns this gravel court; do not paint meadow beneath it.
+		# O pátio do guindaste é dono deste pátio de cascalho; não pinta gramado embaixo dele.
 		cover.append(CUT.rect_polygon(Rect2(Vector2(parent.global_position.x,parent.global_position.z)-Vector2(16,11.5),Vector2(32,23))))
-		# The railway supplies its physical ground landing; meadow and its approach
-		# finish meet its edge instead of painting over the station's concrete.
+		# A ferrovia fornece o próprio patamar de chão físico; o gramado e o acabamento
+		# da aproximação encontram a borda dele em vez de pintar sobre o concreto da estação.
 		cover.append(CUT.rect_polygon(preload("res://world/railway/RailwayNetwork.gd").ground_landing_rect("harbor_central")))
 	if zone == "cemetery":
 		cover.append_array(preload("res://world/regions/OriginalCemetery3D.gd").path_footprints(Vector2(parent.global_position.x,parent.global_position.z)))
@@ -69,7 +69,7 @@ static func compose(parent: Node3D, zone: String) -> void:
 		var pieces: Array[PackedVector2Array] = CUT.subtract(entry.polygons,cover)
 		var local: Array[PackedVector2Array] = []
 		var inverse: Transform3D = entry.node.global_transform.affine_inverse()
-		# Keep original transforms/children and original elevation; replace only the top surface.
+		# Mantém transforms/filhos originais e a elevação original; troca só a superfície de cima.
 		var local_y: float = (inverse*Vector3(0,entry.height,0)).y
 		for polygon in pieces:
 			var converted := PackedVector2Array()
@@ -82,8 +82,8 @@ static func compose(parent: Node3D, zone: String) -> void:
 		entry.node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		cover.append_array(entry.polygons)
 	if zone == "cobra" and parent.get_meta("harbor_ground_fill_reservation",false):
-		# The district reserves its whole original footprint in the city base.
-		# Saved path deletions/moves must reveal supported ground, never sky.
+		# O distrito reserva a área original inteira na base da cidade.
+		# Remoções/movimentos de caminho salvos precisam revelar chão apoiado, nunca céu.
 		var pieces: Array[PackedVector2Array] = []
 		for footprint in footprints(zone,Vector2(parent.global_position.x,parent.global_position.z)):
 			pieces.append_array(CUT.subtract_exact([footprint],cover))

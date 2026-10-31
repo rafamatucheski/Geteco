@@ -1,6 +1,6 @@
 extends RefCounted
-## Faceted, weathered boulders. Seeded silhouette; no primitive cube presentation.
-## Bounds remain inside the existing footprint, with an explicit blocking volume.
+## Matacões facetados e gastos pelo tempo. Silhueta com semente; sem apresentação de cubo primitivo.
+## Os limites ficam dentro da área existente, com um volume de bloqueio explícito.
 static func rock(parent: Node3D, label: String, at: Vector3, size: Vector3, color: Color, solid := false) -> MeshInstance3D:
 	var seed_value := absi(int(at.x*71+at.z*133+size.x*913))
 	var rng := RandomNumberGenerator.new()
@@ -47,7 +47,7 @@ static func rock(parent: Node3D, label: String, at: Vector3, size: Vector3, colo
 		body.collision_layer=1
 		body.collision_mask=0
 		var shape := CollisionShape3D.new()
-		# Convex hull tracks the visible tapered silhouette rather than an invisible box.
+		# A carcaça convexa segue a silhueta afunilada visível em vez de uma caixa invisível.
 		# Pontos da CPU (a física calcula o casco, como o clean de create_convex_shape): sem ler a malha da GPU.
 		var hull := ConvexPolygonShape3D.new()
 		hull.points=vertices

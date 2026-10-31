@@ -1,9 +1,9 @@
 extends UrbanBuildingBase
 class_name UrbanIndustrialBuilding
 
-## Reconstructs warehouses, freight depots, and artisan workshops in native 3D geometry.
-## Features structural brick piers, double timber carriage doors with iron strap hinges,
-## roll-up loading bays, sawtooth monitor roofs with skylights, and loading dock curbs.
+## Reconstrói armazéns, depósitos de carga e oficinas artesanais em geometria 3D nativa.
+## Tem pilares estruturais de tijolo, portas duplas de madeira para carroças com dobradiças de cinta de ferro,
+## baias de carga de enrolar, telhados em shed com claraboias e meios-fios de doca de carga.
 
 func build() -> void:
 	var painted := PaintedHarborHouses.style_for(building_id, building_kind)
@@ -25,8 +25,8 @@ func build() -> void:
 	add_roof_parapet(visuals_root, height, 0.45, 0.25, trim_mat)
 	add_mesh_box(visuals_root,"V1RoofSurface",Vector3(0,height+.03,0),Vector3(building_size.x-.5,.06,building_size.y-.5),UrbanMaterials.material_for_color(v1_palette.roof,.92))
 	
-	# Only the custom artisan source owns a sawtooth monitor. Productive generic
-	# warehouses use repeated flat roof bays/skylights.
+	# Só a fonte artesanal personalizada tem telhado em shed. Armazéns genéricos
+	# de produção usam baias de telhado plano/claraboias repetidas.
 	if is_artisan: _build_sawtooth_monitors(height)
 	else: _build_warehouse_roof_bays(height)
 	
@@ -140,9 +140,9 @@ func _build_warehouse_bays(front_z: float) -> void:
 			add_mesh_box(visuals_root, "ShutterSlat", Vector3(bx, sy, front_z + 0.07), Vector3(bay_w - 0.1, 0.03, 0.02), dark_mat)
 
 func _build_warehouse_roof_bays(roof_y: float) -> void:
-	# ProceduralBuilding._draw_roof_surface divides the inner roof every 42 V1
-	# pixels and places one flat skylight in each bay. World data is converted at
-	# the same 16 px/m scale used by NativeRegion.
+	# ProceduralBuilding._draw_roof_surface divide o telhado interno a cada 42 pixels
+	# da V1 e põe uma claraboia plana em cada baia. Os dados do mundo são convertidos na
+	# mesma escala de 16 px/m usada pelo NativeRegion.
 	var source_bay_width_m: float = 42.0 / 16.0
 	var bay_count: int = maxi(2, int(building_size.x / source_bay_width_m))
 	var inner_width: float = maxf(1.0, building_size.x - 1.0)

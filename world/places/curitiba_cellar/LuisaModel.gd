@@ -1,7 +1,7 @@
 extends "res://assets/CivilianModel.gd"
-## Luisa works at the accounts desk, seated at human scale in the native world.
-## The occupied compact chair belongs to the resident: its footprint is covered
-## by her physical Actor capsule, rather than blocking her authored admission.
+## A Luisa trabalha na mesa de contas, sentada em escala humana no mundo nativo.
+## A cadeira compacta ocupada pertence à moradora: a área dela é coberta
+## pela cápsula física do Actor, em vez de bloquear a admissão autorada dela.
 var character_name := "Luísa"
 var work_chair: Node3D
 var chair_body: StaticBody3D
@@ -32,8 +32,8 @@ func _pose(delta: float) -> void:
 	if _workstation_ready:
 		var threatened: bool = is_instance_valid(_owner_actor) and _owner_actor.get_meta("workplace_threatened",false)
 		var distance := Vector2(global_position.x-_workstation_position.x,global_position.z-_workstation_position.z).length()
-		# The real reaction calls _pose before moving: stand up immediately and
-		# let its hand provider own the shielding pose until physical return.
+		# A reação real chama _pose antes de se mover: levanta na hora e
+		# deixa o provedor de mãos ser dono da pose de proteção até o retorno físico.
 		sit_amount = 1.0 if not threatened and distance <= .08 else 0.0
 		if threatened and not is_instance_valid(chair_body): _anchor_empty_chair()
 	super._pose(delta)
@@ -60,14 +60,14 @@ func _anchor_empty_chair() -> void:
 func _typing_hands() -> Array:
 	if is_instance_valid(_owner_actor) and (_owner_actor.get("dead") == true or _owner_actor.get_meta("workplace_threatened",false)):
 		return [null,null]
-	# The desk keyboard is .54 m in front of the actor's feet. Fine vertical
-	# motion makes the task visible, without per-key nodes or a UI viewport.
+	# O teclado da mesa fica .54 m à frente dos pés do ator. Um movimento vertical
+	# fino deixa a tarefa visível, sem nós por tecla nem viewport de interface.
 	return [to_global(Vector3(-.17,.95+sin(clock*7.4)*.008,.56)),
 		to_global(Vector3(.12,.95+sin(clock*6.8+1.2)*.008,.56))]
 
 func _place_leg(index: int, pelvis_basis: Basis, pelvis_position: Vector3, ankle: Vector3, pitch: float) -> void:
-	# Draw the feet a little closer to the chair, clear of the desk's full
-	# solid footprint. Native two-bone IK still owns knees, shins and shoes.
+	# Puxa os pés um pouco mais para perto da cadeira, longe da área sólida inteira
+	# da mesa. O IK nativo de dois ossos continua dono de joelhos, canelas e sapatos.
 	if sit_amount > .99: ankle.z -= .08
 	super._place_leg(index,pelvis_basis,pelvis_position,ankle,pitch)
 

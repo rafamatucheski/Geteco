@@ -1,5 +1,5 @@
 extends RefCounted
-## Sparse colonies, with world-cell ownership so streaming never moves a plant.
+## Colônias esparsas, com posse por célula do mundo para o streaming nunca mover uma planta.
 const G := preload("res://world/desert/expansion/DesertEcologyGeometry.gd")
 const FLORA := preload("res://assets/urban_detail/FloraSurfaces.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
@@ -23,7 +23,7 @@ static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callab
 	for item in placements(rect,world_seed,clearance_callable):
 		var p: Vector2=item.point
 		var y := float(height_callable.call(p))
-		# Footprint samples reject steep support, rather than burying an entire plant.
+		# Amostras da área rejeitam apoio íngreme em vez de enterrar uma planta inteira.
 		var supported := true
 		for offset in [Vector2(.65,0),Vector2(-.65,0),Vector2(0,.65),Vector2(0,-.65)]:
 			if absf(float(height_callable.call(p+offset))-y)>.22: supported=false

@@ -1,6 +1,6 @@
 extends RefCounted
-## Supplemental 3D forest floor. Coordinates and sampling use world metres (X/Z).
-## Caller owns geographic exclusions and parents the result to its streamed chunk.
+## Piso de floresta 3D suplementar. Coordenadas e amostragem usam metros do mundo (X/Z).
+## Quem chama é dono das exclusões geográficas e põe o resultado como filho do chunk em streaming.
 const CATALOG = preload("res://world/places/PlaceCatalog.gd")
 const CELL := 64.0
 const MAX_GRASS := 144
@@ -62,7 +62,7 @@ static func step(job: Dictionary, budget_usec: float) -> bool:
 		var solid := i < int(job.solid_count)
 		var point := _point(rect, rng)
 		var radius := rng.randf_range(0.55, 0.95) if solid else rng.randf_range(0.08, 0.19)
-		# Keep full footprint inside this chunk and outside entrances, roads and water.
+		# Mantém a área inteira dentro deste chunk e fora de entradas, estradas e água.
 		if rect.grow(-radius).has_point(point) and not bool(is_reserved.call(point, radius + 0.6)):
 			var y := float(height_at.call(point))
 			if is_finite(y) and _gentle(point, y, height_at, radius, 0.25):
@@ -95,7 +95,7 @@ static func _point(rect: Rect2, rng: RandomNumberGenerator) -> Vector2:
 	return rect.position + Vector2(rng.randf() * rect.size.x, rng.randf() * rect.size.y)
 
 static func _snow(point: Vector2) -> bool:
-	# Keep the original mountain's northern snow biome, independent of chunk borders.
+	# Mantém o bioma de neve do norte da montanha original, independente das bordas de chunk.
 	return preload("res://world/regions/WorldConnection3D.gd").mountain_weight(Vector3(point.x, 0, point.y)) >= 0.5 and point.y < (-1350.0 + CATALOG.MOUNTAIN_OFFSET.y) / 16.0
 
 static func _gentle(point: Vector2, y: float, height_at: Callable, radius: float, tolerance: float) -> bool:

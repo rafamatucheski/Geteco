@@ -18,7 +18,7 @@ static func material(kind: String) -> StandardMaterial3D:
 			result.roughness=.78
 		"concrete":
 			result=PORT.concrete().duplicate() as StandardMaterial3D
-			# Keep port's worn slabs, warmed to a dry garage floor; never mutate its shared material.
+			# Mantém as lajes gastas do porto, aquecidas para um piso seco de garagem; nunca altera o material compartilhado.
 			result.albedo_color=Color(1.55,1.50,1.36)
 			result.uv1_scale=Vector3.ONE/6.0
 			var pixels := result.albedo_texture.get_image()
@@ -59,13 +59,13 @@ static func apply(room: Node3D, bank: bool) -> void:
 			_piece(room,"DocumentTray",at+Vector3(.85,.04,0),Vector3(.38,.075,.28),material("dark_wood"))
 			G.box(room,"Forms",at+Vector3(.85,.085,0),Vector3(.29,.015,.21),Color("d8ceb6"))
 			G.box(room,"TellerKeyboard",at+Vector3(0,.02,.22),Vector3(.45,.035,.16),Color("525951"))
-		# Workstation accessories sit on existing furniture, away from resident and customer routes.
+		# Os acessórios de bancada ficam sobre móveis existentes, longe das rotas de moradores e clientes.
 		G.box(room,"Ledger",Vector3(6.25,1.28,1.2),Vector3(.34,.07,.46),Color("65715b"))
 	else:
 		for i in 6:
 			G.box(room,"WorkbenchDrawer",Vector3(-11.1+float(i%3)*1.4,.35+float(floori(i/3.0))*.46,-4.79),Vector3(1.2,.37,.035),Color("626c58"))
 			G.box(room,"DrawerPull",Vector3(-11.1+float(i%3)*1.4,.36+float(floori(i/3.0))*.46,-4.765),Vector3(.3,.035,.025),Color("abb0a0"))
-		# Small familiar tools keep the scale human without cluttering the drive-through bay.
+		# Ferramentas pequenas e conhecidas mantêm a escala humana sem entulhar a baia de passagem.
 		for i in 4:
 			var at := Vector3(-10.6+float(i)*.45,1.32,-5.4)
 			_piece(room,"SocketTool",at,Vector3(.055,.045,.28),material("steel"))
@@ -78,7 +78,7 @@ static func _piece(room: Node3D, id: String, at: Vector3, size: Vector3, mat: Ma
 	return node
 
 static func _finish_seat(room: Node3D, solid: MeshInstance3D, bench: bool) -> void:
-	# Retain the exact tagged collider envelope, replacing its visible solid block with furniture.
+	# Retém exatamente o envelope do colisor marcado, trocando o bloco sólido visível por móveis.
 	solid.hide()
 	var dimensions: Vector3=solid.mesh.size
 	var center: Vector3=solid.position

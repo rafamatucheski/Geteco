@@ -55,8 +55,8 @@ static func tapered_box(root: Node3D, label: String, size: Vector3, at: Vector3,
 	return part
 
 static func glazing(root: Node3D, label: String, size: Vector2, at: Vector3, yaw := 0.0) -> void:
-	# A pane has one surface. Thin double-sided boxes drew both front/back faces
-	# on top of one another and produced unstable dark seams during steering.
+	# Um vidro tem uma superfície. Caixas finas de dois lados desenhavam as faces da frente/trás
+	# uma sobre a outra e produziam emendas escuras instáveis ao esterçar.
 	var part := MeshInstance3D.new()
 	part.name = label
 	var pane := QuadMesh.new()
@@ -89,8 +89,8 @@ static func pin(root: Node3D, at: Vector3, radius := .10, width := .12) -> void:
 	root.add_child(part)
 
 static func tread_plate(root: Node3D, at: Vector3, width: float, length: float) -> void:
-	# Thick raised chevrons, grouped into the existing steel batch. The geometry
-	# sits above the plate; no coplanar decals or runtime material animation.
+	# Chevrons grossos em relevo, agrupados no lote de aço existente. A geometria
+	# fica acima da chapa; sem decals coplanares nem animação de material em runtime.
 	for row in 3:
 		for column in 3:
 			var mark := box(root,"RaisedDeckGrip",Vector3(width*.19,.023,length*.12),at+Vector3((column-1)*width*.28,.012,(row-1)*length*.27),"worn_steel",Color("7f837d"))
@@ -101,8 +101,8 @@ static func bucket_finish(bucket: Node3D) -> void:
 	for side in [-1,1]:
 		box(bucket,"ScoopWearCheek",Vector3(.13,.26,1.1),Vector3(side*1.32,.15,-.20),"worn_steel",Color("7f837d"))
 		for z in [-.58,.11]: pin(bucket,Vector3(side*1.405,.23,z),.054,.055)
-	# Long scrape channels follow the loading direction and leave the bright
-	# cutting edge exposed. Angular residue remains within the working scoop.
+	# Canais longos de raspagem seguem o sentido de carga e deixam a borda de corte
+	# brilhante exposta. Resíduo anguloso fica dentro da caçamba de trabalho.
 	for index in 7:
 		var x := -.99+index*.33
 		box(bucket,"ScrapedScoopFloor",Vector3(.075,.027,.83),Vector3(x,.091,-.18),"worn_steel",Color("7f837d"))
@@ -136,7 +136,7 @@ static func wheel(root: Node3D, at: Vector3, radius: float, width: float) -> voi
 		hub.material_override = material("metal",Color("787466"))
 		hub.set_meta("wheel_center",at)
 		root.add_child(hub)
-	# Wide diagonal tread blocks remain attached to the wheel pivot.
+	# Blocos largos de banda de rodagem em diagonal continuam presos ao pivô da roda.
 	for i in 12:
 		var angle := TAU*float(i)/12.0
 		var tread := box(root,"Tread",Vector3(width+.04,.10,radius*.24),at+Vector3(0,cos(angle)*radius,sin(angle)*radius),"mud",Color("514937"))
@@ -165,8 +165,8 @@ static func _batch(root: Node3D) -> void:
 		if not child is MeshInstance3D:
 			if child is Node3D: _batch(child)
 			continue
-		# Only cabin skin belongs to the door leaf. Previously a door also cut
-		# loader arms, exhausts, handrails and the dump bed out of their pivots.
+		# Só o revestimento da cabine pertence à folha da porta. Antes uma porta também arrancava
+		# dos pivôs os braços da carregadeira, escapamentos, corrimãos e a caçamba basculante.
 		if root.name != "Cabin": child.set_meta("door_cut_exempt",true)
 		var signature := str(child.material_override.get_instance_id())+str(child.get_meta("wheel_center",Vector3.INF))
 		if not batches.has(signature): batches[signature] = []
@@ -227,8 +227,8 @@ static func _loader(root: Node3D, key: String, paint: Color, tractor: bool) -> v
 	for side in [-1,1]:
 		box(root,"EngineVent",Vector3(.025,.28,.78),Vector3(side*.81,1.26,-1.33),"rubber",Color("222820"))
 		for index in 5: box(root,"VentSlat",Vector3(.035,.025,.73),Vector3(side*.832,1.15+index*.052,-1.33),"metal",Color("5c5c4a"))
-		# Service covers and a separate frame keep the hood from reading as one
-		# painted block; the running gear remains visible below the panels.
+		# Tampas de serviço e um chassi separado impedem que o capô pareça um único
+		# bloco pintado; o trem de rodagem continua visível abaixo dos painéis.
 		box(root,"HoodLowerSeam",Vector3(.035,.055,1.32),Vector3(side*.81,.91,-1.27),"rubber",Color("222820"))
 		box(root,"ServiceLatch",Vector3(.045,.13,.12),Vector3(side*.834,1.19,-.70),"worn_steel",Color("7f837d"))
 		box(root,"RearMudflap",Vector3(.56,.43,.09),Vector3(side*1.10,.51,1.98),"rubber",Color("222820"))
@@ -273,7 +273,7 @@ static func _loader(root: Node3D, key: String, paint: Color, tractor: bool) -> v
 	for x in [-1.31,1.31]: box(bucket,"BucketSide",Vector3(.12,.48,1.25),Vector3(x,.24,-.20),key,paint)
 	for x in [-1.08,-.54,0,.54,1.08]: box(bucket,"Tooth",Vector3(.15,.11,.43),Vector3(x,-.015,-.98),"hydraulic",Color("a7a18c"))
 	bucket_finish(bucket)
-	# Attachment points make the heavy load sit above the scoop, never at cab height.
+	# Pontos de fixação fazem a carga pesada ficar acima da caçamba, nunca na altura da cabine.
 	var anchor := Marker3D.new()
 	anchor.name = "LoadAnchor"
 	anchor.position = Vector3(0,.13,-.38)
@@ -305,8 +305,8 @@ static func _truck(root: Node3D, key: String, paint: Color) -> void:
 	for x in [-1.91,1.91]:
 		for z in [-2.30,2.20]: wheel(root,Vector3(x,1.05,z),1.05,.79)
 		box(root,"SafetyRail",Vector3(.055,.70,.055),Vector3(signf(x)*1.48,1.52,-3.63),"metal",Color("5b5e51"))
-	# The front deck has a guardrail; the two cabin approaches stay open.
-	# Continuous side rails previously ran straight through the boarding route.
+	# O deck dianteiro tem guarda-corpo; os dois acessos à cabine ficam abertos.
+	# Os guarda-corpos laterais contínuos atravessavam antes a rota de embarque.
 	box(root,"Handrail",Vector3(3.02,.06,.06),Vector3(0,1.88,-3.63),"metal",Color("5b5e51"))
 	var bed := Node3D.new()
 	bed.name = "DumpBed"
@@ -320,8 +320,8 @@ static func _truck(root: Node3D, key: String, paint: Color) -> void:
 		for z in [-4.2,-3.2,-2.2,-1.2,-.2]:
 			beam(bed,"BedRib",Vector3(side*2.04,.48,z),Vector3(side*2.26,2.02,z),.13,"metal",Color("85764a"))
 			for y in [.58,1.91]: pin(bed,Vector3(side*(2.08+(y-.48)*.14),y,z),.051,.065)
-		# Uneven scraped edges and repaired patches create a working vehicle;
-		# every plate stays proud of its host panel to avoid z-fighting.
+		# Bordas raspadas irregulares e remendos dão um veículo de trabalho;
+		# toda chapa fica saliente sobre o painel hospedeiro para evitar z-fighting.
 		for index in 5:
 			box(bed,"RimBareMetal",Vector3(.225,.028,.21+float(index%3)*.11),Vector3(side*2.15,2.215,-4.05+index*.83),"worn_steel",Color("7f837d"))
 		for index in 3:

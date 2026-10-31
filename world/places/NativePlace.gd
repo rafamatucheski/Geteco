@@ -86,14 +86,14 @@ func _ready() -> void:
 	if stage_started != 0:
 		STALL_WORK.finish("native.ready.solids", stage_started, {"place":definition.id})
 	stage_started = STALL_WORK.begin()
-	# Front cutaway uses the same original silhouette; physical bounds stay full.
+	# O corte frontal usa a mesma silhueta original; os limites físicos ficam inteiros.
 	for mesh in model.find_children("*","MeshInstance3D",true,false):
 		var bounds: AABB = (global_transform.affine_inverse()*mesh.global_transform)*mesh.get_aabb()
 		if mesh.mesh is BoxMesh and bounds.position.z > size.y*.5-.9 and bounds.size.y > 2.2:
 			mesh.mesh = mesh.mesh.duplicate()
 			mesh.mesh.size.y = .3
 			mesh.position.y = .15
-	# Authored overhead structures cut away from the fixed gameplay camera.
+	# Estruturas superiores autoradas são cortadas da câmera fixa do jogo.
 	for mesh in model.find_children("*","MeshInstance3D",true,false):
 		var bounds: AABB = (global_transform.affine_inverse()*mesh.global_transform)*mesh.get_aabb()
 		if definition.id == "harbor_police" and mesh.mesh is BoxMesh and absf(bounds.get_center().z-.5)<.05 and bounds.size.x>6.9 and bounds.size.x<7.1 and bounds.size.y>2.2:
@@ -123,8 +123,8 @@ func _ready() -> void:
 			var point: Vector2 = model.station_points[station]
 			interaction_points[station] = to_global(Vector3(point.x,0,point.y))
 	if definition.id in ["harbor_ammunation", "mountain_gunshop"]:
-		# The service target belongs to the customer side of Vance's counter.
-		# Spawn-relative placement left it in the middle of the shop instead.
+		# O alvo de atendimento pertence ao lado do cliente do balcão do Vance.
+		# O posicionamento relativo ao spawn o deixava no meio da loja.
 		interaction_points["service"] = to_global(Vector3(1.7 if definition.id == "mountain_gunshop" else 0.0, 0, -.9))
 	for npc in definition.get("npcs",[]): interaction_points[npc.id] = to_global(npc.local_position)
 	if stage_started != 0:
@@ -239,7 +239,7 @@ func _classify_bank() -> void:
 		if label == "Floor" or label.begins_with("Tile_") or label.begins_with("Cornice") or label.begins_with("Lamp") or label == "VaultLintel": continue
 		mesh.set_meta("interior_solid_id",label)
 	_rect_solid("BankFrontBoundary",Rect2(-7,5,14,.12))
-	# A visible, broad exit aligns with the actual walk-out threshold.
+	# Uma saída visível e larga se alinha à soleira real de saída a pé.
 	var part = preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
 	for side in [-1,1]:
 		part.piece(model,Vector3(.15,.4,.18),Vector3(side*1.3,.2,4.92),Color("5e696d"))
@@ -255,8 +255,8 @@ func _classify_bank() -> void:
 
 func update_bank_visibility(point: Vector3,delta: float) -> void:
 	if definition.id!="harbor_bank": return
-	# Open a view through the partition as Dante approaches/crosses the vault;
-	# physical walls remain solid, and opacity returns on the way to the lobby.
+	# Abre uma vista pela divisória quando o Dante se aproxima/atravessa o cofre;
+	# as paredes físicas continuam sólidas e a opacidade volta no caminho para o saguão.
 	var target := .88 if point.z < -2.6 else 0.0
 	bank_cutaway_amount=move_toward(bank_cutaway_amount,target,delta*3.5)
 	for surface in bank_cutaway_materials: surface.albedo_color.a=1.0-bank_cutaway_amount
@@ -265,8 +265,8 @@ func _special_solids() -> void:
 	if definition.id in ["harbor_ammunation","mountain_gunshop"]:
 		var solids := {"NorthWall":Rect2(-7.25,-5.25,14.5,.5),"WestWall":Rect2(-7.25,-5.25,.5,10.5),"EastWall":Rect2(6.75,-5.25,.5,10.5),"SouthWall":Rect2(-7.25,4.75,14.5,.5),"ServiceCounter":Rect2(-2.6,-2.8,5.2,1.2),"ArmorDisplay":Rect2(-6.35,-1.05,1.7,3.05),"ExplosivesDisplay":Rect2(4.65,-1.05,1.7,3.05),"LeftStock":Rect2(-6.05,2.2,1.1,1.6),"RightStock":Rect2(4.95,2.2,1.1,1.6),"StaffOnly":Rect2(-6.8,-4.85,13.6,1.7)}
 		if definition.id == "harbor_ammunation":
-			# The former full-width StaffOnly rectangle intersected Vance's feet
-			# and blocked an empty aisle. Cover the actual fitted rear furniture.
+			# O antigo retângulo StaffOnly de largura total cruzava os pés do Vance
+			# e bloqueava um corredor vazio. Cobre os móveis reais encaixados no fundo.
 			solids.erase("StaffOnly")
 			for side in [-1,1]:
 				solids["RearWeapons%d"%side] = Rect2(side*4.8-1.8,-4.9,3.6,.9)
@@ -291,7 +291,7 @@ func _special_solids() -> void:
 			var body: StaticBody3D = solid_bodies[-1]
 			body.position = Vector3(center.x,0,center.y)
 			body.rotation.y = atan2(delta.x,delta.y)
-			solid_bounds.pop_back() # Rotated contour is tested by native physics, not axis approximation.
+			solid_bounds.pop_back() # O contorno girado é testado pela física nativa, não por aproximação de eixos.
 		_rect_solid("CaveExitThreshold",Rect2(-1,5.6,2,.2))
 
 func set_vault_open(amount: float) -> void:

@@ -1,10 +1,10 @@
 extends Node3D
 class_name MountainTerminal3D
 
-## High-detail 3D model of the Mountain Transit Terminal ("Terminal da Serra") and Coach Berth 01.
-## Reconstructs the station office, passenger shelter canopy, waiting benches, and platform markings
-## from MountainTransitArchitecture3D.gd into native 3D metric geometry.
-## Strictly adheres to AGENTS.md: proper name signage, zero SubViewports, layer 1 StaticBody3D.
+## Modelo 3D detalhado do Mountain Transit Terminal ("Terminal da Serra") e da Baia de Ônibus 01.
+## Reconstrói o escritório da estação, a cobertura do abrigo de passageiros, os bancos de espera e as marcações da plataforma
+## de MountainTransitArchitecture3D.gd em geometria métrica 3D nativa.
+## Segue à risca o AGENTS.md: placa com nome próprio, zero SubViewports, StaticBody3D na camada 1.
 
 @export var terminal_size: Vector2 = Vector2(7.8, 3.5) # ~125 x 55 px
 @export var terminal_height: float = 3.6
@@ -122,7 +122,7 @@ func build() -> void:
 	
 	_add_box("RidgeCap", Vector3(0, ridge_y + 0.10, 0), Vector3(roof_overhang_w + 0.08, 0.14, 0.35), snow_mat)
 	
-	# 8. Coach Berth 01 Markings (Positioned in front of the terminal at Z offset -5.5m)
+	# 8. Marcações da Baia de Ônibus 01 (posta em frente ao terminal com deslocamento Z de -5.5m)
 	_build_berth_markings()
 
 func _build_bench(pos: Vector3, width: float) -> void:
@@ -138,7 +138,7 @@ func _build_bench(pos: Vector3, width: float) -> void:
 		_add_box("BenchLeg", pos + Vector3(side * (half_bw - 0.15), -0.22, 0), Vector3(0.08, 0.44, 0.40), trim_mat)
 
 func _build_berth_markings() -> void:
-	# Coach berth located in front of terminal: width ~10.5m x 2.8m
+	# Baia de ônibus em frente ao terminal: largura ~10.5m x 2.8m
 	var berth_center := Vector3(0.5, 0.02, -7.5)
 	var gold_mat := MountainMaterials.metal_brass()
 	

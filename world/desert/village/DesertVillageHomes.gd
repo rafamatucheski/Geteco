@@ -1,5 +1,5 @@
 extends RefCounted
-## Four distinct native rooms. Positions are local metres; the access is authored by the village.
+## Quatro cômodos nativos distintos. Posições em metros locais; o acesso é autorado pelo vilarejo.
 const MODEL := "res://world/desert/village/DesertVillageHomeInterior.gd"
 const IDS := ["santa_lua_home_1", "santa_lua_home_2", "santa_lua_home_3", "santa_lua_home_4"]
 

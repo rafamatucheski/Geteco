@@ -1,6 +1,6 @@
 extends Node3D
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
-## Physical garage shutter. It opens only for the session's current admission token.
+## Porta de enrolar física da garagem. Só abre para o token de admissão atual da sessão.
 signal access_changed(opened: bool)
 const GROUP := "digo_vehicle_gate"
 const INTERIOR_GROUP := "digo_interior_vehicle_gate"
@@ -18,7 +18,7 @@ func _ready() -> void:
 	var panel := BoxMesh.new()
 	panel.size = Vector3(5.4,3.3,.16)
 	if interior_gate:
-		# The physical door is not the adapter's cutaway wall silhouette.
+		# A porta física não é a silhueta de parede em corte do adaptador.
 		var authored := ArrayMesh.new()
 		authored.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,MESH_ARRAYS.arrays_of(panel,0))
 		_panel.mesh = authored

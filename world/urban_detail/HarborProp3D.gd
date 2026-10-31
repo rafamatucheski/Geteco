@@ -1,8 +1,8 @@
 extends Node3D
 class_name HarborProp3D
 
-## Streamable native 3D translations of the productive HarborDistrict,
-## HarborEastDistrict and HarborNorthDistrict prop inventories.
+## Traduções 3D nativas em streaming dos inventários de props de produção HarborDistrict,
+## HarborEastDistrict e HarborNorthDistrict.
 
 var definition: Dictionary
 var material_cache:={}
@@ -16,7 +16,7 @@ var _tree_initial_transform := Transform3D.IDENTITY
 
 static func records()->Array[Dictionary]:
 	var result:Array[Dictionary]=[]
-	# Breakwater trees, including the memorial verge and the terminal cut-outs.
+	# Árvores do quebra-mar, incluindo a margem do memorial e os recortes do terminal.
 	for point in [Vector2(1465,865),Vector2(1465,1025),Vector2(1460,1840),Vector2(1460,2040),Vector2(1750,1840),Vector2(1750,2040),Vector2(2040,1840),Vector2(2040,2040),Vector2(650,805),Vector2(880,805)]:
 		result.append(_tree_record(point,1,1.25,"446b53","world/harbor/HarborDistrict.gd"))
 	for x in [45,205]:
@@ -103,11 +103,11 @@ func furniture_tree_ready() -> void:
 	set_notify_transform(true)
 
 func _tree(style:int,scale_factor:float,color:Color)->void:
-	# Harbor-only olive palette; keep authored species, silhouettes and batching.
+	# Paleta oliva só do Harbor; mantém espécies, silhuetas e lotes autorados.
 	color = color.lerp(Color("46583a"),.28).darkened(.07)
 	var trunk_h:=(3.0 if style!=2 else 3.6)*scale_factor
 	_cylinder("TreeTrunk",.22*scale_factor,trunk_h,Vector3(0,trunk_h*.5,0),Color("66513a"),true)
-	# Retain the existing collision envelope; replace only its visual mesh.
+	# Mantém o envelope de colisão existente; troca só a malha visual.
 	var wood := get_child(get_child_count()-1) as MeshInstance3D
 	wood.mesh=preload("res://world/urban_detail/StreetTreeWood.gd").mesh()
 	wood.position=Vector3.ZERO

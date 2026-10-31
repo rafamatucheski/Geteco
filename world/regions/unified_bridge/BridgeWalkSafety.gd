@@ -1,5 +1,5 @@
 extends RefCounted
-## Follows the deck profile, independently of the narrower traffic graph.
+## Segue o perfil do tabuleiro, independente do grafo de trânsito mais estreito.
 const KIT := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
 
 static func protected_segment(a: Dictionary, b: Dictionary, side: float) -> bool:
@@ -23,8 +23,8 @@ static func add_geometry(kit) -> void:
 			kit._beam("steel",start+Vector3.UP*.67,end+Vector3.UP*.67,.08,.08,false)
 			kit._beam("",start+Vector3.UP*.60,end+Vector3.UP*.60,.22,1.10,true)
 			kit.add_box("steel",start+Vector3.UP*.72,Vector3(.10,.80,.10))
-		# Wide approaches carry two lanes per direction. Preserve the double
-		# yellow centre and mark the boundary within each direction in white.
+		# As aproximações largas levam duas faixas por sentido. Preserva o centro amarelo
+		# duplo e marca em branco o limite dentro de cada sentido.
 		if minf(a.road,b.road) < 8.0: continue
 		var length: float = b.distance-a.distance
 		var cursor := 0.0

@@ -1,9 +1,9 @@
 extends UrbanBuildingBase
 class_name UrbanBrownstoneBuilding
 
-## Reconstructs authentic brownstone, rowhouse, and terrace architecture in native 3D geometry.
-## Features raised stone stoops, multi-pane sash windows with lintels, dentil cornices,
-## rooftop water towers, and chimney stacks with clay flue pots.
+## Reconstrói arquitetura autêntica de brownstone, casas geminadas e terraços em geometria 3D nativa.
+## Tem escadarias de pedra elevadas, janelas de guilhotina com vários vidros e vergas, cornijas com dentículos,
+## caixas d'água no telhado e chaminés com potes de barro.
 
 ## Placa no vão entre o 1º e o 2º andar (verga de baixo termina em 4,09 m,
 ## peitoril de cima começa em 4,55 m). Na altura antiga (5,55 m / topo-0,75)
@@ -27,12 +27,12 @@ func build() -> void:
 	var half_d := building_size.y * 0.5
 	var front_z := half_d
 	
-	# Determine unit count based on width: single unit or twin terrace
+	# Determina a contagem de unidades pela largura: unidade única ou terraço duplo
 	var unit_count := 1
 	var unit_w := building_size.x / float(unit_count)
 	
-	# Productive Foundry terraces have four authored unit identities. Other
-	# brownstones use their exact seeded V1 palette instead of a generic red row.
+	# Os terraços da Foundry de produção têm quatro identidades de unidade autoradas. Os outros
+	# brownstones usam a paleta exata da V1 com semente em vez de uma fileira vermelha genérica.
 	var wall_colors: Array[Color]
 	var roof_colors: Array[Color]
 	var door_mats: Array[StandardMaterial3D]
@@ -66,7 +66,7 @@ func build() -> void:
 		# Raised entrance Stoop
 		_build_stoop(Vector3(u_center_x - unit_w * 0.22, 0, front_z), u_door_mat, u)
 		
-		# Windows on ground floor and upper floor(s)
+		# Janelas no térreo e no(s) andar(es) de cima
 		# A bay window ocupa a coluna da direita; sem pular essas janelas o
 		# vidro saliente atravessava as duas.
 		var has_bay := (variant_seed + u) % 2 == 0
@@ -90,9 +90,9 @@ func build() -> void:
 			visuals_root.add_child(sign_node)
 
 func _build_v1_terrace() -> void:
-	# HarborBuilding._draw_rowhouse_terrace publishes four distinct units. The
-	# 2D facade-band heights are mapped proportionally around the established
-	# 6.8 m V2 datum so their relative skyline survives the 3D conversion.
+	# HarborBuilding._draw_rowhouse_terrace publica quatro unidades distintas. As
+	# alturas das faixas de fachada 2D são mapeadas proporcionalmente em torno da referência
+	# estabelecida de 6.8 m da V2 para o skyline relativo sobreviver à conversão 3D.
 	var east := building_id.ends_with("East") or "East" in building_id
 	var profiles := [
 		{"height":6.40,"wall":Color("7c463b"),"roof":Color("343840"),"door":UrbanMaterials.wood_door_green(),"transom":"fanlight","prop":"flower_pot","panes":2,"flues":2,"dormer":false},

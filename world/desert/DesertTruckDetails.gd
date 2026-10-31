@@ -26,7 +26,7 @@ static func truck_stop() -> Node3D:
 	for x in [-5.0,5.0]:
 		var pump := canopy+Vector3(x,0,0)
 		for side in [-1.0,1.0]:
-			# Thick loops, nozzle and guards communicate the pump without explanatory signs.
+			# Laços grossos, bico e protetores comunicam a bomba sem placas explicativas.
 			var path := PackedVector3Array([pump+Vector3(side*.49,1.7,0),pump+Vector3(side*.87,1.36,.05),pump+Vector3(side*.96,.58,.12),pump+Vector3(side*.68,.31,.17),pump+Vector3(side*.46,.63,.2),pump+Vector3(side*.47,1.33,.23)])
 			for i in range(1,path.size()): _pipe(root,"PumpHose",path[i-1],path[i],.043,"rubber")
 			_pipe(root,"PumpNozzle",pump+Vector3(side*.47,1.33,.23),pump+Vector3(side*.61,1.51,.23),.052,"steel")
@@ -34,7 +34,7 @@ static func truck_stop() -> Node3D:
 		T._piece(root,"PumpKeypad",pump+Vector3(0,1.29,.53),Vector3(.35,.21,.035),"steel")
 		for side in [-1.0,1.0]: T._piece(root,"PumpMeter",pump+Vector3(side*.2,1.79,.53),Vector3(.25,.13,.035),"glass")
 		T._piece(root,"PumpBaseTrim",pump+Vector3(0,.27,0),Vector3(.92,.17,1.07),"steel")
-	# Air/water station sits clear of the x290 entry and Raul/manifest to the west.
+	# A estação de ar/água fica longe da entrada x290 e do Raul/manifesto a oeste.
 	var air := Vector3(28,0,12)
 	T._piece(root,"AirCabinet",air+Vector3(0,.82,0),Vector3(.82,1.64,.68),"rust",true)
 	G.cylinder(root,"AirGauge",air+Vector3(0,1.35,.38),.17,.065,Color("ddd0af")).rotation.x=PI*.5
@@ -47,7 +47,7 @@ static func truck_stop() -> Node3D:
 	for i in 3: T._pallet(root,Vector3(-47+float(i)*1.4,0,-39))
 	T._barrel(root,Vector3(-42.5,0,-39),"rust")
 	T._barrel(root,Vector3(-41.4,0,-39),"steel")
-	# Individual wheel stops are only on parked trailer rear bays, never across through lanes.
+	# Batentes de roda individuais ficam só nas baias traseiras de carretas estacionadas, nunca atravessando faixas de passagem.
 	for i in 4:
 		var x := -26.0-float(i)*6.4
 		T._piece(root,"TruckWheelStop",Vector3(x,.11,17.3),Vector3(2.7,.22,.36),"stone",true)

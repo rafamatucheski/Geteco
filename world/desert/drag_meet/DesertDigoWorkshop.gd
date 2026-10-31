@@ -1,6 +1,6 @@
 extends Node3D
-## An open service yard: no doorway transfer, ceiling over the actors, private
-## viewport, traffic spawn or active light. Static pieces stream with the meet.
+## Um pátio de serviço aberto: sem transferência por porta, teto sobre os atores, viewport
+## privado, spawn de trânsito ou luz ativa. As peças estáticas entram em streaming com o encontro.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const GOL := preload("res://gameplay/digo/DigoGolModel.gd")
 const URBAN := preload("res://assets/urban_detail/UrbanMaterials.gd")
@@ -25,8 +25,8 @@ func _ready() -> void:
 	set_meta("desert_drag_workshop",true)
 	var slab := G.box(self,"ServiceConcrete",Vector3(0,.019,0),Vector3(30,.012,24),Color("8c8678"),true)
 	slab.material_override=URBAN.textured_wall(Color("767d78"),.97)
-	# The north-facing bay has a low weathered back panel. Its former tall
-	# wall and full awning completely hid the worker from the default camera.
+	# A baia virada para o norte tem um painel de fundo baixo e gasto. A antiga parede
+	# alta e o toldo inteiro escondiam completamente o mecânico da câmera padrão.
 	_solid("RearPanel",Vector3(-2,.525,4.5),Vector3(11,1.05,.16),Color("52646a"))
 	for x in [.45,3.3]:
 		_solid("AwningPost",Vector3(x,1.75,2.8),Vector3(.16,3.5,.16),Color("b4a582"))
@@ -64,7 +64,7 @@ func _ready() -> void:
 	stage = STALL_WORK.begin()
 	_surface_wear()
 	STALL_WORK.finish_slow("desert.digo_workshop.wear", stage, 2000)
-	# Both service and customer bays are readable through paint alone.
+	# As baias de serviço e de clientes ficam legíveis só pela pintura.
 	for x in [-1.6,1.6]: G.box(self,"ServiceBayPaint",Vector3(x,.033,-.2),Vector3(.055,.008,5.4),Color("c6b783"))
 	for x in [3.8,8.2]: G.box(self,"CustomerBayPaint",Vector3(x,.033,-5.8),Vector3(.065,.008,5.5),Color("c6b783"))
 	G.box(self,"CustomerBayEnd",Vector3(6,.033,-3.05),Vector3(4.4,.008,.065),Color("c6b783"))
@@ -98,14 +98,14 @@ func _car() -> void:
 	add_child(car)
 	var model := GOL.new()
 	car.add_child(model)
-	# The original shared Gol resources are untouched. This presentation hides
-	# only the closed bonnet triangles in its own copy before opening the hood.
+	# Os recursos originais compartilhados do Gol ficam intocados. Esta apresentação esconde
+	# só os triângulos do capô fechado na própria cópia antes de abrir o capô.
 	for panel: MeshInstance3D in model.get_children():
 		if not panel.mesh is ArrayMesh: continue
 		var cleaned := _without_closed_hood(panel.mesh)
 		if cleaned!=null: panel.mesh=cleaned
-		# The parked repair car is oxidised/satin. Never change the shared Gol
-		# resources used by Digo's real racer or the motocross car.
+		# O carro parado em conserto é oxidado/acetinado. Nunca muda os recursos compartilhados
+		# do Gol usados pelo carro de corrida real do Digo nem pelo carro de motocross.
 		if panel.material_override is StandardMaterial3D:
 			var worn: StandardMaterial3D=panel.material_override.duplicate()
 			worn.roughness=maxf(worn.roughness,.78)
@@ -199,8 +199,8 @@ func _tools() -> void:
 		G.cylinder(self,"WheelRim",Vector3(x,.89,-3.45),.23,.03,Color("9caaa8"))
 	_solid("Compressor",Vector3(2.55,.49,1.25),Vector3(.95,.98,.65),Color("ab5140"))
 	G.cylinder(self,"CompressorMotor",Vector3(2.55,1.02,1.25),.20,.24,Color("444c4b"))
-	# Real motor fins, wheels and gauge make the compressor readable at play
-	# distance, while its complete footprint remains reserved by one body.
+	# Aletas reais do motor, rodas e manômetro deixam o compressor legível à distância
+	# de jogo, enquanto a área completa continua reservada por um corpo.
 	for i in 5: G.box(self,"CompressorFin",Vector3(2.55,.98+float(i)*.045,1.25),Vector3(.47,.018,.40),Color("6e7770"))
 	G.cylinder(self,"CompressorGauge",Vector3(2.55,1.25,1.05),.075,.035,Color("c0c1b0")).rotation.x=PI*.5
 

@@ -33,8 +33,8 @@ static func pick(kind: String, roll: float) -> int:
 	return [GRAVEL, TAR, WHITE, MEMBRANE][int(roll * 4.0) % 4]
 
 
-## Swap the finish on authored roof slabs. Geometry, collisions, helipad and
-## circulation stay intact; no extra plane and no extra surface/draw call.
+## Troca o acabamento das lajes de telhado autoradas. Geometria, colisões, heliponto e
+## circulação ficam intactos; sem plano extra e sem superfície/draw call extra.
 static func replace_existing(root: Node3D, kind: String, key: String) -> void:
 	if kind == "cobra_house": return
 	var custom_roof := find_roof(root) if not root is UrbanBuildingBase else AABB()

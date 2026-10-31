@@ -1,5 +1,5 @@
 extends "res://world/places/NativePlace.gd"
-## Fagulha uses normal room admission, rewards, residents and save restoration.
+## A Fagulha usa admissão comum de cômodo, recompensas, moradores e restauração de save.
 const ID := "harbor_arcade"
 const EXTERIOR := Vector3(80, .12, 8.75)
 const STATIONS := {
@@ -32,7 +32,7 @@ func _ready() -> void:
 	super._ready()
 	for station in STATIONS: interaction_points[station] = to_global(STATIONS[station])
 	interaction_points.service = interaction_points.arcade_pinball
-	# The front wall remains physically full height even where its visual is cut.
+	# A parede da frente continua fisicamente com altura total mesmo onde o visual é cortado.
 	for mesh in model.get_children():
 		if mesh is MeshInstance3D and str(mesh.get_meta("interior_solid_id", "")).begins_with("SouthWall"):
 			mesh.mesh = mesh.mesh.duplicate()
@@ -43,5 +43,5 @@ func on_session_entered(owner_session) -> void:
 	for actor in owner_session.room_npcs:
 		if not is_instance_valid(actor): continue
 		if str(actor.get_meta("interior_npc_id", "")).begins_with("fagulha_"):
-			# Actor's native forward is -Z; the resident rig turns PI internally.
+			# A frente nativa do ator é -Z; o rig do morador gira PI internamente.
 			actor.visual.rotation.y = -PI * .5

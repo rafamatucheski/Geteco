@@ -1,6 +1,6 @@
 extends RefCounted
-## Small static construction buffer: unit meshes/materials are shared, draw calls
-## are grouped by shape/finish, and one body owns the explicit solid volumes.
+## Pequeno buffer estático de construção: malhas/materiais unitários são compartilhados, draw calls
+## são agrupados por forma/acabamento e um corpo é dono dos volumes sólidos explícitos.
 const MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")
 static var _meshes: Dictionary = {}
@@ -39,9 +39,9 @@ func cylinder(label: String, at: Vector3, radius: float, height: float, material
 	_collision(label, at, rotation, shape)
 
 func rail_collision(label: String, at: Vector3, size: Vector3, rotation := Vector3.ZERO) -> void:
-	# Authored horizontal rails are shallow steps, unlike the furniture/ruins
-	# sharing this construction buffer. Group only rails with the same top level
-	# so PedestrianStep3D receives the actual support height under the capsule.
+	# Trilhos horizontais autorados são degraus rasos, ao contrário dos móveis/ruínas
+	# que dividem este buffer de construção. Agrupa só trilhos com o mesmo nível de topo
+	# para o PedestrianStep3D receber a altura real de apoio sob a cápsula.
 	var top: float = at.y+size.y*.5
 	if not rail_step_bodies.has(top):
 		var rail_body := StaticBody3D.new()

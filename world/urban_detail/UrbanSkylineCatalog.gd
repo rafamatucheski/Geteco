@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
-## Dimensions are metres: width, depth, total body height. Stable model IDs
-## are shared by the editor library, saved documents and production factory.
+## As dimensões são metros: largura, profundidade, altura total do corpo. IDs estáveis de modelo
+## são compartilhados pela biblioteca do editor, documentos salvos e fábrica de produção.
 const TYPES := ["urban_setback","urban_twin","urban_slab","urban_deco","urban_infill","urban_podium"]
 const LABELS := ["Torre escalonada","Torres gêmeas","Residencial com varandas","Torre art déco","Prédio estreito","Torre sobre base comercial"]
 const PRESETS := [

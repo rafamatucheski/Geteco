@@ -1,9 +1,9 @@
 extends Node3D
 class_name MountainChairliftParity3D
 
-## Native 3D environmental presentation of the production V1 chairlift.
-## The streaming owner mounts/unmounts the whole mechanism. Animation has no
-## physics tick and can be suspended explicitly while its chunk is dormant.
+## Apresentação ambiental 3D nativa do teleférico de cadeiras de produção da V1.
+## O dono do streaming monta/desmonta o mecanismo inteiro. A animação não tem
+## tick de física e pode ser suspensa explicitamente enquanto o chunk está dormente.
 
 const SCALE := 1.0 / 16.0
 const SOURCE_CENTER := Vector2(7465.0, -3952.5)
@@ -115,8 +115,8 @@ func _build_station(node_name: String, cable_point: Vector3, is_base: bool) -> v
 	var steel := _material(Color("4b5961"), 0.55, 0.48)
 	var roof := _material(Color("34444b"), 0.72, 0.30)
 	var platform := _box(station, "Platform", Vector3(0, 0.18, 0), Vector3(7.6, 0.36, 6.0), concrete)
-	# Both terminals are walkable: the northern/base terminal previously had
-	# a raised visual slab without support or a ramp, unlike the other end.
+	# Os dois terminais são caminháveis: o terminal norte/da base tinha antes
+	# uma laje visual elevada sem apoio nem rampa, ao contrário da outra ponta.
 	_add_box_collision(platform)
 	_build_walkup_ramp(station,concrete)
 	for x in [-3.1, 3.1]:
@@ -125,16 +125,16 @@ func _build_station(node_name: String, cable_point: Vector3, is_base: bool) -> v
 	for z in [-2.65, 2.65]:
 		_box(station, "RoofCrossbeam", Vector3(0, 6.48, z), Vector3(6.5, .22, .24), steel)
 	_build_station_roof(station, roof)
-	# Horizontal return wheel shares the real cable height and lane separation.
-	# The previous upright disk sat 2.35 m below the cable with no connection.
+	# A roda de retorno horizontal divide a altura real do cabo e a separação das pistas.
+	# O antigo disco em pé ficava 2.35 m abaixo do cabo sem ligação.
 	_cylinder(station, "BullWheel", Vector3(0, 8.0, 0), .875, .20, steel)
 	_cylinder(station, "WheelAxle", Vector3(0, 7.73, 0), .13, .70, steel)
 	_box(station, "WheelBearing", Vector3(0, 7.47, 0), Vector3(.55, .14, .55), steel)
 	station.set_meta("station_role", "base" if is_base else "summit")
 
 func _build_station_roof(station: Node3D, roof: Material) -> void:
-	# Complete pitched shelter: two slopes, an enclosed edge and snow ridge,
-	# instead of an unfinished flat square. Keep the 7.8 x 6.2 m footprint.
+	# Abrigo de duas águas completo: duas inclinações, uma borda fechada e cumeeira de neve,
+	# em vez de um quadrado plano inacabado. Mantém a área de 7.8 x 6.2 m.
 	var snow := _material(Color("dbe5e8"), .94)
 	var trim := _material(Color("3b4c55"), .74, .18)
 	var pitch := atan2(.80, 3.9)
@@ -148,7 +148,7 @@ func _build_station_roof(station: Node3D, roof: Material) -> void:
 	_box(station, "SnowRidge", Vector3(0, 7.63, 0), Vector3(.20, .12, 6.24), snow)
 
 func _build_walkup_ramp(station: Node3D, material: Material) -> void:
-	# Meet the 2.2 m trail at ground level and the existing platform at 36 cm.
+	# Encontra a trilha de 2.2 m no nível do chão e a plataforma existente a 36 cm.
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for point in [Vector3(-1.1,.36,3),Vector3(1.1,.36,3),Vector3(-1.1,0,4.8),
@@ -203,7 +203,7 @@ func _sample_cable(progress: float) -> Vector3:
 	return _cable_points[0]
 
 func _add_box_collision(mesh: MeshInstance3D) -> void:
-	# Read the rendered volume and inherit its transform; no duplicate bounds.
+	# Lê o volume renderizado e herda o transform; sem limites duplicados.
 	var geometry := mesh.mesh as BoxMesh
 	var body := StaticBody3D.new()
 	body.name = "GeometrySolid"

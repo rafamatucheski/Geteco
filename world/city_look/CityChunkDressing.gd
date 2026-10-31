@@ -245,7 +245,7 @@ static func _roll(key: String) -> float:
 
 
 static func _add(batches: Dictionary, kind: String, point: Vector3, forward: Vector2, scale := 1.0) -> void:
-	# Full furniture footprints must clear the court and its sidewalk connection.
+	# A área inteira dos móveis precisa liberar a quadra e a ligação com a calçada.
 	var skate_layout := preload("res://activities/skate/SkateParkLayout.gd")
 	if kind in ["dumpster", "trash_bags", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth", "bench_seat", "planter"] and skate_layout.reserved(Vector2(point.x, point.z), 1.5 * scale): return
 	# forward: direção (x,z) para onde a frente (+Z local) do adereço aponta.
@@ -374,8 +374,8 @@ static func _flush_kind(chunk: Node3D, kind: String, transforms: Array, built: D
 
 
 static func _flush_tail(chunk: Node3D, batches: Dictionary, built: Dictionary) -> void:
-	# Planters keep their batched mesh; one static compound body per chunk
-	# provides the exact stone footprint, removed with the streamed chunk.
+	# Os canteiros mantêm a malha em lote; um corpo estático composto por chunk
+	# dá a área exata da pedra e é removido junto com o chunk em streaming.
 	if batches.has("planter"):
 		var body := StaticBody3D.new()
 		body.name = "CityPlanterSolids"
@@ -542,9 +542,9 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	head_instance.material_override = MATERIALS.lamp_head()
 	head_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.add_child(head_instance)
-	# A small caged diffuser hangs below the existing canopy. Unlike the flat
-	# underside, its warm glass reads from the elevated gameplay camera, matching
-	# the port/garage splash art without more poles, light pools or real lights.
+	# Um pequeno difusor engaiolado fica abaixo da cobertura existente. Ao contrário
+	# da face inferior plana, o vidro quente aparece na câmera elevada do jogo, como
+	# na arte de abertura do porto/garagem, sem mais postes, poças de luz ou luzes reais.
 	var frame_instance := MultiMeshInstance3D.new()
 	frame_instance.name = "CityLook_street_lantern_frames"
 	frame_instance.multimesh = lantern_frames
@@ -554,8 +554,8 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	var glass_instance := MultiMeshInstance3D.new()
 	glass_instance.name = "CityLook_street_lantern_diffusers"
 	glass_instance.multimesh = lantern_glass
-	# Shared time-of-day material: the new glass follows the same gradual
-	# transition and warm-white palette, without an additional update loop.
+	# Material compartilhado de hora do dia: o vidro novo segue a mesma transição
+	# gradual e a paleta branco-quente, sem um laço de atualização extra.
 	glass_instance.material_override = MATERIALS.lamp_head()
 	glass_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.add_child(glass_instance)
@@ -621,15 +621,15 @@ static func _lamp_mesh(part: String) -> ArrayMesh:
 	elif part == "head":
 		_lamp_box(tool, Vector3(0, LAMP_HEIGHT - 0.04, LAMP_ARM + 0.02), Vector3(0.3, 0.05, 0.54))
 	elif part == "lantern_frame":
-		# The existing shoebox head is the rain canopy. A restrained four-rod
-		# guard and lower tray give the point of light an industrial port shape.
+		# A cabeça em caixa existente é a cobertura de chuva. Uma grade discreta de
+		# quatro hastes e uma bandeja inferior dão ao ponto de luz uma forma de porto industrial.
 		var center_z := LAMP_ARM + .02
 		_lamp_box(tool, Vector3(0, LAMP_HEIGHT - .48, center_z), Vector3(.38, .055, .44))
 		for x in [-.16, .16]:
 			for z in [-.19, .19]:
 				_lamp_box(tool, Vector3(x, LAMP_HEIGHT - .265, center_z + z), Vector3(.035, .43, .035))
-		# Base ferrule and two shaft collars are grounded metal details, never
-		# decorative lights. They preserve the existing silhouette/footprint.
+		# A virola da base e os dois anéis do fuste são detalhes de metal aterrados, nunca
+		# luzes decorativas. Eles preservam a silhueta/área existente.
 		_lamp_box(tool, Vector3(0, .52, 0), Vector3(.19, .045, .19))
 		_lamp_box(tool, Vector3(0, 1.06, 0), Vector3(.14, .05, .14))
 		if UTILITY.enabled:
@@ -778,7 +778,7 @@ static func _light_pools(points: PackedVector3Array, sizes: PackedFloat32Array, 
 	instance.multimesh = multimesh
 	instance.material_override = MATERIALS.light_pool()
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# Wet highlights extend the existing horizontal footprint by at most 30%.
+	# Os reflexos molhados aumentam a área horizontal existente em no máximo 30%.
 	instance.extra_cull_margin = 2.0
 	instance.visible = MATERIALS.night > 0.01
 	instance.add_to_group(NIGHT_GROUP)
@@ -891,11 +891,11 @@ static func _sidewalk_furniture(context: Dictionary, batches: Dictionary) -> voi
 					if kind in ["phone_booth", "bench_seat", "planter"]:
 						point = along + outward * (width * 0.5 + SIDEWALK - 0.7)
 						if _inside_building(context, point, 0.5) or FILL.occupied_near(context, point, 1.2): continue
-					# Both divided lanes share a structural bridge deck. Their inner
-					# "sidewalks" are the driving median, not a place for furniture.
+					# As duas pistas divididas dividem um tabuleiro de ponte estrutural. As
+					# "calçadas" internas são o canteiro central da pista, não lugar para mobiliário.
 					if WORLD_CONNECTION.reserves_approach_for_driving(point): continue
-					# The workshop's authored vehicle access owns this apron. Keep
-					# the same furniture on the opposite public Quay sidewalk.
+					# O acesso de veículos autorado da oficina é dono deste pátio. Mantém
+					# o mesmo mobiliário na calçada pública oposta da Quay.
 					if _workshop_driving(point):
 						point = Vector2(197.25,102.8+_roll(key+"workshop_edge")*6.0)
 						if not _in_chunk(context,point) or _inside_building(context,point,.5): continue
@@ -955,7 +955,7 @@ static func _building_surroundings(context: Dictionary, batches: Dictionary) -> 
 
 
 static func _refuse_overlaps_transit(context: Dictionary, point: Vector2) -> bool:
-	# Includes the full refuse prop, not only its pivot; the tube stays intact.
+	# Inclui o prop de lixo inteiro, não só o pivô; o tubo fica intacto.
 	for rect: Rect2 in context.get("transit_reservations",[]):
 		if rect.grow(1.1).has_point(point): return true
 	return false
@@ -971,8 +971,8 @@ static func _push(batches: Dictionary, kind: String, transform: Transform3D) -> 
 # de bueiro e bocas de lobo junto ao meio-fio.
 
 static func _road_wear(context: Dictionary, batches: Dictionary) -> void:
-	# The police sewer owns a dedicated interactive hatch at this exact spot.
-	# Keep generic road lids clear so they cannot overlap the authored access.
+	# O esgoto da polícia tem uma escotilha interativa dedicada exatamente neste ponto.
+	# Mantém as tampas genéricas da rua afastadas para não sobreporem o acesso autorado.
 	for road in context.roads:
 		var points: PackedVector2Array = road.points
 		var width: float = road.width
@@ -1462,8 +1462,8 @@ static func _other_roofs(chunk: Node3D, _batches: Dictionary) -> void:
 
 ## Um filho do chunk por item (o passo 12 fatiado chama isto pelo cursor).
 static func _other_roof(child: Node) -> void:
-	# Walk-in cargo owns a retractable roof; a chunk-wide slab would remain
-	# opaque over the player after its actual roof had disappeared.
+	# A carga com entrada a pé tem um teto retrátil; uma laje do chunk inteiro ficaria
+	# opaca sobre o jogador depois que o teto real tivesse sumido.
 	if child.get_meta("native_dynamic_roof",false): return
 	if not child is Node3D or child is UrbanBuildingBase or child is MultiMeshInstance3D: return
 	if child.find_children("*", "MeshInstance3D", true, false).size() < 3: return

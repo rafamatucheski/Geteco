@@ -15,7 +15,7 @@ static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callab
 	body.collision_mask=0
 	body.set_meta("vehicle_surface","hard")
 	var count := 0
-	# Global cells, with enough padding for displaced companions owned by adjacent chunks.
+	# Células globais, com margem suficiente para companheiros deslocados que pertencem a chunks vizinhos.
 	for x in range(floori(area.position.x/CELL)-1,ceili(area.end.x/CELL)+1):
 		for z in range(floori(area.position.y/CELL)-1,ceili(area.end.y/CELL)+1):
 			var rng := RandomNumberGenerator.new()

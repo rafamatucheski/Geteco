@@ -1,9 +1,9 @@
 extends UrbanBuildingBase
 class_name UrbanLandmarkFrontage3D
 
-## Faithful native replacements for the three accessible North Frontage exteriors
-## whose V1 positions already agree with the V2 catalog. Small facade details stay
-## visual-only; only the architectural shell owns collision.
+## Substitutos nativos fiéis para os três exteriores acessíveis da North Frontage
+## cujas posições na V1 já batem com o catálogo da V2. Pequenos detalhes de fachada ficam
+## só visuais; só a casca arquitetônica tem colisão.
 
 const V1_PUMP_OFFSET_X := 70.0 / 16.0
 const V1_PUMP_OFFSET_Z := 140.0 / 16.0
@@ -51,8 +51,8 @@ func _build_north_pier_bank() -> void:
 	var glass := UrbanMaterials.glass_window()
 	var front_z := building_size.y * 0.5
 
-	# The native transfer vestibule needs standing depth behind the real leaf.
-	# The previous back wall was only six centimetres behind its closed face.
+	# O vestíbulo nativo de transferência precisa de profundidade para ficar em pé atrás da folha real.
+	# A parede do fundo anterior ficava só seis centímetros atrás da face fechada.
 	_build_recessed_shell(stone, 1.55, 1.65)
 	add_roof_parapet(visuals_root, height, 0.34, 0.24, light_stone)
 	add_roof_gravel(visuals_root, height)
@@ -86,7 +86,7 @@ func _build_north_pier_bank() -> void:
 	_build_glazed_door(front_z, 0.0, 1.42, 2.52, ink, glass, bronze)
 	_add_proper_name_sign(Vector3(0, 4.22, front_z + 0.57), Vector2(3.9, 0.58), ink)
 
-	# Low copper-framed skylight from the original authored bank roof.
+	# Claraboia baixa com moldura de cobre do telhado autorado original do banco.
 	var skylight := Node3D.new()
 	skylight.name = "BankSkylight"
 	skylight.position = Vector3(0, height + 0.12, -building_size.y * 0.18)
@@ -127,8 +127,8 @@ func _build_union_clothing() -> void:
 		add_mesh_box(visuals_root, "UnionDisplayFrame", Vector3(bay_x, 1.78, front_z + 0.23), Vector3(3.05, 2.72, 0.14), trim)
 		var display_glass := add_mesh_box(visuals_root, "UnionDisplayGlass", Vector3(bay_x, 1.78, front_z + 0.32), Vector3(2.76, 2.43, 0.04), glass)
 		display_glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		# V1 draws each dressed mannequin inside the display glass. In 3D, keep
-		# it between the opaque shell and the pane so it remains visible yet enclosed.
+		# A V1 desenha cada manequim vestido dentro do vidro da vitrine. Em 3D, mantém
+		# o manequim entre a casca opaca e o vidro para continuar visível e ainda fechado.
 		_build_dressed_mannequin(Vector3(bay_x, 0.0, front_z + 0.24), side > 0.0, "West" if side < 0.0 else "East")
 
 	add_mesh_box(visuals_root, "UnionWelcomeMat", Vector3(0, 0.025, front_z + 0.86), Vector3(1.55, 0.05, 0.62), UrbanMaterials.material_for_color(Color("74644a"), 0.95))
@@ -170,8 +170,8 @@ func _build_fuel_store() -> void:
 		var pane := add_mesh_box(visuals_root, "FuelStoreWindow", Vector3(window_x, 1.72, front_z + 0.24), Vector3(2.76, 2.16, 0.04), glass)
 		pane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
-	# The productive V1 adds exactly two pumps at (+/-70, 140) relative pixels.
-	# They remain visual-only as in V1, so the central access corridor cannot snag.
+	# A V1 de produção acrescenta exatamente duas bombas em (+/-70, 140) pixels relativos.
+	# Elas continuam só visuais como na V1, para o corredor central de acesso não enroscar.
 	for side in [-1.0, 1.0]:
 		_build_v1_fuel_pump(Vector3(side * V1_PUMP_OFFSET_X, 0.0, V1_PUMP_OFFSET_Z), pump_red, dark, glass, "West" if side < 0.0 else "East")
 

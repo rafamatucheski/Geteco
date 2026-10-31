@@ -1,6 +1,6 @@
 extends RefCounted
 const LIFETIME := preload("res://world/desert/DesertPreparationLifetime.gd")
-## One shared triangulation for visible geology, physical floor and height queries.
+## Uma triangulação compartilhada para a geologia visível, o piso físico e as consultas de altura.
 const L := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const SANDSTONE := preload("res://world/desert/canyon/smuggler_sandstone.gdshader")
 const CELL := 96.0
@@ -90,8 +90,8 @@ static func _tile_faces(key: Vector2i) -> PackedVector3Array:
 		var bottom := _is_refined(key+Vector2i(0,1))
 		var left := _is_refined(key+Vector2i(-1,0))
 		if top or right or bottom or left:
-			# Match every refined edge vertex. A plain coarse quad would leave
-			# cracks where a shelf turns into the half-metre rock mesh.
+			# Casa cada vértice de borda refinado. Um quad grosseiro simples deixaria
+			# rachaduras onde uma prateleira vira a malha de rocha de meio metro.
 			var ring: Array[Vector2]=[a]
 			if top: ring.append_array([a.lerp(b,1.0/3),a.lerp(b,2.0/3)])
 			ring.append(b)
@@ -141,8 +141,8 @@ static func build_visuals() -> Node3D:
 			node.mesh=mesh_for(Vector2i(x,z))
 			node.material_override=material()
 			root.add_child(node)
-	# Render resources now cover every cell; collision reuses these exact faces.
-	# Height queries need no generation dictionaries after the first build.
+	# Os recursos de render agora cobrem toda célula; a colisão reaproveita estas mesmas faces.
+	# Consultas de altura não precisam de dicionários de geração depois da primeira montagem.
 	_samples.clear()
 	_refined.clear()
 	return root

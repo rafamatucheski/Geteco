@@ -11,7 +11,7 @@ const DETAIL_KIT := preload("res://world/city_look/CityPropKit.gd")
 var data: Dictionary = {}
 var building_id: String = ""
 var building_kind: String = ""
-var building_size: Vector2 = Vector2(10.0, 10.0) # Width (X) and Depth (Z) in meters
+var building_size: Vector2 = Vector2(10.0, 10.0) # Largura (X) e profundidade (Z) em metros
 var height: float = 4.5
 var entrance_north: bool = false
 var base_color: Color = Color("8b8d80")
@@ -42,9 +42,9 @@ static func resolved_height(source: Dictionary) -> float:
 	var local_building_kind := str(local_data.get("kind","office"))
 	var local_variant_seed := int(local_data.get("variant_seed",0))
 	var value := 4.5
-	# Existing vertical conversion remains unchanged unless V1 publishes an
-	# explicit override (Exchange/Civic). Generic heights are still an open
-	# fidelity item and are not guessed from screen-space extrusion here.
+	# A conversão vertical existente fica igual a menos que a V1 publique uma
+	# sobreposição explícita (Exchange/Civic). Alturas genéricas ainda são um item aberto
+	# de fidelidade e não são chutadas a partir da extrusão em espaço de tela aqui.
 	if local_data.has("height_override"):
 		value = float(local_data.height_override)
 	elif local_building_kind in ["brownstone", "rowhouse", "rowhouse_terrace", "l_shaped_block"]:
@@ -106,7 +106,7 @@ func _ready() -> void:
 	preload("res://runtime/StallWorkTrace.gd").finish_slow("stream.building.build", build_span, 2000, self)
 
 	if entrance_north:
-		# Mirror/rotate visuals and entrance layout if entrance is on North
+		# Espelha/gira o visual e o layout da entrada se a entrada estiver no norte
 		visuals_root.rotation.y = PI
 		collision_root.rotation.y = PI
 
@@ -238,7 +238,7 @@ func add_cornice(parent: Node3D, y: float, projection: float = 0.35, h: float = 
 		var dentil_d := 0.16
 		var count := int((building_size.x - 0.4) / 0.45)
 		var step := (building_size.x - 0.6) / float(maxi(count - 1, 1))
-		# The static blocks share one material and one facade visibility scope.
+		# Os blocos estáticos dividem um material e um escopo de visibilidade de fachada.
 		var dentil_box := BoxMesh.new()
 		dentil_box.size = Vector3(dentil_w, dentil_h, dentil_d)
 		var dentil_surface := SurfaceTool.new()

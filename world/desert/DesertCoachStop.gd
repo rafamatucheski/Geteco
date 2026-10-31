@@ -1,5 +1,5 @@
 extends RefCounted
-## Exterior stop, owned and unloaded by the desert's existing chunk lifecycle.
+## Parada externa, pertencente ao ciclo de vida de chunks existente do deserto e descarregada por ele.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const M := preload("res://world/desert/DesertTownMaterials.gd")
 const POSITION := Vector3(-185,0,-549)
@@ -8,7 +8,7 @@ static func build() -> Node3D:
 	var stop := Node3D.new()
 	stop.name="CobreCoachStop"
 	stop.position=POSITION
-	# Flush foundation; the clear front apron contains the authored arrival.
+	# Fundação rente; o pátio dianteiro livre contém a chegada autorada.
 	# Só visual: o tampo fica 1,5 cm acima do chão e, sólido, a quina vertical segurava o casco do carro
 	# (caixa sem subida de degrau) na beira do ponto (sonda probe_desert_invisible_walls, 27/10). O chão
 	# do deserto já apoia carro e jogador aqui.
@@ -27,7 +27,7 @@ static func build() -> Node3D:
 	_part(stop,"BenchBack",Vector3(0,.9,-1.01),Vector3(3.1,.7,.12),"wood")
 	_part(stop,"NameBoard",Vector3(0,2.72,1.7),Vector3(2.9,.47,.10),"steel")
 	G.sign_name(stop,"COBRE",Vector3(0,2.73,1.765),38)
-	# No new local lights or per-frame work; existing road lighting reaches it.
+	# Sem luzes locais novas nem trabalho por quadro; a iluminação de estrada existente chega até ela.
 	M.batch_visuals(stop)
 	return stop
 

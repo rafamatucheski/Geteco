@@ -1,6 +1,6 @@
 extends Node3D
-## Passenger coach and articulated diesel unit; real windows into the shared world.
-## Geometry is instanced by material, not one draw call per seat/frame.
+## Vagão de passageiros e unidade diesel articulada; janelas reais para o mundo compartilhado.
+## A geometria é instanciada por material, não um draw call por assento/quadro.
 const PASSENGER_FOOT := Vector3(0.0, 0.84, 2.7)
 const WINDOW_EYE := Vector3(0.06, 2.37, -1.50)
 const ENGINE_LEAD := 9.15
@@ -40,7 +40,7 @@ func _build_coach() -> void:
 	_box(self, "wood", Vector3(2.68, .14, 10), Vector3(0, .76, 0), true, "coach_floor")
 	_arched_roof(self, "CoachRoof", 2.86, 10.2, Vector3(0, 2.78, 0), .36)
 	for side in [-1.0, 1.0]:
-		# Sill and window header stay solid; the open middle is a genuine view out.
+		# O peitoril e a verga da janela ficam sólidos; o meio aberto é uma vista real para fora.
 		for z in [-2.98, 2.98]:
 			_box(self, "paint", Vector3(.12, .78, 4.04), Vector3(side * 1.36, 1.19, z), true, "wall_sill")
 		_box(self, "cream", Vector3(.12, .30, 10), Vector3(side * 1.36, 2.64, 0), true, "window_header")
@@ -60,7 +60,7 @@ func _build_coach() -> void:
 		_box(self, "metal", Vector3(.38, .12, 1.90), Vector3(side * 1.51, .66, 0))
 		for z in [-4.9, -2.95, -.98, .98, 2.95, 4.9]:
 			_box(self, "cream", Vector3(.15, 1.02, .105), Vector3(side * 1.36, 2.05, z), true, "window_post")
-		# Recessed seals and divided glazing read as windows, rather than an open tram.
+		# Vedações rebaixadas e vidraça dividida parecem janelas, em vez de um bonde aberto.
 		for z in [-3.92, -1.96, 1.96, 3.92]:
 			_box(self, "rubber", Vector3(.025, .055, 1.80), Vector3(side * 1.375, 1.64, z))
 			_box(self, "rubber", Vector3(.025, .055, 1.80), Vector3(side * 1.375, 2.45, z))
@@ -89,7 +89,7 @@ func _build_coach() -> void:
 		_box(self, "cream", Vector3(2.74, .06, .14), Vector3(0, 1.57, z))
 		for x in [-1.1, 1.1]:
 			_box(self, "orange", Vector3(.15, .18, .045), Vector3(x, 1.34, z + signf(z) * .08))
-	# Luminaires are emissive materials, no extra shadow maps or per-pixel light.
+	# As luminárias são materiais emissivos, sem mapas de sombra extras nem luz por pixel.
 	for z in [-3.5, 0.0, 3.5]:
 		_box(self, "metal", Vector3(.52, .06, .72), Vector3(0, 2.74, z))
 		_box(self, "lamp", Vector3(.39, .045, .60), Vector3(0, 2.70, z))
@@ -118,7 +118,7 @@ func _build_locomotive() -> void:
 		_box(locomotive, "lamp", Vector3(.27, .19, .08), Vector3(side * .83, 1.73, -3.52))
 	for z in [-2.35, 2.45]: _bogie(locomotive, z)
 	_arched_roof(locomotive, "EngineCover", 2.6, 3.65, Vector3(0, 2.02, 1.52), .18)
-	# Flush exhaust grille replaces the isolated block above the engine cover.
+	# Uma grade de escape rente substitui o bloco isolado acima da tampa do motor.
 	for z in [.55, .76, .97, 1.18, 1.39, 1.60, 1.81, 2.02, 2.23, 2.44]:
 		_box(locomotive, "rubber", Vector3(1.35, .025, .065), Vector3(0, 2.205, z))
 	_box(locomotive, "paint", Vector3(2.42, .31, .34), Vector3(0, 1.34, -3.51))
@@ -134,7 +134,7 @@ func _material(color: Color, roughness: float, metallic: float, glow := false, s
 	result.metallic = metallic
 	if not glow and not surface.is_empty():
 		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(result, surface, 1.5, .22)
-		# World-anchored mapping slides across a moving roof. Keep it on the vehicle.
+		# O mapeamento ancorado no mundo desliza num teto em movimento. Mantém-no no veículo.
 		result.uv1_world_triplanar = false
 		result.albedo_color = Color(minf(color.r * result.albedo_color.r, 1.0), minf(color.g * result.albedo_color.g, 1.0), minf(color.b * result.albedo_color.b, 1.0), color.a)
 		result.roughness = roughness
@@ -155,7 +155,7 @@ func _bogie(parent: Node3D, z: float) -> void:
 		_box(parent, "metal", Vector3(.11, .12, 1.84), Vector3(side * 1.07, .63, z))
 
 func _arched_roof(parent: Node3D, node_name: String, width: float, length: float, center: Vector3, rise: float) -> void:
-	# One low-poly extrusion per roof, with closed ends and no moving props.
+	# Uma extrusão low-poly por teto, com pontas fechadas e sem props móveis.
 	var profile := PackedVector2Array()
 	for index in range(9):
 		var angle := PI - float(index) * PI / 8.0

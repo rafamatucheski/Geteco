@@ -93,7 +93,7 @@ func _darts() -> void:
 	for i in (0 if painted else 20):
 		var angle := TAU*i/20.0
 		_dart_detail(Vector3(5.3+sin(angle)*.21,1.73+cos(angle)*.21,-5.542),Vector3(.012,.27,.012),"c3b386","metal",Vector3(0,0,-angle))
-	# A regulation throw line is paint, with the lane kept free of solids.
+	# A linha de arremesso oficial é pintura, com a pista livre de sólidos.
 	detail(Vector3(5.3,.014,-3.15),Vector3(1.3,.012,.06),"d2b573","paint")
 
 func _tables() -> void:
@@ -106,7 +106,7 @@ func _tables() -> void:
 		_bottle(at+Vector3(-.3,.91,.1),0)
 		_bottle(at+Vector3(.32,.91,-.15),1)
 		detail(at+Vector3(.25,.99,.22),Vector3(.12,.16,.12),"b98d4d","paint",Vector3.ZERO,true)
-	# Bench is away from the standing drinkers and entrance corridor.
+	# O banco fica longe dos que bebem em pé e do corredor de entrada.
 	box("EastBench",Vector3(7,.37,3.5),Vector3(.78,.74,2.4),"75533b","EastBench","wood")
 	box("EastBenchBack",Vector3(7.4,.86,3.5),Vector3(.12,1.25,2.4),"694733","EastBench","wood")
 
@@ -148,7 +148,7 @@ func _paintings() -> void:
 	DECOR.panel(self,"sede_moto",Vector3(6.85,2.35,-5.745),Vector2(1.0,.5))
 
 func _dart_detail(at: Vector3, size: Vector3, color: String, kind := "paint", rotation := Vector3.ZERO, round_shape := false) -> void:
-	# Scale in primitive-local axes before rotation; wall discs retain their circle.
+	# Escala nos eixos locais da primitiva antes da rotação; os discos de parede mantêm o círculo.
 	var key := color+kind+str(round_shape)
 	if not _batches.has(key): _batches[key]={"color":color,"kind":kind,"round":round_shape,"transforms":[]}
 	_batches[key].transforms.append(Transform3D(Basis.from_euler(rotation)*Basis.from_scale(size),at))

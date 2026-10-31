@@ -1,6 +1,6 @@
 extends "res://scripts/Actor.gd"
-## Civilian actors keep the shared collision/damage contracts. Their task is
-## performed with native hand IK and real props, without NPC-sized billboards.
+## Atores civis mantêm os contratos compartilhados de colisão/dano. A tarefa deles é
+## feita com IK nativo das mãos e props reais, sem billboards do tamanho de NPC.
 ## Rework 15/10/2026: além de trabalhar em pé, o morador senta no próprio
 ## banquinho (dentro da cápsula), deita na cama do andar a partir de um ponto
 ## livre ao lado dela, conversa em dupla, toma café, varre e caminha entre

@@ -7,7 +7,7 @@ const LIFE := preload("res://world/desert/expansion/DesertEcologyLife.gd")
 const STAGES := 2
 
 static func enabled() -> bool:
-	# Read only by the isolated before/after benchmark, never a saved game option.
+	# Lido só pelo benchmark isolado de antes/depois, nunca uma opção salva do jogo.
 	return not (OS.is_debug_build() and Engine.get_meta("desert_expansion_benchmark_disabled",false))
 
 static func prewarm(height: Callable) -> Dictionary:
@@ -21,7 +21,7 @@ static func build_stage(parent: Node3D,rect: Rect2,stage: int,height: Callable,c
 		1: FLORA.build_chunk(parent,rect,6102026,height,clearance)
 
 static func build_surfaces(parent: Node3D,rect: Rect2,height: Callable) -> void:
-	# Raised surfaces must exist before the region admits a restored actor/car.
+	# Superfícies elevadas precisam existir antes de a região admitir um ator/carro restaurado.
 	if enabled(): LANDFORMS.build_chunk(parent,rect,6102026,height)
 
 static func reservation_clear(point: Vector2,radius: float=0.0) -> bool:

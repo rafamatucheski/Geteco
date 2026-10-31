@@ -1,7 +1,7 @@
 extends RefCounted
-## Independent west-side gorge. Heights are metres below the desert datum.
+## Desfiladeiro independente do lado oeste. As alturas são metros abaixo da referência do deserto.
 const DIMENSIONS := preload("res://world/desert/canyon/CanyonDimensions.gd")
-## 29,160 square metres: 30% of the former 270 x 360 m formation.
+## 29,160 metros quadrados: 30% da antiga formação de 270 x 360 m.
 const BOUNDS := Rect2(-1285,-610,162,180)
 const CENTER := Vector3(-1204,0,-492)
 const CAMP_BOUNDS := Rect2(-1240,-524,72,64)
@@ -46,8 +46,8 @@ static func reservation_clear(point: Vector2,radius := 0.0) -> bool:
 
 static func analytic_height(point: Vector2) -> float:
 	if not enabled() or not BOUNDS.has_point(point): return 0.0
-	# Compress only the empty gorge. Camp furniture, guards and its natural mesa
-	# retain their original metre dimensions and entrance/armory positions.
+	# Comprime só o desfiladeiro vazio. Móveis do acampamento, guardas e a mesa natural
+	# mantêm as dimensões originais em metros e as posições de entrada/arsenal.
 	var source := DIMENSIONS.field_to_source(point)
 	if not DIMENSIONS.SOURCE_BOUNDS.has_point(source): return 0.0
 	var opening := smoothstep(-620,-550,source.y)
@@ -57,14 +57,14 @@ static func analytic_height(point: Vector2) -> float:
 	var angle := atan2(q.y,q.x)
 	var erosion := .028*sin(angle*7+.7)+.021*sin(angle*11-1.4)
 	var radial := q.length()+erosion
-	# Three scarps and their benches keep the sandstone's geological structure.
+	# Três escarpas e as bancadas mantêm a estrutura geológica do arenito.
 	var wall := .28*smoothstep(.36,.52,radial)+.36*smoothstep(.63,.78,radial)+.36*smoothstep(.85,.99,radial)
 	var wash := 1.0-smoothstep(3.0,8.0,absf(source.x-_source_wash_center(source.y)))
 	var variation := 2.5*sin(source.y*.027)+1.7*sin(source.x*.041+source.y*.01)-wash*2.2
 	var floor_height := -DEPTH+variation*DIMENSIONS.DEPTH_FACTOR
 	var height := lerpf(floor_height,0.0,clampf(wall,0,1))
-	# This island stays full size: every existing guard, cover and cache needs
-	# the same solid, level metre-space as before the gorge was shortened.
+	# Esta ilha fica em tamanho cheio: todo guarda, cobertura e esconderijo existente precisa
+	# do mesmo espaço sólido e nivelado em metros de antes de encurtarem o desfiladeiro.
 	var island := (point-Vector2(CENTER.x,CENTER.z))/Vector2(42,31)
 	var island_r := island.length()+.025*sin(atan2(island.y,island.x)*5)
 	var mesa := 1.0-smoothstep(.88,1.20,island_r)

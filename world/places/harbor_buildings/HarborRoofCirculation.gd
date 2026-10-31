@@ -1,6 +1,6 @@
 extends RefCounted
-## Shared physical clearance for the roof stair, cache and guarded jump bay.
-## Dressing keeps its detail budget, placing props around these walking lanes.
+## Folga física compartilhada para a escada do telhado, o esconderijo e a baia de pulo com guarda.
+## O mobiliário mantém o orçamento de detalhe, pondo props em volta destas faixas de caminhada.
 ## Casinha da escada: centro em relação ao patamar e tamanho da que se monta ao subir
 ## (a do enfeite, BuildingLifeKit._roof_shed, tem 2,0 × 2,0 × 1,6 e cabe dentro dela).
 const HOUSE_OFFSET := Vector3(0,0,-1.65)
@@ -88,7 +88,7 @@ static func occupied(building: Node3D) -> Array:
 		for index in steps+1:
 			var point: Vector3 = local_to_building*a.lerp(b,float(index)/steps)
 			result.append({"point":Vector2(point.x,point.z),"radius":.65})
-	# The stair bulkhead and its landing are authored architecture on the roof.
+	# O volume da escada e o patamar dela são arquitetura autorada no telhado.
 	var bulkhead: Vector3 = local_to_building*(landing+Vector3(0,0,-1.25))
 	result.append({"point":Vector2(bulkhead.x,bulkhead.z),"radius":1.45})
 	return result

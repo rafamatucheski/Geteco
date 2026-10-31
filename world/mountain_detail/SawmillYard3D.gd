@@ -1,11 +1,11 @@
 extends Node3D
 class_name SawmillYard3D
 
-## Complete 3D exterior presentation of the Mountain Pass Sawmill / Logging Camp.
-## Positioned at mountain coordinates (6350, 560), matching V1 geography at 16 px/metre.
-## Assembles the cutting shed, strapped lumber stacks and covered log piles,
-## rustic perimeter fences, campfire ring, and truck parking bay.
-## Guarantees 100% unblocked transit along the main driveway and pedestrian work paths.
+## Apresentação 3D externa completa da Serraria / acampamento madeireiro do Mountain Pass.
+## Fica nas coordenadas da montanha (6350, 560), batendo com a geografia da V1 em 16 px/metro.
+## Junta o galpão de corte, as pilhas de madeira cintadas e as pilhas de toras cobertas,
+## as cercas rústicas de perímetro, o círculo da fogueira e a baia de estacionamento de caminhões.
+## Garante trânsito 100% desbloqueado na entrada principal e nos caminhos de trabalho a pé.
 
 const SCALE := 1.0 / 16.0
 const SHADOW_FINISH := preload("res://world/mountain_detail/MountainShadowFinish.gd")
@@ -28,23 +28,23 @@ func build_sawmill_yard() -> void:
 	# 1. Earth Ground and Driveway Polygons (preserving V1 geography)
 	_build_ground_polygons()
 	
-	# V1 uses LumberjackCabin3D at the yard origin, not an additional office.
+	# A V1 usa LumberjackCabin3D na origem do pátio, não um escritório extra.
 	_build_office_cabin()
 	
-	# 4. Covered Log Piles at original setpiece points (-95, 5) and (-95, 55)
+	# 4. Pilhas de toras cobertas nos pontos originais do setpiece (-95, 5) e (-95, 55)
 	_build_woodpiles()
 	
 	# 5. Strapped Sawn Lumber Stacks at original points (SawmillYardDetails.gd)
 	_build_lumber_stacks()
 	
-	# 7. Campfire Stone Ring and Seating Logs at original point (90, 20)
-	# HeatPresentation owns the original fire and collider.
+	# 7. Círculo de pedra da fogueira e toras de sentar no ponto original (90, 20)
+	# O HeatPresentation é dono do fogo e do colisor originais.
 	
-	# 8. Rustic Perimeter Split-Rail Fence (with clear driveway opening)
-	# No perimeter fences are authored by V1 build_detailed_sawmill.
+	# 8. Cerca rústica de perímetro de trilhos rachados (com abertura livre na entrada)
+	# Nenhuma cerca de perímetro é autorada pelo build_detailed_sawmill da V1.
 
 func _build_ground_polygons() -> void:
-	# The yard owns its original footprint; the short driveway plate was removed.
+	# O pátio é dono da área original; a placa curta da entrada foi removida.
 	var yard_poly := PackedVector2Array([
 		Vector2(-180, -110), Vector2(180, -110),
 		Vector2(200, 130), Vector2(-170, 140)
@@ -54,8 +54,8 @@ func _build_ground_polygons() -> void:
 	var earth_mat := ShaderMaterial.new()
 	if _ground_shader == null:
 		_ground_shader = Shader.new()
-		# Opaque interior pixels occlude the expensive terrain underneath, while
-		# the perimeter keeps its existing alpha blend. Compile once for this place.
+		# Os pixels opacos do interior ocultam o terreno caro embaixo, enquanto
+		# o perímetro mantém a mistura alpha existente. Compila uma vez para este lugar.
 		_ground_shader.code = preload("res://world/regions/natural_ground_edge.gdshader").code.replace(
 			"render_mode diffuse_lambert, specular_schlick_ggx;",
 			"render_mode diffuse_lambert, specular_schlick_ggx, depth_prepass_alpha;")
@@ -71,8 +71,8 @@ func _create_flat_polygon(node_name: String, polygon: PackedVector2Array, height
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var center := Vector2.ZERO
 	for point in polygon: center += point / polygon.size()
-	# Subdivide the unchanged physical boundary and vary the inner blend edge.
-	# The broad, uneven fade avoids a rectangular dirt plate against the snow.
+	# Subdivide o limite físico inalterado e varia a borda interna da mistura.
+	# O fade largo e irregular evita uma placa retangular de terra contra a neve.
 	var perimeter := PackedVector2Array()
 	for i in polygon.size():
 		for step in 4:
@@ -95,8 +95,8 @@ func _create_flat_polygon(node_name: String, polygon: PackedVector2Array, height
 	mesh_inst.material_override = mat
 	mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mesh_inst)
-	# The visible triangulated footprint also owns the floor. A second opaque
-	# copy at the same height used to fight this shader and hide its soft edges.
+	# A área triangulada visível também é dona do piso. Uma segunda cópia
+	# opaca na mesma altura brigava com este shader e escondia as bordas suaves.
 	mesh_inst.create_trimesh_collision()
 	for body in mesh_inst.get_children():
 		if body is StaticBody3D:
@@ -111,7 +111,7 @@ func _ground_vertex(st: SurfaceTool, point: Vector2, height: float, alpha: float
 	st.add_vertex(Vector3(local.x,height,local.y))
 
 func _build_office_cabin() -> void:
-	# Positioned in northeast quadrant of yard (x ~ 5.5m, z ~ -3.5m)
+	# Posto no quadrante nordeste do pátio (x ~ 5.5m, z ~ -3.5m)
 	var cabin_path := "res://assets/regions/source/world/mountain_pass/art/winter_props/LumberjackCabin3D.gd"
 	if ResourceLoader.exists(cabin_path):
 		var cabin_script = load(cabin_path)
@@ -120,8 +120,8 @@ func _build_office_cabin() -> void:
 		office_cabin.position = Vector3.ZERO
 		add_child(office_cabin)
 		SHADOW_FINISH.attach(office_cabin, Vector2(3.6, 4.2))
-		# Original building is a closed cabin, not the delivered invented open saw hall.
-		# Physical walls follow its own mesh; no single solid volume across the doorway.
+		# O prédio original é uma cabana fechada, não o galpão de serra aberto inventado que foi entregue.
+		# As paredes físicas seguem a própria malha; nenhum volume sólido único atravessando a porta.
 		for mesh in office_cabin.find_children("*","MeshInstance3D",true,false):
 			if mesh.mesh is BoxMesh:
 				var bounds: AABB = mesh.mesh.get_aabb()
@@ -129,7 +129,7 @@ func _build_office_cabin() -> void:
 				mesh.create_trimesh_collision()
 
 func _build_woodpiles() -> void:
-	# Points from MountainSceneryBuilder.gd:997: Vector2(-95, 5) and Vector2(-95, 55)
+	# Pontos de MountainSceneryBuilder.gd:997: Vector2(-95, 5) e Vector2(-95, 55)
 	for pt in [Vector2(-95.0, 5.0), Vector2(-95.0, 55.0)]:
 		var woodpile := preload("res://world/mountain_detail/OriginalCoveredWoodpile.gd").new()
 		woodpile.name = "CoveredWoodpile_%d" % woodpiles.size()
@@ -181,7 +181,7 @@ func _build_lumber_stacks() -> void:
 		lumber_stacks.append(stack)
 
 func _build_sawdust_area() -> void:
-	# Original point from SawmillYardDetails.gd:30: Vector2(-30, 81) with radius 22x17
+	# Ponto original de SawmillYardDetails.gd:30: Vector2(-30, 81) com raio 22x17
 	var center := Vector3(-30.0 * SCALE, 0.022, 81.0 * SCALE)
 	var radius_x: float = 22.0 * SCALE
 	var radius_z: float = 17.0 * SCALE
@@ -226,7 +226,7 @@ func _build_campfire_area() -> void:
 		var sz := sin(angle) * ring_r
 		_add_box(campfire_root, "RingStone_%d" % i, Vector3(sx, 0.10, sz), Vector3(0.20, 0.16, 0.20), stone_mat)
 	
-	# Charcoal and glowing embers in center
+	# Carvão e brasas acesas no centro
 	_add_box(campfire_root, "Embers", Vector3(0, 0.04, 0), Vector3(0.70, 0.08, 0.70), MountainMaterials.brazier_coals())
 	
 	# Seating log benches around campfire
@@ -254,11 +254,11 @@ func _build_perimeter_fences() -> void:
 	perimeter_fence.name = "SawmillPerimeterFences"
 	add_child(perimeter_fence)
 	
-	# Yard boundary coordinates (derived from polygon corners / 16):
-	# West: X = -11.0m, Z from -6.8m to +8.5m
-	# South: Z = +8.5m, X from -11.0m to +12.5m
-	# East: X = +12.5m, Z from +8.5m to -6.8m
-	# North: Z = -6.8m, with GAP from X = -2.5m to +2.5m for the driveway!
+	# Coordenadas do limite do pátio (derivadas dos cantos do polígono / 16):
+	# Oeste: X = -11.0m, Z de -6.8m a +8.5m
+	# Sul: Z = +8.5m, X de -11.0m a +12.5m
+	# Leste: X = +12.5m, Z de +8.5m a -6.8m
+	# Norte: Z = -6.8m, com VÃO de X = -2.5m a +2.5m para a entrada!
 	
 	var west_start := Vector3(-10.8, 0, -6.8)
 	var west_end := Vector3(-10.8, 0, 8.4)

@@ -1,7 +1,7 @@
 extends Node
-## Two shared reflection targets, allocated once. Same World3D, dedicated
-## capture layers: receivers never sample a viewport while being drawn into it.
-## Registration follows scene lifetime; no scene traversal in the frame loop.
+## Dois alvos de reflexo compartilhados, alocados uma vez. Mesmo World3D, camadas
+## de captura dedicadas: receptores nunca amostram um viewport enquanto são desenhados nele.
+## O registro segue o tempo de vida da cena; nenhuma travessia de cena no laço do quadro.
 const BATCHES := preload("res://world/city_look/CoastalFacadeBatches.gd")
 const ROADS := preload("res://world/urban_detail/HarborRoadGeometry3D.gd")
 const FACADE_GROUP := &"coastal_reflective_facade"
@@ -54,10 +54,10 @@ func _ready() -> void:
 	_benchmark = "--benchmark" in OS.get_cmdline_user_args()
 	name = "CoastalPlanarReflections"
 	process_priority = 110
-	# Reserve two currently unused public visual layers; do not commandeer
-	# masks owned by silhouettes, interiors, cutaways or another session system.
-	# Bits 18/19 are reserved even before their scenes stream in (secret
-	# passages, residence mirror and canopy cutaway). Coastal owns 16/17.
+	# Reserva duas camadas visuais públicas hoje sem uso; não toma
+	# máscaras de silhuetas, interiores, cortes ou outro sistema da sessão.
+	# Os bits 18/19 ficam reservados mesmo antes das cenas entrarem em streaming (passagens
+	# secretas, espelho da residência e corte da cobertura). O Coastal é dono de 16/17.
 	var used := (1 << 18) | (1 << 19) | preload("res://gameplay/PersonalLightLayers.gd").PLAYER_LAYER
 	var queue: Array[Node] = [controller.world]
 	while not queue.is_empty():
@@ -109,7 +109,7 @@ func _make_view(label: String, width: int) -> SubViewport:
 	view.size = Vector2i(width, width * 9 / 16)
 	view.world_3d = controller.world.get_world_3d()
 	view.transparent_bg = true
-	# Keep sampled radiance linear and HDR; the main viewport tones it once.
+	# Mantém a radiância amostrada linear e HDR; o viewport principal faz o tone map uma vez.
 	view.use_hdr_2d = true
 	view.gui_disable_input = true
 	view.render_target_update_mode = SubViewport.UPDATE_DISABLED
@@ -122,7 +122,7 @@ func _make_view(label: String, width: int) -> SubViewport:
 	if _match_msaa: view.msaa_3d = get_viewport().msaa_3d
 	add_child(view)
 	var camera := Camera3D.new()
-	# Copy the displayed source camera in _process; do not interpolate it twice.
+	# Copia a câmera fonte exibida em _process; não interpola duas vezes.
 	camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	view.add_child(camera)
 	camera.current = true
@@ -134,12 +134,12 @@ func _queue_node(node: Node) -> void:
 func _remove_node(node: Node) -> void:
 	var id := node.get_instance_id()
 	if _batches.has(id):
-		# Retirement can remove the capture mesh before its source node.
-		# Validate the dictionary value before assigning it to a typed Node.
+		# A aposentadoria pode remover a malha de captura antes do nó fonte.
+		# Valida o valor do dicionário antes de atribuí-lo a um Node tipado.
 		if is_instance_valid(_batches[id].visual): _batches[id].visual.queue_free()
 		_batches.erase(id)
 	if _registered.has(id):
-		# Nodes can be pooled and reattached: relinquish only our own bits.
+		# Nós podem ir para pool e ser reanexados: libera só os nossos bits.
 		if node is VisualInstance3D: node.layers &= ~(_bits.x | _bits.y)
 		_registered.erase(id)
 		_dynamic.erase(id)
@@ -175,8 +175,8 @@ func _register(node: Node) -> void:
 				if "coastal_wet_asphalt" in path or "rural_road_end" in path: ground_receiver = true
 				elif "coastal_" in path or "RainPuddle" in path or "water" in path.to_lower() or "lamp_pool" in path: return
 	var bounds: AABB = node.global_transform * node.get_aabb()
-	# Exclude horizontal terrain/floors, including sidewalks. They would hide
-	# above-ground geometry from the camera mirrored below the wet street.
+	# Exclui terreno/pisos horizontais, incluindo calçadas. Eles esconderiam a
+	# geometria acima do chão da câmera espelhada abaixo da rua molhada.
 	_registered[node.get_instance_id()] = weakref(node)
 	if dynamic:
 		_dynamic[node.get_instance_id()] = weakref(node)
@@ -249,8 +249,8 @@ func _classify_dynamic() -> void:
 			var visual = ref.get_ref()
 			if not is_instance_valid(visual): continue
 			if _benchmark: last_dynamic_checked += 1
-			# Hidden accessories/LOD meshes cannot contribute to this capture.
-			# A newly visible mesh is classified before UPDATE_ONCE below.
+			# Acessórios escondidos/malhas de LOD não podem contribuir para esta captura.
+			# Uma malha que acabou de ficar visível é classificada antes do UPDATE_ONCE abaixo.
 			if not visual.is_visible_in_tree():
 				if _benchmark: last_hidden_dynamic_count += 1
 				continue
@@ -328,8 +328,8 @@ func _process_reflections(delta: float) -> void:
 	if _match_msaa and ground_view.msaa_3d != samples:
 		ground_view.msaa_3d = samples
 		facade_view.msaa_3d = samples
-	# Dedicated facade batches exist only in the capture layer; the player's
-	# camera (including binocular view) must not draw them a second time.
+	# Lotes de fachada dedicados existem só na camada de captura; a câmera do
+	# jogador (incluindo a visão de binóculo) não pode desenhá-los uma segunda vez.
 	if not _view_cameras.has(camera.get_instance_id()):
 		_view_cameras[camera.get_instance_id()] = {"camera":weakref(camera),"bits":camera.cull_mask & (_bits.x | _bits.y)}
 		camera.cull_mask &= ~(_bits.x | _bits.y)
@@ -350,8 +350,8 @@ func _process_reflections(delta: float) -> void:
 		ground_view.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	_ground_active = wet
 	_capture_clock += delta
-	# During camera motion capture every displayed frame. A stationary view
-	# refreshes at 20Hz for moving traffic; textures remain world projected.
+	# Com a câmera em movimento, captura todo quadro exibido. Uma vista parada
+	# atualiza a 20Hz por causa do trânsito; as texturas continuam projetadas no mundo.
 	var moving := not camera.global_transform.is_equal_approx(_last_camera)
 	if not moving and not facade_entered and _capture_clock < .05: return
 	# Em movimento, no máximo _moving_capture_hz capturas por segundo. Sem limite, a 150+ fps o
@@ -384,8 +384,8 @@ func _process_reflections(delta: float) -> void:
 						last_rebuilt_batch_names.append(String(source.get_path()))
 		if _benchmark: last_batch_usec = Time.get_ticks_usec() - batch_started
 		var dynamic_started := Time.get_ticks_usec() if _benchmark else 0
-		# Vehicles/actors can cross the reflecting half-space without a camera
-		# change. Only this small dynamic set needs refreshed eligibility.
+		# Veículos/atores podem cruzar o meio-espaço refletor sem a câmera
+		# mudar. Só este pequeno conjunto dinâmico precisa de elegibilidade atualizada.
 		_classify_dynamic()
 		if _benchmark: last_dynamic_usec = Time.get_ticks_usec() - dynamic_started
 		mirror_camera(camera, facade_camera, _plane_normal, _plane_point)

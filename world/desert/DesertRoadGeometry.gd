@@ -1,6 +1,6 @@
 extends RefCounted
-## The render mesh, wheel contact and traffic all use DesertLayout's centre-lines.
-## Prepared once per region; only clipped, batched surfaces are built per chunk.
+## A malha de render, o contato das rodas e o trânsito usam as linhas centrais do DesertLayout.
+## Preparado uma vez por região; só superfícies recortadas e em lote são montadas por chunk.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")
 const DETAIL := preload("res://world/desert/DesertSurfaceDetail.gd")
@@ -26,8 +26,8 @@ func configure(roads: Array[Dictionary]) -> void:
 		for polygon in Geometry2D.offset_polyline(path,float(road.width)*.5+2.4,Geometry2D.JOIN_ROUND,Geometry2D.END_BUTT):
 			shoulders.append(_record(polygon,str(road.id)))
 		if road.id=="desert_bank_approach":
-			# Authored drop-off ends before the pedestrian portico. A same-width
-			# round cap closes its asphalt silhouette without paving into the bank.
+			# O ponto de desembarque autorado termina antes do pórtico de pedestres. Uma tampa
+			# redonda da mesma largura fecha a silhueta do asfalto sem pavimentar o barranco.
 			for extra in [0.0,2.4]:
 				var cap := PackedVector2Array()
 				for i in 24:
@@ -52,7 +52,7 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 func build_chunk_part(parent: Node3D, rect: Rect2, part: int) -> void:
 	match part:
 		0:
-			# Avoid coincident triangles at T/crossings instead of relying on depth ties.
+			# Evita triângulos coincidentes em T/cruzamentos em vez de depender de empates de profundidade.
 			var shoulder_segments := DETAIL.prepare_shoulder_segments(rect,_roads)
 			_emit(parent,"GravelShoulder",_unique(shoulders,rect),rect,.008,DETAIL.shoulder_material(),false,shoulder_segments)
 		1:
@@ -146,8 +146,8 @@ func _build_paint(road: Dictionary) -> void:
 	var masks: Array[Dictionary] = []
 	for row in corridors:
 		if row.id==str(road.id): continue
-		# A branch ends on the other road's centre-line: include the full width of
-		# its paint, so clipping does not leave a half-width dash through the T.
+		# Um ramo termina na linha central da outra estrada: inclui a largura total da
+		# pintura, para o recorte não deixar um traço de meia largura atravessando o T.
 		for expanded in Geometry2D.offset_polygon(row.polygon,.2,Geometry2D.JOIN_ROUND): masks.append(_record(expanded,row.id))
 	# Junction fillets extend into corner approaches: remove side paint there too.
 	var edge_inset: float = UNIFIED_BRIDGE.EDGE_LINE_INSET if UNIFIED_BRIDGE.enabled() else .25
@@ -171,8 +171,8 @@ func _build_paint(road: Dictionary) -> void:
 		travelled+=length
 
 func _build_stop_lines() -> void:
-	# Native unsignalized junctions stop every incoming arm at the same 7m line.
-	# Race-only spurs do not create an ambient stop on the through highway.
+	# Cruzamentos nativos sem semáforo param todo braço de entrada na mesma linha de 7m.
+	# Ramais só de corrida não criam parada ambiente na rodovia principal.
 	for junction in junctions:
 		var arms: Array = junction.arms.filter(func(arm: Dictionary): return arm.traffic)
 		if arms.size()<3: continue
@@ -222,8 +222,8 @@ func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect
 		if not bounds.has_area(): continue
 		var tiles: Array[Rect2] = [bounds]
 		if id=="GravelShoulder":
-			# Two metres resolves the narrow blend and exactly divides the ramp grid.
-			# Only intersecting road bounds are tiled, never all 96x96m of a chunk.
+			# Dois metros resolvem a mistura estreita e dividem exatamente a grade da rampa.
+			# Só os limites de estrada que se cruzam viram ladrilhos, nunca os 96x96m inteiros de um chunk.
 			tiles.clear()
 			for z in range(floori(bounds.position.y/2),ceili(bounds.end.y/2)):
 				for x in range(floori(bounds.position.x/2),ceili(bounds.end.x/2)):
@@ -237,9 +237,9 @@ func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect
 			for part in Geometry2D.intersect_polygons(polygon,clip):
 				if Geometry2D.is_polygon_clockwise(part): part.reverse()
 				if solid and not UNIFIED_BRIDGE.enabled():
-					# The raised asphalt used to present a vertical collision edge to
-					# cars on sand. Bevel its perimeter into the existing shoulder.
-					# Clipped tile seams also taper below the adjacent asphalt surface.
+					# O asfalto elevado apresentava uma borda de colisão vertical para
+					# carros na areia. Chanfra o perímetro para dentro do acostamento existente.
+					# As emendas dos ladrilhos recortados também afinam abaixo da superfície de asfalto vizinha.
 					for i in part.size():
 						var a: Vector2 = part[i]
 						var b: Vector2 = part[(i+1)%part.size()]
@@ -251,8 +251,8 @@ func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect
 						var low_c := Vector3(c.x,_height(c),c.y)
 						var low_d := Vector3(d.x,_height(d),d.y)
 						var bevel := PackedVector3Array([top_b,top_a,low_d,top_b,low_d,low_c])
-						# The bridge transition is visible asphalt too. This strip lies
-						# outside the road polygon, meeting its top only at the edge.
+						# A transição da ponte também é asfalto visível. Esta faixa fica
+						# fora do polígono da estrada, encontrando o topo dela só na borda.
 						if absf(a.y-LAYOUT.BOUNDS.end.y)<.0001 and absf(b.y-LAYOUT.BOUNDS.end.y)<.0001:
 							vertices.append_array(bevel)
 						else:
@@ -290,9 +290,9 @@ func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect
 		shape.set_faces(physical_faces); collider.shape=shape; body.add_child(collider); node.add_child(body)
 
 func _height(point: Vector2) -> float:
-	# The perimeter bevel reaches onto the flat bridge deck. Extrapolating the
-	# first descending terrain interval raised its foot by 1.2 mm, enough for a
-	# grounded box hull to strike its edge instead of climbing the bevel.
+	# O chanfro do perímetro alcança o tabuleiro plano da ponte. Extrapolar o
+	# primeiro intervalo descendente do terreno elevava o pé em 1.2 mm, o bastante para
+	# uma carcaça de caixa no chão bater na borda em vez de subir o chanfro.
 	if point.y>=LAYOUT.BOUNDS.end.y: return LAYOUT.BRIDGE_END.y
 	if point.y<=-448: return 0.0
 	var low := floorf(point.y/8)*8

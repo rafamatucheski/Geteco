@@ -1,10 +1,10 @@
 extends UrbanBuildingBase
 class_name UrbanLShapedBlock
 
-## Reconstructs L-shaped architectural blocks (e.g. FoundryLofts / Union Lofts & Works).
-## Strictly preserves physical volume contract: North Main Wing and East Wing have collision,
-## while the Southwest Courtyard remains fully open and accessible.
-## Features Crittall loft windows, courtyard loading dock doors, and rooftop water tower.
+## Reconstrói blocos arquitetônicos em L (por exemplo, FoundryLofts / Union Lofts & Works).
+## Preserva à risca o contrato de volume físico: a Ala Principal Norte e a Ala Leste têm colisão,
+## e o Pátio Sudoeste continua totalmente aberto e acessível.
+## Tem janelas de loft Crittall, portas de doca de carga no pátio e caixa d'água no telhado.
 
 const PAINTED_SKINS := preload("res://world/urban_detail/PaintedTallBuildings.gd")
 const L_MAIN_DEPTH := 0.55
@@ -22,8 +22,8 @@ func build() -> void:
 	var brick_mat := UrbanMaterials.brick_brown()
 	var trim_mat := UrbanMaterials.trim_stone()
 	
-	# 1. Main Wing (North portion across full building width)
-	# Center Z for main wing: starts at -half_d, extends +main_d
+	# 1. Ala Principal (parte norte ao longo da largura inteira do prédio)
+	# Centro Z da ala principal: começa em -half_d, estende +main_d
 	var main_center_z: float = -half_d + main_d * 0.5
 	var main_visual := add_solid_box(visuals_root, "MainWing", Vector3(0, height * 0.5, main_center_z), Vector3(building_size.x, height, main_d), brick_mat)
 	if painted:
@@ -40,11 +40,11 @@ func build() -> void:
 		east_visual.hide()
 		PAINTED_SKINS.add_skin_box(visuals_root,"EastWing",east_visual.position,Vector3(wing_w,height,wing_d),"lofts-fundicao")
 	
-	# L-Shaped Roof Surfaces: Main Wing and East Wing only (courtyard remains open to the sky)
+	# Superfícies de telhado em L: só a Ala Principal e a Ala Leste (o pátio fica aberto para o céu)
 	add_mesh_box(visuals_root, "MainWingRoof", Vector3(0, height + 0.025, main_center_z), Vector3(building_size.x - 0.2, 0.05, main_d - 0.2), UrbanMaterials.roof_tar())
 	add_mesh_box(visuals_root, "EastWingRoof", Vector3(wing_center_x, height + 0.025, wing_center_z), Vector3(wing_w - 0.2, 0.05, wing_d - 0.2), UrbanMaterials.roof_tar())
 	
-	# Cornice only on the street-facing front of East Wing
+	# Cornija só na frente da Ala Leste virada para a rua
 	var front_cornice_z: float = half_d + 0.15
 	add_mesh_box(visuals_root, "EastWingCornice", Vector3(wing_center_x, height - 0.05, front_cornice_z), Vector3(wing_w + 0.2, 0.38, 0.30), trim_mat)
 	
@@ -64,13 +64,13 @@ func build() -> void:
 	# East wing south rim
 	add_mesh_box(visuals_root, "ParapetSouth", Vector3(wing_center_x, py, half_d - p_thick * 0.5), Vector3(wing_w, p_h, p_thick), trim_mat)
 	
-	# 3. Courtyard (South-West corner is OPEN - NO COLLISION, NO ROOF)
-	# Courtyard bounds: X from -half_w to (half_w - wing_w), Z from (-half_d + main_d) to half_d.
+	# 3. Pátio (o canto sudoeste é ABERTO - SEM COLISÃO, SEM TELHADO)
+	# Limites do pátio: X de -half_w a (half_w - wing_w), Z de (-half_d + main_d) a half_d.
 	
-	# Courtyard loading dock doors on the recessed west-facing wall of the East Wing
+	# Portas de doca de carga do pátio na parede rebaixada virada para o oeste da Ala Leste
 	_build_courtyard_loading_dock(wing_center_x - wing_w * 0.5, wing_center_z, wing_d)
 	
-	# Crittall loft windows on Main Wing north/south and East Wing east/south facades
+	# Janelas de loft Crittall nas fachadas norte/sul da Ala Principal e leste/sul da Ala Leste
 	if not painted: _build_loft_windows(main_center_z, main_d, wing_center_x, wing_center_z, wing_w, wing_d)
 	
 	# Rooftop water tower on Main Wing
@@ -79,7 +79,7 @@ func build() -> void:
 	# Chimney on party wall
 	add_chimney(visuals_root, Vector3(-half_w * 0.1, height + 0.05, main_center_z - main_d * 0.3), 1.5, 2)
 	
-	# Facade proper name signage on the street front
+	# Placa com nome próprio na fachada da frente da rua
 	if not proper_name.is_empty():
 		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(wing_w * 0.8, 3.8), 0.65), 0.08, trim_mat)
 		if sign_node != null:
@@ -94,7 +94,7 @@ func _build_courtyard_loading_dock(dock_wall_x: float, dock_center_z: float, _do
 	var dock_h := 2.5
 	var dock_y := dock_h * 0.5
 	
-	# Double loading doors on the courtyard wall
+	# Portas duplas de carga na parede do pátio
 	add_mesh_box(visuals_root, "CourtyardDoorFrame", Vector3(dock_wall_x - 0.02, dock_y, dock_center_z), Vector3(0.08, dock_h + 0.15, dock_w + 0.2), dark_mat)
 	add_mesh_box(visuals_root, "CourtyardDoorLeft", Vector3(dock_wall_x - 0.04, dock_y, dock_center_z - dock_w * 0.25), Vector3(0.05, dock_h, dock_w * 0.48), wood_mat)
 	add_mesh_box(visuals_root, "CourtyardDoorRight", Vector3(dock_wall_x - 0.04, dock_y, dock_center_z + dock_w * 0.25), Vector3(0.05, dock_h, dock_w * 0.48), wood_mat)

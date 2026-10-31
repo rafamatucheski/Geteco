@@ -1,6 +1,6 @@
 extends RefCounted
-## Santa Lua is a small inhabited roadside hamlet. Geometry and physics share
-## authored parts, while collision is admitted before deferred visual dressing.
+## Santa Lua é um pequeno vilarejo habitado de beira de estrada. Geometria e física dividem
+## partes autoradas, e a colisão é admitida antes do mobiliário visual adiado.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
 const CENTER := Vector3(-528,0,-482)
@@ -121,9 +121,9 @@ static func build_record(parent: Node3D, data: Dictionary) -> Array[OmniLight3D]
 	return lights
 
 static func build_ground(parent: Node3D, rect: Rect2) -> void:
-	# Continuous regional terrain owns all support. These thin visual layers sit
-	# above it and stop at the asphalt shoulder, with a broad vehicle turn-in.
-	# Disjoint pieces form one courtyard footprint, without coplanar overlaps.
+	# O terreno regional contínuo é dono de todo o apoio. Estas camadas visuais finas ficam
+	# acima dele e param no acostamento do asfalto, com uma entrada larga para veículos.
+	# Peças disjuntas formam uma área de pátio única, sem sobreposições coplanares.
 	for area in [Rect2(-536,-532,16,20),Rect2(-546,-512,36,49),Rect2(-558,-486,12,9),Rect2(-510,-486,12,9)]:
 		var clipped: Rect2=area.intersection(rect)
 		if not clipped.has_area(): continue
@@ -238,8 +238,8 @@ static func _house(parts: Array[Dictionary],data: Dictionary) -> void:
 	var size: Vector3=data.size
 	var h := size.y
 	var style: String=data.get("style","store")
-	# Keep the shell solid except for a shallow, supported doorway recess.
-	# The shared push controller admits the actor into the corresponding room.
+	# Mantém a casca sólida exceto por um recuo raso e apoiado na porta.
+	# O controlador de empurrão compartilhado admite o ator no cômodo correspondente.
 	if data.kind == "home":
 		_box(parts,"HouseRear",Vector3(0,h*.5,-.75),Vector3(size.x,h,6.5),data.finish,true)
 		for side in [-1.0,1.0]:
@@ -270,8 +270,8 @@ static func _house(parts: Array[Dictionary],data: Dictionary) -> void:
 	_box(parts,"ClosedDoor",Vector3(0,1.19,4.24),Vector3(1.16,2.26,.08),"wood" if style in ["adobe","ranch"] else "rust")
 	_box(parts,"DoorPanel",Vector3(0,.78,4.29),Vector3(.86,.78,.025),"wood")
 	_box(parts,"DoorHandle",Vector3(.39,1.13,4.31),Vector3(.065,.16,.07),"steel")
-	# The porch surface is flush with the regional floor; posts and furniture
-	# remain physical, while the roof is well above pedestrian head clearance.
+	# O piso da varanda fica rente ao chão regional; postes e móveis
+	# continuam físicos, e o telhado fica bem acima da altura da cabeça dos pedestres.
 	_box(parts,"PorchPaving",Vector3(0,.024,5.38),Vector3(size.x+.5,.046,3.1),"wood" if style=="ranch" else "stone")
 	_box(parts,"PorchBeam",Vector3(0,2.96,6.7),Vector3(size.x+.55,.24,.22),"wood",true)
 	_roof_and_siding(parts,data,style)
@@ -394,7 +394,7 @@ static func _tower(parts: Array[Dictionary]) -> void:
 static func _courtyard(parts: Array[Dictionary]) -> void:
 	_bench(parts,Vector3(-10,0,-6),PI*.5)
 	_bench(parts,Vector3(10,0,8),-PI*.5)
-	# The central 14 m corridor stays open to pedestrians and turning cars.
+	# O corredor central de 14 m fica aberto a pedestres e carros manobrando.
 	for at in [Vector3(-12,0,12),Vector3(12,0,-14)]:
 		_cylinder(parts,"WaterBarrel",at+Vector3.UP*.52,.4,1.04,"wood",true)
 		for y in [.12,.87]: _cylinder(parts,"BarrelHoop",at+Vector3.UP*y,.41,.055,"steel")
@@ -403,8 +403,8 @@ static func _courtyard(parts: Array[Dictionary]) -> void:
 			_box(parts,"BoundaryFencePost",Vector3(x,.66,z),Vector3(.17,1.32,.17),"wood",true)
 			if z<29.0:
 				for y in [.49,1.01]: _box(parts,"BoundaryFenceRail",Vector3(x,y,z+4),Vector3(.11,.13,8),"wood",true)
-	# Laundry, rain barrels and stored firewood make the place read as occupied
-	# without extra NPC loops or explanatory labels.
+	# Roupa no varal, barris de chuva e lenha guardada fazem o lugar parecer ocupado
+	# sem laços extras de NPC nem etiquetas explicativas.
 	for x in [-25.0,-17.0]: _box(parts,"ClothesPost",Vector3(x,2,-33),Vector3(.12,4,.12),"wood",true)
 	_beam(parts,"ClothesLine",Vector3(-25,3.22,-33),Vector3(-17,3.22,-33),.022,"steel")
 	for i in 5:
@@ -421,7 +421,7 @@ static func _mesh(kind: String) -> Mesh:
 		var vertices := _prism_vertices(kind)
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-		# Godot front faces use clockwise winding, including the triangular ends.
+		# Faces da frente no Godot usam sentido horário, incluindo as pontas triangulares.
 		for index in [0,2,1,3,4,5,0,5,2,0,3,5,2,4,1,2,5,4,3,1,4,3,0,1]:
 			surface.add_vertex(vertices[index])
 		surface.generate_normals()

@@ -1,7 +1,7 @@
 extends RefCounted
-## Authored natural landmarks, entirely owned by the streamed desert chunks.
-## Ground detail uses world-anchored vertices and the supplied physical height.
-## There are no process callbacks, timers, particle systems or new light sources.
+## Marcos naturais autorados, pertencentes inteiramente aos chunks do deserto em streaming.
+## O detalhe do chão usa vértices ancorados no mundo e a altura física dada.
+## Não há callbacks de process, timers, sistemas de partículas nem fontes de luz novas.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const SURFACE := preload("res://world/desert/expansion/DesertLandformsSurface.gdshader")
 const ARCH := Vector2(-650,-690)
@@ -21,12 +21,12 @@ static var _resource_cells: Array[Vector2i] = []
 static var _resource_caches: Array[Dictionary] = []
 
 static func _cache_enabled() -> bool:
-	# Only the isolated A/B benchmark uses this flag; it is never saved.
+	# Só o benchmark A/B isolado usa esta flag; ela nunca é salva.
 	return not (OS.is_debug_build() and Engine.get_meta("desert_landform_cache_benchmark_disabled",false))
 
 static func prewarm(height_callable: Callable, world_seed: int = 6102026) -> Dictionary:
-	# The finite authored resource set is prepared under the existing loading
-	# curtain. First visits and revisits both instantiate the same cached assets.
+	# O conjunto finito de recursos autorados é preparado sob a cortina de carregamento
+	# existente. Primeiras visitas e revisitas instanciam os mesmos assets em cache.
 	if not _cache_enabled(): return {"enabled":false,"ready":false,"cached_cells":0}
 	_prepare()
 	var cache := _cache_for(height_callable,world_seed,true)
@@ -113,8 +113,8 @@ static func walk_paths() -> Array[Dictionary]:
 	]
 
 static func surface_height(point: Vector2, base_callable: Callable) -> float:
-	# Barycentric evaluation of the same clipped triangles, for exact support
-	# queries in validation or placement. No renderer/physics approximation here.
+	# Avaliação baricêntrica dos mesmos triângulos recortados, para consultas exatas de apoio
+	# na validação ou no posicionamento. Sem aproximação de renderer/física aqui.
 	if not base_callable.is_valid(): return 0.0
 	_prepare()
 	var result := float(base_callable.call(point))
@@ -144,9 +144,9 @@ static func surface_height(point: Vector2, base_callable: Callable) -> float:
 	return result
 
 static func reservation_clear(point: Vector2, radius: float = 0.0) -> bool:
-	# Reserves protect raised support and the open arch portal from legacy scatter.
-	# The broad box includes a large empty triangle beside the diagonal wash.
-	# Reserve the generated polygon and its safe shoulder, not that empty land.
+	# Reservas protegem o apoio elevado e o portal aberto do arco da dispersão legada.
+	# A caixa larga inclui um grande triângulo vazio ao lado do leito diagonal.
+	# Reserva o polígono gerado e o acostamento seguro dele, não essa terra vazia.
 	if WASH_BOUNDS.grow(radius).has_point(point):
 		var polygon := wash_footprint()
 		if Geometry2D.is_point_in_polygon(point,polygon): return false
@@ -156,7 +156,7 @@ static func reservation_clear(point: Vector2, radius: float = 0.0) -> bool:
 	if Rect2(SALT-Vector2(102, 59), Vector2(204, 118)).grow(radius).has_point(point): return false
 	return true
 
-## Same polygon used by the visible/physical banks; pure and cached at preparation.
+## Mesmo polígono usado pelas margens visíveis/físicas; puro e em cache na preparação.
 static func wash_footprint() -> PackedVector2Array:
 	_prepare()
 	for feature in _features:
@@ -179,7 +179,7 @@ static func build_chunk(parent: Node3D, rect: Rect2, world_seed: int, height_cal
 	_prepare()
 	var key := Vector2i((rect.position/RESOURCE_CELL).floor())
 	var canonical := Rect2(Vector2(key)*RESOURCE_CELL,Vector2.ONE*RESOURCE_CELL)
-	# Other rectangle sizes keep the general API's clipping and ownership contract.
+	# Outros tamanhos de retângulo mantêm o contrato de recorte e posse da API geral.
 	if not rect.is_equal_approx(canonical): return _build_uncached(parent,rect,world_seed,height_callable)
 	if key not in _resource_cells: return 0
 	var cache := _cache_for(height_callable,world_seed,true)
@@ -207,8 +207,8 @@ static func _build_uncached(parent: Node3D, rect: Rect2, world_seed: int, height
 		mesh.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mesh.set_meta("desert_expansion_ground", true)
 		mesh.set_meta("vehicle_surface", "dirt")
-		# Every raised face is also a physical face, including the gentle dune edge.
-		# Salt lies only 16mm over the existing ground and needs no duplicate collider.
+		# Toda face elevada também é face física, incluindo a borda suave da duna.
+		# O sal fica só 16mm acima do chão existente e não precisa de colisor duplicado.
 		if int(kind)<2: _ground_collision(mesh, data.vertices)
 	var tracks := _data()
 	_build_tracks(tracks, rect, height_callable)
@@ -366,7 +366,7 @@ static func _ground_vertex(point: Vector2, feature: Dictionary, height_callable:
 			var cross: float = sample.y
 			var end_mask := smoothstep(0.0, .15, t)*(1.0-smoothstep(.85,1.0,t))
 			mask=(1.0-smoothstep(.68,1.0,cross))*end_mask
-			# A dry stream bed over the existing terrain, with shallow eroded banks.
+			# Um leito seco de riacho sobre o terreno existente, com margens rasas erodidas.
 			elevation=(smoothstep(.32,.66,cross)*(1.0-smoothstep(.70,1.0,cross)))*.64*end_mask
 			cracks=(1.0-smoothstep(.34,.65,cross))*end_mask
 		2:
@@ -374,10 +374,10 @@ static func _ground_vertex(point: Vector2, feature: Dictionary, height_callable:
 			cracks=mask
 	var ground_offset := .016
 	if int(feature.kind)<2:
-		# An upright vehicle hull cannot step over even a16mm exposed mesh edge.
-		# Both visual mesh and collider merge into the existing floor at the exact
-		# polygon perimeter; the interior retains its full authored sand volume.
-		# The1mm band also absorbs clipping roundoff at large world coordinates.
+		# Uma carcaça de veículo em pé não passa nem por uma borda de malha exposta de 16mm.
+		# A malha visual e o colisor se fundem ao piso existente exatamente no
+		# perímetro do polígono; o interior mantém o volume de areia autorado inteiro.
+		# A faixa de 1mm também absorve o arredondamento do recorte em coordenadas grandes do mundo.
 		elevation*=smoothstep(.001,.75,border_distance)
 		ground_offset*=smoothstep(.001,2.4,border_distance)
 	return {"position":Vector3(point.x, float(height_callable.call(point))+ground_offset+elevation, point.y), "color":Color(mask,cracks,0,1)}
@@ -405,8 +405,8 @@ static func _wash_sample(point: Vector2) -> Vector2:
 
 static func _build_tracks(data: Dictionary, rect: Rect2, height_callable: Callable) -> void:
 	if not rect.intersects(WASH_BOUNDS): return
-	# Paired old tire impressions remain on the flat centre of the dry stream bed.
-	# Each small segment has exactly one owner and follows the supplied ground.
+	# Pares de marcas antigas de pneu ficam no centro plano do leito seco.
+	# Cada segmento pequeno tem exatamente um dono e segue o chão dado.
 	for i in 174:
 		var t := .075+float(i)*.85/174.0
 		var next := minf(t+.0038, .925)
@@ -434,7 +434,7 @@ static func _arch(data: Dictionary, body: StaticBody3D) -> void:
 				var depth := 2.5+sin(angle)*.7
 				for side in [-1.0, 1.0]: points.append(Vector3(x,y,side*depth))
 		_prism(data, body, points, Color("b08a65"), i)
-	# A low talus fan visually anchors the feet while leaving the portal clear.
+	# Um leque baixo de tálus ancora visualmente os pés e deixa o portal livre.
 	for row in [[Vector3(-14.2,-.18,1.5),Vector3(6.4,1.6,6.1)], [Vector3(13.5,-.18,-.8),Vector3(5.2,1.5,6.5)]]:
 		_boulder(data, body, row[0], row[1], 810+int(row[0].x), Color("a77f59"))
 

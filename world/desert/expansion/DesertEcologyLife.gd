@@ -221,8 +221,8 @@ func _update_wind(delta: float) -> void:
 			node.rotate_x(delta*.44)
 		node.visible=enabled
 	if _dust==null: return
-	# One short, soft-edged column every 52 seconds, with smooth birth/death.
-	# The geometry is 14 small quads, not a full-screen transparency layer.
+	# Uma coluna curta de borda suave a cada 52 segundos, com nascimento/morte suaves.
+	# A geometria são 14 quads pequenos, não uma camada de transparência de tela inteira.
 	var age := fposmod(_clock+4.0,52.0)
 	var envelope := smoothstep(0.0,3.0,age)*(1.0-smoothstep(13.0,19.0,age))
 	_dust.visible=_wind_index>=0 and envelope>.001

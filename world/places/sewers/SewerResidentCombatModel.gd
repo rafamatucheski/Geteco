@@ -49,7 +49,7 @@ func _part(at: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
 	return part
 
 func _build_bottle() -> void:
-	# Opaque dark glass with a genuinely jagged broken edge, held by its neck.
+	# Vidro escuro opaco com uma borda quebrada realmente serrilhada, segurado pelo gargalo.
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for i in 10:
