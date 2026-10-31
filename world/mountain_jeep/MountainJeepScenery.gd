@@ -59,7 +59,7 @@ static func _crest_vertex(distance: float, lateral: float) -> Vector3:
 	var side := Vector3(forward.z,0,-forward.x)
 	var amount := 1.0-smoothstep(COURSE.WIDTH*.5,COURSE.WIDTH*.5+COURSE.SHOULDER,absf(lateral))
 	var point: Vector3=sample.position+side*lateral
-	# Edges meet the terrain at exactly zero. Only the raised area has a new top.
+	# As bordas encontram o terreno exatamente em zero. Só a área elevada tem um topo novo.
 	point.y=COURSE.rise(distance)*amount
 	return point
 
@@ -75,7 +75,7 @@ static func _build_crest(parent: Node3D, first: float, last: float) -> void:
 			var vertices := [_crest_vertex(a,widths[j]),_crest_vertex(b,widths[j]),_crest_vertex(a,widths[j+1]),_crest_vertex(b,widths[j+1])]
 			var uv := [Vector2(widths[j],a),Vector2(widths[j],b),Vector2(widths[j+1],a),Vector2(widths[j+1],b)]
 			for triangle in [[0,1,2],[2,1,3]]:
-				# Godot's front faces are clockwise, as in MountainTerrain3D.
+				# As faces da frente no Godot são horárias, como no MountainTerrain3D.
 				if (vertices[triangle[1]]-vertices[triangle[0]]).cross(vertices[triangle[2]]-vertices[triangle[0]]).y>0: triangle.reverse()
 				for index in triangle:
 					surface.set_uv(uv[index])
@@ -91,7 +91,7 @@ static func _build_crest(parent: Node3D, first: float, last: float) -> void:
 		_soil.shader=preload("res://world/mountain_jeep/jeep_trail.gdshader")
 	mesh.material_override=_soil
 	parent.add_child(mesh)
-	# These exact triangles provide the wheels' support and match the rendered crest.
+	# Estes triângulos exatos dão o apoio das rodas e batem com a crista renderizada.
 	var body := StaticBody3D.new()
 	body.collision_layer=1
 	body.collision_mask=0
