@@ -4,8 +4,8 @@ rem Feche os editores do Godot antes. A saída também vai para evidence\csharp-
 setlocal
 set "GODOT_MONO=D:\Downloads Chrome\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe"
 set "NUPKGS=D:\Downloads Chrome\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64\GodotSharp\Tools\nupkgs"
-set "SAIDA=%~dp0evidence\csharp-router\saida.txt"
-cd /d "%~dp0"
+set "SAIDA=%~dp0..\..\evidence\csharp-router\saida.txt"
+cd /d "%~dp0..\..\"
 if not exist "evidence\csharp-router" mkdir "evidence\csharp-router"
 
 echo === dotnet build === > "%SAIDA%"

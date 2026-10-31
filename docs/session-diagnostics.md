@@ -11,7 +11,7 @@ Desde 21/10/2026, o padrão no Jogar.cmd e em novas exports release é essencial
 início/fim da sessão, mensagens, avisos, erros, exceções e heartbeat para detectar
 bloqueios. Não coleta métricas periódicas, inventário, contexto ou histórico de frames.
 `HARBOR_SESSION_PROFILE=1` ativa explicitamente o perfil descrito abaixo, incluindo
-métricas C# e operações instrumentadas. `JogarDiagnostico.cmd` ativa esse perfil e
+métricas C# e operações instrumentadas. `tools/launchers/JogarDiagnostico.cmd` ativa esse perfil e
 o StallLog adicional; na release, use essas mesmas variáveis antes de abrir o executável.
 `HARBOR_STALL_LOG=1` habilita o StallLog separadamente. `HARBOR_SESSION_LOG=0`
 desliga o logger de sessão, mas não o log nativo do Godot nem o StallLog independente.
@@ -99,7 +99,7 @@ jogo; o restante do log continua ativo. A validação jogável e o comparativo d
 performance desta ampliação ficam com o usuário, conforme solicitado.
 
 Cada processo de jogo cria automaticamente uma pasta em `user://session-logs`.
-Neste Windows: `%APPDATA%\GetecoV2\session-logs`. Abra com `AbrirLogs.cmd`.
+Neste Windows: `%APPDATA%\GetecoV2\session-logs`. Abra com `tools/launchers/AbrirLogs.cmd`.
 O nome contém data/hora UTC, PID e identificador aleatório. F5, F6, Jogar.cmd
 e executáveis exportados com .NET usam o mesmo autoload.
 

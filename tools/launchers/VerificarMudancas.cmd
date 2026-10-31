@@ -3,14 +3,14 @@ rem Verifica o projeto no Godot .NET e grava os resultados em evidence\csharp-ro
 rem Encerre o jogo antes; o editor pode permanecer aberto.
 setlocal enabledelayedexpansion
 set "GODOT_MONO=D:\Downloads Chrome\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe"
-set "SAIDA=%~dp0evidence\csharp-router\verificacao.txt"
-cd /d "%~dp0"
+set "SAIDA=%~dp0..\..\evidence\csharp-router\verificacao.txt"
+cd /d "%~dp0..\..\"
 if not exist "evidence\csharp-router" mkdir "evidence\csharp-router"
 echo Verificacao iniciada em %date% %time% > "%SAIDA%"
 set FALHAS=0
 
 echo Preparando o Godot .NET e compilando o C#...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Open.ps1" -PrepareOnly -GodotPath "%GODOT_MONO%" >> "%SAIDA%" 2>&1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\Open.ps1" -PrepareOnly -GodotPath "%GODOT_MONO%" >> "%SAIDA%" 2>&1
 if errorlevel 1 (
   echo [FALHOU] preparacao do projeto - veja %SAIDA%
   pause
