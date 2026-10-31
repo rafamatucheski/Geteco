@@ -4,9 +4,10 @@ const STORE := preload("res://runtime/SaveStore.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const PATH := "user://GetecoV2/rachas/profile.json"
+const GAME_STATE := preload("res://runtime/GameState.gd")
 
 static func initial_snapshot() -> Dictionary:
-	var state = load("res://runtime/GameState.gd").new()
+	var state = GAME_STATE.new()
 	var intro: Dictionary = state.intro.snapshot()
 	intro.phase="complete"
 	intro.location_id="harbor_street"
@@ -27,13 +28,13 @@ static func initial_snapshot() -> Dictionary:
 	# A fixed starting allowance lives only in this profile; reopening never pays it again.
 	state.economy.grant_reward("drag_profile_start",2000)
 	var snapshot: Dictionary=state.snapshot()
-	return snapshot if load("res://runtime/GameState.gd").new().restore_snapshot(snapshot) else {}
+	return snapshot if GAME_STATE.new().restore_snapshot(snapshot) else {}
 
 static func prepare(launch: Node, path: String = PATH) -> Error:
 	if path.is_empty() or path==STORE.PATH: return ERR_INVALID_PARAMETER
 	var store := STORE.new()
 	store.path=path
-	var state = load("res://runtime/GameState.gd").new()
+	var state = GAME_STATE.new()
 	var loaded: Dictionary=store.load_into(state)
 	if loaded.ok:
 		var marker: Variant=state.world_state.get("drag_standalone",{})

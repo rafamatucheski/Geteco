@@ -5,6 +5,7 @@ extends RefCounted
 const SHAPES := preload("res://world/editing/WorldPieceShape.gd")
 const PROPS := preload("res://world/editing/WorldPropFactory.gd")
 const STATE := &"world_interior_editor_state"
+const WORLD_EDIT_DATA := preload("res://world/editing/WorldEditData.gd")
 
 static func content(place: Node3D, id: String) -> Node3D:
 	if id == "maciota" and place.get("room") is Node3D: return place.get("room")
@@ -445,7 +446,7 @@ static func apply_saved(place: Node3D, id: String) -> void:
 	var document: Dictionary
 	if Engine.has_meta("geteco_world_edit_document"): document = Engine.get_meta("geteco_world_edit_document")
 	else:
-		var data = load("res://world/editing/WorldEditData.gd")
+		var data = WORLD_EDIT_DATA
 		var loaded: Dictionary = data.read_document()
 		if not str(loaded.error).is_empty(): push_error(loaded.error); return
 		document = loaded.document

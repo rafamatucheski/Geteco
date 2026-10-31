@@ -1,6 +1,7 @@
 extends RefCounted
 const BOX_BATCH := preload("res://runtime/transit/StaticBoxBatch.gd")
 const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
+const LETTERING_FONT := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 ## Metric three-section low-floor bus; shared materials and separate sliding doors.
 static var materials: Dictionary = {}
 static var wheel_tire: TorusMesh
@@ -89,7 +90,7 @@ static func panel(parent: Node3D, at: Vector3, size: Vector2, yaw: float, key: S
 static func lettering(parent: Node3D, text: String, at: Vector3, yaw: float, pixel: float, color: Color) -> void:
 	var label := Label3D.new()
 	label.text = text; label.font_size = 48; label.pixel_size = pixel
-	label.font = load("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
+	label.font = LETTERING_FONT
 	label.position = at; label.rotation.y = yaw; label.modulate = color
 	label.outline_size = 0; label.no_depth_test = false; label.shaded = true
 	parent.add_child(label)

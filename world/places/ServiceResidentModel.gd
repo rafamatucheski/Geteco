@@ -1,4 +1,5 @@
 extends Node3D
+const CITIZEN_APPEARANCE := preload("res://assets/regions/source/characters/pedestrians/CitizenAppearance.gd")
 @export var character_name: String = "Atendente"
 @export var title_color: Color = Color("#f1c40f")
 @export var shirt_color: Color = Color("#2980b9")
@@ -72,7 +73,7 @@ func _build_model() -> void:
 	var cap_t := CapsuleMesh.new()
 	cap_t.radius = 0.16
 	cap_t.height = 0.46
-	torso_mesh.mesh = load("res://assets/regions/source/characters/pedestrians/CitizenAppearance.gd").tailored_body(is_female, false)
+	torso_mesh.mesh = CITIZEN_APPEARANCE.tailored_body(is_female, false)
 	torso_mesh.material_override = mat_shirt
 	torso_node.add_child(torso_mesh)
 

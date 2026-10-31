@@ -6,6 +6,7 @@ const FACADE := preload("res://assets/maciota/GarageFacade.gd")
 const MACIOTA := preload("res://assets/maciota/MaciotaModel.gd")
 const MECHANIC := preload("res://assets/maciota/MechanicModel.gd")
 const INDUSTRIAL_ORIGIN := Vector3(2696.0 / 16.0, 0, 1624.0 / 16.0)
+const WORLD_INTERIOR_EDITS := preload("res://world/editing/WorldInteriorEdits.gd")
 var exterior_origin := INDUSTRIAL_ORIGIN
 var interior_origin := Vector3(0, 0, -130)
 var tour_parking: Vector3:
@@ -201,7 +202,7 @@ func _add_solid(parent: Node3D, id: String, bounds: AABB) -> void:
 	solid_bodies.append(body)
 
 func set_interior_active(active: bool) -> void:
-	if active: load("res://world/editing/WorldInteriorEdits.gd").apply_saved(self,"maciota")
+	if active: WORLD_INTERIOR_EDITS.apply_saved(self,"maciota")
 	interior_active = active
 	if not is_instance_valid(room): return
 	room.visible = active

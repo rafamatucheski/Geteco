@@ -4,6 +4,7 @@ const SCALE := 1.0 / 16.0
 const FIRE_STATION_DOOR_OFFSET := Vector3(310.0 / 16.0 * .12, 0, 220.0 / 32.0 + .06)
 const HARBOR_SEWER_OPENING := Rect2(1173.0, 2105.0, 18.0, 18.0)
 const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
+const NATIVE_PLACE := preload("res://world/places/NativePlace.gd")
 ## Todos os recortes de bueiro (o original e os de `SewerNetwork`), em pixels de origem.
 static func sewer_openings() -> Array[Rect2]:
 	return preload("res://world/editing/WorldManholes.gd").harbor_openings()
@@ -231,7 +232,7 @@ static func create_place(id: String) -> Node3D:
 		var fort = preload("res://gameplay/urban_v1/MountainFortPlace.gd").new()
 		fort.definition = definition
 		return fort
-	var place = load("res://world/places/NativePlace.gd").new()
+	var place = NATIVE_PLACE.new()
 	place.definition = definition
 	return place
 static func access_points() -> Array[Dictionary]:

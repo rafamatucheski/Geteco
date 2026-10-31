@@ -7,6 +7,7 @@ const DESIGN_VOICE := preload("res://audio/EngineDesignVoice.gd")
 const DESIGN_CATALOG := preload("res://audio/FleetEngineDesign.gd")
 const PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const CATALOG := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
+const SHIFT_BLOWOFF := preload("res://audio/vehicle_fx/sport_blowoff_1.wav")
 var drivetrain: RefCounted
 var vehicle: Node3D
 var _bank: Array[AudioStreamWAV] = []
@@ -89,7 +90,7 @@ func _ready() -> void:
 	for i in 2: _layers.append(_player("EngineBand%d" % i,-80.0))
 	_apply_profile()
 	_shift = _player("ShiftBlowoff",-16.0)
-	_shift.stream = load("res://audio/vehicle_fx/sport_blowoff_1.wav")
+	_shift.stream = SHIFT_BLOWOFF
 	_tire = _player("Wheelspin",-80.0)
 	# The driver's close race listener must not amplify rubber above the motor.
 	_tire.max_db = WHEELSPIN_MAX_DB

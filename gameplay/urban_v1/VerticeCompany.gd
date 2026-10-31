@@ -4,6 +4,10 @@ const ORIGIN := Vector3(-340,0,-80)
 const FOOTPRINT := Rect2(-392,-112,108,112)
 const ACTOR := preload("res://scripts/Actor.gd")
 const YARD_PAVING := preload("res://world/urban_detail/HarborPaving.gd")
+const VERTICE_SITE_DRESSING := preload("res://gameplay/urban_v1/VerticeSiteDressing.gd")
+const VERTICE_OFFICE_CLUTTER := preload("res://gameplay/urban_v1/VerticeOfficeClutter.gd")
+const VERTICE_YARD_FORKLIFTS := preload("res://gameplay/urban_v1/VerticeYardForklifts.gd")
+const VERTICE_NIGHT_SHIFT := preload("res://gameplay/urban_v1/vertice_night/VerticeNightShift.gd")
 
 static func painted_yard_enabled() -> bool:
 	return OS.get_environment("GETECO_PAINTED_VERTICE_YARD") != "0"
@@ -57,11 +61,11 @@ func _ready() -> void:
 	_build_yard()
 	_build_staff()
 	_build_secrets()
-	dressing = load("res://gameplay/urban_v1/VerticeSiteDressing.gd").new()
+	dressing = VERTICE_SITE_DRESSING.new()
 	add_child(dressing)
-	clutter = load("res://gameplay/urban_v1/VerticeOfficeClutter.gd").new()
+	clutter = VERTICE_OFFICE_CLUTTER.new()
 	add_child(clutter)
-	forklifts = load("res://gameplay/urban_v1/VerticeYardForklifts.gd").new()
+	forklifts = VERTICE_YARD_FORKLIFTS.new()
 	forklifts.company = self
 	add_child(forklifts)
 	_build_hatch()
@@ -71,7 +75,7 @@ func _ready() -> void:
 	interior_camera.far = 150
 	add_child(interior_camera)
 	if session != null:
-		night_shift = load("res://gameplay/urban_v1/vertice_night/VerticeNightShift.gd").new()
+		night_shift = VERTICE_NIGHT_SHIFT.new()
 		night_shift.configure(session,self)
 		add_child(night_shift)
 	set_physics_process(session != null)

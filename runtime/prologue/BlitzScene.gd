@@ -86,6 +86,7 @@ const LIMA_CARGO := Vector3(1.8, 0, 3.4)
 const LIMA_COVER := Vector3(6.15, 0, -16.7)
 const VICENTE_FLEE := [Vector3(-.4, 0, -5.4), Vector3(-3.1, 0, 2.0), Vector3(-3.4, 0, 13.0)]
 const WARM_DRAWS := 4
+const CIVILIAN_MESH_KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 signal finished(pov: String, skipped: bool)
 
 static var _retained: Array = []
@@ -1048,7 +1049,7 @@ func _stage_warm() -> void:
 ## sem a tampa reta que saltava como ombreira quadrada. O kit dos outros NPCs não muda.
 func _round_shoulders(body) -> void:
 	if not is_instance_valid(body) or body.get("_meshy") != null or body.upper_arms.is_empty(): return
-	var kit = load("res://assets/civilians/CivilianMeshKit.gd")
+	var kit = CIVILIAN_MESH_KIT
 	var profile: Dictionary = kit.build_profile(bool(body.wardrobe.female), int(body.wardrobe.build))
 	profile.merge(body.wardrobe.get("body_profile", {}), true)
 	var k: float = profile.limb

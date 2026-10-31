@@ -6,6 +6,7 @@ const SOURCE_IDS := {"NorthFrontage0":"harbor_bank","NorthFrontage1":"harbor_sup
 static var _cache: Array[Dictionary] = []
 static var _cache_signature := -1
 const SERVICES := preload("res://world/editing/WorldServiceBuildings.gd")
+const URBAN_BUILDING_FACTORY := preload("res://world/urban_detail/UrbanBuildingFactory.gd")
 
 static func definitions(include_deleted := false) -> Array[Dictionary]:
 	var edits := SERVICES.changes()
@@ -49,7 +50,7 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 			"harbor_police","harbor_fire_station":
 				var record: Dictionary = original_by_id[mapping[id]]
 				size=Vector2(record.size[0],record.size[1])/16.0
-				height=load("res://world/urban_detail/UrbanBuildingFactory.gd").resolved_height(record)+.14
+				height=URBAN_BUILDING_FACTORY.resolved_height(record)+.14
 				# Delegacia pintada: a parede tem a altura da pintura, menos o que afunda até a soleira.
 				if id=="harbor_police" and not PaintedHarborHouses.style_for("Police","police_precinct").is_empty(): height=PaintedPoliceStation.roof_height()
 				# Quartel pintado: a escada de marinheiro da lateral leste chega ao telhado;
@@ -87,7 +88,7 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 	_append("truckers_tire_shop","",Vector3(-269,0,104),Vector2(15,10),4.17,0,"tire_shop")
 	_append("vertice_roof","",Vector3(-340,0,-81),Vector2(55.5,37.5),11.40,0,"vertice")
 	var motor: Dictionary = original_by_id.MotorWorkshop
-	_append("northgate_auto_roof","",Vector3(motor.position[0]/16.0,0,motor.position[1]/16.0),Vector2(motor.size[0],motor.size[1])/16.0,load("res://world/urban_detail/UrbanBuildingFactory.gd").resolved_height(motor)+.45,0,"northgate")
+	_append("northgate_auto_roof","",Vector3(motor.position[0]/16.0,0,motor.position[1]/16.0),Vector2(motor.size[0],motor.size[1])/16.0,URBAN_BUILDING_FACTORY.resolved_height(motor)+.45,0,"northgate")
 	return _available(edits,include_deleted)
 
 static func _available(edits: Dictionary, include_deleted: bool) -> Array[Dictionary]:

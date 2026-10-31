@@ -15,6 +15,8 @@ const DIGO_PARKING := Vector3(-237,.13,-43.5)
 const DIGO_AMAROK_PARKING := Vector3(-237,.13,-47.0)
 ## Rival start-gate odds by difficulty: [holeshot, bog, wheelie].
 const RIVAL_LAUNCH := [[.18,.28,.06],[.26,.2,.06],[.34,.14,.05],[.42,.08,.04]]
+const MOTOCROSS_SURFACE_EFFECTS := preload("res://activities/motocross/MotocrossSurfaceEffects.gd")
+const MOTOCROSS_AMBIENT := preload("res://activities/motocross/MotocrossAmbient.gd")
 var stealing := false
 var selected_model := 0
 var start_shot := preload("res://activities/motocross/MotocrossStart.gd").new()
@@ -89,12 +91,12 @@ func configure(owner_session) -> void:
 	_marker.add_child(arrow)
 	session.world.add_child(_marker)
 	_marker.hide()
-	surface_effects = load("res://activities/motocross/MotocrossSurfaceEffects.gd").new()
+	surface_effects = MOTOCROSS_SURFACE_EFFECTS.new()
 	session.world.add_child(surface_effects)
 	surface_effects.configure(track)
 	wetness = .85 if int(session.state.world_state.get("weather",0)) in [1,2] else 0.0
 	process_physics_priority = -10
-	ambient = load("res://activities/motocross/MotocrossAmbient.gd").new()
+	ambient = MOTOCROSS_AMBIENT.new()
 	ambient.configure(self)
 
 func snapshot() -> Dictionary:

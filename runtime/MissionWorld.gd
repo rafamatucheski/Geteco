@@ -1,4 +1,6 @@
 extends Node3D
+const NECO_MODEL := preload("res://world/places/NecoModel.gd")
+const COBRA_AGENT := preload("res://gameplay/CobraAgent.gd")
 ## Successful live operations only; restoring/cancelling cargo is silent.
 signal tow_event(kind: String)
 const UNIT := 1.0/16.0
@@ -409,7 +411,7 @@ func _spawn_near_actors() -> void:
 				var previous: Node = actor.visual.get_child(0)
 				actor.visual.remove_child(previous)
 				previous.queue_free()
-				actor.visual.add_child(load("res://world/places/NecoModel.gd").new())
+				actor.visual.add_child(NECO_MODEL.new())
 			actors[id] = actor
 		elif not near and actors.has(id):
 			if is_instance_valid(actors[id]): actors[id].queue_free()
@@ -434,7 +436,7 @@ func _start_encounter(id: String, center: Vector3) -> void:
 	for index in (3 if id == "boss_encounter" else 2):
 		var point := center+Vector3((index-1)*3,0,-4)
 		if not session.position_clear(point+Vector3.UP*.05): continue
-		var enemy = load("res://gameplay/CobraAgent.gd").new()
+		var enemy = COBRA_AGENT.new()
 		enemy.configure(session.world.gameplay,2 if id == "boss_encounter" and index==1 else 0)
 		enemy.weapon_id = encounter_weapon(id, index)
 		enemy.position = point+Vector3.UP*.05
