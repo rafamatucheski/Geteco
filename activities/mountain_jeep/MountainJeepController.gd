@@ -176,7 +176,7 @@ func _physics_process(delta: float) -> void:
 					session.show_message("Prova concluída; não foi possível registrar o prêmio.")
 				else:
 					session.state.world_state.mountain_jeep=snapshot()
-					var suffix := " · R$ %d" % result.paid if result.paid>0 else " · novo recorde" if result.record else ""
+					var suffix := " · novo recorde" if result.record else ""
 					session.show_message(String(TranslationServer.translate("Trilha concluída · %.2f s%s")) % [result.time,suffix])
 					session.save_game(true)
 				driver=null

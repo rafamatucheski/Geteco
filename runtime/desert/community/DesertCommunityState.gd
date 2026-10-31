@@ -39,7 +39,7 @@ static func advance(world: Dictionary, wallet: RefCounted, expected: int) -> Dic
 	if not valid(state) or not unlocked(world) or state.step!=expected or expected>=LAST: return {"ok":false}
 	var next:=expected+1
 	if next==LAST:
-		var paid: Dictionary=wallet.grant_world_reward({"id":REWARD_ID,"kind":"cash","amount":REWARD})
+		var paid: Dictionary=wallet.grant_world_reward({"id":REWARD_ID,"kind":"cash","amount":REWARD,"label":TITLE})
 		if not paid.get("ok",false): return paid
 	state.step=next
 	state.active=next<LAST

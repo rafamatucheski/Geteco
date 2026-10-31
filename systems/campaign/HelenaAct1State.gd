@@ -89,7 +89,7 @@ static func finish(world: Dictionary, campaign: Dictionary, economy, id: String)
 	var definition: Dictionary = CHAIN[id]
 	if not ready(world, campaign, id) or "done" not in _allowed(id, stage(world, id)): return {"ok": false, "reason": "stage"}
 	if int(definition.amount) > 0:
-		var paid: Dictionary = economy.grant_world_reward({"id": str(definition.receipt), "kind": "cash", "amount": int(definition.amount)})
+		var paid: Dictionary = economy.grant_world_reward({"id": str(definition.receipt), "kind": "cash", "amount": int(definition.amount), "label": String(TranslationServer.translate(str(definition.title)))})
 		if not paid.ok: return {"ok": false, "reason": str(paid.get("reason", "wallet_full"))}
 	var next := {"version": 1, "stage": "done"}
 	if id == "press": next.choice = choice(world)

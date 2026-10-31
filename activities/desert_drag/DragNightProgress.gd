@@ -207,6 +207,6 @@ static func claim_rewards(world: Dictionary, economy) -> int:
 		var amount := FINISH_PRIZE if domain=="drag_night_finish" else WIN_PRIZE
 		# Um acúmulo carregado é resolvido em lotes limitados ao abrir o quadro.
 		for serial in range(through+1,mini(total,through+8)+1):
-			if not economy.grant_reward(domain+":"+str(serial),amount): break
+			if not economy.grant_reward(domain+":"+str(serial),amount,"Noite da arrancada"): break
 			paid+=amount
 	return paid

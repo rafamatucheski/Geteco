@@ -259,22 +259,25 @@ func _start_motorsport(action: String) -> bool:
 
 func _finish_motorsport(mode: String) -> void:
 	var reward := 0
+	var label := ""
 	if mode == "race":
 		var spec: Dictionary = Definitions.races(_region)[motorsport.id]
+		label = "Corrida " + str(spec.name)
 		var record: bool = not _data.race_best.has(motorsport.id) or motorsport.elapsed < float(_data.race_best[motorsport.id])
 		if record: _data.race_best[motorsport.id] = motorsport.elapsed; _data.race_records += 1
 		_data.races_finished += 1
 		reward = int(spec.reward) + (int(spec.best_time_bonus) if record else 0)
 	else:
 		var spec: Dictionary = Definitions.drifts(_region)[motorsport.id]
+		label = "Drift " + str(spec.name)
 		var points := int(motorsport.score)
 		_data.drift_best[motorsport.id] = maxi(points,int(_data.drift_best.get(motorsport.id,0)))
 		if points > 0: _data.drift_finished += 1
 		reward = int(points/1000.0*int(spec.reward_per_1000))
-	session.state.economy.grant_reward("activity:%d:%s"%[int(_data.attempt),motorsport.id],reward)
+	session.state.economy.grant_reward("activity:%d:%s"%[int(_data.attempt),motorsport.id],reward,label)
 	_achievements()
 	_commit()
-	session.show_message(String(TranslationServer.translate("Atividade concluída · +R$ %d")) %reward)
+	session.show_message("Atividade concluída")
 
 func _rebuild() -> void:
 	for visual in _visuals:
@@ -432,7 +435,7 @@ func _deliver_tow() -> bool:
 		return true
 	var job: Dictionary = _data.tow_contract
 	var wallet_before: Dictionary = session.state.economy.snapshot()
-	if not session.state.economy.grant_reward("tow:"+str(job.token),int(job.reward)): return false
+	if not session.state.economy.grant_reward("tow:"+str(job.token),int(job.reward),"Guincho"): return false
 	if not session.mission_world.finish_tow_job():
 		session.state.economy.restore_snapshot(wallet_before)
 		return false
@@ -440,7 +443,7 @@ func _deliver_tow() -> bool:
 	_data.tow_delivered_today += 1
 	_data.tow_contract = {}
 	_commit()
-	session.show_message(String(TranslationServer.translate("Reboque entregue · +R$ %d")) %int(job.reward))
+	session.show_message("Reboque entregue")
 	return true
 
 func _tick_tow(delta: float) -> void:

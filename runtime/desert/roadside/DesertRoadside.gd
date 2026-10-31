@@ -344,8 +344,8 @@ func _tick_courier(delta: float) -> void:
 		var pay := int(BALANCE.ROADSIDE_COURIER.get(str(route.id), 0))
 		var receipt := str(courier.receipt)
 		courier = {}
-		if session.state.economy.grant_reward(receipt, pay):
-			session.show_message(_t("Entrega feita · + R$ %d") % pay)
+		if session.state.economy.grant_reward(receipt, pay, "Entrega na estrada"):
+			session.show_message(_t("Entrega feita"))
 			session.save_game()
 		return
 	if float(courier.left) <= 0.0:
@@ -401,14 +401,14 @@ func _sell_scrap() -> bool:
 		return true
 	var reward := GARAGE.scrap_value(car)
 	var wallet: Dictionary = session.state.economy.snapshot()
-	if not session.state.economy.grant_reward(session.activities.salvage_receipt("desert_scrap"), reward) or not session.activities.record_external_delivery():
+	if not session.state.economy.grant_reward(session.activities.salvage_receipt("desert_scrap"), reward, "Sucata do Nonato") or not session.activities.record_external_delivery():
 		session.state.economy.restore_snapshot(wallet)
 		session.show_message("O Nonato não conseguiu pagar agora. O carro ficou no pátio.")
 		return true
 	# Remoção deliberada: se era o último carro dirigido, Driving/ProductionWorld soltam a
 	# referência e o snapshot do veículo do jogador (como na prensa do Neco).
 	car.queue_free()
-	session.show_message(_t("O Nonato prensa o carro · + R$ %d") % reward)
+	session.show_message(_t("O Nonato prensa o carro"))
 	session.save_game()
 	return true
 

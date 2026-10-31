@@ -899,8 +899,8 @@ func finish(won: bool, reason := "") -> void:
 	if progress.data.owned: _park_owned()
 	session.save_game()
 	_idle_board()
-	session.show_message((String(TranslationServer.translate("Vitória! +R$ %d (inscrição + R$ %d de lucro).")) %[prize,PROGRESS.LEVELS[difficulty].bonus]) if won else (String(TranslationServer.translate("%dº lugar · inscrição de R$ %d perdida.")) %[placement,PROGRESS.LEVELS[difficulty].fee] if reason == "finished" else String(TranslationServer.translate("Derrota · inscrição de R$ %d perdida.")) %PROGRESS.LEVELS[difficulty].fee))
-	if not was_owned and progress.data.owned: session.show_message(String(TranslationServer.translate("Vitória! +R$ %d. A motocross é sua: retire-a na entrada.")) %prize)
+	session.show_message((String(TranslationServer.translate("Vitória! Inscrição de volta + R$ %d de lucro.")) %PROGRESS.LEVELS[difficulty].bonus) if won else (String(TranslationServer.translate("%dº lugar · inscrição de R$ %d perdida.")) %[placement,PROGRESS.LEVELS[difficulty].fee] if reason == "finished" else String(TranslationServer.translate("Derrota · inscrição de R$ %d perdida.")) %PROGRESS.LEVELS[difficulty].fee))
+	if not was_owned and progress.data.owned: session.show_message("Vitória! A motocross é sua: retire-a na entrada.")
 
 ## Monta o cartão de resultados a partir da cronometragem ao vivo e devolve a posição do jogador.
 func _classify(won: bool, reason: String) -> int:

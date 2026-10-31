@@ -420,7 +420,7 @@ func _finish_scrap(completed: bool) -> void:
 		return
 	var reward := scrap_value(car)
 	var wallet: Dictionary = session.state.economy.snapshot()
-	if not session.state.economy.grant_reward(session.activities.salvage_receipt("neco_scrap"),reward) or not session.activities.record_external_delivery():
+	if not session.state.economy.grant_reward(session.activities.salvage_receipt("neco_scrap"),reward,"Sucata do Neco") or not session.activities.record_external_delivery():
 		session.state.economy.restore_snapshot(wallet)
 		car.collision_layer = _scrap_layer
 		session.show_message("O Neco não conseguiu pagar agora. O carro ficou na baia.")
@@ -430,13 +430,13 @@ func _finish_scrap(completed: bool) -> void:
 	# Remoção deliberada: se era o último carro dirigido, Driving/ProductionWorld
 	# soltam a referência e o snapshot do veículo do jogador.
 	car.queue_free()
-	session.show_message(String(TranslationServer.translate("Neco pagou R$ %d pela sucata.")) % reward)
+	session.show_message("Neco pagou pela sucata.")
 	session.save_game()
 
 func _commit_porto_delivery() -> bool:
 	if data.port_status!="stolen": return false
 	var wallet: Dictionary=session.state.economy.snapshot()
-	if not session.state.economy.grant_reward("port_boss_porto_rosso",50000): return false
+	if not session.state.economy.grant_reward("port_boss_porto_rosso",50000,"Carro do porto"): return false
 	if not session.activities.record_external_delivery(): session.state.economy.restore_snapshot(wallet); return false
 	data.port_status="delivered"
 	session.activities.residence.release_garage_vehicle(PORT_ID)
@@ -444,7 +444,7 @@ func _commit_porto_delivery() -> bool:
 	_retain_delivered_body(car)
 	data.vehicles.erase(PORT_ID)
 	cars.erase(PORT_ID)
-	session.show_message("Neco pagou R$ 50.000.")
+	session.show_message("Neco pagou.")
 	session.save_game()
 	return true
 

@@ -106,7 +106,7 @@ func perform(target: String) -> bool:
 		if not PROGRESS.claim_reward(session.state.world_state,session.state.economy):
 			session.show_message("Não foi possível receber o prêmio agora.")
 			return false
-		session.show_message("Prêmio da descida recebido: R$ 2400.")
+		session.show_message("Prêmio da descida recebido.")
 		session.save_game()
 		return true
 	if target != "start": return false
@@ -387,7 +387,7 @@ func _finish(place: int, seconds: float) -> void:
 	var paid := recorded and PROGRESS.claim_reward(session.state.world_state,session.state.economy)
 	last_result = {"place":place,"seconds":seconds,"paid":paid,"finished":true}
 	_cleanup()
-	session.show_message(String(TranslationServer.translate("Descida concluída · %d/7 · %.2f s%s")) %[place,seconds," · R$ 2400" if paid else ""])
+	session.show_message(String(TranslationServer.translate("Descida concluída · %d/7 · %.2f s")) %[place,seconds])
 	session.save_game()
 
 func cancel_attempt(reason: String = "cancelled") -> void:

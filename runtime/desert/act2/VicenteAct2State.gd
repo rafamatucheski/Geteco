@@ -196,7 +196,7 @@ static func chain_finish(world: Dictionary, economy, id: String, extra := {}) ->
 	if "done" not in _allowed(spec, chain_stage(world, id)) or not chain_ready(world, id): return {"ok": false, "reason": "stage"}
 	if id == "trunk" and str(extra.get("trunk_car", "")).is_empty(): return {"ok": false, "reason": "stage"}
 	if int(spec.amount) > 0:
-		var paid: Dictionary = economy.grant_world_reward({"id": str(spec.receipt), "kind": "cash", "amount": int(spec.amount)})
+		var paid: Dictionary = economy.grant_world_reward({"id": str(spec.receipt), "kind": "cash", "amount": int(spec.amount), "label": str(extra.get("label", ""))})
 		if not paid.ok: return {"ok": false, "reason": str(paid.get("reason", "wallet_full"))}
 	world[spec.key] = {"version": 1, "stage": "done"}
 	if not str(spec.flag).is_empty(): STORY.mark(world, str(spec.flag))

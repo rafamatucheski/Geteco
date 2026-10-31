@@ -43,7 +43,7 @@ static func sale_candidate(snapshot: Dictionary, id: String, receipt: String) ->
 	if parse_id(id).is_empty() or not _valid_receipt(receipt, "fishing_sale_"): return {}
 	var economy = _candidate(snapshot)
 	if economy == null or economy.has_reward_receipt(receipt): return {}
-	if not economy.consume_item(id) or not economy.grant_reward(receipt, sale_price(id)): return {}
+	if not economy.consume_item(id) or not economy.grant_reward(receipt, sale_price(id), "Venda de peixe"): return {}
 	return economy.snapshot()
 
 static func cook_candidate(snapshot: Dictionary, id: String, receipt: String) -> Dictionary:

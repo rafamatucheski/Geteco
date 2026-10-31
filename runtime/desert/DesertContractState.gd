@@ -38,7 +38,7 @@ static func advance(world: Dictionary, wallet: RefCounted, id: String, expected:
 	if int(state[id])!=expected or expected>=int(LAST[id]): return {"ok":false}
 	var next:=expected+1
 	if next==int(LAST[id]):
-		var result: Dictionary=wallet.grant_world_reward({"id":"desert_contract_"+id,"kind":"cash","amount":REWARDS[id]})
+		var result: Dictionary=wallet.grant_world_reward({"id":"desert_contract_"+id,"kind":"cash","amount":REWARDS[id],"label":"Serviço das peças" if id=="parts" else "Serviço do ramal"})
 		if not result.get("ok",false): return result
 	state[id]=next
 	state.active=id if next<int(LAST[id]) else ("" if state.active==id else state.active)

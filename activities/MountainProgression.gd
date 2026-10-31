@@ -364,7 +364,7 @@ func _finish() -> void:
 		return
 	if settlement.record: data.best[race.id]=race.elapsed
 	session.activities.refresh_achievements()
-	if _commit(): session.show_message("%s · %.2f s · +R$ %d%s"%[spec.name,race.elapsed,int(settlement.amount)," · Novo recorde!" if settlement.record else ""])
+	if _commit(): session.show_message("%s · %.2f s%s"%[spec.name,race.elapsed," · Novo recorde!" if settlement.record else ""])
 
 func _update_gate() -> void:
 	var target: Vector3 = race.target_position()

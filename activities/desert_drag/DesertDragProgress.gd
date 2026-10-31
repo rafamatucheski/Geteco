@@ -83,7 +83,7 @@ static func claim_rewards(world: Dictionary, economy) -> int:
 	var total := 0
 	for rival in pending:
 		var amount := reward_amount(rival)
-		if economy.grant_reward("desert_drag:"+rival,amount): total += amount
+		if economy.grant_reward("desert_drag:"+rival,amount,"Arrancada"): total += amount
 	return total
 
 static func record_finish(world: Dictionary, rival: String, won: bool, seconds: float) -> Dictionary:

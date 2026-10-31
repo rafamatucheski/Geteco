@@ -313,7 +313,7 @@ func _workshop() -> bool:
 func _claim_rewards() -> void:
 	var paid := PROGRESS.claim_rewards(session.state.world_state,session.state.economy)
 	session.close_menu()
-	session.show_message(String(TranslationServer.translate("Prêmios recebidos: R$ %d"))%paid if paid>0 else "Libere espaço na carteira para receber os prêmios.")
+	session.show_message("Prêmios recebidos." if paid>0 else "Libere espaço na carteira para receber os prêmios.")
 	if paid>0: session.save_game()
 func _open_tuning() -> void:
 	if not is_instance_valid(tuning_car): session.close_menu(); return

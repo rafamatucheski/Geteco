@@ -385,7 +385,7 @@ func _finish(id: String) -> bool:
 	var title := String(TranslationServer.translate(str(STATE.CHAIN[id].title)))
 	if int(result.amount) > 0:
 		preload("res://gameplay/RewardAudio.gd").play(self, "cash")
-		session.show_message(String(TranslationServer.translate("Missão concluída: %s · + R$ %d")) % [title, int(result.amount)])
+		session.show_message(String(TranslationServer.translate("Missão concluída: %s")) % title)
 	elif id != "ride" and id != "farewell":
 		session.show_message(String(TranslationServer.translate("Missão concluída: %s")) % title)
 	session.save_game()

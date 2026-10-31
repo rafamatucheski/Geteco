@@ -42,9 +42,9 @@ static func apply_ski_settlement(economy: RefCounted, settlement: Dictionary) ->
 	if economy == null or settlement.get("ok") != true:
 		return false
 	var before: Dictionary = economy.snapshot()
-	if not economy.grant_reward(str(settlement.finish_receipt),int(settlement.finish_amount)):
+	if not economy.grant_reward(str(settlement.finish_receipt),int(settlement.finish_amount),"Prova de esqui"):
 		return false
-	if int(settlement.record_amount) > 0 and not economy.grant_reward(str(settlement.record_receipt),int(settlement.record_amount)):
+	if int(settlement.record_amount) > 0 and not economy.grant_reward(str(settlement.record_receipt),int(settlement.record_amount),"Recorde de esqui"):
 		economy.restore_snapshot(before)
 		return false
 	return true

@@ -286,9 +286,9 @@ func _update_challenge() -> void:
 	var height := float(lift.best_hop)
 	record = snappedf(height, .01)
 	_cheer_near(CENTER, 3.5)
-	if not _rewarded and session.state.economy.grant_reward(_receipt(), HOP_REWARD):
+	if not _rewarded and session.state.economy.grant_reward(_receipt(), HOP_REWARD, "Encontro lowrider"):
 		_rewarded = true
-		session.show_message(String(TranslationServer.translate("Novo recorde da vila: %.2f m! A quebrada pagou R$ %d.")) % [height, HOP_REWARD])
+		session.show_message(String(TranslationServer.translate("Novo recorde da vila: %.2f m! A quebrada pagou.")) % height)
 	else:
 		session.show_message(String(TranslationServer.translate("Novo recorde da vila: %.2f m!")) % height)
 

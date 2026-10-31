@@ -95,7 +95,7 @@ static func cave_reward(site: Dictionary) -> Dictionary:
 	var id := "desert_wilds_" + str(site.id)
 	if str(site.get("loot", "")) == "weapon": return {"id": id, "kind": "weapon", "item": str(site.weapon), "ammo": CAVE_AMMO}
 	if str(site.get("loot", "")) == "car": return {"id": id, "kind": "car"}
-	return {"id": id, "kind": "cash", "amount": int(site.amount)}
+	return {"id": id, "kind": "cash", "amount": int(site.amount), "label": "Caverna"}
 
 static func cave_claimed(economy, site: Dictionary) -> bool:
 	var reward := cave_reward(site)

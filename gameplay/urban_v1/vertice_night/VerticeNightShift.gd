@@ -475,14 +475,14 @@ func _open_safe() -> bool:
 	var state := data()
 	# No tiro o cofre queima junto: só o caminho escondido leva o dinheiro.
 	if state.is_empty() or state.safe or state.stage != "escaping" or state.route != "stealth" or alarm: return false
-	var receipt: Dictionary = session.state.economy.grant_world_reward({"id":STATE.SAFE_RECEIPT, "kind":"cash", "amount":STATE.SAFE_CASH})
+	var receipt: Dictionary = session.state.economy.grant_world_reward({"id":STATE.SAFE_RECEIPT, "kind":"cash", "amount":STATE.SAFE_CASH, "label":"Cofre dos Cobras"})
 	if not receipt.get("ok",false):
 		session.show_message("Libere espaço na carteira para levar o dinheiro do cofre.")
 		return false
 	state.safe = true
 	props.safe_door.rotation.y = -1.9
 	preload("res://gameplay/RewardAudio.gd").play(self,"cash")
-	session.show_message(String(TranslationServer.translate("Dinheiro dos Cobras: R$ %d.")) % STATE.SAFE_CASH)
+	session.show_message("Dinheiro dos Cobras recolhido.")
 	return true
 
 # --- Saída e ligação do Maciota ------------------------------------------------------------

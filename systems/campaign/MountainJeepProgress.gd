@@ -30,7 +30,7 @@ func settle(run: RefCounted, economy: RefCounted) -> Dictionary:
 	if not validate_snapshot(data) or not validate_wallet(data,economy.snapshot()): return {}
 	var paid := 0
 	if not data.rewarded:
-		if not economy.grant_reward(RECEIPT,PRIZE): return {}
+		if not economy.grant_reward(RECEIPT,PRIZE,"Trilha de jipe"): return {}
 		data.rewarded=true
 		paid=PRIZE
 	var record: bool = float(data.best)==0.0 or run.elapsed<float(data.best)

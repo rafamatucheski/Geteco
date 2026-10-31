@@ -85,7 +85,7 @@ func perform(action: Dictionary) -> bool:
 	# comum de save ainda decide se grava agora ou enfileira o checkpoint.
 	session.save_game()
 	if bool(result.get("reward_changed",false)):
-		session.show_message(String(TranslationServer.translate("R$ %d recolhidos."))%int(result.get("amount",0)))
+		session.show_message("Dinheiro recolhido.")
 	var clue := str(result.get("clue",""))
 	if not clue.is_empty(): session.show_dialogue([{"speaker":"Anotação","message":clue}])
 	return true

@@ -225,10 +225,12 @@ static func _max_capacity(id: String) -> int:
 
 ## Itens efêmeros cuidam da própria flag de uso único; só a carteira sobrevive ao save.
 ## Evita uma transação permanente por civil que reaparece.
-func collect_loose_cash(amount: int) -> bool:
+func collect_loose_cash(amount: int, label := "") -> bool:
 	if amount < 5 or amount > 300 or int(_data.balance) > LIMIT - amount: return false
 	_data.balance += amount
+	gain_label = label
 	money_gained.emit(amount)
+	gain_label = ""
 	return true
 
 ## Perda sem recibo (conta do hospital, multa da prisão): acontece uma vez, no fim do resgate,
@@ -409,7 +411,7 @@ func collect(id: String) -> bool:
 	if not Collectibles.ENTRIES.has(id) or _data.collectibles.has(id): return false
 	var next_count: int = _data.collectibles.size() + 1
 	var reward: int = Collectibles.FIND_CASH + int(Collectibles.MILESTONE_CASH.get(next_count, 0))
-	if not grant_reward("collectible:" + id, reward): return false
+	if not grant_reward("collectible:" + id, reward, "Colecionável"): return false
 	_data.collectibles.append(id)
 	return true
 
@@ -436,7 +438,7 @@ func evaluate_achievements(stats: Dictionary) -> Array:
 		var value: Variant = stats.get(criterion[0], 0)
 		if typeof(value) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(value)): continue
 		if float(value) < float(criterion[1]): continue
-		if not grant_reward("achievement:" + id, int(Achievements.CASH_REWARDS.get(id, 0))): continue
+		if not grant_reward("achievement:" + id, int(Achievements.CASH_REWARDS.get(id, 0)), "Conquista"): continue
 		_data.achievements.append(id)
 		unlocked.append(id)
 	return unlocked

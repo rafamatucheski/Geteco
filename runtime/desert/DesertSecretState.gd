@@ -25,7 +25,7 @@ static func collected(world_state: Dictionary, id: String) -> bool:
 
 static func reward(id: String) -> Dictionary:
 	if id not in IDS: return {}
-	return {"id":id+"_cache","kind":"cash","amount":5000}
+	return {"id":id+"_cache","kind":"cash","amount":5000,"label":"Esconderijo do deserto"}
 
 static func claim(world_state: Dictionary, economy: RefCounted, id: String, player_alive: bool) -> Dictionary:
 	if not player_alive: return {"ok":false,"reason":"player_dead","changed":false}

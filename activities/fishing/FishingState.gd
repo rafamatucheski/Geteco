@@ -97,5 +97,5 @@ static func claim(world: Dictionary, economy) -> int:
 	var saved := data(world)
 	for serial in saved.rewards:
 		var prize := int(RULES.TIERS[int(saved.rewards[serial])].prize)
-		if economy.grant_reward("fishing:prize:" + str(serial), prize): paid += prize
+		if economy.grant_reward("fishing:prize:" + str(serial), prize, "Torneio de pesca"): paid += prize
 	return paid

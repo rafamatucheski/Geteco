@@ -794,7 +794,7 @@ func _secure_cash() -> void:
 	for index in 2:
 		if not data.taken[index] or data.secured[index]: continue
 		var receipt := "armored:%s:truck:%d" % [data.id,index]
-		if session.state.economy.grant_reward(receipt,SCHEDULE.CASH_PER_TRUCK):
+		if session.state.economy.grant_reward(receipt,SCHEDULE.CASH_PER_TRUCK,"Carro-forte"):
 			awarded += SCHEDULE.CASH_PER_TRUCK
 			data.secured[index] = true
 		elif session.state.economy.has_reward_receipt(receipt): data.secured[index] = true
@@ -802,7 +802,7 @@ func _secure_cash() -> void:
 	for index in 2:
 		if data.taken[index] and not data.secured[index]: data.pending += SCHEDULE.CASH_PER_TRUCK
 	escape_seconds = 0.0
-	if awarded > 0: session.show_message(String(TranslationServer.translate("Saque garantido: R$ %d")) % awarded)
+	if awarded > 0: session.show_message("Saque garantido.")
 	_persist()
 
 func _failed() -> void:

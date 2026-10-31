@@ -227,7 +227,7 @@ static func claim_rewards(world: Dictionary, economy) -> int:
 		for serial in range(1,int(value.bonuses.get(rival,0))+1):
 			var id: String="drag_rival_record:"+str(rival)+":"+str(serial)
 			if not RECEIPTS.lookup(wallet,"reward",id).is_empty(): continue
-			if not economy.grant_reward(id,BONUS): return paid
+			if not economy.grant_reward(id,BONUS,"Recorde de arrancada"): return paid
 			paid+=BONUS
 	return paid
 

@@ -36,4 +36,4 @@ static func claim(world: Dictionary, economy) -> bool:
 	var saved:=data(world)
 	if not validate_world(world,economy.snapshot()) or not saved.won: return false
 	if not RECEIPTS.lookup(economy.snapshot(),"reward",RECEIPT).is_empty(): return false
-	return economy.grant_reward(RECEIPT,REWARD)
+	return economy.grant_reward(RECEIPT,REWARD,"Leito seco")

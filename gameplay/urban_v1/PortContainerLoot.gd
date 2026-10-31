@@ -156,10 +156,10 @@ func collect(container: Node3D) -> bool:
 	if wallet.snapshot().transactions.has("reward:"+receipt):
 		message = "Já recolhido"
 	elif reward.kind == "cash":
-		if not wallet.grant_reward(receipt,int(reward.amount)):
+		if not wallet.grant_reward(receipt,int(reward.amount),"Contêiner"):
 			session.show_message("Sem espaço na carteira")
 			return false
-		message = "+R$ %d" % reward.amount
+		message = "Dinheiro recolhido"
 		cue = "cash"
 	elif reward.kind == "armor":
 		if session.world.gameplay.armor >= 100.0:

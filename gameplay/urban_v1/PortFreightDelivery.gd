@@ -159,7 +159,7 @@ func _deliver() -> bool:
 	var index := active_bay
 	var entry: Dictionary = cargo.work_trucks[index]
 	var vehicle = entry.truck
-	var receipt: Dictionary = session.state.economy.grant_world_reward({"id":_receipt_id(index), "kind":"cash", "amount":PAYMENT})
+	var receipt: Dictionary = session.state.economy.grant_world_reward({"id":_receipt_id(index), "kind":"cash", "amount":PAYMENT, "label":"Frete do porto"})
 	if not receipt.ok:
 		session.show_message("Não foi possível receber o frete. Tente novamente.")
 		return false
@@ -186,7 +186,7 @@ func _deliver() -> bool:
 	session.state.world_state.vehicles = saved.filter(func(record): return record.get("vehicle_id", "") != _vehicle_id(index))
 	_restore_previous_selection()
 	session.save_game()
-	session.show_message("Carga entregue · +R$ 300" if receipt.changed else "Carga já entregue.")
+	session.show_message("Carga entregue" if receipt.changed else "Carga já entregue.")
 	return true
 
 func _process(delta: float) -> void:

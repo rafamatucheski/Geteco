@@ -2219,7 +2219,7 @@ func _wire_money_audio() -> void:
 ## carregar save e restore_snapshot não emitem money_gained, então não aparecem aqui.
 func _on_money_gained(amount: int) -> void:
 	if is_instance_valid(world) and is_instance_valid(world.hud) and world.hud.has_method("present_money"):
-		if world.hud.present_money(amount, state.economy.gain_label): REWARD_AUDIO.play(self, "cash")
+		if world.hud.present_money(amount, String(TranslationServer.translate(state.economy.gain_label)) if not state.economy.gain_label.is_empty() else ""): REWARD_AUDIO.play(self, "cash")
 		return
 	REWARD_AUDIO.play(self, "cash")
 

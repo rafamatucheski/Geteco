@@ -514,11 +514,11 @@ func _physics_process(delta: float) -> void:
 		var found: bool = session.state.economy.snapshot().transactions.has("reward:"+secret.id)
 		secret.visual.visible = not found
 		if not found and p.distance_to(secret.point)<1.0:
-			var receipt: Dictionary = session.state.economy.grant_world_reward({"id":secret.id,"kind":"cash","amount":secret.amount})
+			var receipt: Dictionary = session.state.economy.grant_world_reward({"id":secret.id,"kind":"cash","amount":secret.amount,"label":"Dinheiro escondido"})
 			if receipt.ok:
 				secret.visual.hide()
 				session.save_game()
-				session.show_message(String(TranslationServer.translate("Encontrou R$ %d."))%secret.amount)
+				session.show_message("Encontrou dinheiro escondido.")
 
 func dock_occupied(index: int) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()

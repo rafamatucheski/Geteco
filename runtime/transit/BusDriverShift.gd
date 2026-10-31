@@ -94,9 +94,9 @@ func complete_stop(bus: CharacterBody3D) -> void:
 	var amount := 12+boarded*2
 	if int(bus.work_state.stops)%service.stops.size()==0:
 		bus.work_state.laps=int(bus.work_state.laps)+1; amount+=60
-	if world.session.state.economy.collect_loose_cash(amount):
+	if world.session.state.economy.collect_loose_cash(amount,"Linha 510"):
 		bus.work_state.earned=int(bus.work_state.earned)+amount
-		notice=String(TranslationServer.translate("Parada atendida · +R$ %d")) % amount
+		notice="Parada atendida"
 	else: notice="Parada atendida · carteira cheia"
 	notice_age=4; _exchange_done=false; _exchange_age=0
 

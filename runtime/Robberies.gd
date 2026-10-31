@@ -86,7 +86,7 @@ func bank_departed() -> void:
 	if session.state.place_id!="harbor_bank" or session.world.gameplay.health<=0 or data.bank_pending<=0: return
 	var mask := int(data.bank_cash0)+int(data.bank_cash1)*2+int(data.bank_cash2)*4
 	var amount: int = data.bank_pending
-	if session.state.economy.grant_reward("bank_haul:%d:%d"%[int(data.bank_cycle),mask],amount):
+	if session.state.economy.grant_reward("bank_haul:%d:%d"%[int(data.bank_cycle),mask],amount,"Assalto ao banco"):
 		data.bank_pending=0
 		# Um assalto bem-sucedido também precisa de um ciclo escrito de investigação/reabertura.
 		# Preserva o recibo do roubo; uma visita posterior não pode pagá-lo de novo.
@@ -98,7 +98,7 @@ func bank_departed() -> void:
 		# bônus até o próximo evento de dano/morte mudar o HUD do jogo.
 		if "activities" in session and session.activities!=null: session.activities.refresh_achievements()
 		preload("res://gameplay/RewardAudio.gd").play(self,"cash")
-		session.show_message(String(TranslationServer.translate("Saque guardado: + R$ %d.000"))%floori(float(amount)/1000.0))
+		session.show_message("Saque guardado.")
 		_session_save()
 	else: session.show_message(String(TranslationServer.translate("Carteira cheia. Saque preservado: R$ %d"))%amount)
 
@@ -342,7 +342,7 @@ func _tick_cashier(delta: float, aiming: bool) -> void:
 		_cashier_speech(clerk, "Não vou abrir o caixa! Estou chamando a polícia!" if data.fuel_resists else "Calma! Vou abrir o caixa...")
 		_fuel_notice=true
 	if not data.fuel_resists and _intimidation>=3:
-		if session.state.economy.grant_reward("fuel_register",180):
+		if session.state.economy.grant_reward("fuel_register",180,"Caixa do posto"):
 			data.fuel_register=true
 			_cashier_speech(clerk, "Leva e vai embora!")
 			_session_save()

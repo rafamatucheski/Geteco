@@ -217,7 +217,7 @@ func claim_reward(economy: RefCounted, id: String = "") -> bool:
 	if not _data.pending_rewards.has(id): return false
 	# O recibo da carteira cuida da idempotência. Salve os dois módulos no mesmo snapshot.
 	var receipt := "campaign:" + id
-	var paid := bool(economy.grant_reward(receipt, int(_data.pending_rewards[id])))
+	var paid := bool(economy.grant_reward(receipt, int(_data.pending_rewards[id]), String(TranslationServer.translate(str(Missions.MISSIONS.get(id, {}).get("title", ""))))))
 	if not paid:
 		var wallet: Dictionary = economy.snapshot()
 		var entry: Dictionary = wallet.get("transactions", {}).get("reward:" + receipt, {})

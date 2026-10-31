@@ -650,15 +650,17 @@ func _finish_step(next_stage: String, extra := {}) -> void:
 		var parts := next_stage.split(":")
 		var id := parts[0]
 		if parts[1] == "done":
-			var result: Dictionary = STATE.chain_finish(world, session.state.economy, id, extra)
+			# O rótulo só nomeia a origem no aviso central de dinheiro; o estado não o grava.
+			var paid_extra: Dictionary = extra.duplicate()
+			paid_extra.label = String(TranslationServer.translate(str(CHAIN_TITLES[id])))
+			var result: Dictionary = STATE.chain_finish(world, session.state.economy, id, paid_extra)
 			if not result.ok:
 				# Carteira cheia: a missão espera na última conversa, que paga na próxima vez.
 				if str(result.reason) != "stage": session.show_message("Libere espaço na carteira para receber o pagamento.")
 				return
-			var amount := int(STATE.CHAIN[id].amount)
 			REWARD_AUDIO.play(session, "collectible")
 			var title := String(TranslationServer.translate(str(CHAIN_TITLES[id])))
-			session.show_message(String(TranslationServer.translate("%s concluída · + R$ %d")) % [title, amount] if amount > 0 else String(TranslationServer.translate("%s concluída")) % title)
+			session.show_message(String(TranslationServer.translate("%s concluída")) % title)
 			if id == "finale": session.show_message("Ato 2 concluído · A passagem norte está aberta.")
 		else:
 			var from := STATE.chain_stage(world, id)
@@ -680,7 +682,7 @@ func _finish_step(next_stage: String, extra := {}) -> void:
 	elif next_stage == "done":
 		# Paga antes de marcar (carteira cheia não marca), então confere a etapa antes de pagar.
 		if stage() != "chapel": return
-		var paid: Dictionary = session.state.economy.grant_world_reward({"id": STATE.ENVELOPE_RECEIPT, "kind": "cash", "amount": STATE.ENVELOPE_AMOUNT})
+		var paid: Dictionary = session.state.economy.grant_world_reward({"id": STATE.ENVELOPE_RECEIPT, "kind": "cash", "amount": STATE.ENVELOPE_AMOUNT, "label": "Envelope de Vicente"})
 		if not paid.ok:
 			# Carteira cheia: a missão espera na capela, e a próxima conversa tenta de novo.
 			session.show_message("Libere espaço na carteira para receber o envelope de Vicente.")
@@ -688,7 +690,7 @@ func _finish_step(next_stage: String, extra := {}) -> void:
 		if not STATE.advance(world, "done"): return
 		STORY.mark(world, "met_vicente")
 		REWARD_AUDIO.play(session, "collectible")
-		session.show_message(String(TranslationServer.translate("%s concluída · + R$ %d")) % [String(TranslationServer.translate(TITLE)), STATE.ENVELOPE_AMOUNT])
+		session.show_message(String(TranslationServer.translate("%s concluída")) % String(TranslationServer.translate(TITLE)))
 	elif not STATE.advance(world, next_stage): return
 	session.save_game()
 

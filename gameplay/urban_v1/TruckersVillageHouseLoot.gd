@@ -20,7 +20,7 @@ func _process(delta: float) -> void:
 		stash.call("set_available",not taken)
 		if taken or session.world.gameplay.health<=0 or session.world.player.get("dead")==true or session.world.driving.occupied: continue
 		if homes.current_home!=i or homes.house_at(session.world.player.global_position)!=i or session.world.player.global_position.distance_to(stash.global_position)>1.3: continue
-		if session.state.economy.grant_reward(id,CASH[i]):
+		if session.state.economy.grant_reward(id,CASH[i],"Dinheiro escondido"):
 			REWARD_AUDIO.play(self,"cash")
 			stash.call("set_available",false,true)
-			session.show_message(String(TranslationServer.translate("Encontrou R$ %d."))%CASH[i])
+			session.show_message("Encontrou dinheiro escondido.")

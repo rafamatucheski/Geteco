@@ -41,7 +41,7 @@ func settle(wallet, won: bool) -> int:
 	var prize := 0
 	if won:
 		prize = int(LEVELS[level].fee)+int(LEVELS[level].bonus)
-		if not wallet.grant_reward("motocross_prize:%d"%int(data.serial),prize): return 0
+		if not wallet.grant_reward("motocross_prize:%d"%int(data.serial),prize,"Motocross"): return 0
 		data.wins[level] += 1
 		data.unlocked = maxi(int(data.unlocked),mini(3,level+1))
 		if level >= 1: data.owned = true

@@ -136,12 +136,12 @@ func perform(target: String) -> bool:
 			_sync_visual()
 			session.show_message("Correia recuperada." if target == "belt" else "Manivela recuperada.")
 		"repair":
-			if not _paid() and not session.state.economy.grant_reward(REWARD_ID,REWARD):
+			if not _paid() and not session.state.economy.grant_reward(REWARD_ID,REWARD,"Conserto da bomba"):
 				session.show_message("Sua carteira está cheia. Volte para concluir o conserto.")
 				return false
 			data.completed = true
 			_sync_visual()
-			session.show_message("Bomba restaurada · R$ 450. Tonico liberou consertos grátis aqui no posto!")
+			session.show_message("Bomba restaurada. Tonico liberou consertos grátis aqui no posto!")
 			session.save_game()
 		"service":
 			var car = _service_vehicle()

@@ -161,7 +161,7 @@ func _finish() -> void:
 	last_result={"finished":true,"seconds":elapsed,"won":elapsed<=COURSE.PRIZE_TIME,"paid":paid}
 	_release()
 	var best: float=STATE.data(session.state.world_state).best
-	session.show_message(String(TranslationServer.translate("Leito seco: %.2f s · Recorde: %.2f s%s")) %[elapsed,best," · R$ 1.800" if paid else ""])
+	session.show_message(String(TranslationServer.translate("Leito seco: %.2f s · Recorde: %.2f s")) %[elapsed,best])
 	session.save_game()
 	race_completed.emit(last_result)
 

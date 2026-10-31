@@ -43,12 +43,12 @@ func rob_register() -> bool:
 		return false
 	if data.robbery_serial >= 1000000: return false
 	var serial := int(data.robbery_serial)+1
-	if not session.state.economy.grant_reward("tonico_register_%d"%serial,REGISTER_CASH): return false
+	if not session.state.economy.grant_reward("tonico_register_%d"%serial,REGISTER_CASH,"Caixa do Tonico"): return false
 	data.robbery_serial = serial
 	data.register_cooldown = REGISTER_COOLDOWN
 	quest.trigger_conflict(session.world.player)
 	session.world.gameplay.register_crime(30,quest.COOLER_POINT)
-	session.show_message("R$ 180 roubados · Os moradores se armaram! Saia da vila.")
+	session.show_message("Caixa roubado · Os moradores se armaram! Saia da vila.")
 	# Crime/active quest checkpoint restrictions remain authoritative.
 	quest.save_when_allowed()
 	return true

@@ -110,7 +110,7 @@ func _grant_loot(pickup: Node3D) -> bool:
 	if pickup.consumed: return false
 	if pickup.kind == "cash":
 		if pickup.consumed or pickup.cash_credited or g.state == null or g.state.get("economy") == null: return false
-		if not g.state.economy.collect_loose_cash(int(pickup.cash_amount)): return false
+		if not g.state.economy.collect_loose_cash(int(pickup.cash_amount), "Dinheiro no chão"): return false
 		pickup.cash_credited = true
 		g._play_ui(AUDIO.reward("pickup", g._rng), -3.0)
 		return true

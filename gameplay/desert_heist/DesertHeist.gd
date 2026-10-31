@@ -266,13 +266,13 @@ func perform(action: Dictionary) -> bool:
 		return true
 	if action.get("target","")!="cargo_heist:collect" or data.phase!="opened": return false
 	var receipt:=STATE.receipt(data)
-	if not session.state.economy.has_reward_receipt(receipt) and not session.state.economy.grant_reward(receipt,STATE.reward(data)):
+	if not session.state.economy.has_reward_receipt(receipt) and not session.state.economy.grant_reward(receipt,STATE.reward(data),"Carga do comboio"):
 		session.show_message("Libere espaço na carteira para recolher a carga.")
 		return false
 	data.phase="looted"
 	_set_open(true,true)
 	write_snapshot()
-	session.show_message("Carga recuperada: R$ %d"%STATE.reward(data))
+	session.show_message("Carga recuperada.")
 	session.save_game()
 	return true
 

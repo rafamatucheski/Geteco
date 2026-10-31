@@ -252,30 +252,30 @@ func perform(target: String) -> bool:
 	var economy = session.state.economy
 	match target:
 		"event_help":
-			if not economy.grant_reward(STATE.next_receipt(session.state.world_state, "breakdown"), BALANCE.ROADSIDE_TRUCK_HELP):
+			if not economy.grant_reward(STATE.next_receipt(session.state.world_state, "breakdown"), BALANCE.ROADSIDE_TRUCK_HELP, "Ajuda na estrada"):
 				session.show_message("Carteira cheia.")
 				return true
 			event.helped = true
 			event.resolved = true
 			if is_instance_valid(event.vehicle): event.vehicle.engine_disabled = false
-			session.show_message(_t("Vocês trocam a correia e a van pega · + R$ %d") % BALANCE.ROADSIDE_TRUCK_HELP)
+			session.show_message(_t("Vocês trocam a correia e a van pega"))
 			session.save_game()
 		"event_cashbox":
 			var amount := _rng.randi_range(BALANCE.ROADSIDE_TRUCK_CASHBOX.x, BALANCE.ROADSIDE_TRUCK_CASHBOX.y)
-			if not economy.collect_loose_cash(amount):
+			if not economy.collect_loose_cash(amount, "Caixinha da cabine"):
 				session.show_message("Carteira cheia.")
 				return true
 			event.looted = true
 			event.resolved = true
-			session.show_message(_t("Caixinha da cabine · + R$ %d") % amount)
+			session.show_message(_t("Caixinha da cabine"))
 		"event_loot":
 			var amount := _rng.randi_range(BALANCE.ROADSIDE_ROADBLOCK_LOOT.x, BALANCE.ROADSIDE_ROADBLOCK_LOOT.y)
-			if not economy.collect_loose_cash(amount):
+			if not economy.collect_loose_cash(amount, "Porta-luvas"):
 				session.show_message("Carteira cheia.")
 				return true
 			event.looted = true
 			event.resolved = true
-			session.show_message(_t("Dinheiro escondido no porta-luvas · + R$ %d") % amount)
+			session.show_message(_t("Dinheiro escondido no porta-luvas"))
 		_: return false
 	return true
 

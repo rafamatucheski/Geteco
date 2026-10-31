@@ -241,10 +241,10 @@ func _secure_haul() -> void:
 		session.show_message("Você escapou dos reforços da mina.")
 		return
 	if not pending_cash or completed() or session.world.gameplay.health <= 0: return
-	if session.state.economy.grant_reward(STATE.RECEIPT, STATE.CASH):
+	if session.state.economy.grant_reward(STATE.RECEIPT, STATE.CASH, "Saque da mina"):
 		session.state.world_state[STATE.KEY] = {"version":1,"escaped":true}
 		preload("res://gameplay/RewardAudio.gd").play(self,"cash")
-		session.show_message("Emboscada superada. Saque guardado: R$ 12.000.")
+		session.show_message("Emboscada superada. Saque guardado.")
 	cancel()
 	session.save_game()
 

@@ -45,7 +45,7 @@ func complete_contract(id: String, economy: RefCounted) -> bool:
 	var contract := _find("district_one_contracts", id)
 	if contract.is_empty(): return false
 	# Scene contract adapter must verify the original theft/delivery conditions.
-	if not economy.grant_reward("canonical_contract:" + id, int(contract.reward)): return false
+	if not economy.grant_reward("canonical_contract:" + id, int(contract.reward), "Contrato do distrito"): return false
 	_data.completed_contracts.append(id)
 	_apply(contract)
 	return true

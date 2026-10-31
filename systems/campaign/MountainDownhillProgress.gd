@@ -44,7 +44,7 @@ static func claim_reward(world: Dictionary, economy) -> bool:
 	var current := data(world)
 	if not validate_snapshot(current) or current.wins == 0 or current.reward_paid: return false
 	if economy.has_reward_receipt(RECEIPT): return false
-	if not economy.grant_reward(RECEIPT,FIRST_WIN_REWARD): return false
+	if not economy.grant_reward(RECEIPT,FIRST_WIN_REWARD,"Descida da montanha"): return false
 	current.reward_paid = true
 	world.mountain_downhill = current
 	return true

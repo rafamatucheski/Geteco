@@ -102,9 +102,8 @@ func _finish_game(hits: int) -> void:
 	best_score = maxi(best_score,hits)
 	var awarded := false
 	if hits >= 2 and not _paid(PRIZE_ID):
-		awarded = session.state.economy.grant_reward(PRIZE_ID,200)
+		awarded = session.state.economy.grant_reward(PRIZE_ID,200,"Ferradura")
 	var result := String(TranslationServer.translate("%d/3 acertos"))%hits
-	if awarded: result += " · R$ 200"
 	if hits == 3: result += ". A marca na ferradura aponta para a caixa sob o catavento."
 	elif hits < 2: result += ". Acerte pelo menos duas para ganhar o prêmio."
 	else: result += ". Três acertos revelam o esconderijo."
@@ -115,12 +114,12 @@ func _paid(id: String) -> bool:
 	return session.state.economy.snapshot().transactions.has("reward:"+id)
 
 func _collect_cache() -> bool:
-	if not _paid(CACHE_ID) and not session.state.economy.grant_reward(CACHE_ID,650):
+	if not _paid(CACHE_ID) and not session.state.economy.grant_reward(CACHE_ID,650,"Esconderijo"):
 		session.show_message("Sem espaço na carteira.")
 		return false
 	cache_opened = true
 	if is_instance_valid(art): art.set_cache_open(true)
-	session.show_message("Esconderijo encontrado · R$ 650")
+	session.show_message("Esconderijo encontrado")
 	_persist()
 	return true
 

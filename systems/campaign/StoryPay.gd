@@ -16,7 +16,7 @@ static func settle(campaign_snapshot: Dictionary, economy) -> int:
 		var id := str(id_value)
 		var bonus := int(BALANCE.STORY_BONUS.get(id, 0))
 		if bonus <= 0 or economy.has_reward_receipt(receipt(id)): continue
-		if economy.grant_reward(receipt(id), bonus): paid += bonus
+		if economy.grant_reward(receipt(id), bonus, String(TranslationServer.translate(str(MISSIONS.MISSIONS.get(id, {}).get("title", ""))))): paid += bonus
 	return paid
 
 ## Total que a missão paga hoje (base + bônus), para o aviso de conclusão.
@@ -25,4 +25,4 @@ static func total(id: String) -> int:
 
 static func completion_notice(id: String) -> String:
 	var title := String(TranslationServer.translate(str(MISSIONS.MISSIONS.get(id, {}).get("title", id))))
-	return String(TranslationServer.translate("%s concluída · + R$ %d")) % [title, total(id)]
+	return String(TranslationServer.translate("%s concluída")) % title
