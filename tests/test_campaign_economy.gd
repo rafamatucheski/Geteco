@@ -52,13 +52,17 @@ func _services() -> void:
 	_check(restored.restore_snapshot(_roundtrip(extended.snapshot())), "Extended magazine survives restore")
 	var collection := Economy.new()
 	var letters: Array = preload("res://data/catalogs/VicenteLetters.gd").IDS
+	var tapes: Array = preload("res://data/catalogs/PilotTapes.gd").IDS
 	for id in Economy.Collectibles.ENTRIES:
-		if id in letters: continue
+		if id in letters or id in tapes: continue
 		_check(collection.collect(id), "Original collectible pays once")
 	_check(collection.balance == 1300, "Original 10 finds plus milestones total 1300")
 	# Cartas de Vicente (20/10/2026): R$ 50 cada, sem marco novo (os marcos são 3, 5 e 10 achados).
 	for id in letters: _check(collection.collect(id), "Vicente letter pays once")
 	_check(collection.balance == 1800, "Ten Vicente letters add R$ 500")
+	# Fitas do piloto (31/10/2026): mesmo caminho das cartas, R$ 50 cada; o prêmio da décima é o galpão.
+	for id in tapes: _check(collection.collect(id), "Pilot tape pays once")
+	_check(collection.balance == 2300, "Ten pilot tapes add R$ 500")
 	_check(not economy.purchase("outfit", "dante_ski", "ski").ok, "Ski outfit absent from original shop ORDER is not sold for free")
 	_check(economy.grant_outfit("dante_ski") and economy.equip_outfit("dante_ski"), "Original ski service can grant special outfit")
 	var pickup := Economy.new()

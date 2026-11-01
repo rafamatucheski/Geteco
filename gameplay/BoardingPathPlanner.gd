@@ -21,7 +21,7 @@ func _prepare_locked_path() -> void:
 	g._planning_closed = true
 	var route: Array[Vector2] = g._plan(Vector2(from.x, from.z), Vector2(destination.x, destination.z))
 	g._planning_closed = false
-	g._path = [g._start]
+	g._path.assign([g._start])
 	for index in range(1, route.size()):
 		g._path.append(g.vehicle.to_global(Vector3(route[index].x, .04, route[index].y)))
 	g._path_length = 0.0
@@ -65,7 +65,7 @@ func _walk_along(k: float) -> Vector3:
 
 func _prepare_door_path(outside: Vector3, entering: bool) -> void:
 	g._layout = {}
-	g._path = []
+	g._path.clear()
 	if not g.vehicle.has_method("door_layout") or not (g._kind in ["car", "tall", "truck"]): return
 	var found: Dictionary = g.vehicle.door_layout(g.side)
 	if found.is_empty(): return

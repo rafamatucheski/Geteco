@@ -28,7 +28,7 @@ func _begin_mocap_entry() -> void:
 	var to_local: Vector3 = g.vehicle.to_local(target)
 	g._planning_closed = true
 	var route: Array[Vector2] = g._plan(Vector2(from_local.x, from_local.z), Vector2(to_local.x, to_local.z))
-	g._path = [g._start]
+	g._path.assign([g._start])
 	for index in range(1, route.size()):
 		var point: Vector3 = g.vehicle.to_global(Vector3(route[index].x, 0.0, route[index].y))
 		point.y = target.y if index == route.size() - 1 else lerpf(g._start.y, target.y, float(index) / float(route.size() - 1))
@@ -88,9 +88,9 @@ func _begin_mocap_carjack() -> void:
 	g._pull.setup(g.actor, g.vehicle, g.side, g.PULL, g.PULL_MARKS, -g.vehicle.global_basis.x * float(g.side), MOCAP.seat_pelvis(g.vehicle), float(g.PULL_MARKS.sit_to))
 	g._pull.obstacles = g.carjacking.door_obstacles()
 	# Segmentos em s de jogo: caminhada, abrir a porta, puxar e sentar, fechar a porta e pegar o volante.
-	g._segments = [g._approach_seconds, g.ENTER_DOOR_END / MOCAP.SPEED,
+	g._segments.assign([g._approach_seconds, g.ENTER_DOOR_END / MOCAP.SPEED,
 		(float(g.PULL_MARKS.end) - float(g.PULL_MARKS.start)) / float(g.PULL_MARKS.speed),
-		(float(MOCAP.ENTER_MARKS.end) - g.ENTER_TAIL) / MOCAP.SPEED]
+		(float(MOCAP.ENTER_MARKS.end) - g.ENTER_TAIL) / MOCAP.SPEED])
 	g.duration = 0.0
 	for seconds in g._segments: g.duration += seconds
 	g._approach = g._approach_seconds / g.duration

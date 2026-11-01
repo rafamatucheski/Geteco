@@ -552,10 +552,11 @@ func check_registry() -> void:
 			if not script_has_method(scripts[path], method): missing.append("%s: %s.%s" % [stage, path, method])
 	check(missing.is_empty(), "todo passo aponta para sistema e método reais%s" % ("" if missing.is_empty() else ": " + ", ".join(missing)))
 
-## Variável da sessão → script que _ready instancia nela.
+## Variável da sessão → script que _ready instancia nela. Desde 01/11 o corpo do _ready mora em
+## SessionStartup, que escreve no dono como `g.sistema = preload(...).new()`.
 func system_scripts() -> Dictionary:
-	var source := FileAccess.get_file_as_string(SESSION_PATH)
-	var pattern := RegEx.create_from_string("(?m)^\\s*(\\w+) = preload\\(\"(res://[^\"]+)\"\\)\\.new\\(\\)")
+	var source := FileAccess.get_file_as_string(SESSION_PATH) + "\n" + FileAccess.get_file_as_string("res://runtime/SessionStartup.gd")
+	var pattern := RegEx.create_from_string("(?m)^\\s*(?:g\\.)?(\\w+) = preload\\(\"(res://[^\"]+)\"\\)\\.new\\(\\)")
 	var result := {}
 	for found in pattern.search_all(source): result[found.get_string(1)] = load(found.get_string(2))
 	return result

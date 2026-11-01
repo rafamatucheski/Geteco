@@ -94,7 +94,7 @@ func run() -> void:
 	gameplay.report_contact(world.player.global_position)
 	hud.refresh_from_state()
 	await frames(20)
-	check(gameplay.stars > 0 and hud.stars_label.get_parsed_text() == "★".repeat(gameplay.stars)+"  Perseguição", "active wanted stars explicitly show police contact")
+	check(gameplay.stars > 0 and hud.stars_label.get_parsed_text() == "★".repeat(gameplay.stars)+"  Perseguição", "active wanted stars explicitly show police contact (estrelas=%d, texto=\"%s\")" % [gameplay.stars, hud.stars_label.get_parsed_text()])
 	gameplay.contact_age = 2.0
 	hud.refresh_from_state()
 	check(hud.stars_label.get_parsed_text() == "★".repeat(gameplay.stars)+"  Busca" and hud.search_progress.visible, "lost police contact shows search and escape progress")

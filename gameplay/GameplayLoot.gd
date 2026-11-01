@@ -75,10 +75,13 @@ func spawn_loot(kind: String, id: String, amount: int, point: Vector3) -> Node3D
 ## reserva no limite) fica no chão para depois.
 func _update_loot(delta: float) -> void:
 	for index in range(g._loot.size() - 1, -1, -1):
-		var pickup: Node3D = g._loot[index]
-		if not is_instance_valid(pickup) or pickup.consumed:
+		# Quem solta o próprio saque (MiningRaid._release) libera o nó ainda na lista; atribuir
+		# instância liberada a variável tipada é erro e abortava o laço antes do remove_at, todo quadro.
+		var entry: Variant = g._loot[index]
+		if not is_instance_valid(entry) or entry.consumed:
 			g._loot.remove_at(index)
 			continue
+		var pickup: Node3D = entry
 		if not pickup.advance(delta):
 			pickup.queue_free()
 			g._loot.remove_at(index)

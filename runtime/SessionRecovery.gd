@@ -217,8 +217,8 @@ func _respawn() -> void:
 	# Morte acorda no hospital da região onde aconteceu, prisão sai pela delegacia (RecoveryDestination).
 	# Na ponte/túnel decide a ponta mais próxima; o spawn_position da serra e do deserto fica em cima
 	# de conexão e não serve mais de resgate (Dante acordava na ponte, relato de 31/10).
-	var died_at: Vector3 = g.world.player.global_position if g.state.place_id.is_empty() else Vector3.INF
-	if g.state.place_id.is_empty() and g.world.driving.occupied and is_instance_valid(g.world.driving.car): died_at = g.world.driving.car.global_position
+	var died_at: Vector3 = g.world.player.global_position if g.state.place_id.is_empty() and g.world.player.is_inside_tree() else Vector3.INF
+	if g.state.place_id.is_empty() and g.world.driving.occupied and is_instance_valid(g.world.driving.car) and g.world.driving.car.is_inside_tree(): died_at = g.world.driving.car.global_position
 	var target: Dictionary = RECOVERY_DESTINATION.choose(died_at, g.state.region_id, arrested)
 	if target.region != g.state.region_id:
 		# A ponta escolhida é a outra região: só troca se ela estiver montada (perto da ponte ela
