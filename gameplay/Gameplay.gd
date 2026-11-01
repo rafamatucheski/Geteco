@@ -63,6 +63,9 @@ const FIRE_RULES := preload("res://gameplay/GameplayFire.gd")
 var _firing: FIRE_RULES = FIRE_RULES.new(self)
 const DAMAGE_RULES := preload("res://gameplay/GameplayDamage.gd")
 var _damage_rules: DAMAGE_RULES = DAMAGE_RULES.new(self)
+## Onda 3 (01/11): procura policial; stars, last_known e o resto do estado da procura seguem aqui.
+const POLICE_RULES := preload("res://gameplay/GameplayPolice.gd")
+var _police: POLICE_RULES = POLICE_RULES.new(self)
 var _cash_rng := RandomNumberGenerator.new()
 ## Mixagem de combate (ver `_hearing_gain_db`). Volumes da V1: recarga -5 dB
 ## (`Player._reload_audio`), explosão +3 dB (`Bullet._trigger_explosion`). O
@@ -957,9 +960,9 @@ func damage(actor: Object, amount: float, source: Node, continuous: bool = false
 
 func _stall_damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void: _damage_rules._stall_damage(actor, amount, source, continuous)
 
-func _report_police_assault(victim: Node3D) -> void: _damage_rules._report_police_assault(victim)
+func _report_police_assault(victim: Node3D) -> void: _police._report_police_assault(victim)
 
-func _report_police_killed(victim: Node3D) -> void: _damage_rules._report_police_killed(victim)
+func _report_police_killed(victim: Node3D) -> void: _police._report_police_killed(victim)
 
 func reload_weapon() -> bool: return _arsenal.reload_weapon()
 
@@ -1066,19 +1069,9 @@ func _shield_blocked(amount: float, from: Vector3) -> float: return _damage_rule
 
 func damage_environment(amount: float) -> void: _damage_rules.damage_environment(amount)
 
-func arrest_player() -> bool:
-	if not police_can_arrest() or health <= 0 or state == null or not state.weapons_allowed() or player.input_locked: return false
-	_clear_chain_explosions()
-	player.input_locked = true
-	player_arrested.emit()
-	return true
+func arrest_player() -> bool: return _police.arrest_player()
 
-func police_arrest_warning(actor: Node3D = null) -> void:
-	var now := Time.get_ticks_msec()
-	if now-_last_arrest_warning_msec < 2500: return
-	_last_arrest_warning_msec = now
-	last_warning_actor = weakref(actor) if is_instance_valid(actor) else null
-	police_warning_issued.emit()
+func police_arrest_warning(actor: Node3D = null) -> void: _police.police_arrest_warning(actor)
 
 func _apply_player_damage(amount: float, use_armor: bool, from := Vector3.INF) -> void: _damage_rules._apply_player_damage(amount, use_armor, from)
 
@@ -1095,37 +1088,11 @@ func respawn() -> void:
 	clear_wanted()
 	changed.emit()
 
-func register_crime(points: int, point: Vector3, kind: String = "reported", testimony: Dictionary = {}) -> void:
-	# A completed testimony describes an earlier crime. Entering a safe garage
-	# cannot retroactively erase it; safe areas still reject new local offenses.
-	if points < 0 or (points == 0 and kind != "police_assault") or (not state.weapons_allowed() and testimony.is_empty()): return
-	if police_case != null:
-		police_case.confirmed(points, point, kind, testimony)
-		points = police_case.escalation.accept(points, crime_points, kind)
-	var old_stars := stars
-	crime_points = mini(MAX_CRIME_POINTS, crime_points + points)
-	update_stars()
-	last_known = testimony.get("exterior", point)
-	last_known_valid = true
-	set_meta("police_contact_place_id", "" if not testimony.is_empty() else (String(state.place_id) if "place_id" in state else ""))
-	hidden_time = 0
-	if old_stars == 0 and stars > 0:
-		dispatch_timer = [0.0, 6.0, 3.0, 1.0, 1.0, 1.0, 1.0][stars]
-	crime_reported.emit(points)
-	changed.emit()
+func register_crime(points: int, point: Vector3, kind: String = "reported", testimony: Dictionary = {}) -> void: _police.register_crime(points, point, kind, testimony)
 
-func update_stars() -> void:
-	stars = 0
-	for level in range(1, STAR_THRESHOLDS.size()):
-		if crime_points >= STAR_THRESHOLDS[level]: stars = level
+func update_stars() -> void: _police.update_stars()
 
-func report_contact(point: Vector3) -> void:
-	set_meta("police_contact_place_id", String(state.place_id) if "place_id" in state else "")
-	last_known = point
-	last_known_valid = true
-	contact_age = 0
-	hidden_time = 0
-	if police_case != null: police_case.descending = false
+func report_contact(point: Vector3) -> void: _police.report_contact(point)
 
 func report_observed_crime(points: int, point: Vector3, kind: String = "theft", victim: Node3D = null) -> bool:
 	return police_case.observe(points, point, kind, victim) if police_case != null else false
@@ -1136,67 +1103,25 @@ func police_force_authorized() -> bool:
 func police_surrendering() -> bool:
 	return police_case != null and police_case.surrendering
 
-func police_can_arrest() -> bool:
-	return stars > 0 and (police_surrendering() or (stars == 1 and not police_force_authorized()) or _vehicle_bust_allowed())
+func police_can_arrest() -> bool: return _police.police_can_arrest()
 
-## Perseguição estilo GTA: com 1-2 estrelas sem força autorizada, quem está num carro parado e
-## cercado é preso pelo policial que chega à porta (PoliceAgent exige carro parado e o policial ao lado).
-func _vehicle_bust_allowed() -> bool:
-	if not PURSUIT.enabled or stars > PURSUIT.BUST_MAX_STARS or police_force_authorized(): return false
-	return is_instance_valid(world) and world.get("driving") != null and bool(world.driving.occupied)
+func _vehicle_bust_allowed() -> bool: return _police._vehicle_bust_allowed()
 
-## Área de busca (PursuitRules): raio por estrela em volta da última posição conhecida.
-func police_search_radius() -> float:
-	return PURSUIT.search_radius(stars) if PURSUIT.enabled else 0.0
+func police_search_radius() -> float: return _police.police_search_radius()
 
-## Fora da área de busca a fuga anda normal; dentro, a PursuitRules.EVASION_INSIDE_RATE. Sair do
-## círculo é o que despista (GTA IV); esconder-se perto ainda funciona, só demora mais.
-func evasion_rate() -> float:
-	if not PURSUIT.enabled or stars <= 0 or not last_known_valid: return 1.0
-	var target := pursuit_target()
-	if not is_instance_valid(target): return 1.0
-	var flat := Vector2(target.global_position.x - last_known.x, target.global_position.z - last_known.z).length()
-	return 1.0 if flat > police_search_radius() else PURSUIT.EVASION_INSIDE_RATE
+func evasion_rate() -> float: return _police.evasion_rate()
 
-func police_investigation_active() -> bool:
-	return police_case != null and police_case.investigation_active()
+func police_investigation_active() -> bool: return _police.police_investigation_active()
 
-func police_investigation_point() -> Vector3:
-	return police_case.case_point if police_case != null else last_known
+func police_investigation_point() -> Vector3: return _police.police_investigation_point()
 
-func police_k9_restraint(seconds: float = 1.2) -> void:
-	if health <= 0 or police_surrendering() or not state.weapons_allowed(): return
-	player.set_meta("police_restraint_left", clampf(seconds, 0.0, 2.0))
+func police_k9_restraint(seconds: float = 1.2) -> void: _police.police_k9_restraint(seconds)
 
-## A testemunha informa a posição observada e antecipa a primeira viatura.
-## Não cria crime novo nem procura quando o jogador não é suspeito.
-func report_civilian_call(witness: Vector3, suspect: Vector3) -> bool:
-	if stars <= 0 or health <= 0: return false
-	if witness.distance_to(suspect) > 40.0: return false
-	var ray := PhysicsRayQueryParameters3D.create(witness + Vector3.UP * 1.4, suspect + Vector3.UP, 1)
-	if not get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): return false
-	report_contact(suspect)
-	if dispatch_owned:
-		var dispatcher: Variant = world.get("dispatch") if is_instance_valid(world) else null
-		if is_instance_valid(dispatcher) and dispatcher.has_method("witness_call"):
-			dispatcher.witness_call(witness)
-	else: dispatch_timer = minf(dispatch_timer, 1.5)
-	return true
+func report_civilian_call(witness: Vector3, suspect: Vector3) -> bool: return _police.report_civilian_call(witness, suspect)
 
-func police_can_see(officer: CharacterBody3D) -> bool:
-	var place := String(state.place_id) if "place_id" in state else ""
-	if String(officer.get_meta("police_place_id", "")) != place: return false
-	var suspect := pursuit_target()
-	if health <= 0 or not state.weapons_allowed() or not suspect.visible: return false
-	if officer.global_position.distance_to(suspect.global_position) > 26.875: return false
-	var ray := PhysicsRayQueryParameters3D.create(officer.global_position + Vector3.UP * 1.4, suspect.global_position + Vector3.UP, 7, [officer.get_rid()])
-	var hit := get_world_3d().direct_space_state.intersect_ray(ray)
-	return hit.is_empty() or hit.collider == suspect
+func police_can_see(officer: CharacterBody3D) -> bool: return _police.police_can_see(officer)
 
-func pursuit_target() -> Node3D:
-	if world != null and world.get("driving") != null and world.driving.occupied:
-		return world.driving.car
-	return player
+func pursuit_target() -> Node3D: return _police.pursuit_target()
 
 var _police_rounds: Array[Dictionary] = []
 var hitmarker_until := 0.0
@@ -1270,68 +1195,13 @@ func _is_firearm(id: String) -> bool: return _combat_sound._is_firearm(id)
 
 func _weapon_switch_sound(from_id: String, to_id: String) -> void: _combat_sound._weapon_switch_sound(from_id, to_id)
 
-func police_evasion_seconds() -> float:
-	if police_case != null and police_case.descending: return 8.0
-	return EVASION_SECONDS[clampi(stars, 0, 6)]
+func police_evasion_seconds() -> float: return _police.police_evasion_seconds()
 
-func police_evasion_progress() -> float:
-	if stars <= 0 or contact_age <= 1.0 or police_surrendering(): return 0.0
-	return clampf(hidden_time / police_evasion_seconds(), 0.0, 1.0)
+func police_evasion_progress() -> float: return _police.police_evasion_progress()
 
-func _update_police(delta: float) -> void:
-	if police_case != null: police_case.tick(delta)
-	police = police.filter(func(unit): return is_instance_valid(unit) and not unit.dead)
-	contact_age += delta
-	if crime_points > 0 and contact_age > 1.0: hidden_time += delta * evasion_rate()
-	elif crime_points == 0: hidden_time = 0.0
-	if crime_points > 0 and stars == 0 and hidden_time > 12.0:
-		crime_points = 0
-		changed.emit()
-	if stars == 0: return
-	var evasion_seconds := police_evasion_seconds()
-	if hidden_time > evasion_seconds:
-		if stars <= 1:
-			clear_wanted(true)
-			message.emit("Você despistou a polícia.")
-		else:
-			crime_points = STAR_THRESHOLDS[stars - 1]
-			update_stars()
-			hidden_time = 0.0
-			if police_case != null: police_case.descending = true
-			changed.emit()
-		return
-	dispatch_timer -= delta
-	if not dispatch_owned and dispatch_timer <= 0 and police.size() < MAX_ACTIVE[stars] and deployed < DEPLOYMENT[stars]:
-		dispatch_timer = DISPATCH[stars]
-		spawn_officer()
+func _update_police(delta: float) -> void: _police._update_police(delta)
 
-func spawn_officer() -> CharacterBody3D:
-	if dispatch_owned: return null
-	if not last_known_valid: return null
-	for attempt in 16:
-		var angle := _rng.randf_range(0, TAU)
-		var point := last_known + Vector3(cos(angle), 0, sin(angle)) * 16.0
-		point.y = last_known.y + 0.05
-		# No fundo do túnel do canal o círculo de 16 m cai quase todo dentro da
-		# terra: o policial nasce ao longo do eixo do túnel, no piso da rampa.
-		var tunnel := preload("res://world/urban_detail/CanalTunnel3D.gd")
-		if tunnel.below_grade(last_known):
-			point = Vector3(last_known.x + (16.0 if attempt % 2 == 0 else -16.0), 0.0, tunnel.CENTER_Z)
-			point.y = tunnel.floor_y(point.x) + 0.05
-		if not clear_at(point): continue
-		var floor_ray := PhysicsRayQueryParameters3D.create(point + Vector3.UP, point - Vector3.UP * 2.0, 1)
-		var floor_hit := get_world_3d().direct_space_state.intersect_ray(floor_ray)
-		if floor_hit.is_empty(): continue
-		var unit := OFFICER.new()
-		unit.controller = self
-		unit.tier = clampi(stars - 2, 0, 4)
-		unit.last_known = last_known
-		add_child(unit)
-		unit.global_position = floor_hit.position + Vector3.UP * 0.05
-		police.append(unit)
-		deployed += 1
-		return unit
-	return null
+func spawn_officer() -> CharacterBody3D: return _police.spawn_officer()
 
 func on_region_changed() -> void:
 	_clear_melee_action()
@@ -1374,21 +1244,7 @@ func on_region_changed() -> void:
 	_occupancy.clear()
 	set_meta("police_navigation_epoch", int(get_meta("police_navigation_epoch", 0)) + 1)
 
-func clear_wanted(keep_investigation: bool = false) -> void:
-	# A fuga deixa as aeronaves livres para terminar de descer o esquadrão e ir embora.
-	# Custódia, respawn e restauração de save encerram explicitamente a resposta antiga.
-	if not keep_investigation and is_instance_valid(police_air): police_air.clear_response()
-	if police_case != null and not keep_investigation: police_case.reset()
-	elif police_case != null: police_case.escalation = police_case.ESCALATION.new()
-	stars = 0
-	crime_points = 0
-	hidden_time = 0
-	deployed = 0
-	last_known_valid = false
-	for unit in police:
-		if is_instance_valid(unit): unit.queue_free()
-	police.clear()
-	changed.emit()
+func clear_wanted(keep_investigation: bool = false) -> void: _police.clear_wanted(keep_investigation)
 
 func clear_at(point: Vector3, mask: int = 1) -> bool:
 	var box := BoxShape3D.new()

@@ -1,12 +1,13 @@
 extends RefCounted
 ## Dano e crimes do Gameplay: dano em atores e veículos (damage_bullet, _stall_damage), fogo em pessoas,
 ## dano no jogador (colete, escudo, morte, cura) e a denúncia de cada agressão sem contar o mesmo ataque
-## duas vezes (_crime_due, atropelamento, policial ferido ou morto, civil morto) com a limpeza dos registros
+## duas vezes (_crime_due, atropelamento, civil morto) com a limpeza dos registros
 ## por vítima. Separado em 01/11 (Onda 2 de docs/plano-divisao-arquivos-grandes-20261101.md) para o
 ## Gameplay.gd caber na leitura. O estado (health, armor, _crime_window, _crime_attack, _police_kill_reported,
 ## _vehicle_contact...) e os sinais (changed, player_wounded, player_died) continuam no Gameplay; _damage,
 ## com o span gameplay.damage, também. Cada função antiga virou delegação de uma linha com a mesma
-## assinatura e os mesmos padrões. A procura em si (register_crime, estrelas) fica no Gameplay (Onda 3).
+## assinatura e os mesmos padrões. A procura em si (register_crime, estrelas) e a denúncia de policial ferido
+## ou morto (_report_police_assault/_report_police_killed) foram para gameplay/GameplayPolice.gd (Onda 3).
 ## `g` fica como Node3D, e não como o script do Gameplay, para não criar preload cíclico.
 ## Até as chamadas entre funções deste arquivo passam por `g.`: testes sobrescrevem _damage,
 ## _play_glass_break, report_observed_crime e police_* numa subclasse do Gameplay e o despacho tem de
@@ -184,23 +185,6 @@ func _stall_damage(actor: Object, amount: float, source: Node, continuous: bool 
 				g._report_civilian_killed(actor as Node3D)
 			elif g._crime_due(actor, continuous):
 				g.report_observed_crime(12, g.player.global_position, "assault", actor as Node3D)
-
-## V1 `ensure_minimum_wanted_level(2)`: ferir um policial nunca pode deixar o
-## jogador abaixo de 30 pontos. Uma procura maior não recebe pontos artificiais
-## a cada pelota ou tique contínuo.
-func _report_police_assault(victim: Node3D) -> void:
-	if not is_instance_valid(victim): return
-	var missing := maxi(0, g.STAR_THRESHOLDS[2] - g.crime_points)
-	g.register_crime(missing, victim.global_position, "police_assault")
-
-## V1 `report_officer_killed`: depois da agressão soma pelo menos 30 pontos e
-## chega ao piso de 60. O id impede duplicação entre origens de dano.
-func _report_police_killed(victim: Node3D) -> void:
-	if not is_instance_valid(victim): return
-	var id := victim.get_instance_id()
-	if g._police_kill_reported.has(id): return
-	g._police_kill_reported[id] = true
-	g.register_crime(maxi(30, g.STAR_THRESHOLDS[3] - g.crime_points), victim.global_position, "police_killed")
 
 ## `from` é a posição de quem causou o dano (INF se não houver); a morte cai no lado oposto.
 func damage_player(amount: float, from := Vector3.INF) -> void:
