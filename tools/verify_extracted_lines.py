@@ -2,7 +2,7 @@
 
 Toda linha não vazia que saiu do dono (diff contra uma revisão do Git) tem de reaparecer, na mesma
 ordem e sem sobra, no corpo dos auxiliares (do primeiro `func` ou `static func` que não é `_init`,
-com os `##` e `static var` colados acima dele, até o fim). Normaliza só o prefixo `g.` e a anotação de tipo de `var` (`:=` vira `: T =`
+com os `##` e `static var` colados acima dele, até o fim). Normaliza só o prefixo `g.` (e `self` do dono como `g`) e a anotação de tipo de `var` (`:=` vira `: T =`
 quando o valor passa a vir de `g.`, que é Node3D e não infere tipo).
 
 Uso: python tools/verify_extracted_lines.py <rev> <dono.gd> <auxiliar.gd> [<auxiliar.gd>...]
@@ -16,6 +16,8 @@ import sys
 
 
 def norm(line: str) -> str:
+    # `self` do dono vira `g` no auxiliar (ex.: TUNNEL_CUTAWAY.prime(chunk, g, rect)).
+    line = re.sub(r'(?<![\w.])self\b', 'g', line)
     line = re.sub(r'(?<![\w.])g\.', '', line)
     return re.sub(r'\bvar (\w+)(?:: [\w\[\]]+ =| :=)', r'var \1 :=', line)
 
