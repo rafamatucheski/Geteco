@@ -3,6 +3,32 @@
 A versão aparece na marca d'água do canto superior esquerdo (`ui/BuildWatermark.gd`,
 lida de `application/config/version` no `project.godot`), seguida do commit.
 
+## Não lançado — 31/10–01/11/2026 (ramo `viagem-lages-testar`, sem teste jogando)
+
+Tudo abaixo foi feito só por leitura de código, sem Godot; o roteiro de verificação está em
+`docs/roteiro-teste-viagem-lages-20261031.md`.
+
+**Jogo**
+- Ganhar dinheiro mostra no centro "RECEBIDO · origem / +R$" com o som de caixa; ganhos seguidos somam.
+- Saldo do HUD em "R$".
+- Morte e prisão voltam ao hospital/delegacia da região (Bay Medical e Harbor Patrol; Abrigo dos
+  Lenhadores e Posto Florestal na serra; posto Miragem no deserto); nunca mais na ponte.
+- Carro dirigido que cai do mapa volta ao último apoio com o jogador dentro.
+- Trem de passageiros cobra bilhete por zona (R$ 15 a 40), com anúncios de estação.
+- Dez fitas do piloto (4 Harbor, 3 serra, 3 deserto), dicas da próxima e portão do galpão.
+- Gravações 01–03 do Arquivo de Vicente coletáveis no túnel (áudio ainda por gravar).
+- Forte: fases de alojamento, arsenal e comando, três tipos de soldado e pistas de Vicente
+  (salas ainda sem geometria).
+- Limpeza da cava paga direto com as três pedras, mesmo pausada.
+- Lanterna do jogador e holofote do helicóptero entram no orçamento de luzes com prioridade.
+
+**Desenvolvimento**
+- CI no GitHub (build C# e contratos rápidos).
+- `Gameplay.gd` e `FullSession.gd` divididos em auxiliares; 29 `load()` viraram `preload`;
+  40 arquivos leem malhas pelo `MeshArrayCache`; autoloads pelo nome.
+- `artifacts/` e mídia de `evidence/` fora do Git; atalhos secundários em `tools/launchers/`.
+- ~11 mil linhas de comentário traduzidas para português.
+
 ## Não lançado — 18/10/2026 (sobre a 0.3.3)
 
 As versões 0.3.1 a 0.3.3 não foram registradas aqui; o histórico delas está no `git log` e no

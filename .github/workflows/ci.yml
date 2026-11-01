@@ -79,6 +79,14 @@ jobs:
             tests/test_private_security_crime.gd
             tests/test_gpu_release_scene_swap.gd
             tests/test_localization_coverage.gd
+            tests/test_recovery_destination.gd
+            tests/test_mining_yard_job.gd
+            tests/test_money_received_notice.gd
+            tests/test_railway_fares.gd
+            tests/test_pilot_tapes.gd
+            tests/test_vicente_audio_pickups.gd
+            tests/test_fort_expansion.gd
+            tests/test_static_review_recheck.gd
           )
           mkdir -p ci-logs
           failed=0

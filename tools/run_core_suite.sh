@@ -41,6 +41,14 @@ FAST=(
 	"headless|tests/test_private_security_crime.gd|"
 	"headless|tests/test_gpu_release_scene_swap.gd|"
 	"headless|tests/test_localization_coverage.gd|"
+	# Lógica das mudanças de 31/10 (viagem-lages-testar): sem mundo, só estado e carteira.
+	"headless|tests/test_mining_yard_job.gd|"
+	"headless|tests/test_money_received_notice.gd|"
+	"headless|tests/test_railway_fares.gd|"
+	"headless|tests/test_pilot_tapes.gd|"
+	"headless|tests/test_vicente_audio_pickups.gd|"
+	"headless|tests/test_fort_expansion.gd|"
+	"headless|tests/test_static_review_recheck.gd|"
 )
 # As quatro primeiras são a verificação mínima do CLAUDE.md depois de mudança estrutural.
 WORLD=(
@@ -55,6 +63,7 @@ WORLD=(
 	"headless|tests/test_mountain_island.gd|"
 	"headless|tests/test_save_indicator.gd|--no-save --skip-arrival|Could not create directory: .*/missing-parent-"
 	"headless|tests/test_recovery_penalty_session.gd|--no-save --skip-arrival"
+	"headless|tests/test_mining_raid.gd|--no-save"
 	"rendered|tests/test_desert_wilds.gd|--no-save --no-traffic"
 	"rendered|tests/test_desert_roadside_session.gd|--no-save --no-traffic"
 	"rendered|tests/test_dialogue_flow.gd|--no-save --skip-arrival"

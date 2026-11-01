@@ -22,6 +22,8 @@ Este repositório é o jogo principal. Ele nasceu como a "V2", uma migração da
 - **Campanha e atividades:** histórias do Harbor e de Vicente, diário (J), fretes, guincho,
   carro-forte, corrida Descida da Meia Noite, bares com dardos e bilhar, academia Ferro Velho
   (força e fôlego), lojas e mais de 25 interiores com porta física.
+- **Exploração:** dez fitas do piloto escondidas pelo mapa, cartas e gravações do Arquivo de
+  Vicente, trem de passageiros entre Harbor, serra e deserto.
 - **Save próprio** com recuperação de slot danificado e importação do save da V1.
 
 O que mudou em cada versão está no [CHANGELOG.md](CHANGELOG.md) e no board
