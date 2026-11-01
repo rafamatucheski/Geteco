@@ -928,11 +928,6 @@ func retain_investigator(unit: RefCounted) -> bool:
 	if investigation_unit == null or investigation_unit.finished: investigation_unit = unit
 	return investigation_unit == unit
 
-func _has_active_tactical() -> bool:
-	for unit in _active_police():
-		if unit.variant == "tactical": return true
-	return false
-
 # --- Emergência ----------------------------------------------------------------
 
 func _dispatch_emergency(delta: float) -> void:
