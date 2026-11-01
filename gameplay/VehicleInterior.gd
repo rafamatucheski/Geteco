@@ -17,6 +17,7 @@ extends RefCounted
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const PROP_KIT := preload("res://world/city_look/CityPropKit.gd")
 
 ## Altura do quadril (junta da coxa) do Dante de pé sobre a sola. Medido no esqueleto.
 const STANDING_HIP := 0.77
@@ -906,17 +907,10 @@ const C_BELT := Color("15171a")
 const C_DIAL := Color("cfe3ee")
 const C_AMBER := Color("e0a030")
 
+## Mesma caixa do kit da cidade (cantos, ordem dos triângulos e cor por vértice idênticos);
+## as normais continuam saindo do generate_normals de mesh_for.
 static func _box(t: SurfaceTool, center: Vector3, size: Vector3, color: Color, basis := Basis.IDENTITY) -> void:
-	var h := size * .5
-	var corners := []
-	for i in 8:
-		var local := Vector3(h.x if i & 1 else -h.x, h.y if i & 2 else -h.y, h.z if i & 4 else -h.z)
-		corners.append(center + basis * local)
-	var faces := [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1], [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
-	t.set_color(color)
-	for face in faces:
-		t.add_vertex(corners[face[0]]); t.add_vertex(corners[face[1]]); t.add_vertex(corners[face[2]])
-		t.add_vertex(corners[face[0]]); t.add_vertex(corners[face[2]]); t.add_vertex(corners[face[3]])
+	PROP_KIT._rotated_box(t, center, size, color, basis)
 
 static func _tube(t: SurfaceTool, from: Vector3, to: Vector3, radius: float, color: Color, sides := 6) -> void:
 	var axis := to - from
