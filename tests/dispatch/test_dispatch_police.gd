@@ -183,7 +183,7 @@ func _foot_agent_contract() -> void:
 	officer.global_position = Vector3(6.0, 0, 0)
 	await _frames(5)
 	# A jogabilidade é dona da atribuição de crime e da autorização de força; o ator é dono do dano.
-	gameplay._damage(officer, 1.0, bundle.player)
+	gameplay.damage(officer, 1.0, bundle.player)
 	await _frames(90)
 	check(officer.response_aggression > 0.0 and gameplay.contact_age < 1.0, "dano identifica o agressor real e renova contato")
 	check(gameplay.health < initial_health, "policial vivo reage ao dano com ataque")
@@ -201,7 +201,7 @@ func _entity_limits() -> void:
 	await _frames(3)
 	# Esta fixture exercita o dispatch máximo, independente da escalada do jogador.
 	gameplay.crime_points = 420
-	gameplay._update_stars()
+	gameplay.update_stars()
 	gameplay.register_crime(1, bundle.player.global_position)
 	check(gameplay.stars == 6, "420 pontos = 6 estrelas")
 	var peak_units := 0

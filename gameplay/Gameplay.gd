@@ -642,7 +642,8 @@ func _stall_physics_tick(delta: float) -> void:
 	_update_effects(delta)
 	_update_loot(delta)
 
-func _update_visual() -> void: _weapon_visuals._update_visual()
+func update_visual() -> void: _weapon_visuals._update_visual()
+func _update_visual() -> void: update_visual()
 
 func katana_style() -> Dictionary:
 	var honor: Dictionary = state.world_state.get("takeshi", {}) if state != null else {}
@@ -662,9 +663,11 @@ func _mount_flashlight() -> void: _weapon_visuals._mount_flashlight()
 
 func _update_left_knuckles(id: String) -> void: _weapon_visuals._update_left_knuckles(id)
 
-func _update_weapon_pose(delta: float) -> void: _weapon_visuals._update_weapon_pose(delta)
+func update_weapon_pose(delta: float) -> void: _weapon_visuals._update_weapon_pose(delta)
+func _update_weapon_pose(delta: float) -> void: update_weapon_pose(delta)
 
-func _update_weapon_parts(id: String) -> void: _weapon_visuals._update_weapon_parts(id)
+func update_weapon_parts(id: String) -> void: _weapon_visuals._update_weapon_parts(id)
+func _update_weapon_parts(id: String) -> void: update_weapon_parts(id)
 
 func _update_magazine(magazine: Node3D) -> void: _weapon_visuals._update_magazine(magazine)
 
@@ -674,7 +677,8 @@ func _build_muzzle_flash(id: String, muzzle: Vector3) -> void: _weapon_visuals._
 
 func _directional_flash_mesh() -> ArrayMesh: return _weapon_visuals._directional_flash_mesh()
 
-func _muzzle_world_position() -> Vector3: return _weapon_visuals._muzzle_world_position()
+func muzzle_world_position() -> Vector3: return _weapon_visuals._muzzle_world_position()
+func _muzzle_world_position() -> Vector3: return muzzle_world_position()
 
 func _flash_muzzle(id: String) -> void: _weapon_visuals._flash_muzzle(id)
 
@@ -719,7 +723,7 @@ func _present(facing: float, clip: String, clip_time: float, stance: String = ""
 ## `aim_from_screen`). Controle/toque: a MESMA conta de `GameInput.aim_target_3d`, só que lendo `aim_direction`
 ## (sem chamar a função, que integra a rotação do direcionador e não pode rodar duas vezes por quadro).
 ## Assim o rumo do corpo e o rumo do disparo (`fire_at(target)`) saem da mesma direção.
-func _aim_direction() -> Vector3:
+func aim_direction() -> Vector3:
 	var controls: Node = get_node_or_null("/root/GameInput")
 	if controls != null and is_instance_valid(camera) and (controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx()):
 		var stick: Vector2 = controls.touch_aim if not controls.touch_aim.is_zero_approx() else controls.aim_direction
@@ -735,10 +739,11 @@ func _aim_direction() -> Vector3:
 	var flat := aim_point - player.global_position
 	flat.y = 0.0
 	return flat.normalized() if flat.length_squared() > 0.0001 else Vector3.ZERO
+func _aim_direction() -> Vector3: return aim_direction()
 
 ## Estado de mira e rumo do corpo. Só em jogo livre com ataque permitido (pausa, menu, garagem, veículo, ski,
 ## morte, transição e bloqueio de entrada zeram tudo e devolvem a locomoção).
-func _update_aim(delta: float) -> void:
+func update_aim(delta: float) -> void:
 	if not is_instance_valid(player): return
 	player.set_meta("melee_movement_scale", 1.0)
 	if _aim_hold > 0.0: _aim_hold -= delta
@@ -780,6 +785,7 @@ func _update_aim(delta: float) -> void:
 		_clear_melee_action()
 		_aim_hold = 0.0
 		_cancel_combat_clip()
+func _update_aim(delta: float) -> void: update_aim(delta)
 
 ## Contrato de luneta (V1 `Player.weapon_scope_active`). VERDADEIRO enquanto TODAS valem, no quadro de física atual:
 ##   1. luneta instalada na arma equipada (`scope_part() != "none"`);
@@ -1189,7 +1195,7 @@ func _notification(what: int) -> void:
 	# Um clique enfileirado antes de abrir a pausa nunca pode executar na volta.
 	if what == NOTIFICATION_PAUSED: _melee_buffer.clear()
 
-func _update_melee_buffer() -> void:
+func update_melee_buffer() -> void:
 	if _melee_buffer.is_empty(): return
 	var id := equipped()
 	if id.is_empty(): id = "fists"
@@ -1199,6 +1205,7 @@ func _update_melee_buffer() -> void:
 	if cooldown > 0.0 or not _pending_contact.is_empty(): return
 	_melee_buffer.clear()
 	_stall_fire_at(aim_point)
+func _update_melee_buffer() -> void: update_melee_buffer()
 
 ## Mesma boca do cano, trajetória horizontal, máscara e alcance do tiro, sem dispersão.
 func aim_feedback() -> Dictionary:
@@ -1244,38 +1251,38 @@ func _stall_fire_at(target: Vector3) -> bool:
 	if not CATALOG.WEAPONS.has(id): return false
 	if id != "fists" and not state.owns_weapon(id): return false
 	var data: Dictionary = weapon_data(id)
-	var melee: bool = data.get("is_melee", false)
+	var melee_weapon: bool = data.get("is_melee", false)
 	if cooldown > 0 or reload_timer > 0 or not _pending_contact.is_empty():
-		if melee and reload_timer <= 0 and cooldown <= MELEE_CONTROL.BUFFER_SECONDS:
+		if melee_weapon and reload_timer <= 0 and cooldown <= MELEE_CONTROL.BUFFER_SECONDS:
 			_melee_buffer = {"id": id, "until": _combat_clock + MELEE_CONTROL.BUFFER_SECONDS}
 		return false
 	_melee_buffer.clear()
 	_melee_action.clear()
-	_melee_rate = MELEE_CONTROL.rate(id, float(CATALOG.WEAPONS[id].fire_interval), float(data.fire_interval)) if melee else 1.0
+	_melee_rate = MELEE_CONTROL.rate(id, float(CATALOG.WEAPONS[id].fire_interval), float(data.fire_interval)) if melee_weapon else 1.0
 	var grenade: bool = data.get("is_grenade", false)
 	var has_ammo: bool = int(state.get_ammo(id).get("magazine", 0)) > 0 if grenade else true
-	if not melee and (not has_ammo or (not grenade and not state.consume_ammo(id, 1))):
+	if not melee_weapon and (not has_ammo or (not grenade and not state.consume_ammo(id, 1))):
 		# V1 (`Player._shoot_towards`): pente vazio recarrega sozinho quando há reserva.
 		cooldown = 0.25
 		if not grenade: _firefly_sound("weapons_fire", "dry_fire", player.global_position, -7.0, 20.0)
 		if not reload_weapon(): message.emit("Sem munição.")
 		return false
-	cooldown = float(data.fire_interval) / float(MELEE_CONTROL.profile(id).rate) if melee else float(data.fire_interval)
+	cooldown = float(data.fire_interval) / float(MELEE_CONTROL.profile(id).rate) if melee_weapon else float(data.fire_interval)
 	_attack_serial += 1
 	_aim_hold = AIM_HOLD + float(RIG_POSE.MELEE_CONTACT.get(id, 0.0))
-	var bag_recoil := 3.0 if state.get("economy") != null and state.economy.grid_handbag() and not melee else 1.0
+	var bag_recoil := 3.0 if state.get("economy") != null and state.economy.grid_handbag() and not melee_weapon else 1.0
 	_rig_pose.attack(id, float(data.get("recoil_multiplier", 1.0))*bag_recoil)
-	if not melee: _recoil = float(POSE.PROFILES.get(id, [Vector3.ZERO, Vector3.ZERO, 0.0, 12.0])[2])*bag_recoil*float(data.get("recoil_multiplier", 1.0))
-	if not melee and not grenade: weapon_fired.emit(id, player.global_position)
+	if not melee_weapon: _recoil = float(POSE.PROFILES.get(id, [Vector3.ZERO, Vector3.ZERO, 0.0, 12.0])[2])*bag_recoil*float(data.get("recoil_multiplier", 1.0))
+	if not melee_weapon and not grenade: weapon_fired.emit(id, player.global_position)
 	# Spans por parte (27/10): `gameplay.fire_at` chegou a 33 ms num quadro (rodada de 24/10) sem dizer onde.
 	var part_span := STALL_WORK.begin()
-	if melee: _melee_swing_sound(id, data)
+	if melee_weapon: _melee_swing_sound(id, data)
 	elif data.get("is_flame", false): _flame_sound()
 	elif grenade: _firefly_sound("weapons_fire", "grenade_pin", player.global_position, -9.0, 14.0) # O arremesso e a munição acompanham a saída da mão.
 	else: _shot_sound(id, data)
 	STALL_WORK.finish_slow("gameplay.fire_at.sound", part_span, 2000, self)
 	part_span = STALL_WORK.begin()
-	if not melee and not data.get("is_grenade", false): _flash_muzzle(id)
+	if not melee_weapon and not data.get("is_grenade", false): _flash_muzzle(id)
 	STALL_WORK.finish_slow("gameplay.fire_at.muzzle", part_span, 2000, self)
 	aim_point = target
 	var origin := _muzzle_world_position()
@@ -1301,7 +1308,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 		origin += Vector3(player.velocity.x, 0.0, player.velocity.z) * get_physics_process_delta_time()
 	var defense_ray := PhysicsRayQueryParameters3D.create(origin, origin + direction * float(data.get("max_range", 420.0)) / 16.0, 7, [player.get_rid()])
 	var muzzle_bridge: Dictionary = {}
-	if not melee and not grenade and not data.get("is_explosive", false) and not data.get("is_flame", false):
+	if not melee_weapon and not grenade and not data.get("is_explosive", false) and not data.get("is_flame", false):
 		muzzle_bridge = _muzzle_obstruction(origin)
 	var defense_hit := muzzle_bridge if not muzzle_bridge.is_empty() else get_world_3d().direct_space_state.intersect_ray(defense_ray)
 	var self_defense: bool = not defense_hit.is_empty() and defense_hit.collider.get_meta("gameplay_role", "") == "cobra"
@@ -1331,7 +1338,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 		add_child(shot)
 		shot.global_position = origin
 		if not shot.grenade: effects.backblast(origin, direction)
-	elif melee:
+	elif melee_weapon:
 		# Golpe procedural da V1 (`WeaponRigPose`: socos alternados, soqueira em
 		# quatro variações, faca, arco de ombro do machado/taco). Os clipes
 		# `Attack`/`Punch_Forward_with_Both_Fists` do GLB moviam o corpo inteiro e
@@ -1411,7 +1418,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 		STALL_WORK.finish_slow("gameplay.fire_at.flesh_effect", part_span, 2000, self)
 		_in_pellet_volley = false
 		_handling.fired(id, data, _combat_clock)
-	if not melee and not grenade and not self_defense:
+	if not melee_weapon and not grenade and not self_defense:
 		if data.get("is_flame", false):
 			# Jato contínuo: a denúncia do disparo acompanha o tempo, não os 20 disparos por segundo.
 			if _flame_crime_clock <= 0.0:
@@ -1566,7 +1573,7 @@ func _melee_pick(origin: Vector3, direction: Vector3, data: Dictionary, id: Stri
 	if not wall.is_empty(): return {"point": wall.position, "blocked": true, "surface": wall.collider}
 	return {}
 
-func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = "") -> bool:
+func melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = "") -> bool:
 	var pick := _melee_pick(origin, direction, data, id)
 	if not pick.has("actor"):
 		if pick.get("blocked", false) and pick.has("surface"):
@@ -1598,6 +1605,7 @@ func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = 
 		_rig_pose.impact(id)
 		hitmarker_until = _combat_clock + 0.16
 	return true
+func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = "") -> bool: return melee(origin, direction, data, id)
 
 ## Peso do contato: o golpe trava no alvo (hit-stop), a câmera dá um tranco e a
 ## vítima viva é empurrada no sentido do golpe. Só apresentação: o dano já entrou.
@@ -1726,7 +1734,7 @@ func _clear_combat_registers() -> void:
 	_flame_crime_clock = 0.0
 
 ## `weapon`: dados da arma que atirou (PoliceAgent.scale_bullet_damage lê o calibre para o colete).
-func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF, hit_point := Vector3.INF, weapon: Dictionary = {}) -> void:
+func damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF, hit_point := Vector3.INF, weapon: Dictionary = {}) -> void:
 	# Lataria absorve 85% dos tiros, inclusive cada chumbo de escopeta.
 	# Mantém durabilidade, blindagem, colisões, fogo e explosões independentes.
 	if is_instance_valid(actor) and actor is Node and actor.get_meta("gameplay_role", "") == "vehicle":
@@ -1753,12 +1761,14 @@ func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vec
 		# Policial: cabeça × colete (PoliceAgent). Jogador, civis e demais NPCs não têm o método e não mudam.
 		amount = actor.scale_bullet_damage(amount, hit_point, weapon)
 	_damage(actor, amount, source)
+func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF, hit_point := Vector3.INF, weapon: Dictionary = {}) -> void: damage_bullet(actor, amount, source, shot_from, shot_to, hit_point, weapon)
 
 ## `continuous`: dano de jato ou de fogo em tique periódico (ver `_crime_due`).
 func _damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void:
 	var began := STALL_WORK.begin()
 	_stall_damage(actor,amount,source,continuous)
 	STALL_WORK.finish_slow("gameplay.damage",began,10000,self)
+func damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void: _damage(actor, amount, source, continuous)
 
 func _stall_damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void:
 	if _is_invulnerable(actor): return
@@ -1848,7 +1858,7 @@ func equip_slot(id: String) -> bool:
 	return true
 
 ## Jogo livre: sessão pronta, sem menu/remapeamento/abertura/cofre em minigame.
-func _free_play_ok() -> bool:
+func free_play_ok() -> bool:
 	if _railway_controls_locked(): return false
 	var session: Variant = world.get("session") if is_instance_valid(world) else null
 	if session != null:
@@ -1857,6 +1867,7 @@ func _free_play_ok() -> bool:
 		if is_instance_valid(session.robberies.lockpick) and session.robberies.lockpick.active: return false
 	var controls: Node = get_node_or_null("/root/GameInput")
 	return controls == null or not controls.remapping
+func _free_play_ok() -> bool: return free_play_ok()
 
 ## `weapon_previous` e `weapon_slot_1..10` estão mapeados em GameInput mas o FullSession só trata
 ## `weapon_next`/`unarmed`. Trata-se aqui, depois do `_input` do FullSession e só em jogo livre.
@@ -1938,7 +1949,7 @@ func toggle_god_mode() -> bool:
 	return true
 
 ## Mantém a marca no jogador e no veículo atual (que muda ao entrar/sair de um carro).
-func _sync_god_mode() -> void:
+func sync_god_mode() -> void:
 	var wanted: Array[Node] = []
 	if god_mode:
 		if is_instance_valid(player): wanted.append(player)
@@ -1954,6 +1965,7 @@ func _sync_god_mode() -> void:
 		if _god_marked.has(node) or node.get_meta(PROTECTION.META, false) == true: continue
 		node.set_meta(PROTECTION.META, true)
 		_god_marked.append(node)
+func _sync_god_mode() -> void: sync_god_mode()
 
 ## Ativa o arsenal temporário do Economy, sem gravar armas/munição no save.
 ## Bloqueado onde atacar é bloqueado (garagem).
@@ -2106,10 +2118,11 @@ func register_crime(points: int, point: Vector3, kind: String = "reported", test
 	crime_reported.emit(points)
 	changed.emit()
 
-func _update_stars() -> void:
+func update_stars() -> void:
 	stars = 0
 	for level in range(1, STAR_THRESHOLDS.size()):
 		if crime_points >= STAR_THRESHOLDS[level]: stars = level
+func _update_stars() -> void: update_stars()
 
 func report_contact(point: Vector3) -> void:
 	set_meta("police_contact_place_id", String(state.place_id) if "place_id" in state else "")
@@ -2143,12 +2156,13 @@ func police_search_radius() -> float:
 
 ## Fora da área de busca a fuga anda normal; dentro, a PursuitRules.EVASION_INSIDE_RATE. Sair do
 ## círculo é o que despista (GTA IV); esconder-se perto ainda funciona, só demora mais.
-func _evasion_rate() -> float:
+func evasion_rate() -> float:
 	if not PURSUIT.enabled or stars <= 0 or not last_known_valid: return 1.0
 	var target := pursuit_target()
 	if not is_instance_valid(target): return 1.0
 	var flat := Vector2(target.global_position.x - last_known.x, target.global_position.z - last_known.z).length()
 	return 1.0 if flat > police_search_radius() else PURSUIT.EVASION_INSIDE_RATE
+func _evasion_rate() -> float: return evasion_rate()
 
 func police_investigation_active() -> bool:
 	return police_case != null and police_case.investigation_active()
@@ -2214,6 +2228,7 @@ func _bullet_whiz(round_index: Dictionary) -> void: _npc_gunfire._bullet_whiz(ro
 func police_reload(officer: Node3D, weapon_id: String) -> void: _npc_gunfire.police_reload(officer, weapon_id)
 
 func _sound(kind: String, point: Vector3, base_volume_db: float = NPC_GUNFIRE_DB) -> void: _combat_sound._sound(kind, point, base_volume_db)
+func sound(kind: String, point: Vector3, base_volume_db: float = NPC_GUNFIRE_DB) -> void: _sound(kind, point, base_volume_db)
 
 func _stall_sound(kind: String, point: Vector3, base_volume_db: float = NPC_GUNFIRE_DB) -> void: _combat_sound._stall_sound(kind, point, base_volume_db)
 
@@ -2224,6 +2239,7 @@ func _play_weapon_stream(stream: AudioStream, point: Vector3, volume_db: float, 
 func _play_glass_break(point: Vector3, volume_offset := 0.0, pitch := 1.0) -> void: _combat_sound._play_glass_break(point, volume_offset, pitch)
 
 func _play_stream(stream: AudioStream, point: Vector3, volume_db: float, pitch: float = 1.0, reach: float = HEARING_DEFAULT) -> void: _combat_sound._play_stream(stream, point, volume_db, pitch, reach)
+func play_stream(stream: AudioStream, point: Vector3, volume_db: float, pitch: float = 1.0, reach: float = HEARING_DEFAULT) -> void: _play_stream(stream, point, volume_db, pitch, reach)
 
 func _play_ui(stream: AudioStream, volume_db: float) -> void: _combat_sound._play_ui(stream, volume_db)
 
@@ -2383,7 +2399,7 @@ func clear_wanted(keep_investigation: bool = false) -> void:
 	police.clear()
 	changed.emit()
 
-func _clear_at(point: Vector3, mask: int = 1) -> bool:
+func clear_at(point: Vector3, mask: int = 1) -> bool:
 	var box := BoxShape3D.new()
 	box.size = Vector3(0.7, 1.5, 0.7)
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -2391,6 +2407,7 @@ func _clear_at(point: Vector3, mask: int = 1) -> bool:
 	query.transform.origin = point + Vector3.UP
 	query.collision_mask = mask
 	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
+func _clear_at(point: Vector3, mask: int = 1) -> bool: return clear_at(point, mask)
 
 func _walkable_at(point: Vector3) -> bool:
 	if not _clear_at(point): return false
@@ -2430,7 +2447,8 @@ func _find_grid_path(start: Vector3, finish: Vector3) -> PackedVector3Array:
 
 func _tracer_material(color: Color) -> StandardMaterial3D: return _weapon_visuals._tracer_material(color)
 
-func _trace(from: Vector3, to: Vector3, lifetime: float, width: float, color: Color = Color(0, 0, 0, 0)) -> void: _weapon_visuals._trace(from, to, lifetime, width, color)
+func trace(from: Vector3, to: Vector3, lifetime: float, width: float, color: Color = Color(0, 0, 0, 0)) -> void: _weapon_visuals._trace(from, to, lifetime, width, color)
+func _trace(from: Vector3, to: Vector3, lifetime: float, width: float, color: Color = Color(0, 0, 0, 0)) -> void: trace(from, to, lifetime, width, color)
 
 func _update_effects(delta: float) -> void: _weapon_visuals._update_effects(delta)
 
@@ -2442,7 +2460,8 @@ func drop_cash(actor: Node3D) -> void: _loot_drops.drop_cash(actor)
 
 func spawn_loot(kind: String, id: String, amount: int, point: Vector3) -> Node3D: return _loot_drops.spawn_loot(kind, id, amount, point)
 
-func _update_loot(delta: float) -> void: _loot_drops._update_loot(delta)
+func update_loot(delta: float) -> void: _loot_drops._update_loot(delta)
+func _update_loot(delta: float) -> void: update_loot(delta)
 
 func _loot_refused(pickup: Node3D) -> void: _loot_drops._loot_refused(pickup)
 

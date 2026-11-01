@@ -401,9 +401,9 @@ func _search_fan() -> void:
 	check(not deployed, "search_fan: busca de carro não desce equipe a pé")
 	# Fuga: fora da área anda normal; dentro, devagar.
 	car.place(gameplay.last_known + Vector3(5, 0.12, 0), 0.0)
-	check(is_equal_approx(gameplay._evasion_rate(), PURSUIT.EVASION_INSIDE_RATE), "search_fan: dentro da área a fuga anda devagar")
+	check(is_equal_approx(gameplay.evasion_rate(), PURSUIT.EVASION_INSIDE_RATE), "search_fan: dentro da área a fuga anda devagar")
 	car.place(gameplay.last_known + Vector3(radius + 20.0, 0.12, 0), 0.0)
-	check(is_equal_approx(gameplay._evasion_rate(), 1.0), "search_fan: fora da área a fuga anda normal")
+	check(is_equal_approx(gameplay.evasion_rate(), 1.0), "search_fan: fora da área a fuga anda normal")
 	done("search_fan")
 	_teardown(bundle)
 	await process_frame
@@ -525,7 +525,7 @@ func _toggle_off() -> void:
 	gameplay.register_crime(30, car.global_position)
 	gameplay.report_contact(car.global_position)
 	check(not gameplay.police_can_arrest(), "off: sem prisão dentro do carro com duas estrelas")
-	check(is_equal_approx(gameplay._evasion_rate(), 1.0), "off: fuga só por tempo")
+	check(is_equal_approx(gameplay.evasion_rate(), 1.0), "off: fuga só por tempo")
 	var unit: RefCounted = controller.dispatch_police_to(car.global_position)
 	if unit != null:
 		unit.vehicle.place(Vector3(-RING + 2.0, 0.12, -RING + 10.0), 0.0)

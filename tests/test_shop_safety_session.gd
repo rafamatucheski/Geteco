@@ -23,7 +23,7 @@ func run() -> void:
 	for actor in world.session.room_npcs:
 		var before: float = actor.health
 		actor.receive_damage(10000.0, world.player)
-		world.gameplay._damage(actor, 10000.0, world.player)
+		world.gameplay.damage(actor, 10000.0, world.player)
 		check(PROTECTION.is_protected(actor) and actor.health == before and not actor.dead, str(actor.get_meta("interior_npc_id")) + " survives real lethal damage paths")
 	await photo("protected-luisa-nelson")
 	# --no-save protege o slot padrão do usuário; esta fixture é explicitamente dona

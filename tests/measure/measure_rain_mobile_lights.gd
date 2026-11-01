@@ -134,7 +134,7 @@ func run() -> void:
 			world.gameplay.state.equip_weapon("pistol" if scenario == "rain-weapon" else "fists")
 			if scenario == "rain-weapon": world.gameplay.buy_attachment("pistol","flashlight")
 			world.gameplay.flashlight_enabled = scenario == "rain-weapon"
-			world.gameplay._update_visual()
+			world.gameplay.update_visual()
 		weather.weather_state = 0 if scenario.begins_with("dry") else 1
 		weather.rain_intensity = .30
 		weather.coastal_wetness = 0.0 if scenario.begins_with("dry") else 1.0

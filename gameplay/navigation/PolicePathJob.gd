@@ -25,7 +25,7 @@ func configure(gameplay: Node3D, start: Vector3, finish: Vector3) -> void:
 		to = surface[0][1]
 		_surface_first = TUNNEL.below_grade(finish)
 	_grid = GRID.new()
-	_grid.configure(from, to, gameplay.get("_occupancy"), Callable(gameplay, "_walkable_at"), Callable(gameplay, "_clear_at"))
+	_grid.configure(from, to, gameplay.get("_occupancy"), Callable(gameplay, "_walkable_at"), Callable(gameplay, "clear_at"))
 	if _grid.done: _complete()
 
 func advance(max_expansions: int, deadline_usec: int) -> int:

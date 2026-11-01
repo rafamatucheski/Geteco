@@ -62,9 +62,9 @@ func _run() -> void:
 
 	var officer := FakePolice.new()
 	root.add_child(officer)
-	gameplay._damage(officer, 1.0, player)
+	gameplay.damage(officer, 1.0, player)
 	check(gameplay.crime_points == 30 and gameplay.stars == 2, "ferir policial garante o piso de duas estrelas", "crime=%d stars=%d" % [gameplay.crime_points, gameplay.stars])
-	gameplay._damage(officer, 200.0, player)
+	gameplay.damage(officer, 200.0, player)
 	check(officer.dead and gameplay.crime_points == 60 and gameplay.stars == 3, "matar após agressão chega ao piso de três estrelas", "crime=%d stars=%d" % [gameplay.crime_points, gameplay.stars])
 	gameplay._report_police_killed(officer)
 	check(gameplay.crime_points == 60, "morte policial é registrada uma única vez")
@@ -74,7 +74,7 @@ func _run() -> void:
 	var invalid_source := Node3D.new()
 	root.add_child(unauthored)
 	root.add_child(invalid_source)
-	gameplay._damage(unauthored, 10.0, invalid_source)
+	gameplay.damage(unauthored, 10.0, invalid_source)
 	check(gameplay.crime_points == 0 and gameplay.stars == 0, "fonte sem autoria do jogador não cria crime")
 
 	reset_crime(gameplay)

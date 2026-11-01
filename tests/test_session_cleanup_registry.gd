@@ -121,7 +121,8 @@ class FakeGameplay extends Node:
 	func respawn() -> void:
 		recorder._note("respawn")
 		health = 100.0
-	func _update_visual() -> void: recorder._note("_update_visual")
+	func update_visual() -> void: recorder._note("update_visual")
+	func _update_visual() -> void: update_visual()
 
 class FakeHud extends Node:
 	var recorder: Recorder
@@ -375,7 +376,7 @@ func check_rescue() -> void:
 		"cold.recover_after_rescue() @LRT",
 		"wine.recover() @LRT",
 		"player.teleport(v) @LRT",
-		"gameplay._update_visual() @LR",
+		"gameplay.update_visual() @LR",
 		"hud.refresh_from_state() @LR",
 		"session.close_menu() @L",
 		"session.save_game() @L",

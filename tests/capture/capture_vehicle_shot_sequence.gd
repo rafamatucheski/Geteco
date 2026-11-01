@@ -46,7 +46,7 @@ func run() -> void:
 	for shot in 30:
 		if not is_instance_valid(car): break
 		var from: Vector3 = world.player.global_position + Vector3(0, 1.2, randf_range(-1.0, 1.0))
-		world.gameplay._damage_bullet(car, 25.0, world.player, from, car.global_position + Vector3(0, .9, randf_range(-1.2, 1.2)))
+		world.gameplay.damage_bullet(car, 25.0, world.player, from, car.global_position + Vector3(0, .9, randf_range(-1.2, 1.2)))
 		for tick in 3:
 			await physics_frame
 			if not is_instance_valid(car): break

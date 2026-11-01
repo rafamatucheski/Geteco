@@ -202,7 +202,7 @@ static func cut_point(actor: Node3D, weapon_id: String, combo: int, direction: V
 	var right := flat.cross(Vector3.UP)
 	return actor.global_position + Vector3.UP * profile.x + right * profile.y
 
-## Chamado por `Gameplay._melee` logo depois do dano. Devolve true se cortou.
+## Chamado por `Gameplay.melee` logo depois do dano. Devolve true se cortou.
 func try_sever(actor: Node3D, weapon_id: String, damage: float, heavy: bool, impact: Vector3, direction: Vector3) -> bool:
 	register_defeated(actor)
 	if not enabled or not is_strong_cut(weapon_id, damage, heavy): return false

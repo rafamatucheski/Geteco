@@ -48,7 +48,7 @@ func run() -> void:
 		if not await world.session.enter_place("harbor_ammunation", false): quit(4); return
 	# Fixed load fixture: reports no longer bypass the crime escalation policy.
 	world.gameplay.crime_points = 60 if scenario in ["recon", "search"] else 420
-	world.gameplay._update_stars()
+	world.gameplay.update_stars()
 	world.gameplay.register_crime(1,world.player.global_position)
 	# Same baseline escalation; new policy receives explicit violent testimony.
 	if world.gameplay.get("police_case") != null: world.gameplay.police_case.confirmed(0,world.player.global_position,"gunfire")

@@ -356,7 +356,7 @@ func _refresh_routine_context() -> void: refresh_routine_context()
 func sync_location_presentation() -> void:
 	if is_instance_valid(weather): weather._update()
 	prompt.text = ""
-	world.gameplay._update_visual()
+	world.gameplay.update_visual()
 	var city_look := world.get_node_or_null("CityLook") as Node
 	if city_look != null: city_look._refresh_silhouette()
 	if world.hud.has_method("refresh_from_state"): world.hud.refresh_from_state()

@@ -118,12 +118,12 @@ func run() -> void:
 		var hit := car.get_world_3d().direct_space_state.intersect_ray(physical)
 		if hit.is_empty() or hit.collider != car: print("GLASS_PHYSICS ",id," from=",ray[0]," to=",ray[1]," hit=",hit," car=",car.global_position)
 		check(not hit.is_empty() and hit.collider == car,id+" shot hits production vehicle collider")
-		combat._damage_bullet(car,25.0,null,ray[0],ray[1])
+		combat.damage_bullet(car,25.0,null,ray[0],ray[1])
 		check(car.door_presentation.ready_for_boarding or car.door_presentation.coupe_ready,id+" resolves pending door topology before breaking glass")
 		# Rachadura (26/10): os primeiros tiros só marcam o vidro; o BREAK_HITS-ésimo derruba o painel.
 		check(glass_count(car) == original and not car.find_children(GLASS.CRACK_NAME,"Decal",true,false).is_empty(),id+" first shot cracks the pane without removing glazing")
 		var side_point: Vector3 = GLASS.owner_for(car).contact(ray[0],ray[1]).get("point",Vector3.INF)
-		for i in GLASS.BREAK_HITS - 1: combat._damage_bullet(car,25.0,null,ray[0],ray[1])
+		for i in GLASS.BREAK_HITS - 1: combat.damage_bullet(car,25.0,null,ray[0],ray[1])
 		var broken := glass_count(car)
 		# Fragmentos de borda acrescentam triângulos: a remoção se mede por área e passagem do tiro.
 		check(glass_area(car) < glass_area(twin) and glass_area(car) > 0 and opening_at(car,side_point,(ray[1]-ray[0]).normalized()),id+" opens struck pane while preserving other glazing and edge fragments")
@@ -135,7 +135,7 @@ func run() -> void:
 		check(glass_count(car) == broken,id+" opening a door preserves its broken window")
 		var saved: Array = car.snapshot_glass()
 		check(saved.size() == GLASS.BREAK_HITS and GLASS.valid_records(saved),id+" snapshots each valid glass strike")
-		combat._damage_bullet(car,25.0,null,Vector3(0,.4,-8),Vector3(0,.4,8))
+		combat.damage_bullet(car,25.0,null,Vector3(0,.4,-8),Vector3(0,.4,8))
 		check(car.snapshot_glass().size() == GLASS.BREAK_HITS,id+" hood or tire shot cannot shatter a window")
 		car.body_dents.impact(18.0,Vector3(.6,.6,-car.half_length))
 		car.body_dents._rebuild()
@@ -149,7 +149,7 @@ func run() -> void:
 		check(not front.is_empty(),id+" exposes reachable windshield")
 		if not front.is_empty():
 			var front_point: Vector3 = GLASS.owner_for(car).contact(front[0],front[1]).get("point",Vector3.INF)
-			for i in GLASS.BREAK_HITS: combat._damage_bullet(car,25.0,null,front[0],front[1])
+			for i in GLASS.BREAK_HITS: combat.damage_bullet(car,25.0,null,front[0],front[1])
 			check(glass_area(car) < glass_area(twin) and opening_at(car,front_point,(front[1]-front[0]).normalized()),id+" windshield opens after repeated hits")
 			car.repair()
 			combat._police_rounds.append({"point":front[0],"direction":(front[1]-front[0]).normalized(),"speed":1200.0,"distance":0.0,"range":20.0,

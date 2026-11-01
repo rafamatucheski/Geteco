@@ -359,7 +359,7 @@ func raise_alarm(_reason: String) -> void:
 	for guard in _live_guards(): guard.alert(seen_at)
 	for body in bodies: body.found = true
 	company.set_night_alarm(true)
-	session.world.gameplay._play_stream(AUDIO.wav("panic_1.wav"),ORIGIN+YARD_CENTER+Vector3.UP*3,-2.0)
+	session.world.gameplay.play_stream(AUDIO.wav("panic_1.wav"),ORIGIN+YARD_CENTER+Vector3.UP*3,-2.0)
 	session.show_message("Alarme na Vértice! A van dos Cobras vem com reforço.")
 
 func _tick_alarm(elapsed: float) -> void:
@@ -447,7 +447,7 @@ func perform(target: String) -> bool:
 			var guard := _takedown_guard()
 			if guard == null: return false
 			guard.knock_out(_player().global_position)
-			session.world.gameplay._play_stream(AUDIO.wav("impact_flesh_0.wav"),guard.global_position+Vector3.UP,-16.0)
+			session.world.gameplay.play_stream(AUDIO.wav("impact_flesh_0.wav"),guard.global_position+Vector3.UP,-16.0)
 			return true
 		"vertice_night_book":
 			_in_dialogue = true

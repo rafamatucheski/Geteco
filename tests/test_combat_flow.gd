@@ -179,10 +179,10 @@ func _run() -> void:
 	controls.touch_aim = Vector2.ZERO
 	controls.using_gamepad = false
 	gameplay.aim_point = player.global_position + flat.normalized() * 8.0
-	check(gameplay._aim_direction().dot(flat.normalized()) > 0.99, "mouse: direção vem do ponto projetado pela câmera")
+	check(gameplay.aim_direction().dot(flat.normalized()) > 0.99, "mouse: direção vem do ponto projetado pela câmera")
 	controls.using_gamepad = true
 	controls.aim_direction = Vector2(flat.dot(world.camera.global_basis.x.normalized()), flat.dot(world.camera.global_basis.z.normalized())).normalized()
-	check(gameplay._aim_direction().dot(flat.normalized()) > 0.95, "controle: direção vem do analógico de mira")
+	check(gameplay.aim_direction().dot(flat.normalized()) > 0.95, "controle: direção vem do analógico de mira")
 	controls.using_gamepad = false
 	controls.touch_aim = Vector2(flat.dot(world.camera.global_basis.x.normalized()), flat.dot(world.camera.global_basis.z.normalized())).normalized()
 	var pose_data = preload("res://gameplay/WeaponPoseData.gd")
@@ -425,8 +425,8 @@ func _run() -> void:
 	var mechanic: Node3D = world.maciota_place.mechanic
 	for person in [resident, mechanic]:
 		var body := person.get_node("ResidentBody") as StaticBody3D
-		gameplay._damage(body, 500.0, player)
-		gameplay._damage(person, 500.0, player)
+		gameplay.damage(body, 500.0, player)
+		gameplay.damage(person, 500.0, player)
 		gameplay.explode(body.global_position, 3.0, 500.0, world.player)
 		check(is_instance_valid(person) and person.get_meta("invulnerable", false) == true and preload("res://gameplay/DamageProtection.gd").is_protected(body), "%s protegido (marca e corpo)" % person.name)
 	# Restauração: um snapshot com a pistola equipada e o local na garagem tem de guardar a arma.

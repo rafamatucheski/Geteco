@@ -160,7 +160,7 @@ func _dispatch(key: int) -> bool:
 		crew.vehicle = unit
 		add_child(crew)
 		crew.global_position = unit.to_global(Vector3(unit.half_width + 0.9, 0, 0))
-		if not gameplay._clear_at(crew.global_position):
+		if not gameplay.clear_at(crew.global_position):
 			crew.queue_free()
 			unit.queue_free()
 			continue

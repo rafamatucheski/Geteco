@@ -200,7 +200,7 @@ func run() -> void:
 		state.equipped_weapon = id
 		gameplay.cooldown = 0
 		gameplay.reload_timer = 0
-		gameplay._update_visual()
+		gameplay.update_visual()
 		check(gameplay.fire_at(Vector3(0, 1, -6)), "arsenal fires: " + id)
 		await await_contact(gameplay)
 		check(gameplay.visual_id == id, "original geometry equipped: " + id)
@@ -245,10 +245,10 @@ func run() -> void:
 	check(gameplay.buy_attachment("pistol", "flashlight"), "flashlight can be purchased")
 	check(gameplay.toggle_flashlight(), "owned lamp switches")
 	gameplay.aim_active = false
-	gameplay._update_visual()
+	gameplay.update_visual()
 	check(gameplay.flashlight.visible and not gameplay.laser.visible, "lamp on; laser off until aiming")
 	gameplay.aim_active = true
-	gameplay._update_visual()
+	gameplay.update_visual()
 	check(gameplay.laser.visible, "laser appears while aiming")
 	var lens: Node3D = gameplay.gun.find_child("LaserLens", true, false)
 	var beam_start: Vector3 = gameplay.laser.global_position + gameplay.laser.global_basis.z.normalized() * gameplay.laser.scale.z * 0.5

@@ -73,8 +73,8 @@ func run() -> void:
 				elif baseline and game.police_can_see(officer):
 					# Caminho police_shoot original exato, mantido só para o A/B sequencial.
 					var origin: Vector3 = officer.global_position + Vector3.UP * 1.1
-					game._trace(origin, world.player.global_position + Vector3.UP, 0.08, 0.012)
-					game._sound(officer.weapon_id, origin)
+					game.trace(origin, world.player.global_position + Vector3.UP, 0.08, 0.012)
+					game.sound(officer.weapon_id, origin)
 					game.damage_player(6.0)
 		if warm < 8.0: continue
 		frames.append(ms)

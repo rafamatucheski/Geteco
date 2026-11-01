@@ -32,7 +32,7 @@ func run() -> void:
 	world.gameplay.state.equip_weapon("pistol")
 	world.gameplay.buy_attachment("pistol","flashlight")
 	world.gameplay.flashlight_enabled = false
-	world.gameplay._update_visual()
+	world.gameplay.update_visual()
 	var previous_env: Environment = world.camera.environment
 	var previous_sun: int = world.production.sun.light_cull_mask
 	var previous_shadows: bool = world.gameplay.flashlight.shadow_enabled

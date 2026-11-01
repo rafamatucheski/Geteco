@@ -88,7 +88,7 @@ func run() -> void:
 		var arcade = session.arcade
 		check(arcade.active and session.modal and world.player.input_locked,id+" modal owns controls")
 		check(not session.save_block_reason().is_empty(),id+" live round not saved")
-		check(not world.gameplay._free_play_ok(),id+" real combat blocked")
+		check(not world.gameplay.free_play_ok(),id+" real combat blocked")
 		await press("ui_accept")
 		check(arcade.ui.playing,id+" Enter starts round")
 		await frames(5)

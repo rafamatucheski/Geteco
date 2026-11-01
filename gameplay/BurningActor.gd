@@ -70,7 +70,7 @@ func _physics_process(delta: float) -> void:
 	while tick_clock >= TICK_SECONDS:
 		tick_clock -= TICK_SECONDS
 		var source: Node = source_ref.get_ref() if source_ref != null else null
-		gameplay._damage(actor, TICK_DAMAGE, source, true)
+		gameplay.damage(actor, TICK_DAMAGE, source, true)
 		if actor.get("dead") == true:
 			_stop_visuals()
 			queue_free()

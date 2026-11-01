@@ -82,9 +82,9 @@ func run() -> void:
 	var victim := KIT.add_patient(b.scene, Vector3(1,.04,0),10)
 	victim.set_physics_process(false)
 	await physics_frame
-	game._damage(victim, 100.0, game.player)
+	game.damage(victim, 100.0, game.player)
 	check(victim.dead and case.pending.size() == 1 and case.pending[0].kind == "civilian_killed", "fatal civilian damage creates a distinct witnessed homicide")
-	game._damage(victim, 100.0, game.player)
+	game.damage(victim, 100.0, game.player)
 	case.tick(2.6)
 	check(case.escalation.fatal_points == 30 and game.crime_points == 30, "shooting a corpse cannot duplicate its death")
 	game.clear_wanted()
@@ -93,7 +93,7 @@ func run() -> void:
 	hidden_victim.set_physics_process(false)
 	KIT.add_wall(b.scene,Vector3(3,1.5,0),Vector3(.5,3,8))
 	await physics_frame
-	game._damage(hidden_victim,100.0,game.player)
+	game.damage(hidden_victim,100.0,game.player)
 	case.tick(2.6)
 	check(hidden_victim.dead and case.escalation.fatal_points == 0 and game.stars == 0, "seeing a body behind a wall cannot identify the hidden shooter")
 	b.state.safe = true

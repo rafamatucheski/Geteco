@@ -35,7 +35,7 @@ func can_activate() -> bool:
 	return unlocked() and not active and charge >= CAPACITY and _permitted() and is_equal_approx(Engine.time_scale, 1.0)
 
 func _permitted() -> bool:
-	return is_instance_valid(gameplay) and gameplay.is_inside_tree() and gameplay.attack_allowed() and gameplay._free_play_ok() and gameplay.equipped() == "katana" and is_instance_valid(gameplay.player) and not gameplay.player.input_locked
+	return is_instance_valid(gameplay) and gameplay.is_inside_tree() and gameplay.attack_allowed() and gameplay.free_play_ok() and gameplay.equipped() == "katana" and is_instance_valid(gameplay.player) and not gameplay.player.input_locked
 
 func add_damage(actual_damage: float) -> void:
 	if active or not unlocked() or not is_finite(actual_damage) or actual_damage <= 0.0: return

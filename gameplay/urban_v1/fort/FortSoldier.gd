@@ -339,8 +339,8 @@ func _shoot(_delta: float) -> void:
 	var aim := end+(Vector3.ZERO if hit else Vector3(_rng.randf_range(-1.2,1.2),_rng.randf_range(-.5,.6),_rng.randf_range(-1.2,1.2)))
 	visual.attack()
 	if is_instance_valid(gameplay):
-		if gameplay.has_method("_sound"): gameplay._sound(weapon_id,origin)
-		if gameplay.has_method("_trace"): gameplay._trace(origin,aim,.06,.012)
+		if gameplay.has_method("sound"): gameplay.sound(weapon_id,origin)
+		if gameplay.has_method("trace"): gameplay.trace(origin,aim,.06,.012)
 		if hit and gameplay.has_method("damage_player"): gameplay.damage_player(shot_damage)
 		if gameplay.has_signal("npc_gunfire"): gameplay.npc_gunfire.emit(origin,(aim-origin).normalized(),self)
 

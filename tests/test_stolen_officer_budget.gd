@@ -40,7 +40,7 @@ func run() -> void:
 	check(world.production.no_save, "save pessoal não utilizado")
 	if not world.production.no_save: _finish(); return
 	world.gameplay.crime_points = 420
-	world.gameplay._update_stars()
+	world.gameplay.update_stars()
 	world.gameplay.register_crime(1, world.player.global_position)
 	check(world.gameplay.stars == 6, "seis estrelas mantêm o mesmo limite antes/depois do roubo")
 	var road: Curve3D = world.production.traffic_routes.route_near(world.player.global_position)

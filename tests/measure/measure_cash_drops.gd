@@ -61,7 +61,7 @@ func run() -> void:
 			if not is_instance_valid(pickup) or pickup.kind != "cash": continue
 			collected += int(pickup.cash_amount)
 			world.player.teleport(pickup.global_position)
-			world.gameplay._update_loot(0)
+			world.gameplay.update_loot(0)
 		var paid: int = world.session.state.economy.balance - initial_balance
 		if collected <= 0 or paid != collected:
 			push_error("Real city cash collection failed: expected %d, got %d" % [collected,paid])

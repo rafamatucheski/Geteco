@@ -130,7 +130,7 @@ func run() -> void:
 		rng.seed=candidate
 		if rng.randf()<=float(world.gameplay.LOOT_WEAPON_CHANCE): world.gameplay._rng.seed=candidate; break
 	var loot_before: int=world.gameplay._loot.size()
-	world.gameplay._damage(last,1000.0,world.player)
+	world.gameplay.damage(last,1000.0,world.player)
 	check(last.dead and last.collision_layer==0 and not last.is_physics_processing(),"final corpse cannot move or block")
 	check(world.gameplay._loot.size()>loot_before,"production death spawns physical weapon loot")
 	check(int(world.session.state.world_state[CANYON.KEY].defeated_mask)==255 and encounter.live_count()==0 and encounter.save_block_reason().is_empty(),"all defeated slots persist and confrontation ends")

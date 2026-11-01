@@ -41,7 +41,7 @@ func _run() -> void:
 	check(weather.precipitation.emitting and weather.precipitation.visible, "outdoor rain active")
 	state.grant_weapon("pistol")
 	state.equip_weapon("pistol")
-	world.gameplay._update_visual()
+	world.gameplay.update_visual()
 	world.hud.refresh_from_state()
 	session.prompt.text = "E  Entrar"
 	if await session.enter_place("maciota", false):

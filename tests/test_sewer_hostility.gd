@@ -27,7 +27,9 @@ class CombatFixture extends Node:
 	func equipped() -> String: return weapon
 	func damage_player(amount: float, _from: Vector3) -> void: health -= amount
 	func _sound(_id: String, _point: Vector3) -> void: pass
+	func sound(_id: String, _point: Vector3) -> void: _sound(_id, _point)
 	func _trace(_from: Vector3, _to: Vector3, _duration: float, _width: float) -> void: pass
+	func trace(_from: Vector3, _to: Vector3, _duration: float, _width: float) -> void: _trace(_from, _to, _duration, _width)
 
 class WorldFixture extends Node3D:
 	var player: CharacterBody3D
@@ -180,13 +182,13 @@ func integrated() -> void:
 	await settle()
 	await capture("residents-idle")
 	var data: Dictionary = world.gameplay.weapon_data("fists")
-	world.gameplay._melee(world.player.global_position+Vector3.UP, Vector3.FORWARD, data, "fists")
+	world.gameplay.melee(world.player.global_position+Vector3.UP, Vector3.FORWARD, data, "fists")
 	check(actor.warned and not actor.hostile, "soco pelo Gameplay provoca PARE sem retaliação")
 	await capture("first-punch-warning")
 	await settle(30)
 	var toward: Vector3 = actor.global_position-world.player.global_position
 	toward.y = 0
-	world.gameplay._melee(world.player.global_position+Vector3.UP, toward.normalized(), data, "fists")
+	world.gameplay.melee(world.player.global_position+Vector3.UP, toward.normalized(), data, "fists")
 	await settle(50)
 	check(actor.hostile and residents[1].hostile and residents[2].hostile, "segundo soco chama aliados, inclusive morador com pistola")
 	for i in 6:

@@ -8,8 +8,11 @@ class Gameplay extends RefCounted:
 	signal npc_gunfire(origin: Vector3, direction: Vector3, shooter: Node3D)
 	var hits := 0
 	func _sound(_id,_point): pass
+	func sound(_id,_point): return _sound(_id, _point)
 	func _trace(_a,_b,_c,_d): pass
+	func trace(_a,_b,_c,_d): return _trace(_a, _b, _c, _d)
 	func _damage(_actor,_amount,_source): hits+=1
+	func damage(_actor,_amount,_source): return _damage(_actor, _amount, _source)
 	func find_path(_a,b): return PackedVector3Array([b])
 class Session extends RefCounted:
 	var world: Dictionary

@@ -75,7 +75,7 @@ func run() -> void:
 				verify(await session.interact(), game_id + " start via real interaction")
 				verify(room.game_active and session.modal and world.player.input_locked, game_id + " owns controls")
 				verify(not session.save_block_reason().is_empty(), game_id + " save blocked during round")
-				verify(not world.gameplay._free_play_ok(), game_id + " real combat blocked")
+				verify(not world.gameplay.free_play_ok(), game_id + " real combat blocked")
 				if not room.game_active: continue
 				world.player.controlled_automatically = false
 				for i in 4: await physics_frame

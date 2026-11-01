@@ -144,7 +144,7 @@ func _process(delta: float) -> void:
 	if react_to_aim and gameplay.aim_active and is_instance_valid(gameplay.player):
 		var origin: Vector3 = gameplay.player.global_position + Vector3.UP
 		var offset: Vector3 = actor.global_position + Vector3.UP - origin
-		var direction: Vector3 = gameplay._aim_direction()
+		var direction: Vector3 = gameplay.aim_direction()
 		if offset.length_squared() <= 144.0 and direction.normalized().dot(offset.normalized()) > .94:
 			var ray := PhysicsRayQueryParameters3D.create(origin, actor.global_position + Vector3.UP, 1)
 			if actor.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): _notice(origin, 12.0)

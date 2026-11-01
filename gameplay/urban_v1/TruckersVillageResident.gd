@@ -159,12 +159,12 @@ func _try_shoot() -> void:
 	_shot_left = 2.4 if weapon_id=="shotgun" else 1.4
 	shots_fired += 1
 	model.attack()
-	if gameplay.has_method("_sound"): gameplay._sound(weapon_id,origin)
+	if gameplay.has_method("sound"): gameplay.sound(weapon_id,origin)
 	if gameplay.has_signal("npc_gunfire"): gameplay.npc_gunfire.emit(origin,direction.normalized(),self)
 	if weapon_id=="shotgun":
 		_fire_pellets(origin,end)
 	else:
-		if gameplay.has_method("_trace"): gameplay._trace(origin,end,.08,.012)
+		if gameplay.has_method("trace"): gameplay.trace(origin,end,.08,.012)
 		gameplay.damage_player(6)
 
 func _fire_pellets(origin: Vector3, end: Vector3) -> void:
@@ -180,7 +180,7 @@ func _fire_pellets(origin: Vector3, end: Vector3) -> void:
 		var ray := PhysicsRayQueryParameters3D.create(origin,tip,7,[get_rid()])
 		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
 		if not hit.is_empty() and hit.collider==target: last_pellet_hits+=1
-		if gameplay.has_method("_trace"): gameplay._trace(origin,hit.position if not hit.is_empty() else tip,.08,.008)
+		if gameplay.has_method("trace"): gameplay.trace(origin,hit.position if not hit.is_empty() else tip,.08,.008)
 	if last_pellet_hits>0: gameplay.damage_player(last_pellet_hits*4)
 
 func receive_damage(amount: float,source: Node = null) -> void:

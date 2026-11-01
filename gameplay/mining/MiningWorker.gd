@@ -113,7 +113,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	died.emit(self)
 
 func _voice(kind: String) -> void:
-	if is_instance_valid(gameplay): gameplay._play_stream(AUDIO.wav(kind + "_0.wav"), global_position + Vector3.UP, -8.0)
+	if is_instance_valid(gameplay): gameplay.play_stream(AUDIO.wav(kind + "_0.wav"), global_position + Vector3.UP, -8.0)
 
 func recover_from_injury() -> void:
 	if not dead: health = 100.0

@@ -100,7 +100,7 @@ func _on_weapon_fired(weapon_id: String, origin: Vector3) -> void:
 	# weapon_fired também acompanha arremessos/chamas no Gameplay atual. Apenas
 	# armas de projétil com estampido entram no contrato de tiro ouvido.
 	if data.is_empty() or data.get("is_grenade", false) or data.get("is_flame", false): return
-	var aim: Vector3 = gameplay._aim_direction() if gameplay.has_method("_aim_direction") else Vector3.ZERO
+	var aim: Vector3 = gameplay.aim_direction() if gameplay.has_method("aim_direction") else Vector3.ZERO
 	aim.y = 0.0
 	if aim.length_squared() < 0.01: aim = Vector3.FORWARD
 	var suppressed: bool = data.get("suppressed", false) == true

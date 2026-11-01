@@ -32,10 +32,10 @@ func run() -> void:
 	var toward: Vector3 = npc.global_position+Vector3(0,1.0,0)
 	var hit: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(from,toward,7))
 	check(not hit.is_empty() and hit.collider==npc,"real bullet mask hits the seated resident above the bench")
-	world.gameplay._damage(npc,12,world.player)
+	world.gameplay.damage(npc,12,world.player)
 	check(npc.health==88 and npc.frightened,"actual combat dispatcher damages and alarms resident")
 	var parked = venue.parked_bikes[0]
-	world.gameplay._damage(parked,10,world.player)
+	world.gameplay.damage(parked,10,world.player)
 	check(parked.health<100 and parked.visual.rotation.z>-.12,"parked rental bike visibly reacts to weapon damage")
 	check(world.gameplay._impact_material(parked)=="metal","bullet impacts use metal effects on motorcycle")
 	var mx = world.session.motocross
@@ -43,7 +43,7 @@ func run() -> void:
 	var rider = mx.ambient.rows[0].bike
 	world.gameplay.weapon_fired.emit("pistol",rider.global_position+Vector3(2,0,0))
 	check(rider._threat_time>0,"nearby shots trigger caution and flinch in a real riding opponent")
-	world.gameplay._damage(rider,20,world.player)
+	world.gameplay.damage(rider,20,world.player)
 	check(rider.crash_state=="fallen" and rider.health<100,"a shot can physically knock a riding opponent off the motorcycle")
 	world.queue_free()
 	await process_frame

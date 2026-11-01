@@ -57,8 +57,8 @@ func run() -> void:
 		for part in spec[1]: parts[gameplay.CUSTOM.PARTS[part].slot] = part
 		gameplay.customization = {id: {"owned_parts":spec[1], "parts":parts}}
 		gameplay.visual_id = "@rebuild"
-		gameplay._update_weapon_pose(1.0 / 60.0)
-		gameplay._update_visual()
+		gameplay.update_weapon_pose(1.0 / 60.0)
+		gameplay.update_visual()
 		var label := id + " " + str(spec[1])
 		var expected: Vector3 = gameplay._muzzle_flash.position
 		if spec[2] != "":
@@ -77,7 +77,7 @@ func run() -> void:
 			check(expected.is_equal_approx(original), label + " base muzzle restored")
 		check(gameplay._muzzle_light.position.is_equal_approx(gameplay._muzzle_flash.position), label + " light follows flash")
 		if id == "flamethrower":
-			check(gameplay._muzzle_world_position().distance_to(gameplay.gun.to_global(expected)) < .006, label + " flame origin follows physical nozzle")
+			check(gameplay.muzzle_world_position().distance_to(gameplay.gun.to_global(expected)) < .006, label + " flame origin follows physical nozzle")
 			continue
 		var tracer_index: int = gameplay.effects._next_tracer
 		gameplay.cooldown = 0.0

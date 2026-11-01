@@ -60,11 +60,11 @@ func run() -> void:
 	if not check(is_instance_valid(vicente),"Vicente is present at the new meeting place"): finish(); return
 	check(vicente.global_position.distance_to(LAYOUT.drag_vicente_point())<.5,"campaign Vicente uses the new venue")
 	var vicente_point: Vector3 = vicente.global_position
-	world.gameplay._damage(vicente,10000.0,world.player)
+	world.gameplay.damage(vicente,10000.0,world.player)
 	await frames(2)
 	check(is_instance_valid(vicente) and not vicente.is_queued_for_deletion() and vicente.collision_layer!=0,"production damage preserves Vicente and his physical body")
 	for member in get_nodes_in_group("desert_drag_crew"):
-		world.gameplay._damage(member,10000.0,world.player)
+		world.gameplay.damage(member,10000.0,world.player)
 	check(get_nodes_in_group("desert_drag_crew").size()==7,"crew remains present after production damage")
 	await overview()
 	await approach(vicente.global_position+Vector3(0,.08,1.2))

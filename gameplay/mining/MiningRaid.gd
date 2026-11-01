@@ -138,7 +138,7 @@ func provoke(source: Node) -> void:
 func _guard_died(_index: int) -> void:
 	var actor = actors.get(_index)
 	if is_instance_valid(actor):
-		session.world.gameplay._play_stream(AUDIO.wav("hurt_%d.wav" % (_index % 3)), actor.global_position + Vector3.UP, -8.0)
+		session.world.gameplay.play_stream(AUDIO.wav("hurt_%d.wav" % (_index % 3)), actor.global_position + Vector3.UP, -8.0)
 	# Drops externos ficam com o tempo de vida normal de pickup de Gameplay. Adotar todos
 	# os drops próximos também apagaria o dinheiro de trabalhadores feridos da mina sem relação.
 	if ambush: return
@@ -217,7 +217,7 @@ func _update_ambush() -> void:
 	if not _ambush_announced:
 		_ambush_announced = true
 		session.show_message("Emboscada! Elimine os reforços ou fuja pela estrada. Há uma caminhonete perto da galeria.")
-		session.world.gameplay._play_stream(AUDIO.wav("panic_1.wav"), LAYOUT.SECRET_RETURN + Vector3.UP, -3.0)
+		session.world.gameplay.play_stream(AUDIO.wav("panic_1.wav"), LAYOUT.SECRET_RETURN + Vector3.UP, -3.0)
 	for index in AMBUSH_POSTS.size():
 		if actors.has(index) or _retry > 0: continue
 		var point: Vector3 = LAYOUT.world(AMBUSH_POSTS[index])

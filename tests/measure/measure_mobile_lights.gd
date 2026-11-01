@@ -51,7 +51,7 @@ func run() -> void:
 			world.gameplay.toggle_flashlight()
 		if scenario == "car":
 			world.gameplay.flashlight_enabled = false
-			world.gameplay._update_visual()
+			world.gameplay.update_visual()
 			var car = world.driving.car
 			car.place(Vector3(67.5,.1,139),0)
 			world.player.teleport(car.driver_door_anchor(-1))

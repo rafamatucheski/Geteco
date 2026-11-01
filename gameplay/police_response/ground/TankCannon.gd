@@ -132,7 +132,7 @@ func _detonate(gameplay: Node3D, source: Node3D, hit: Dictionary, direction: Vec
 		seen[direct.get_instance_id()] = true
 		if _damage_allowed(direct,source,police_control):
 			var amount := 55.0 if direct == gameplay.player else DIRECT_DAMAGE
-			gameplay._damage(direct,amount,source)
+			gameplay.damage(direct,amount,source)
 			gameplay._hit_effect(hit,amount,direction)
 			_impulse(direct,direction,1.0)
 	# Desloca para o lado de onde veio o tiro para que a parede que bloqueia também bloqueie o estilhaço.
@@ -154,10 +154,10 @@ func _detonate(gameplay: Node3D, source: Node3D, hit: Dictionary, direction: Vec
 		var falloff := clampf(1.0-blast_origin.distance_to(target)/BLAST_RADIUS,0.0,1.0)
 		if falloff <= 0.0: continue
 		var amount := minf(BLAST_DAMAGE*falloff,45.0) if actor == gameplay.player else BLAST_DAMAGE*falloff
-		gameplay._damage(actor,amount,source)
+		gameplay.damage(actor,amount,source)
 		gameplay._hit_effect({"collider":actor,"position":target,"normal":Vector3.UP},amount,blast_origin.direction_to(target))
 		_impulse(actor,blast_origin.direction_to(target),falloff)
-	gameplay._play_stream(AUDIO.impact_stream(),point,-2.0,1.0,160.0)
+	gameplay.play_stream(AUDIO.impact_stream(),point,-2.0,1.0,160.0)
 	if is_instance_valid(gameplay.effects): gameplay.effects.explosion(point,BLAST_RADIUS)
 	if is_instance_valid(gameplay.player): gameplay._kick_camera(.28*clampf(1.0-gameplay.player.global_position.distance_to(point)/(BLAST_RADIUS*4.0),0.0,1.0))
 	gameplay.explosion_occurred.emit(point,BLAST_RADIUS,source)

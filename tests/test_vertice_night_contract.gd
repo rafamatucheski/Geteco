@@ -20,6 +20,7 @@ class FakeGameplay extends Node3D:
 	var emergency := FakeEmergency.new()
 	func pursuit_target() -> Node3D: return player
 	func _play_stream(_s, _p, _v, _pitch := 1.0, _r := 0.0) -> void: pass
+	func play_stream(_s, _p, _v, _pitch := 1.0, _r := 0.0) -> void: _play_stream(_s, _p, _v, _pitch, _r)
 	func register_crime(points: int, _point: Vector3, kind := "reported", _t := {}) -> void:
 		crimes.append(points)
 		stars = 2

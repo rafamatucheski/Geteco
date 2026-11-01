@@ -158,9 +158,9 @@ func _hit_target() -> void:
 		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
 		if hit.is_empty() or hit.collider != target: return
 		visual.fire()
-		gameplay._trace(origin, hit.position, .08, .012)
-		gameplay._sound("pistol", origin)
+		gameplay.trace(origin, hit.position, .08, .012)
+		gameplay.sound("pistol", origin)
 		gameplay.npc_gunfire.emit(origin, (hit.position-origin).normalized(), self)
 	else:
-		gameplay._sound("knife" if weapon_id in ["knife", "bottle", "claw"] else "fists", global_position)
+		gameplay.sound("knife" if weapon_id in ["knife", "bottle", "claw"] else "fists", global_position)
 	gameplay.damage_player(damage, global_position)

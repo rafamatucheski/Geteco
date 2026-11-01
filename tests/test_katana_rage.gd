@@ -18,6 +18,7 @@ class FakeGame extends Node:
 	var weapon := "katana"
 	func attack_allowed() -> bool: return available and not state.safe and not get_tree().paused
 	func _free_play_ok() -> bool: return available
+	func free_play_ok() -> bool: return _free_play_ok()
 	func equipped() -> String: return weapon
 class Stage extends Node3D:
 	var gameplay = null

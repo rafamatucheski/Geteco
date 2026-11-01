@@ -169,7 +169,7 @@ func _physics_process(delta: float) -> void:
 	if hit.is_empty() or hit.collider!=player: return
 	cooldown=1.8 if shotgun else .95
 	visual.attack()
-	gameplay._trace(origin,end,.08,.012)
-	gameplay._sound("shotgun" if shotgun else "pistol",origin)
+	gameplay.trace(origin,end,.08,.012)
+	gameplay.sound("shotgun" if shotgun else "pistol",origin)
 	gameplay.npc_gunfire.emit(origin, (end - origin).normalized(), self)
 	gameplay.damage_player(18 if shotgun else 8)

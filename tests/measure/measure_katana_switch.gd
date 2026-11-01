@@ -79,7 +79,7 @@ func run() -> void:
 func verify_garage() -> void:
 	var player = world.player
 	gameplay.god_mode = false
-	gameplay._sync_god_mode()
+	gameplay.sync_god_mode()
 	# Uma concessão simples marca takeshi_honor como descoberto, mas não tem o contrato de save.
 	# Usa a API real de prêmio antes de exercitar a restauração, mesmo para uma espada possuída.
 	preload("res://runtime/TakeshiHonor.gd").record_finish(state.world_state, true, 8.0)
@@ -105,8 +105,8 @@ func verify_garage() -> void:
 	check(state.owns_weapon("katana") and state.owns_weapon("pistol"), "inventário preservado na entrada")
 	for person in [world.maciota_place.maciota, world.maciota_place.mechanic]:
 		var body := person.get_node("ResidentBody") as StaticBody3D
-		gameplay._damage(body, 500.0, player)
-		gameplay._damage(person, 500.0, player)
+		gameplay.damage(body, 500.0, player)
+		gameplay.damage(person, 500.0, player)
 		gameplay.explode(body.global_position, 3.0, 500.0, player)
 		check(is_instance_valid(person) and person.get_meta("invulnerable", false) and preload("res://gameplay/DamageProtection.gd").is_protected(body), "%s permanece protegido" % person.name)
 	var snapshot: Dictionary = state.snapshot()

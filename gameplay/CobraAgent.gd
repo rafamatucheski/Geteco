@@ -116,7 +116,7 @@ func _physics_process(delta: float) -> void:
 		var away := -direction.normalized()
 		for angle in [0.0, PI / 2, -PI / 2, PI]:
 			var candidate := global_position + away.rotated(Vector3.UP, angle) * 4
-			if gameplay._clear_at(candidate):
+			if gameplay.clear_at(candidate):
 				retreat = candidate
 				break
 	# Gira o tronco para o alvo em vez de estalar; o tiro espera o peito alinhar (CobraGunfire).

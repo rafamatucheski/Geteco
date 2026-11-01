@@ -235,7 +235,7 @@ func record_sequence() -> void:
 		if elapsed >= 16.0 and phase == 1: set_weather(2,1.0,.45); phase = 2; events.append({"time":elapsed,"event":"storm"})
 		if shots < 3 and elapsed >= 22.0+shots*2.0:
 			var before := rain_state()
-			world.gameplay._damage_bullet(car,10.0,null,ray[0],ray[1])
+			world.gameplay.damage_bullet(car,10.0,null,ray[0],ray[1])
 			shots += 1
 			events.append({"time":elapsed,"event":"glass-shot","number":shots,"before":before,"after":rain_state()})
 		if elapsed >= 30.0 and moving_start < 0.0:

@@ -74,7 +74,7 @@ func _shoot(target: Node3D) -> void:
 	gameplay._police_rounds.append({"point":origin,"direction":direction,"speed":42.0,"distance":0.0,"range":float(data.max_range)/16.0,"damage":22.0 if weapon_id!="smg" else 17.0,"data":data,"source":weakref(self),"rid":get_rid(),"visual":token,"blocked":blocked})
 	visual.attack()
 	gameplay.npc_gunfire.emit(origin,direction,self)
-	gameplay._play_stream(AUDIO.gunfire_take(weapon_id,gameplay._rng),origin,gameplay.NPC_GUNFIRE_DB,1.0,gameplay.HEARING_GUNFIRE)
+	gameplay.play_stream(AUDIO.gunfire_take(weapon_id,gameplay._rng),origin,gameplay.NPC_GUNFIRE_DB,1.0,gameplay.HEARING_GUNFIRE)
 	shots_fired+=1
 	burst=(burst+1)%3
 	cooldown=float(data.fire_interval) if burst!=0 else 1.0+float(slot%3)*.13

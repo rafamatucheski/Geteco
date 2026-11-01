@@ -44,7 +44,7 @@ func run() -> void:
 	world.gameplay.belt_flashlight.purchase()
 	world.gameplay.belt_flashlight.enabled = false
 	world.gameplay.flashlight_enabled = false
-	world.gameplay._update_visual()
+	world.gameplay.update_visual()
 	var previous_env: Environment = world.camera.environment
 	var previous_sun: int = world.production.sun.light_cull_mask
 	var previous_shadows: bool = world.gameplay.belt_flashlight.lamp.shadow_enabled

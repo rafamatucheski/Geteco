@@ -33,7 +33,7 @@ func _initialize() -> void: run.call_deferred()
 
 func step(delta: float = DT) -> void:
 	gp._update_combat_clip(delta)
-	gp._update_weapon_pose(delta)
+	gp.update_weapon_pose(delta)
 	await physics_frame
 	_follow()
 	var blade: Vector3 = actor.visual.global_basis.inverse() * -(gp.gun.global_basis.z as Vector3).normalized()

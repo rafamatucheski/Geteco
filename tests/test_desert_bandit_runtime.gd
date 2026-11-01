@@ -133,7 +133,7 @@ func run() -> void:
 		if rng.randf()<=float(world.gameplay.LOOT_WEAPON_CHANCE): loot_seed=candidate; break
 	world.gameplay._rng.seed=loot_seed
 	var loot_before: int=world.gameplay._loot.size()
-	world.gameplay._damage(last,1000.0,world.player)
+	world.gameplay.damage(last,1000.0,world.player)
 	check(last.dead and last.collision_layer==0 and not last.is_physics_processing(),"production damage API produces final bandit death and disables body collision")
 	check(world.gameplay._loot.size()>loot_before,"production death creates real loot using deterministic normal-chance seed")
 	check(int(world.session.state.world_state[ENCOUNTER.STATE_KEY].defeated_mask)==7 and encounter.live_count()==0 and encounter.save_block_reason().is_empty(),"all defeated slots persist and combat lock clears")

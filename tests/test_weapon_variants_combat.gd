@@ -98,7 +98,7 @@ func run() -> void:
 		gameplay.cooldown = 0
 		health_before = target.health
 		if id == "shotgun_auto":
-			var obstruction: Dictionary = gameplay._muzzle_obstruction(gameplay._muzzle_world_position())
+			var obstruction: Dictionary = gameplay._muzzle_obstruction(gameplay.muzzle_world_position())
 			check(not obstruction.is_empty() and obstruction.collider == wall, "long semi shotgun detects wall crossed between chest and muzzle")
 		check(gameplay.fire_at(target.global_position) and is_equal_approx(target.health, health_before), id + " solid wall blocks every pellet")
 		wall.collision_layer = 0

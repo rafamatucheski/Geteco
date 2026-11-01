@@ -171,8 +171,8 @@ func check_garage() -> void:
 	gameplay.clear_wanted()
 	for person in [world.maciota_place.maciota, world.maciota_place.mechanic]:
 		var body := person.get_node("ResidentBody") as StaticBody3D
-		gameplay._damage(person, 500, world.player)
-		gameplay._damage(body, 500, world.player, true)
+		gameplay.damage(person, 500, world.player)
+		gameplay.damage(body, 500, world.player, true)
 		check(is_instance_valid(person) and preload("res://gameplay/DamageProtection.gd").is_protected(body) and not person.has_method("receive_damage") and not person.has_method("die"), "%s remains protected with no damage/death routines" % person.name)
 	check(state.economy.snapshot().weapons == owned_before, "garage controls preserve all owned weapons and ammunition")
 	var snapshot: Dictionary = state.snapshot()

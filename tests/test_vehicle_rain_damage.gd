@@ -103,7 +103,7 @@ func run() -> void:
 		if ray.is_empty(): car.free(); dry.free(); continue
 		# Impactos reais mantêm o mesmo caminho pelo vidro e pela vida do veículo.
 		for shot in 3:
-			combat._damage_bullet(car, 25.0, null, ray[0], ray[1])
+			combat.damage_bullet(car, 25.0, null, ray[0], ray[1])
 			dry.receive_damage(25.0 * .15, null)
 			check(car.snapshot_glass().size() == shot + 1, id + " bullet %d reaches glass and damage" % (shot + 1))
 			check(same_colors(car, wet_colors), id + " shot %d preserves wet body color immediately" % (shot + 1))

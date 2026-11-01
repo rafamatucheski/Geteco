@@ -709,7 +709,7 @@ func salt_mission() -> void:
 	await approach(center + Vector3(0, .1, 6))
 	check(session.desert.nearest_action().get("target", "") != "act2:ledger", "A2-11: caderno não sai com fora-da-lei de pé")
 	for outlaw in wilds.sites[REUNION.LEDGER_SITE].actors:
-		if is_instance_valid(outlaw) and not outlaw.dead: world.gameplay._damage(outlaw, 10000.0, world.player)
+		if is_instance_valid(outlaw) and not outlaw.dead: world.gameplay.damage(outlaw, 10000.0, world.player)
 	await frames(20)
 	if not await use_point(center, "act2:ledger", [Vector3(0, 0, 2.0), Vector3(2.0, 0, 0), Vector3(-2.0, 0, 0), Vector3(0, 0, -2.0), Vector3(0, 0, 3.5)], ACT2_LINES.ledger().size()): return
 	check(REUNION.chain_at(state, "salt") == "home", "A2-11: caderno leva à casa da Helena")
@@ -733,7 +733,7 @@ func teodoro_mission() -> void:
 	world.player.teleport(fighter.global_position + Vector3(1.0, .08, 0))
 	var hits := 0
 	while not fighter.down and hits < 20:
-		world.gameplay._damage(fighter, 12.0, world.player)
+		world.gameplay.damage(fighter, 12.0, world.player)
 		hits += 1
 		await frames(6)
 	check(fighter.down and not fighter.dead and is_instance_valid(fighter), "A2-12: Vicente cai sem morrer (%d golpes)" % hits)
@@ -771,7 +771,7 @@ func finale_mission() -> void:
 	await wait_until(func(): return reunion.raiders.size() == REUNION.RAID_POINTS.size(), 20000)
 	check(reunion.raiders.size() == REUNION.RAID_POINTS.size(), "A2-13: o ataque volta inteiro")
 	for raider in reunion.raiders:
-		if is_instance_valid(raider) and not raider.dead: world.gameplay._damage(raider, 10000.0, world.player)
+		if is_instance_valid(raider) and not raider.dead: world.gameplay.damage(raider, 10000.0, world.player)
 	await wait_until(func(): return REUNION.chain_at(state, "finale") == "gate", 5000)
 	check(REUNION.chain_at(state, "finale") == "gate", "A2-13: Cobras derrotados, Vicente vai à passagem norte")
 	if not await visit("gate"): return
