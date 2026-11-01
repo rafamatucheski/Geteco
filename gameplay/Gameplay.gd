@@ -61,6 +61,8 @@ const MELEE_STRIKE := preload("res://gameplay/GameplayMelee.gd")
 var _melee_strike: MELEE_STRIKE = MELEE_STRIKE.new(self)
 const FIRE_RULES := preload("res://gameplay/GameplayFire.gd")
 var _firing: FIRE_RULES = FIRE_RULES.new(self)
+const DAMAGE_RULES := preload("res://gameplay/GameplayDamage.gd")
+var _damage_rules: DAMAGE_RULES = DAMAGE_RULES.new(self)
 var _cash_rng := RandomNumberGenerator.new()
 ## Mixagem de combate (ver `_hearing_gain_db`). Volumes da V1: recarga -5 dB
 ## (`Player._reload_audio`), explosão +3 dB (`Bullet._trigger_explosion`). O
@@ -904,12 +906,7 @@ func _stall_fire_at(target: Vector3) -> bool: return _firing._stall_fire_at(targ
 
 func _update_contact() -> void: _firing._update_contact()
 
-## Pessoas que pegam fogo: qualquer corpo vivo que receba dano, exceto o jogador e veículos. Antes só o papel
-## "civilian" acendia, e a maioria dos moradores é "urban_routine"/"ambient_worker", além de policiais e seguranças.
-func _can_ignite(target: Object) -> bool:
-	if not target is CharacterBody3D or target == player or PROTECTION.is_protected(target): return false
-	var role := String((target as Node).get_meta("gameplay_role", ""))
-	return role != "vehicle" and role != "player" and (target as Node).has_method("receive_damage")
+func _can_ignite(target: Object) -> bool: return _damage_rules._can_ignite(target)
 
 ## Pré-aquece os efeitos de combate sob a tela de carregamento (só se a partida ainda não liberou o jogo).
 func _prewarm_effects() -> void:
@@ -920,26 +917,7 @@ func _prewarm_effects() -> void:
 	if session == null or bool(session.get("ready_for_play")): return
 	effects.prewarm(player.global_position + Vector3.UP * 1.0)
 
-func _ignite_actor(actor: Node3D, source: Node) -> void:
-	if not is_instance_valid(actor) or actor.get("dead") == true: return
-	if not actor.has_method("receive_damage") or actor == player: return
-	var effect := actor.get_node_or_null("V2Burning")
-	if effect == null:
-		var active := get_tree().get_nodes_in_group("v2_burning_actor").size()
-		if active >= 24: return
-		effect = preload("res://gameplay/BurningActor.gd").new()
-		effect.name = "V2Burning"
-		effect.configure(actor, self, source)
-		actor.add_child(effect)
-		actor.set_meta("v2_burning", true)
-		var reactions: Node = world.get_node_or_null("CivilianReactionDirector")
-		if not is_instance_valid(reactions):
-			var production: Node = world.get("production")
-			reactions = production.get("civilian_reactions") if production != null else null
-		if is_instance_valid(reactions) and reactions.has_method("report_assault"):
-			reactions.report_assault(actor, source)
-	else:
-		effect.ignite(source)
+func _ignite_actor(actor: Node3D, source: Node) -> void: _damage_rules._ignite_actor(actor, source)
 
 func _melee_pick(origin: Vector3, direction: Vector3, data: Dictionary, id: String) -> Dictionary: return _melee_strike._melee_pick(origin, direction, data, id)
 
@@ -956,117 +934,19 @@ func _update_swing_trail(delta: float) -> void: _melee_strike._update_swing_trai
 func _is_invulnerable(actor: Object) -> bool:
 	return PROTECTION.is_protected(actor)
 
-## Um golpe do V1 do lança-chamas por alvo a cada 120 ms (o jato V2 é um raio a 20 Hz).
-func _flame_hit_due(target: Object) -> bool:
-	if not is_instance_valid(target): return false
-	var id := target.get_instance_id()
-	if _combat_clock - float(_flame_hit_at.get(id, -FLAME_HIT_COOLDOWN)) < FLAME_HIT_COOLDOWN: return false
-	_flame_hit_at[id] = _combat_clock
-	return true
+func _flame_hit_due(target: Object) -> bool: return _damage_rules._flame_hit_due(target)
 
-## Crime por ferir alguém, sem contar a mesma agressão duas vezes: chumbos do mesmo tiro (ou golpes da
-## mesma explosão) são uma denúncia por vítima; fonte contínua (`continuous`) só denuncia de novo depois
-## de CONTINUOUS_CRIME_COOLDOWN. Um golpe discreto novo (bala, faca) sempre denuncia.
-func _crime_due(victim: Object, continuous: bool) -> bool:
-	var id := victim.get_instance_id()
-	if continuous:
-		if float(_crime_window.get(id, -1.0)) > _combat_clock: return false
-		_crime_window[id] = _combat_clock + CONTINUOUS_CRIME_COOLDOWN
-	elif _in_pellet_volley and int(_crime_attack.get(id, -1)) == _attack_serial: return false
-	_crime_attack[id] = _attack_serial
-	return true
+func _crime_due(victim: Object, continuous: bool) -> bool: return _damage_rules._crime_due(victim, continuous)
 
-## Atropelamento com o veículo do jogador (chamado por `Actor.receive_damage` depois de o `Vehicle`
-## bater na vítima). A atribuição continua em `Vehicle.is_player_damage_source()`: tráfego, viaturas de
-## despacho (`external_input`) e carros sem o jogador ao volante NUNCA denunciam o jogador.
-## Regra: um crime por vítima por contato. Cada chamada renova o contato; só depois de
-## VEHICLE_CONTACT_GAP sem contato um novo atropelamento denuncia de novo. O valor (25) é o do V2;
-## o V1 denunciava 6 (vítima sobrevive) ou 20 (fatal), uma única vez.
-func report_vehicle_assault(victim: Node3D, vehicle: Node) -> void:
-	if not is_instance_valid(victim) or not is_instance_valid(vehicle): return
-	if not vehicle.has_method("is_player_damage_source") or not vehicle.is_player_damage_source(): return
-	var id := victim.get_instance_id()
-	var last := float(_vehicle_contact.get(id, -INF))
-	_vehicle_contact[id] = _combat_clock
-	var new_contact := _combat_clock - last > VEHICLE_CONTACT_GAP
-	# Mesma tabela do dano de arma: Cobra e segurança de comboio não viram homicídio de civil.
-	# Papel desconhecido continua valendo pessoa aqui: só Actor (pedestre) chega a esta função.
-	var victim_class := CRIME_VICTIMS.classify(victim)
-	if not CRIME_VICTIMS.reports_crime(victim_class): return
-	if victim_class == CRIME_VICTIMS.POLICE:
-		if new_contact: _report_police_assault(victim)
-		if victim.get("dead") == true: _report_police_killed(victim)
-		return
-	if victim.get("dead") == true:
-		_report_civilian_killed(victim, victim.global_position)
-	elif new_contact: report_observed_crime(25, victim.global_position, "vehicle_assault", victim)
+func report_vehicle_assault(victim: Node3D, vehicle: Node) -> void: _damage_rules.report_vehicle_assault(victim, vehicle)
 
-func _report_civilian_killed(victim: Node3D, crime_point: Vector3 = Vector3.INF) -> void:
-	# Same bounded per-victim death ledger as officers; a corpse is not a new crime.
-	var id := victim.get_instance_id()
-	if _police_kill_reported.has(id): return
-	_police_kill_reported[id] = true
-	# Ver um corpo distante não é ver quem atirou. Impactos de veículo informam o
-	# local da colisão; dano de arma precisa identificar a posição de tiro do jogador.
-	var observed := player.global_position if crime_point == Vector3.INF else crime_point
-	report_observed_crime(30, observed, "civilian_killed", victim)
+func _report_civilian_killed(victim: Node3D, crime_point: Vector3 = Vector3.INF) -> void: _damage_rules._report_civilian_killed(victim, crime_point)
 
-## Registros por vítima são inteiros (ids de instância), não referências: mesmo assim expiram por tempo,
-## saem quando o ator deixa de existir e são zerados na troca de região.
-func _prune_combat_registers() -> void:
-	for id in _crime_window.keys():
-		if float(_crime_window[id]) <= _combat_clock or not is_instance_id_valid(int(id)): _crime_window.erase(id)
-	for id in _flame_hit_at.keys():
-		if _combat_clock - float(_flame_hit_at[id]) > 1.0 or not is_instance_id_valid(int(id)): _flame_hit_at.erase(id)
-	for id in _vehicle_contact.keys():
-		if _combat_clock - float(_vehicle_contact[id]) > VEHICLE_CONTACT_GAP or not is_instance_id_valid(int(id)): _vehicle_contact.erase(id)
-	for id in _police_kill_reported.keys():
-		if not is_instance_id_valid(int(id)): _police_kill_reported.erase(id)
-	for id in _pain_next.keys():
-		if float(_pain_next[id]) <= _combat_clock or not is_instance_id_valid(int(id)): _pain_next.erase(id)
-	for id in _crime_attack.keys():
-		if not is_instance_id_valid(int(id)): _crime_attack.erase(id)
-	if _crime_attack.size() > 128: _crime_attack.clear()
-	_recent_impacts = _recent_impacts.filter(func(entry): return _combat_clock - float(entry.time) < IMPACT_GROUP_SECONDS)
+func _prune_combat_registers() -> void: _damage_rules._prune_combat_registers()
 
-func _clear_combat_registers() -> void:
-	_crime_window.clear()
-	_crime_attack.clear()
-	_flame_hit_at.clear()
-	_vehicle_contact.clear()
-	_police_kill_reported.clear()
-	_recent_impacts.clear()
-	_pain_next.clear()
-	_flame_crime_clock = 0.0
+func _clear_combat_registers() -> void: _damage_rules._clear_combat_registers()
 
-## `weapon`: dados da arma que atirou (PoliceAgent.scale_bullet_damage lê o calibre para o colete).
-func damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF, hit_point := Vector3.INF, weapon: Dictionary = {}) -> void:
-	# Lataria absorve 85% dos tiros, inclusive cada chumbo de escopeta.
-	# Mantém durabilidade, blindagem, colisões, fogo e explosões independentes.
-	if is_instance_valid(actor) and actor is Node and actor.get_meta("gameplay_role", "") == "vehicle":
-		if actor is Node3D and shot_from.is_finite() and shot_to.is_finite():
-			var glass := preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").owner_for(actor,true)
-			var broken: Dictionary = glass.shoot(shot_from,shot_to)
-			if not broken.is_empty():
-				# Rachadura (26/10): lascas de impacto e um estalo baixo; a chuva de cacos e o som cheio só
-				# quando o painel cai.
-				if broken.get("shattered",true):
-					if is_instance_valid(effects): effects.glass_shatter(broken.point,broken.normal)
-					_play_glass_break(broken.point)
-				else:
-					if is_instance_valid(effects): effects.impact(broken.point,broken.normal,"glass",amount)
-					_play_glass_break(broken.point,-9.0,1.25)
-			# Bala que passa rente ao centro de uma roda fura aquele pneu (com o estouro dele). O teste vai
-			# só 0,9 m além do impacto: tiro na porta não atravessa o carro e fura a roda do outro lado.
-			var tire_to := shot_to if not hit_point.is_finite() else hit_point + (shot_to - shot_from).normalized() * .9
-			preload("res://gameplay/police_response/ground/TirePuncture.gd").shoot(actor,shot_from,tire_to)
-			# Motorista do trânsito sentado: ferido, morto ou sai e foge (TrafficDriverPool).
-			preload("res://gameplay/traffic/TrafficDriverPool.gd").bullet_hit(world,actor,shot_from,shot_to,source)
-		amount *= 0.15
-	elif is_instance_valid(actor) and actor.has_method("scale_bullet_damage") and not _is_invulnerable(actor):
-		# Policial: cabeça × colete (PoliceAgent). Jogador, civis e demais NPCs não têm o método e não mudam.
-		amount = actor.scale_bullet_damage(amount, hit_point, weapon)
-	_damage(actor, amount, source)
+func damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF, hit_point := Vector3.INF, weapon: Dictionary = {}) -> void: _damage_rules.damage_bullet(actor, amount, source, shot_from, shot_to, hit_point, weapon)
 
 ## `continuous`: dano de jato ou de fogo em tique periódico (ver `_crime_due`).
 func _damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void:
@@ -1075,47 +955,11 @@ func _damage(actor: Object, amount: float, source: Node, continuous: bool = fals
 	STALL_WORK.finish_slow("gameplay.damage",began,10000,self)
 func damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void: _damage(actor, amount, source, continuous)
 
-func _stall_damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void:
-	if _is_invulnerable(actor): return
-	if actor == player:
-		damage_player(amount)
-	elif is_instance_valid(actor) and actor.has_method("receive_damage"):
-		var was_dead: bool = actor.get("dead") == true
-		actor.receive_damage(amount, source)
-		var role := String(actor.get_meta("gameplay_role", "")) if actor is Node else ""
-		var killed: bool = not was_dead and actor.get("dead") == true
-		if killed and actor is Node3D: _death_voice(actor as Node3D)
-		if actor is Node3D and role == "civilian" and not killed and source is Node3D:
-			var reactions: Node = world.get_node_or_null("CivilianReactionDirector") if is_instance_valid(world) else null
-			if is_instance_valid(reactions): reactions.report_assault(actor, source)
-		if actor is Node3D and role in ["civilian", "emergency"]:
-			emergency.report_injury(actor, actor.get("dead") == true)
-		var victim_class := CRIME_VICTIMS.classify(actor)
-		if source == player and not was_dead and CRIME_VICTIMS.reports_crime(victim_class):
-			if victim_class == CRIME_VICTIMS.POLICE:
-				if _crime_due(actor, continuous): _report_police_assault(actor as Node3D)
-				if killed: _report_police_killed(actor as Node3D)
-			elif killed and CRIME_VICTIMS.killing_is_murder(victim_class):
-				_report_civilian_killed(actor as Node3D)
-			elif _crime_due(actor, continuous):
-				report_observed_crime(12, player.global_position, "assault", actor as Node3D)
+func _stall_damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void: _damage_rules._stall_damage(actor, amount, source, continuous)
 
-## V1 `ensure_minimum_wanted_level(2)`: ferir um policial nunca pode deixar o
-## jogador abaixo de 30 pontos. Uma procura maior não recebe pontos artificiais
-## a cada pelota ou tique contínuo.
-func _report_police_assault(victim: Node3D) -> void:
-	if not is_instance_valid(victim): return
-	var missing := maxi(0, STAR_THRESHOLDS[2] - crime_points)
-	register_crime(missing, victim.global_position, "police_assault")
+func _report_police_assault(victim: Node3D) -> void: _damage_rules._report_police_assault(victim)
 
-## V1 `report_officer_killed`: depois da agressão soma pelo menos 30 pontos e
-## chega ao piso de 60. O id impede duplicação entre origens de dano.
-func _report_police_killed(victim: Node3D) -> void:
-	if not is_instance_valid(victim): return
-	var id := victim.get_instance_id()
-	if _police_kill_reported.has(id): return
-	_police_kill_reported[id] = true
-	register_crime(maxi(30, STAR_THRESHOLDS[3] - crime_points), victim.global_position, "police_killed")
+func _report_police_killed(victim: Node3D) -> void: _damage_rules._report_police_killed(victim)
 
 func reload_weapon() -> bool: return _arsenal.reload_weapon()
 
@@ -1193,9 +1037,7 @@ func _clear_chain_explosions() -> void: _explosions._clear_chain_explosions()
 
 func _trace_explosion_cost(stage: String, started: int) -> int: return _explosions._trace_explosion_cost(stage, started)
 
-## `from` é a posição de quem causou o dano (INF se não houver); a morte cai no lado oposto.
-func damage_player(amount: float, from := Vector3.INF) -> void:
-	_apply_player_damage(_shield_blocked(amount, from), true, from)
+func damage_player(amount: float, from := Vector3.INF) -> void: _damage_rules.damage_player(amount, from)
 
 ## Começa uma série: troca para os punhos (a arma na mão brigaria com o clipe) e toca o exercício.
 func play_exercise(clip: String, time: float) -> bool:
@@ -1220,21 +1062,9 @@ func _gym_world() -> Dictionary:
 	var world: Variant = state.get("world_state") if state != null else null
 	return world if world is Dictionary else {}
 
-## Escudo levantado e ataque vindo da frente: sobra só SHIELD_BLOCK_SHARE do dano.
-func _shield_blocked(amount: float, from: Vector3) -> float:
-	if not shield_block or not from.is_finite() or not is_instance_valid(player) or not is_finite(amount): return amount
-	var toward := from - player.global_position
-	toward.y = 0.0
-	if toward.length_squared() < 0.0001: return amount
-	var facing: Vector3 = -player.visual.global_basis.z
-	facing.y = 0.0
-	if facing.normalized().dot(toward.normalized()) < SHIELD_BLOCK_CONE: return amount
-	player.set_meta("shield_block_frame", Engine.get_physics_frames())
-	return amount * SHIELD_BLOCK_SHARE
+func _shield_blocked(amount: float, from: Vector3) -> float: return _damage_rules._shield_blocked(amount, from)
 
-func damage_environment(amount: float) -> void:
-	# Frio e outros danos ambientais não consomem colete balístico nem geram crime.
-	_apply_player_damage(amount, false)
+func damage_environment(amount: float) -> void: _damage_rules.damage_environment(amount)
 
 func arrest_player() -> bool:
 	if not police_can_arrest() or health <= 0 or state == null or not state.weapons_allowed() or player.input_locked: return false
@@ -1250,36 +1080,9 @@ func police_arrest_warning(actor: Node3D = null) -> void:
 	last_warning_actor = weakref(actor) if is_instance_valid(actor) else null
 	police_warning_issued.emit()
 
-func _apply_player_damage(amount: float, use_armor: bool, from := Vector3.INF) -> void:
-	if god_mode: return
-	if not is_finite(amount) or amount <= 0 or health <= 0 or state == null or not state.weapons_allowed(): return
-	var absorbed := minf(armor, amount * 0.65) if use_armor else 0.0
-	armor -= absorbed
-	if absorbed > 0.0 and is_instance_valid(player): player.set_meta("armor_hit_frame", Engine.get_physics_frames())
-	var prior_health := health
-	health = maxf(0, health - (amount - absorbed))
-	if use_armor and is_instance_valid(rage): rage.add_damage(prior_health - health + absorbed)
-	# Dano ambiental não é ferida aberta, mesmo quando é letal.
-	if use_armor: player_wounded.emit(health <= 0.0)
-	if health > 0.0:
-		_pain_voice(player, amount)
-		if use_armor and player.has_method("present_hit"): player.present_hit()
-	changed.emit()
-	if health == 0 and not _dead_notified:
-		if is_instance_valid(rage): rage.cancel("death")
-		_clear_chain_explosions()
-		_dead_notified = true
-		player.input_locked = true
-		if use_armor and is_instance_valid(effects): effects.stain(player.global_position, 0.8)
-		var push := player.global_position - from if from.is_finite() else Vector3.ZERO
-		if player.has_method("on_player_death"): player.on_player_death(-1, push)
-		player_died.emit()
+func _apply_player_damage(amount: float, use_armor: bool, from := Vector3.INF) -> void: _damage_rules._apply_player_damage(amount, use_armor, from)
 
-func heal(amount: float) -> bool:
-	if amount <= 0 or health <= 0 or health >= 100: return false
-	health = minf(100, health + amount)
-	changed.emit()
-	return true
+func heal(amount: float) -> bool: return _damage_rules.heal(amount)
 
 func respawn() -> void:
 	if is_instance_valid(rage): rage.cancel("respawn")
@@ -1398,10 +1201,7 @@ func pursuit_target() -> Node3D:
 var _police_rounds: Array[Dictionary] = []
 var hitmarker_until := 0.0
 
-func confirm_player_hit(collider: Object, amount: float) -> void:
-	if amount <= 0.0 or not is_instance_valid(collider) or _is_invulnerable(collider): return
-	if collider.has_method("receive_damage") or collider.has_method("receive_impact"):
-		hitmarker_until = _combat_clock + 0.16
+func confirm_player_hit(collider: Object, amount: float) -> void: _damage_rules.confirm_player_hit(collider, amount)
 
 func hitmarker_active() -> bool:
 	return _combat_clock < hitmarker_until
