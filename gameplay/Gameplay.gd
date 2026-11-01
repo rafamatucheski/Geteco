@@ -59,6 +59,8 @@ const KATANA_RULES := preload("res://gameplay/GameplayKatana.gd")
 var _katana_blade: KATANA_RULES = KATANA_RULES.new(self)
 const MELEE_STRIKE := preload("res://gameplay/GameplayMelee.gd")
 var _melee_strike: MELEE_STRIKE = MELEE_STRIKE.new(self)
+const FIRE_RULES := preload("res://gameplay/GameplayFire.gd")
+var _firing: FIRE_RULES = FIRE_RULES.new(self)
 var _cash_rng := RandomNumberGenerator.new()
 ## Mixagem de combate (ver `_hearing_gain_db`). Volumes da V1: recarga -5 dB
 ## (`Player._reload_audio`), explosão +3 dB (`Bullet._trigger_explosion`). O
@@ -622,24 +624,7 @@ func _muzzle_world_position() -> Vector3: return muzzle_world_position()
 
 func _flash_muzzle(id: String) -> void: _weapon_visuals._flash_muzzle(id)
 
-## Apaga o clarão e para o rugido do lança-chamas quando o gatilho solta ou o ataque é bloqueado.
-func _update_muzzle_and_flame(delta: float) -> void:
-	if _muzzle_timer > 0.0:
-		_muzzle_timer -= delta
-		if _muzzle_timer <= 0.0:
-			if is_instance_valid(_muzzle_flash): _muzzle_flash.hide()
-			if is_instance_valid(_muzzle_light): _muzzle_light.hide()
-	if _flame_clock > 0.0: _flame_clock -= delta
-	if _flame_crime_clock > 0.0: _flame_crime_clock -= delta
-	_prune_clock += delta
-	if _prune_clock >= REGISTER_PRUNE_INTERVAL:
-		_prune_clock = 0.0
-		_prune_combat_registers()
-	if is_instance_valid(_reload_audio) and _reload_audio.playing and reload_timer <= 0.0: _reload_audio.stop()
-	if is_instance_valid(_reload_audio) and _reload_audio.playing and is_instance_valid(player): _reload_audio.global_position = player.global_position
-	if is_instance_valid(_flame_audio) and _flame_audio.playing and is_instance_valid(player): _flame_audio.global_position = player.global_position
-	if is_instance_valid(_flame_audio) and _flame_audio.playing and (_flame_clock <= 0.0 or not attack_allowed() or equipped() != "flamethrower" or reload_timer > 0.0):
-		_flame_audio.stop()
+func _update_muzzle_and_flame(delta: float) -> void: _firing._update_muzzle_and_flame(delta)
 
 func _hit_effect(hit: Dictionary, amount: float, direction: Vector3) -> void: _weapon_visuals._hit_effect(hit, amount, direction)
 
@@ -738,29 +723,7 @@ func scope_part() -> String:
 
 func _play_punch_clip(id: String) -> void: _melee_strike._play_punch_clip(id)
 
-## Clipe de arma de fogo da UAL. `rate` estica o clipe para caber no tempo real (recarga).
-func _play_gun_clip(id: String, kind: String, rate: float = 1.0) -> void:
-	var spec: Dictionary = GUN_CLIPS.get(id, {})
-	if spec.is_empty() or not is_instance_valid(player) or not "animation" in player: return
-	if player is CharacterBody3D and (player as CharacterBody3D).velocity.length() > GUN_CLIP_MAX_SPEED: return
-	var animation: AnimationPlayer = player.animation
-	if animation == null: return
-	var start := 0.0
-	var clip: String
-	var end: float
-	if kind == "shoot":
-		clip = spec.shoot[0]; start = float(spec.shoot[1]); end = float(spec.shoot[2])
-	else:
-		clip = spec.reload
-		if not animation.has_animation(clip): return
-		end = animation.get_animation(clip).length
-	if not animation.has_animation(clip): return
-	_clip_name = clip
-	_clip_start = start
-	_clip_end = end
-	_clip_age = 0.0
-	_clip_rate = rate
-	_clip_weapon = id
+func _play_gun_clip(id: String, kind: String, rate: float = 1.0) -> void: _firing._play_gun_clip(id, kind, rate)
 
 func _cancel_combat_clip() -> void:
 	_clip_name = ""
@@ -862,14 +825,7 @@ func request_rage() -> bool: return _katana_blade.request_rage()
 
 func _katana_contact_time() -> float: return _katana_blade._katana_contact_time()
 
-## Coice de arma de fogo com o `recoil` e a velocidade de retorno de `WeaponPoseData.PROFILES`.
-func _update_recoil(delta: float) -> void:
-	if _recoil <= 0.0005:
-		if _recoil != 0.0:
-			_recoil = 0.0
-		return
-	var rate := float(POSE.PROFILES.get(equipped(), [Vector3.ZERO, Vector3.ZERO, 0.0, 12.0])[3])
-	_recoil *= exp(-rate * delta)
+func _update_recoil(delta: float) -> void: _firing._update_recoil(delta)
 
 func _pain_voice(victim: Node3D, amount: float) -> void: _combat_sound._pain_voice(victim, amount)
 
@@ -934,34 +890,9 @@ func _notification(what: int) -> void:
 
 func update_melee_buffer() -> void: _melee_strike.update_melee_buffer()
 
-## Mesma boca do cano, trajetória horizontal, máscara e alcance do tiro, sem dispersão.
-func aim_feedback() -> Dictionary:
-	var origin := muzzle_world_position()
-	var data := weapon_data(equipped())
-	if not data.get("is_explosive", false) and not data.get("is_grenade", false) and not data.get("is_flame", false):
-		var bridge := _muzzle_obstruction(origin)
-		if not bridge.is_empty():
-			return {"point": bridge.position, "blocked": bridge.collider is CollisionObject3D and (bridge.collider.collision_layer & 1) != 0}
-	var direction := aim_point - origin
-	direction.y = 0.0
-	if direction.length_squared() < 0.001: direction = Vector3.FORWARD
-	var distance := minf(direction.length(), float(data.get("max_range", 420.0)) / 16.0)
-	# Mantém o marcador do controle dentro do campo de visão útil. Os tiros mantêm o alcance total.
-	var controls := get_node_or_null("/root/GameInput")
-	if controls != null and (controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx()): distance = minf(distance, 10.0)
-	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction.normalized() * distance, 7, [player.get_rid()])
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	var blocked: bool = not hit.is_empty() and hit.collider is CollisionObject3D and (hit.collider.collision_layer & 1) != 0
-	return {"point": hit.get("position", query.to), "blocked": blocked}
+func aim_feedback() -> Dictionary: return _firing.aim_feedback()
 
-## Um cano longo pode atravessar uma parede antes que a cápsula de colisão do jogador
-## chegue nela. Checa o caminho físico do peito do atirador até a boca do cano além do
-## raio de saída, igual ao contrato de obstrução dos tiros de NPC.
-func _muzzle_obstruction(origin: Vector3) -> Dictionary:
-	var center := player.global_position + Vector3.UP * 1.1
-	var bridge := PhysicsRayQueryParameters3D.create(center, origin, 7, [player.get_rid()])
-	bridge.hit_from_inside = true
-	return get_world_3d().direct_space_state.intersect_ray(bridge)
+func _muzzle_obstruction(origin: Vector3) -> Dictionary: return _firing._muzzle_obstruction(origin)
 
 func fire_at(target: Vector3) -> bool:
 	var began := STALL_WORK.begin()
@@ -969,246 +900,9 @@ func fire_at(target: Vector3) -> bool:
 	STALL_WORK.finish_slow("gameplay.fire_at",began,10000,self)
 	return fired
 
-func _stall_fire_at(target: Vector3) -> bool:
-	if not attack_allowed() or not free_play_ok() or not is_instance_valid(player) or player.input_locked:
-		_clear_melee_action()
-		return false
-	var id := equipped()
-	if id.is_empty(): id = "fists"
-	if not CATALOG.WEAPONS.has(id): return false
-	if id != "fists" and not state.owns_weapon(id): return false
-	var data: Dictionary = weapon_data(id)
-	var melee_weapon: bool = data.get("is_melee", false)
-	if cooldown > 0 or reload_timer > 0 or not _pending_contact.is_empty():
-		if melee_weapon and reload_timer <= 0 and cooldown <= MELEE_CONTROL.BUFFER_SECONDS:
-			_melee_buffer = {"id": id, "until": _combat_clock + MELEE_CONTROL.BUFFER_SECONDS}
-		return false
-	_melee_buffer.clear()
-	_melee_action.clear()
-	_melee_rate = MELEE_CONTROL.rate(id, float(CATALOG.WEAPONS[id].fire_interval), float(data.fire_interval)) if melee_weapon else 1.0
-	var grenade: bool = data.get("is_grenade", false)
-	var has_ammo: bool = int(state.get_ammo(id).get("magazine", 0)) > 0 if grenade else true
-	if not melee_weapon and (not has_ammo or (not grenade and not state.consume_ammo(id, 1))):
-		# V1 (`Player._shoot_towards`): pente vazio recarrega sozinho quando há reserva.
-		cooldown = 0.25
-		if not grenade: _firefly_sound("weapons_fire", "dry_fire", player.global_position, -7.0, 20.0)
-		if not reload_weapon(): message.emit("Sem munição.")
-		return false
-	cooldown = float(data.fire_interval) / float(MELEE_CONTROL.profile(id).rate) if melee_weapon else float(data.fire_interval)
-	_attack_serial += 1
-	_aim_hold = AIM_HOLD + float(RIG_POSE.MELEE_CONTACT.get(id, 0.0))
-	var bag_recoil := 3.0 if state.get("economy") != null and state.economy.grid_handbag() and not melee_weapon else 1.0
-	_rig_pose.attack(id, float(data.get("recoil_multiplier", 1.0))*bag_recoil)
-	if not melee_weapon: _recoil = float(POSE.PROFILES.get(id, [Vector3.ZERO, Vector3.ZERO, 0.0, 12.0])[2])*bag_recoil*float(data.get("recoil_multiplier", 1.0))
-	if not melee_weapon and not grenade: weapon_fired.emit(id, player.global_position)
-	# Spans por parte (27/10): `gameplay.fire_at` chegou a 33 ms num quadro (rodada de 24/10) sem dizer onde.
-	var part_span := STALL_WORK.begin()
-	if melee_weapon: _melee_swing_sound(id, data)
-	elif data.get("is_flame", false): _flame_sound()
-	elif grenade: _firefly_sound("weapons_fire", "grenade_pin", player.global_position, -9.0, 14.0) # O arremesso e a munição acompanham a saída da mão.
-	else: _shot_sound(id, data)
-	STALL_WORK.finish_slow("gameplay.fire_at.sound", part_span, 2000, self)
-	part_span = STALL_WORK.begin()
-	if not melee_weapon and not data.get("is_grenade", false): _flash_muzzle(id)
-	STALL_WORK.finish_slow("gameplay.fire_at.muzzle", part_span, 2000, self)
-	aim_point = target
-	var origin := muzzle_world_position()
-	var direction := target - origin
-	direction.y = 0
-	if direction.length_squared() < 0.001: direction = Vector3.FORWARD
-	direction = direction.normalized()
-	if data.get("is_flame", false):
-		# O bico lido acima ainda está na pose do quadro anterior; girando a mira, o
-		# jato saía de lado ou de trás do Dante. Mantém altura e alcance do bico e o
-		# gira para a direção nova.
-		# Gira o bico real em torno do Dante pelo quanto a mira mudou desde o quadro
-		# anterior. Antes o jato era recolocado no centro do corpo + direção x raio:
-		# perdia o deslocamento lateral e a altura da arma na cintura e nascia no
-		# ar à frente do peito, longe do lança-chamas (feedback de 25/09/2026).
-		var barrel := -gun.global_basis.z if is_instance_valid(gun) else direction
-		barrel.y = 0.0
-		if barrel.length_squared() > 0.0001:
-			var turn := barrel.normalized().signed_angle_to(direction, Vector3.UP)
-			var offset := origin - player.global_position
-			origin = player.global_position + offset.rotated(Vector3.UP, turn)
-		# A pose do bico é do quadro anterior: andando, o jogador já avançou desde então e o jato nascia atrás da arma.
-		origin += Vector3(player.velocity.x, 0.0, player.velocity.z) * get_physics_process_delta_time()
-	var defense_ray := PhysicsRayQueryParameters3D.create(origin, origin + direction * float(data.get("max_range", 420.0)) / 16.0, 7, [player.get_rid()])
-	var muzzle_bridge: Dictionary = {}
-	if not melee_weapon and not grenade and not data.get("is_explosive", false) and not data.get("is_flame", false):
-		muzzle_bridge = _muzzle_obstruction(origin)
-	var defense_hit := muzzle_bridge if not muzzle_bridge.is_empty() else get_world_3d().direct_space_state.intersect_ray(defense_ray)
-	var self_defense: bool = not defense_hit.is_empty() and defense_hit.collider.get_meta("gameplay_role", "") == "cobra"
-	if "combat_facing" in player: player.combat_facing = atan2(-direction.x, -direction.z)
-	elif is_instance_valid(player.visual): player.visual.rotation.y = atan2(-direction.x, -direction.z)
-	if grenade:
-		_pending_contact = {"id": id, "target": target, "data": data, "time": RIG_POSE.GRENADE_RELEASE, "self_defense": self_defense}
-	elif data.get("is_explosive", false):
-		var shot := PROJECTILE.new()
-		shot.controller = self
-		shot.shooter = player
-		shot.grenade = data.get("is_grenade", false)
-		shot.damage = data.damage
-		shot.radius = float(data.blast_radius) / 16.0
-		# V1: a granada dura 2,0 s e o alcance vem da distância até o alvo (60 px até
-		# `throw_range`); o foguete não fere quem o disparou (`Bullet._trigger_explosion`).
-		shot.fuse = GRENADE_FUSE if shot.grenade else float(data.max_range) / float(data.projectile_speed)
-		shot.hurt_shooter = shot.grenade
-		if shot.grenade:
-			var flat_target := target - origin
-			flat_target.y = 0
-			var throw_distance := clampf(flat_target.length(), GRENADE_MIN_THROW, float(data.get("throw_range", 320.0)) / 16.0)
-			shot.velocity = direction * (throw_distance * GRENADE_LANDING_SHARE / GRENADE_AIR_TIME)
-			shot.velocity.y = 5.5
-		else:
-			shot.velocity = direction * float(data.projectile_speed) / 16.0
-		add_child(shot)
-		shot.global_position = origin
-		if not shot.grenade: effects.backblast(origin, direction)
-	elif melee_weapon:
-		# Golpe procedural da V1 (`WeaponRigPose`: socos alternados, soqueira em
-		# quatro variações, faca, arco de ombro do machado/taco). Os clipes
-		# `Attack`/`Punch_Forward_with_Both_Fists` do GLB moviam o corpo inteiro e
-		# ignoravam a arma na mão; ficam fora do golpe.
-		_start_swing(data, direction)
-		_play_punch_clip(id)
-		if id in NATIVE_SWORDS: _play_katana_clip(id)
-		var contact_time := _katana_contact_time() if id in NATIVE_SWORDS else float(RIG_POSE.MELEE_CONTACT.get(id, 0.14))
-		var profile: Dictionary = MELEE_CONTROL.profile(id)
-		_melee_action = {"id": id, "direction": direction, "locked": false, "contact": contact_time, "window": float(profile.window), "heavy": _katana_combo == (2 if id == "sword_shield" else 1) if id in NATIVE_SWORDS else _rig_pose.heavy_attack()}
-		_pending_contact = {"id": id, "target": target, "data": data, "time": contact_time}
-		_aim_hold = (contact_time + float(profile.window)) / _melee_rate
-		if (id in MELEE_FOLEY.WEAPONS or id in NATIVE_SWORDS) and not (id == "katana" and katana_style().saber) and not _pending_swing.is_empty():
-			var peak: float = {"knife": 0.08, "bat": 0.13, "katana": 0.11, "axe": 0.145, "sword_shield": 0.11}[id]
-			_pending_swing.time = maxf(0.0, contact_time - peak * _melee_rate)
-	else:
-		_in_pellet_volley = true
-		part_span = STALL_WORK.begin()
-		if not data.get("is_flame", false):
-			effects.weapon_shot(id, gun.to_global(Vector3(0.025, 0.05, -0.025)), direction, int(state.get_ammo(id).get("magazine", 0)))
-		STALL_WORK.finish_slow("gameplay.fire_at.weapon_shot", part_span, 2000, self)
-		# Chumbos no mesmo corpo viram UM respingo com o dano somado: oito respingos,
-		# oito vozes de dor e até sete poças no mesmo cadáver (o corpo ainda está no
-		# espaço de física durante a rajada) deixavam a escopeta estranha.
-		var flesh_hits: Dictionary = {}
-		var speed := Vector2(player.velocity.x, player.velocity.z).length()
-		var spread := _handling.shot_spread(id, data, _combat_clock, speed, aim_active)
-		for pellet in int(data.get("pellets", 1)):
-			var ray_direction := direction.rotated(Vector3.UP, _rng.randf_range(-spread, spread))
-			var distance := float(data.get("max_range", 420.0)) / 16.0
-			var query := PhysicsRayQueryParameters3D.create(origin, origin + ray_direction * distance, 7, [player.get_rid()])
-			var hit := muzzle_bridge if not muzzle_bridge.is_empty() else get_world_3d().direct_space_state.intersect_ray(query)
-			var end: Vector3 = hit.get("position", query.to)
-			var shot_from: Vector3 = origin if muzzle_bridge.is_empty() else player.global_position + Vector3.UP * 1.1
-			var shot_to: Vector3 = query.to if muzzle_bridge.is_empty() else end
-			if not hit.is_empty():
-				var amount := CATALOG.distance_damage(int(data.damage), origin.distance_to(end) * 16.0, float(data.get("falloff_start", 0)), float(data.get("max_range", 420)), float(data.get("min_damage_ratio", 1)))
-				if data.get("is_flame", false):
-					if _flame_hit_due(hit.collider):
-						if _can_ignite(hit.collider):
-							_ignite_actor(hit.collider as Node3D, player)
-						_damage(hit.collider, amount, player, true)
-						if hit.collider is Node and String(hit.collider.get_meta("gameplay_role", "")) == "vehicle":
-							var damage_look: Variant = hit.collider.get("damage_look")
-							if is_instance_valid(damage_look) and damage_look.has_method("ignite"): damage_look.ignite(player)
-				else:
-					part_span = STALL_WORK.begin()
-					damage_bullet(hit.collider, amount, player, shot_from, shot_to, end, data)
-					STALL_WORK.finish_slow("gameplay.fire_at.damage", part_span, 2000, hit.collider as Node)
-					confirm_player_hit(hit.collider, amount)
-					part_span = STALL_WORK.begin()
-					_impact_sound(hit.collider, end, float(amount), hit.normal)
-					STALL_WORK.finish_slow("gameplay.fire_at.impact_sound", part_span, 2000, self)
-					if _impact_material(hit.collider) == "flesh":
-						var key: int = hit.collider.get_instance_id()
-						if flesh_hits.has(key): flesh_hits[key].amount += float(amount)
-						else: flesh_hits[key] = {"hit": hit, "amount": float(amount), "direction": ray_direction}
-					else:
-						part_span = STALL_WORK.begin()
-						_hit_effect(hit, float(amount), ray_direction)
-						STALL_WORK.finish_slow("gameplay.fire_at.hit_effect", part_span, 2000, hit.collider as Node)
-			if data.get("is_flame", false):
-				var reach := origin.distance_to(end)
-				# O jato visual segue a mira com leque curto; o espalhamento de ±0,2 rad
-				# do dano jogava cada pacote para um lado e a chama lia como borrifo.
-				effects.flame(origin, direction.slerp(ray_direction, 0.3), reach)
-				# Fogo no chão ao longo do fim do jato, não sempre na ponta do alcance:
-				# errando o alvo, cada disparo acendia um foco a 8,75 m em leque.
-				emergency.ignite(origin + ray_direction * reach * _rng.randf_range(0.55, 1.0), player, 0.3)
-			elif muzzle_bridge.is_empty():
-				part_span = STALL_WORK.begin()
-				effects.tracer(origin, end, float(data.get("projectile_speed", 920.0)) / 16.0, data.get("tracer_color", Color("ffe36b")), float(data.get("damage", 16.0)))
-				STALL_WORK.finish_slow("gameplay.fire_at.tracer", part_span, 2000, self)
-		part_span = STALL_WORK.begin()
-		for entry in flesh_hits.values():
-			_hit_effect(entry.hit, entry.amount, entry.direction)
-		STALL_WORK.finish_slow("gameplay.fire_at.flesh_effect", part_span, 2000, self)
-		_in_pellet_volley = false
-		_handling.fired(id, data, _combat_clock)
-	if not melee_weapon and not grenade and not self_defense:
-		if data.get("is_flame", false):
-			# Jato contínuo: a denúncia do disparo acompanha o tempo, não os 20 disparos por segundo.
-			if _flame_crime_clock <= 0.0:
-				_flame_crime_clock = FLAME_SHOT_CRIME_INTERVAL
-				report_observed_crime(4, player.global_position, "gunfire")
-		else:
-			var crime_span := STALL_WORK.begin()
-			report_observed_crime(1 if data.get("suppressed", false) else 4, player.global_position, "suppressed" if data.get("suppressed", false) else "gunfire")
-			STALL_WORK.finish_slow("gameplay.fire_at.crime", crime_span, 2000, self)
-	var tail_span := STALL_WORK.begin()
-	_play_gun_clip(id, "shoot")
-	changed.emit()
-	STALL_WORK.finish_slow("gameplay.fire_at.clip_changed", tail_span, 2000, self)
-	return true
+func _stall_fire_at(target: Vector3) -> bool: return _firing._stall_fire_at(target)
 
-## Resolve o contato na posição atual, uma vez, no mesmo tempo da pose. Pausa
-## congela ambos; troca de arma, morte, garagem e transição cancelam a ação.
-func _update_contact() -> void:
-	if _pending_contact.is_empty(): return
-	var id: String = _pending_contact.id
-	var current_id := equipped()
-	if current_id.is_empty(): current_id = "fists"
-	if not attack_allowed() or not free_play_ok() or player.input_locked or current_id != id:
-		_pending_contact.clear()
-		_clear_melee_action()
-		return
-	if _rig_pose.action_age + 0.00001 < float(_pending_contact.time): return
-	var contact := _pending_contact
-	var origin: Vector3 = player.global_position + Vector3.UP * 1.05
-	var direction: Vector3 = contact.target - origin
-	direction.y = 0.0
-	direction = direction.normalized() if direction.length_squared() > 0.001 else Vector3.FORWARD
-	if id != "grenade":
-		if not _melee_action.is_empty():
-			_melee_action.locked = true
-			direction = _melee_action.direction
-		var hit := melee(origin, direction, contact.data, id)
-		if hit or _rig_pose.action_age >= float(contact.time) + float(MELEE_CONTROL.profile(id).window):
-			_pending_contact = {}
-		return
-	_pending_contact = {}
-	if not state.consume_ammo(id, 1): return
-	if _weapon_visuals._player_rig(): origin = player.combat_palm_position("Right")
-	var flat_target: Vector3 = contact.target - origin
-	flat_target.y = 0.0
-	direction = flat_target.normalized() if flat_target.length_squared() > 0.001 else direction
-	var shot := PROJECTILE.new()
-	shot.controller = self
-	shot.shooter = player
-	shot.grenade = true
-	shot.damage = contact.data.damage
-	shot.radius = float(contact.data.blast_radius) / 16.0
-	shot.fuse = GRENADE_FUSE
-	shot.hurt_shooter = true
-	var distance := clampf(flat_target.length(), GRENADE_MIN_THROW, float(contact.data.get("throw_range", 320.0)) / 16.0)
-	shot.velocity = direction * (distance * GRENADE_LANDING_SHARE / GRENADE_AIR_TIME)
-	shot.velocity.y = 5.5
-	add_child(shot)
-	shot.global_position = origin
-	_play_stream(AUDIO.grenade_throw(), origin, 0.0)
-	weapon_fired.emit(id, origin)
-	if not contact.self_defense: report_observed_crime(4, player.global_position, "explosion")
-	changed.emit()
+func _update_contact() -> void: _firing._update_contact()
 
 ## Pessoas que pegam fogo: qualquer corpo vivo que receba dano, exceto o jogador e veículos. Antes só o papel
 ## "civilian" acendia, e a maioria dos moradores é "urban_routine"/"ambient_worker", além de policiais e seguranças.
