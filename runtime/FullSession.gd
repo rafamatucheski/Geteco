@@ -325,7 +325,6 @@ func cancel_for(stage: StringName) -> bool:
 		system.callv(method, step[2] if step.size() > 2 else [])
 		if rule == "abort_if_active" and system.active: return false
 	return true
-func _cancel_for(stage: StringName) -> bool: return cancel_for(stage)
 
 func _cancel_system(path: String) -> Object:
 	if path.is_empty(): return self
@@ -358,13 +357,11 @@ func _finish_transition(token: int) -> void: finish_transition(token)
 
 func routine_director():
 	return world.get_node_or_null("V1RoutineDirector") if world != null else null
-func _routine_director(): return routine_director()
 
 func refresh_routine_context() -> void:
 	var routines = routine_director()
 	if routines != null: routines.refresh_context()
 	if urban_operations != null: urban_operations.refresh_context()
-func _refresh_routine_context() -> void: refresh_routine_context()
 
 func sync_location_presentation() -> void:
 	if is_instance_valid(weather): weather._update()
@@ -373,7 +370,6 @@ func sync_location_presentation() -> void:
 	var city_look := world.get_node_or_null("CityLook") as Node
 	if city_look != null: city_look._refresh_silhouette()
 	if world.hud.has_method("refresh_from_state"): world.hud.refresh_from_state()
-func _sync_location_presentation() -> void: sync_location_presentation()
 
 func _vehicle_transition_snapshot(car: CharacterBody3D) -> Dictionary:
 	return {
@@ -425,7 +421,6 @@ func _restore_vehicle_transition_snapshot(snapshot: Dictionary, car: CharacterBo
 func restore_transition_player_lock(previous: bool, token: int) -> void:
 	if token != transition_generation or world.gameplay.health <= 0 or rescue_pending or arrest_pending: return
 	world.player.input_locked = previous
-func _restore_transition_player_lock(previous: bool, token: int) -> void: restore_transition_player_lock(previous, token)
 
 func _discard_place_candidate(candidate: Node3D, owned: bool) -> void:
 	if not is_instance_valid(candidate): return
@@ -1659,7 +1654,6 @@ func find_sewer_hatch(place_id := "harbor_sewer") -> Node3D:
 				best_distance = distance
 				best = node
 	return best
-func _find_sewer_hatch(place_id := "harbor_sewer") -> Node3D: return find_sewer_hatch(place_id)
 
 func _close_sewer_hatch_for_transition(token: int) -> void:
 	if not is_instance_valid(sewer_hatch) or not sewer_hatch.has_method("set_open_amount"): return
@@ -1768,7 +1762,6 @@ func service_threatened(npc_id := "") -> bool:
 		for actor in robberies._actors:
 			if is_instance_valid(actor) and not actor.guard and actor.get_meta("workplace_threatened", false): return true
 	return false
-func _service_threatened(npc_id := "") -> bool: return service_threatened(npc_id)
 
 func _on_workplace_threat_started(actor: Node3D) -> void:
 	var local_staff: bool = actor == static_service_actor or room_npcs.has(actor) or (robberies != null and robberies._actors.has(actor))
@@ -2021,7 +2014,6 @@ func perform_urban_action(target: String) -> bool:
 	if target == "truckers_village_tonico" and is_instance_valid(quest) and not quest.data.started:
 		if not save_game(true): return false
 	return urban_operations.perform(target)
-func _perform_urban_action(target: String) -> bool: return perform_urban_action(target)
 
 func _intro_interact(id: String) -> bool:
 	if id == "maciota" and state.intro.stage == "meet_maciota" and not save_game(true): return false
@@ -2221,7 +2213,6 @@ func toggle_weapon_flashlight() -> void:
 	if not state.can_attack() or id in ["", "fists"]: return
 	if not preload("res://gameplay/WeaponCustomization.gd").installed(world.gameplay.customization, id):
 		show_message("Instale uma lanterna nesta arma na Ammu-Nation.")
-func _toggle_weapon_flashlight() -> void: toggle_weapon_flashlight()
 
 const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
 ## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
@@ -2394,7 +2385,6 @@ func update_world_indicator() -> void:
 	arrow.visible = state.place_id.is_empty() and not Rect2(40,90,1200,520).has_point(screen)
 	arrow.position = Vector2(clampf(screen.x,40,1220),clampf(screen.y,90,610))
 	arrow.rotation = (screen-Vector2(640,360)).angle()+PI/2
-func _update_world_indicator() -> void: update_world_indicator()
 
 func _menu(title: String) -> void: _menus._menu(title)
 func menu(title: String) -> void: _menu(title)
@@ -2441,10 +2431,6 @@ func apply_outfit() -> void:
 	if world.player.has_method("set_outfit"): world.player.set_outfit(outfit)
 	preload("res://activities/amusement_park/AmusementParkCosmetics.gd").apply(world.player,state.world_state)
 	preload("res://assets/outfits/DanteAccessories.gd").apply(world.player,preload("res://systems/wardrobe/AccessoryState.gd").equipped(state.world_state))
-
-func advance_residence_time(target: float) -> bool:
-	if target not in [.36,.84] or not can_rest_at_residence(): return false
-	return advance_residence_minutes(maxi(1,roundi(fposmod(target-float(weather.time_of_day),1.0)*1440.0)))
 
 func can_rest_at_residence() -> bool:
 	if controller.save_invalid or weather == null: return false
