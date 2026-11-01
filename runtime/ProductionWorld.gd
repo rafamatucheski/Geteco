@@ -1911,17 +1911,6 @@ func _repath_ambient_traffic() -> void:
 		car.route = route
 		car.route_distance = route.get_closest_offset(car.global_position)
 
-func _near_segment() -> Dictionary:
-	var options := []
-	for road in ambient_roads_cache:
-		for i in range(road.points.size()-1):
-			var a: Vector3 = road.points[i]
-			var b: Vector3 = road.points[i+1]
-			var point := Geometry3D.get_closest_point_to_segment(world.player.position,a,b)
-			if point.distance_to(world.player.position) < POPULATION_SPAWN_MAX and a.distance_to(b) > 4:
-				options.append({"a":a,"b":b,"width":road.width})
-	return options.pick_random() if not options.is_empty() else {}
-
 ## Ponto dentro do quadro da câmera (com folga de `radius` metros e 10% da tela).
 func _on_screen(point: Vector3, radius: float = 1.0) -> bool:
 	var camera := get_viewport().get_camera_3d()
