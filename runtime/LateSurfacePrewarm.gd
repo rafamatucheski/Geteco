@@ -101,6 +101,7 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 			visual.position = Vector3((column % 6 - 2.5) * FORMAT.SPACING, .6 + floorf(column / 6.0) * FORMAT.SPACING, 0)
 			stage.add_child(visual)
 			column += 1
+	column += _hideout_gate_steel(stage, column)
 	var props := 0
 	if OS.get_environment("GETECO_PROP_ALPHA_PREWARM") != "0": props = _alpha_props(stage)
 	# Envelope da mobília: caixa sem material (o jogo a cria escondida; aqui desenhada).
@@ -129,6 +130,35 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	_done = completed
 	last_summary = {"completed": completed, "draws": draws[0], "silhouette_formats": pieces, "player_parts": borrowed.size(), "dressing": column, "alpha_props": props, "usec": Time.get_ticks_usec() - began}
 	print("Superfícies tardias preparadas: ", JSON.stringify(last_summary))
+
+## Aço do portão do galpão do piloto (31/10): a porta de enrolar do Digo (DigoVehicleGate) agora também
+## aparece em Harbor, longe da cortina do deserto. Painel com `material_override` e nervuras em MultiMesh
+## com o material na malha, como o portão monta. O material é o mesmo do cache (DesertInteriorFinish),
+## que já o retém. Devolve quantas peças entraram.
+static func _hideout_gate_steel(stage: Node3D, column: int) -> int:
+	var steel: Material = preload("res://world/desert/DesertInteriorFinish.gd").material("steel")
+	var panel := MeshInstance3D.new()
+	panel.name = "HideoutGateSteel"
+	var panel_mesh := BoxMesh.new()
+	panel_mesh.size = Vector3(.2, .2, .02)
+	panel.mesh = panel_mesh
+	panel.material_override = steel
+	panel.position = Vector3((column % 6 - 2.5) * FORMAT.SPACING, .6 + floorf(column / 6.0) * FORMAT.SPACING, 0)
+	stage.add_child(panel)
+	var rib := BoxMesh.new()
+	rib.size = Vector3(.2, .02, .02)
+	rib.material = steel
+	var ribs := MultiMesh.new()
+	ribs.transform_format = MultiMesh.TRANSFORM_3D
+	ribs.mesh = rib
+	ribs.instance_count = 1
+	ribs.set_instance_transform(0, Transform3D.IDENTITY)
+	var rib_view := MultiMeshInstance3D.new()
+	rib_view.name = "HideoutGateRibs"
+	rib_view.multimesh = ribs
+	rib_view.position = Vector3(((column + 1) % 6 - 2.5) * FORMAT.SPACING, .6 + floorf((column + 1) / 6.0) * FORMAT.SPACING, 0)
+	stage.add_child(rib_view)
+	return 2
 
 ## Cada tipo do kit de adereços com a malha e os materiais do jogo, no passe alfa (transparência 0,5), e
 ## esfera/caixa de material padrão (peças de destroço sem material). Devolve quantas peças entraram.

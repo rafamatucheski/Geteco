@@ -9,8 +9,21 @@ const IDS := ["pilot_tape_01", "pilot_tape_02", "pilot_tape_03", "pilot_tape_04"
 	"pilot_tape_06", "pilot_tape_07", "pilot_tape_08", "pilot_tape_09", "pilot_tape_10"]
 const HIDEOUT_RECEIPT := "pilot_tapes_hideout"
 const HIDEOUT_NAME := "Galpão do piloto"
-## Pátio dos Armazéns (ActivityDefinitions.delivery_yards "harbor_cold_storage", 1984,952 px / 16).
-const HIDEOUT_POINT := Vector3(124, 0, 59.5)
+## Portão na baia de carga dos fundos do ColdStorage (Pátio dos Armazéns, "COLD STORAGE / 04"),
+## voltado para a foundry_avenue (z=25). Antes ficava solto em (124, 59.5), que é o centro do drift
+## "harbor_cold_storage" (raio 8,1 m): a barreira fechada cortava a pista. Conta da posição: prédio em
+## (162,5; 44,375) nos dados da V1, fachada pintada "camara-fria" com 16 m de largura (footprint_width
+## corta os 26,25 m da V1 para um módulo) e 17,5 m de fundo; o vão sem folha dos fundos (rect
+## 0,243–0,507 do módulo) tem centro em x local +2,0 (fundos giram 180°) e a parede fica em z=35,625.
+## O portão (5,4 m) cobre o vão (4,2 m); 0,1 m para fora da parede. Fica a ~47 m do centro do drift.
+const HIDEOUT_POINT := Vector3(164.5, 0, 35.525)
+## Fundos olham para -Z: o portão gira meia volta para as nervuras ficarem do lado da rua.
+const HIDEOUT_YAW := PI
+## O raio que assenta o portão no chão desce 1,5 m para fora da parede: em cima do ponto ele
+## podia bater na cornija e pôr o portão no telhado.
+const HIDEOUT_GROUND_PROBE := Vector3(164.5, 0, 34.0)
+## Distância mínima entre o portão e a área do drift do pátio (borda do círculo).
+const HIDEOUT_DRIFT_CLEARANCE := 12.0
 ## Rótulo curto (tela de colecionáveis).
 const PLACES := {
 	"pilot_tape_01": "Garagem do Chefe, porto sul", "pilot_tape_02": "Quartel Northgate",
