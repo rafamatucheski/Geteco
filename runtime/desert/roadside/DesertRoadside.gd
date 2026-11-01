@@ -58,7 +58,7 @@ func _process(delta: float) -> void:
 	if not _outside():
 		_park_all()
 		return
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	var planar := Vector2(player.x, player.z)
 	var region: Node3D = session.controller.regions.get("desert")
 	if not is_instance_valid(region): return
@@ -106,7 +106,7 @@ func _park_vehicles(player: Vector2) -> void:
 ## cima ver o cômodo. Por quadro, mas só nos lugares montados que têm cômodo (três) e sem alocar.
 func _walk_in_roofs() -> void:
 	if sites.is_empty() or not is_instance_valid(session) or not session.ready_for_play: return
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	for record in sites.values():
 		if record.parked or not record.has("roofs"): continue
 		var roofs: Node3D = record.roofs
@@ -265,7 +265,7 @@ func _needs_repair(car: Node) -> bool:
 	return float(car.get("health")) < float(car.get("max_health")) - .5 or int(car.get_meta("punctured_tires", 0)) > 0
 
 func _repair() -> bool:
-	var car: CharacterBody3D = session.world.driving.car
+	var car: CharacterBody3D = session.player_vehicle()
 	if not is_instance_valid(car): return false
 	var economy = session.state.economy
 	if not economy.spend(BALANCE.ROADSIDE_REPAIR, STATE.next_receipt(session.state.world_state, "repair")):
@@ -316,7 +316,7 @@ func _light_candle() -> bool:
 
 ## Balança: massa do catálogo do veículo (toneladas) com um pouco de carga e combustível.
 func _weigh() -> bool:
-	var car: CharacterBody3D = session.world.driving.car
+	var car: CharacterBody3D = session.player_vehicle()
 	if not is_instance_valid(car): return false
 	var spec: Dictionary = VEHICLES.VEHICLES.get(str(car.get("archetype")), {})
 	var kilos := int(round(float(spec.get("mass", 1.2)) * 1000.0 * (1.0 + float(car.get_instance_id() % 7) * .01) / 10.0)) * 10
@@ -339,7 +339,7 @@ func _tick_courier(delta: float) -> void:
 	if session.get_tree().paused: return
 	courier.left = float(courier.left) - delta
 	var route: Dictionary = courier.route
-	var at: Vector3 = session.world.driving.car.global_position if session.world.driving.occupied and is_instance_valid(session.world.driving.car) else session.world.player.global_position
+	var at: Vector3 = session.player_vehicle().global_position if session.player_in_vehicle() and is_instance_valid(session.player_vehicle()) else session.player_position()
 	if session.state.region_id == "desert" and Vector2(at.x, at.z).distance_to(Vector2(route.point.x, route.point.z)) <= COURIER_ARRIVAL:
 		var pay := int(BALANCE.ROADSIDE_COURIER.get(str(route.id), 0))
 		var receipt := str(courier.receipt)
@@ -354,7 +354,7 @@ func _tick_courier(delta: float) -> void:
 
 func _climb_tower() -> bool:
 	var record := _record("radio_tower")
-	var origin: Vector3 = record.root.global_position if not record.is_empty() else session.world.player.global_position
+	var origin: Vector3 = record.root.global_position if not record.is_empty() else session.player_position()
 	# Cada subida aponta até três achados novos; os já marcados ficam no mapa até serem achados.
 	var seen: Array = SECRETS.nearest(session.state.world_state, session.state.economy, origin, 3, STATE.data(session.state.world_state).revealed)
 	if seen.is_empty():

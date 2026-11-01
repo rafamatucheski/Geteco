@@ -105,7 +105,7 @@ func _advance_police_rounds(delta: float) -> void:
 		if not hit.is_empty():
 			var data: Dictionary = round_index.data
 			var damage := CATALOG.distance_damage(int(round_index.damage), float(round_index.distance) * 16.0, float(data.get("falloff_start", 170.0)), float(data.get("max_range", 420.0)), float(data.get("min_damage_ratio", 0.25)))
-			g._damage_bullet(hit.collider, damage, round_index.source.get_ref(), shot_from, glass_limit, end, data)
+			g.damage_bullet(hit.collider, damage, round_index.source.get_ref(), shot_from, glass_limit, end, data)
 			g._impact_sound(hit.collider, end, damage, hit.normal)
 			g._hit_effect(hit, damage, round_index.direction)
 		if finished: g._police_rounds.remove_at(index)

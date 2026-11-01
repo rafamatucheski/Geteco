@@ -102,7 +102,7 @@ func _exit_tree() -> void:
 
 func refresh_context() -> void:
 	if session == null or not is_instance_valid(session.world.player): return
-	active = session.state.region_id=="harbor" and session.state.place_id.is_empty() and session.world.player.global_position.distance_to(Vector3(230,0,192))<115
+	active = session.state.region_id=="harbor" and session.state.place_id.is_empty() and session.player_position().distance_to(Vector3(230,0,192))<115
 	visible = active
 	if motor!=null:
 		if active and phase!="away" and not motor.playing: motor.play()
@@ -193,7 +193,7 @@ func _sync_gate() -> void:
 	boarding_gate.solids.collision_layer = 1 if gate_closed else 0
 
 func _boarding_clear() -> bool:
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	if absf(player.x-BERTH.x)<3 and player.z<192 and player.z>176: return false
 	for actor in passengers:
 		if is_instance_valid(actor) and not actor.dead and actor.global_position.z<192 and actor.global_position.x>231: return false

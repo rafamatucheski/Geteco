@@ -209,7 +209,7 @@ func _reason(id: String) -> String:
 
 func refresh() -> void:
 	wallet.text = "R$ "+STYLE.amount(session.state.economy.balance)
-	condition.text = String(TranslationServer.translate("Vida  %d / 100     ·     Proteção  %d / 100"))%[session.world.gameplay.health,session.world.gameplay.armor]
+	condition.text = String(TranslationServer.translate("Vida  %d / 100     ·     Proteção  %d / 100"))%[session.player_health(),session.world.gameplay.armor]
 	for id in cards:
 		var row: Dictionary = cards[id]
 		var reason := _reason(id)

@@ -18,16 +18,16 @@ func configure(owner_session) -> void:
 	raid.configure(session)
 
 func nearest_action() -> Dictionary:
-	if not LAYOUT.enabled() or session.state.region_id!="desert" or session.world.driving.occupied or session.is_transition_blocked(): return {}
+	if not LAYOUT.enabled() or session.state.region_id!="desert" or session.player_in_vehicle() or session.is_transition_blocked(): return {}
 	if session.state.place_id=="remote_coal_mine" and is_instance_valid(session.room):
 		if is_instance_valid(raid):
 			var action: Dictionary=raid.nearest_action()
 			if not action.is_empty(): return action
-		return session.room.nearest_mine_action(session.world.player.global_position)
+		return session.room.nearest_mine_action(session.player_position())
 	return {}
 
 func perform(action: Dictionary) -> bool:
-	if session.modal or session.world.gameplay.health<=0 or nearest_action().get("target","")!=action.get("target",""): return false
+	if session.modal or session.player_health()<=0 or nearest_action().get("target","")!=action.get("target",""): return false
 	if action.get("target","")=="coal_lever": return session.room.perform_mine_action()
 	if action.get("target","")=="raid_loot" and is_instance_valid(raid): return raid.perform(action)
 	return false

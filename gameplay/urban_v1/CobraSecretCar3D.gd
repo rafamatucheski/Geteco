@@ -22,8 +22,8 @@ func _process(delta: float) -> void:
 			session.state.world_state["ashbend_secret_car_claimed"] = true
 			_capture_car(true)
 			return
-		var player_driving: bool = session.world.driving.occupied and session.world.driving.car == car
-		var nearby: bool = session.state.place_id.is_empty() and session.state.region_id == str(car.get_meta("region_id","harbor")) and session.world.player.global_position.distance_to(car.global_position) < 120.0
+		var player_driving: bool = session.player_in_vehicle() and session.player_vehicle() == car
+		var nearby: bool = session.state.place_id.is_empty() and session.state.region_id == str(car.get_meta("region_id","harbor")) and session.player_position().distance_to(car.global_position) < 120.0
 		if not player_driving and not nearby:
 			if not car.get_meta("secret_suspended",false):
 				if bool(session.state.world_state.get("ashbend_secret_car_claimed",false)): _capture_car()
@@ -54,7 +54,7 @@ func _process(delta: float) -> void:
 		point = Vector3(float(saved.position[0]),float(saved.position[1]),float(saved.position[2]))
 	var region: String = str(saved.get("region","harbor"))
 	if session.state.region_id != region or not session.state.place_id.is_empty(): return
-	if session.world.player.global_position.distance_to(point) > 75.0: return
+	if session.player_position().distance_to(point) > 75.0: return
 	car = session.controller.spawn_vehicle("cobra_v8",point,float(saved.get("yaw",PI)))
 	if not is_instance_valid(car): return
 	car.vehicle_id = VEHICLE_ID

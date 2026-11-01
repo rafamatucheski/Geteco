@@ -22,7 +22,7 @@ func configure(owner_session) -> void:
 		presentation.prewarm()
 func _process(delta: float) -> void:
 	if not active or not is_instance_valid(session) or not session.ready_for_play: return
-	var point: Vector3 = session.world.driving.car.global_position if session.world.driving.occupied else session.world.player.global_position
+	var point: Vector3 = session.player_vehicle().global_position if session.player_in_vehicle() else session.player_position()
 	presentation.update_sources(delta,point,session.state.region_id=="mountain" and session.state.place_id.is_empty())
 	if session.state.region_id != "mountain": return # V1 pauses its controller in Harbor.
 	var gameplay = session.world.gameplay
@@ -66,7 +66,7 @@ func _cold_zone_active() -> bool:
 		_in_cold_zone = false
 		return false
 	if not session.state.place_id.is_empty(): return true
-	var point: Vector3 = session.world.driving.car.global_position if session.world.driving.occupied else session.world.player.global_position
+	var point: Vector3 = session.player_vehicle().global_position if session.player_in_vehicle() else session.player_position()
 	var weight := CONNECTION.mountain_weight(point)
 	# Os dois limiares ficam em terra. Andar para lá e para cá na entrada não faz o HUD piscar.
 	_in_cold_zone = weight > (0.10 if _in_cold_zone else 0.25)

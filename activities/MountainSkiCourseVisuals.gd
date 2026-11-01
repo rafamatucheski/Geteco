@@ -44,7 +44,7 @@ func _physics_process(delta: float) -> void:
 	var traced := STALL_WORK.begin()
 	var rays := 0
 	for marker in markers:
-		marker.visible = outside and progression._flat(session.world.player.position).distance_to(progression._flat(marker.position)) < 95
+		marker.visible = outside and progression._flat(session.player_local_position()).distance_to(progression._flat(marker.position)) < 95
 		if not marker.visible or not _rays_enabled: continue
 		rays += 1
 		var point: Vector3 = progression._flat(marker.position)

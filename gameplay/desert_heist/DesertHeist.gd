@@ -49,22 +49,22 @@ func _process(delta: float) -> void:
 	_admission=maxf(0,_admission-elapsed)
 	if session.has_position_transition() or session.modal: return
 	if not is_instance_valid(truck) and not data.is_empty():
-		var restored: CharacterBody3D=session.world.driving.car
+		var restored: CharacterBody3D=session.player_vehicle()
 		if is_instance_valid(restored) and restored.vehicle_id=="desert_cargo_%d_%d"%[int(data.day),int(data.slot)]:
 			truck=restored
 			_bind_truck()
 			_set_open(data.phase in ["opened","looted"],data.phase=="looted")
 	var outdoors: bool=session.state.region_id=="desert" and session.state.place_id.is_empty()
-	if not outdoors or session.world.gameplay.health<=0:
+	if not outdoors or session.player_health()<=0:
 		write_snapshot()
 		# O caminhão roubado continua sendo do motorista ao cruzar regiões.
-		if is_instance_valid(truck) and session.world.driving.car==truck:
+		if is_instance_valid(truck) and session.player_vehicle()==truck:
 			_release_guards()
 		else: _release()
 		return
 	if data.is_empty() or data.phase in ["looted","destroyed","departed"]:
 		if is_instance_valid(truck):
-			if session.world.driving.car==truck or truck.global_position.distance_to(session.world.player.global_position)<130: return
+			if session.player_vehicle()==truck or truck.global_position.distance_to(session.player_position())<130: return
 			_release()
 		if not STATE.is_departure_time(session.weather.time_of_day): return
 		var day: int=session.weather.moon_day()
@@ -81,11 +81,11 @@ func _process(delta: float) -> void:
 			if data.phase=="driving": intercept()
 			if data.phase=="intercepted": data.phase="stolen"
 			truck.player_damage_attribution=true
-		elif data.phase=="driving" and truck.blocked_time>2 and truck.global_position.distance_to(session.world.player.global_position)<30: intercept()
+		elif data.phase=="driving" and truck.blocked_time>2 and truck.global_position.distance_to(session.player_position())<30: intercept()
 		if data.phase=="driving" and truck.global_position.x>=STATE.END.x-8: data.phase="departed"; truck.traffic=false
 		if data.phase in ["intercepted","stolen"]: _admit_guard()
 		write_snapshot()
-		if session.world.driving.car!=truck and truck.global_position.distance_to(session.world.player.global_position)>130:
+		if session.player_vehicle()!=truck and truck.global_position.distance_to(session.player_position())>130:
 			_release()
 	else:
 		if data.phase=="driving":
@@ -95,7 +95,7 @@ func _process(delta: float) -> void:
 			data.position=[point.x,point.y,point.z]
 			if point.x>=STATE.END.x-8: data.phase="departed"; _store(); return
 		if data.get("region","desert")!="desert": return
-		if point.distance_to(session.world.player.global_position)<100 and _admission<=0:
+		if point.distance_to(session.player_position())<100 and _admission<=0:
 			_admission=1.0
 			_admit_truck(point)
 		_store()
@@ -220,10 +220,10 @@ func _admit_guard() -> void:
 		var side:= -1 if index==0 else 1
 		var point: Vector3=truck.driver_door_anchor(side)+truck.global_basis.x*float(side)*.85
 		if data.guards[index].has("position"): point=_point(data.guards[index].position)
-		if point.distance_to(session.world.player.global_position)>120: continue
+		if point.distance_to(session.player_position())>120: continue
 		if not session.controller.region.prepare_collision_at(point): continue
 		if not session.position_clear(point): continue
-		if point.distance_to(session.world.player.global_position)<1.0: continue
+		if point.distance_to(session.player_position())<1.0: continue
 		var guard:=GUARD.new()
 		guard.configure(session.world.gameplay,1)
 		guard.health=float(data.guards[index].health)
@@ -231,7 +231,7 @@ func _admit_guard() -> void:
 		guard.position=point
 		guard.alerted=true
 		session.world.add_child(guard)
-		guard.last_known=session.world.player.global_position
+		guard.last_known=session.player_position()
 		guards[index]=guard
 		truck.animate_driver_door(side,true)
 		get_tree().create_timer(.9).timeout.connect(_close_guard_door.bind(truck,side))
@@ -248,9 +248,9 @@ func nearest_action() -> Dictionary:
 func _can_open() -> bool:
 	if data.is_empty() or data.phase not in ["stolen","opened"] or not is_instance_valid(truck): return false
 	if get_tree().paused or session.world.player.input_locked or session.has_position_transition(): return false
-	if session.state.region_id!="desert" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.modal or session.world.gameplay.health<=0: return false
+	if session.state.region_id!="desert" or not session.state.place_id.is_empty() or session.player_in_vehicle() or session.modal or session.player_health()<=0: return false
 	if truck.health<=0 or absf(truck.speed)>.25 or truck.global_position.distance_to(STATE.DROP_POINT)>14: return false
-	if session.world.player.global_position.distance_to(_door_point())>2.2: return false
+	if session.player_position().distance_to(_door_point())>2.2: return false
 	for saved_guard in data.guards:
 		if not saved_guard.dead and saved_guard.has("position") and _point(saved_guard.position).distance_to(truck.global_position)<40: return false
 	for guard in guards:
@@ -292,7 +292,7 @@ func save_block_reason() -> String:
 	# Abandonar a estrada encerra o risco imediato sem prender o salvamento global.
 	if data.is_empty() or data.phase!="intercepted" or not is_instance_valid(truck): return ""
 	if session.state.region_id!="desert" or not session.state.place_id.is_empty(): return ""
-	if truck.global_position.distance_to(session.world.player.global_position)>80: return ""
+	if truck.global_position.distance_to(session.player_position())>80: return ""
 	for guard in data.guards:
 		if not guard.dead: return "Afaste-se da escolta antes de salvar."
 	return ""
@@ -301,7 +301,7 @@ func write_snapshot() -> void:
 	if data.is_empty(): return
 	if is_instance_valid(truck):
 		var point:=truck.global_position
-		if session.world.driving.car==truck and session.world.driving.occupied:
+		if session.player_vehicle()==truck and session.player_in_vehicle():
 			data.region=session.state.region_id
 			truck.set_meta("region_id",session.state.region_id)
 		data.position=[point.x,point.y,point.z]

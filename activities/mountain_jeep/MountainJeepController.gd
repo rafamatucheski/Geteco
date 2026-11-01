@@ -74,7 +74,7 @@ func target_position() -> Vector3:
 	return run.target_position() if run.active else COURSE.start()
 
 func _outside() -> bool:
-	return session.state.region_id=="mountain" and session.state.place_id.is_empty() and session.world.gameplay.health>0
+	return session.state.region_id=="mountain" and session.state.place_id.is_empty() and session.player_health()>0
 
 func _can_start() -> bool:
 	if not _outside() or session.controller.save_invalid or not session.state.campaign.active_id.is_empty(): return false
@@ -88,7 +88,7 @@ func nearest_action() -> Dictionary:
 	if run.active: return {"id":"mountain_jeep","target":"cancel","label":"Cancelar trilha"}
 	if not _can_start(): return {}
 	var driving=session.world.driving
-	var point: Vector3=driving.car.global_position if driving.occupied and is_instance_valid(driving.car) else session.world.player.global_position
+	var point: Vector3=driving.car.global_position if driving.occupied and is_instance_valid(driving.car) else session.player_position()
 	if point.distance_to(COURSE.start())>4.0: return {}
 	if not driving.occupied:
 		return {"id":"mountain_jeep","target":"prepare","label":"Retirar jipe da trilha","position":COURSE.start()}
@@ -107,7 +107,7 @@ func perform(target: Variant) -> bool:
 		else: session.show_message("Libere o espaço ao lado da largada para retirar o jipe.")
 		return true
 	if action!="start": return false
-	var car: CharacterBody3D=session.world.driving.car
+	var car: CharacterBody3D=session.player_vehicle()
 	if car.archetype!=COURSE.VEHICLE:
 		session.show_message("Use um jipe 4x4 na Trilha dos Pinheiros."); return true
 	if car.health<=0 or absf(car.speed)>.8:
@@ -129,7 +129,7 @@ func _start_attempt() -> bool:
 	session.close_menu()
 	# Rechecha a admissão depois de fechar o modal; o mundo pode ter mudado.
 	if nearest_action().get("target","")!="start": return false
-	var car: CharacterBody3D=session.world.driving.car
+	var car: CharacterBody3D=session.player_vehicle()
 	if car.archetype!=COURSE.VEHICLE or car.health<=0 or absf(car.speed)>.8:
 		session.show_message("Pare um jipe 4x4 em boas condições junto à largada.")
 		return false
@@ -155,7 +155,7 @@ func _physics_process(delta: float) -> void:
 	if session==null or get_tree().paused: return
 	if run.active:
 		var valid: bool=_outside() and session.ready_for_play and not session.blocks_driving_change() and is_instance_valid(driver)
-		valid=valid and session.world.driving.occupied and session.world.driving.car==driver
+		valid=valid and session.player_in_vehicle() and session.player_vehicle()==driver
 		if valid: valid=driver.health>0 and driver.archetype==COURSE.VEHICLE and not driver.is_queued_for_deletion()
 		if not valid:
 			cancel_attempt()
@@ -232,7 +232,7 @@ func _ensure_loan() -> void:
 	if session.state.region_id!=region_id: return
 	var point := COURSE.parking()
 	if not saved.is_empty(): point=Vector3(saved.position[0],saved.position[1],saved.position[2])
-	if session.world.player.global_position.distance_to(point)>42.0: return
+	if session.player_position().distance_to(point)>42.0: return
 	var car: CharacterBody3D=VEHICLE.new()
 	car.archetype=COURSE.VEHICLE
 	car.vehicle_id=COURSE.LOAN_ID

@@ -104,7 +104,7 @@ func close_menu() -> void:
 func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void:
 	g.lines = dialogue_lines.duplicate(true)
 	g.dialogue_done = on_done
-	g._advance_dialogue()
+	g.advance_dialogue()
 
 func interrupt_dialogue() -> void:
 	# Recovery discards unfinished words without completing their mission callback.
@@ -149,7 +149,7 @@ func _present_dialogue_line(line: Dictionary) -> void:
 	if not is_instance_valid(g.dialogue_card):
 		g.dialogue_card = DIALOGUE_CARD.new()
 		g.world.hud.add_child(g.dialogue_card)
-		g.dialogue_card.advance_requested.connect(Callable(g, "_advance_dialogue"))
+		g.dialogue_card.advance_requested.connect(Callable(g, "advance_dialogue"))
 	g.dialogue_card.configure(str(line.get("speaker","")), str(line.get("message","")), g.get_node_or_null("/root/GameInput"))
 	g.dialogue_card.focus_advance.call_deferred()
 
@@ -166,9 +166,9 @@ func cancel_mission() -> bool:
 func show_maciota_menu() -> void:
 	g._menu("Maciota")
 	g._compact_menu_size(Vector2(360, 310))
-	g._button("Ver missões", Callable(g, "show_journal"))
-	g._button("Informações", Callable(g, "show_journal_information"))
-	g._button("Encerrar conversa", Callable(g, "close_menu"))
+	g.button("Ver missões", Callable(g, "show_journal"))
+	g.button("Informações", Callable(g, "show_journal_information"))
+	g.button("Encerrar conversa", Callable(g, "close_menu"))
 	g._menu_information("Guia do HUD em Configurações → Ajuda.", 13)
 	g._fit_compact_menu(g.column.get_child(0), Vector2(360, 310))
 
@@ -227,9 +227,9 @@ func show_journal_information() -> void:
 	if entries.is_empty(): g._menu_information("Nenhuma informação registrada ainda.", 16, records)
 	var secret_file: Variant = g.urban_operations.get("secret_file") if g.urban_operations != null else null
 	if is_instance_valid(secret_file) and secret_file.available():
-		g._button("Arquivo de Vicente", secret_file.open_from_journal)
-	g._button("Ver missões", Callable(g, "show_journal"))
-	g._button("Fechar", Callable(g, "close_menu"))
+		g.button("Arquivo de Vicente", secret_file.open_from_journal)
+	g.button("Ver missões", Callable(g, "show_journal"))
+	g.button("Fechar", Callable(g, "close_menu"))
 	# Lê o primeiro registro antes de navegar pelas ações abaixo dos registros.
 	var scroll: ScrollContainer = g.column.get_parent()
 	if records.get_child_count() > 0: records.get_child(0).grab_focus.call_deferred()
@@ -242,14 +242,14 @@ func show_journal() -> void:
 		return
 	g._menu("Missões")
 	g._compact_menu_size(Vector2(480, 360))
-	if g.mountain_activities != null: g._button("Atividades da montanha", g.mountain_activities.show_journal)
+	if g.mountain_activities != null: g.button("Atividades da montanha", g.mountain_activities.show_journal)
 	if g.state.campaign.active_id != "":
 		g._menu_information("OBJETIVO ATUAL", 13)
 		g._menu_information(g.mission_world.objective())
-		g._button("Cancelar missão",Callable(g, "cancel_mission"))
+		g.button("Cancelar missão",Callable(g, "cancel_mission"))
 	else:
 		for id in g.state.campaign.available_missions():
-			g._button(str(MISSIONS.MISSIONS[id].title),func():
+			g.button(str(MISSIONS.MISSIONS[id].title),func():
 				if g.state.intro.stage != "complete": g.show_message("Converse primeiro com Maciota."); g.close_menu(); return
 				if not g.mission_world.begin(id):
 					g.close_menu()
@@ -260,11 +260,11 @@ func show_journal() -> void:
 	if g.helena_act1 != null and g.state.campaign.active_id == "":
 		for entry in g.helena_act1.journal_entries():
 			var act1_id: String = entry.id
-			g._button(entry.text, func():
+			g.button(entry.text, func():
 				g.helena_act1.focus(act1_id)
 				g.close_menu())
-	g._button("Informações", Callable(g, "show_journal_information"))
-	g._button("Voltar",Callable(g, "close_menu"))
+	g.button("Informações", Callable(g, "show_journal_information"))
+	g.button("Voltar",Callable(g, "close_menu"))
 	g._fit_compact_menu(g.column.get_child(0), Vector2(480, 360))
 
 func show_inventory() -> void:
@@ -275,7 +275,7 @@ func show_inventory() -> void:
 	for id in WEAPONS.ORDER:
 		if g.state.owns_weapon(id):
 			var stored: bool = not g.state.economy.can_carry_weapon(id)
-			g._button(str(WEAPONS.WEAPONS[id].label)+(" · No porta-malas" if stored else ""),func():
+			g.button(str(WEAPONS.WEAPONS[id].label)+(" · No porta-malas" if stored else ""),func():
 				if not g.state.economy.can_carry_weapon(id):
 					g.close_menu()
 					g.show_message("Selecione esta arma no porta-malas da Monaliza.")
@@ -283,14 +283,14 @@ func show_inventory() -> void:
 				g.close_menu()
 				g.state.equip_weapon(id))
 	if g.state.economy.inventory.get("first_aid",0)>0:
-		g._button("Usar primeiros socorros",func():
+		g.button("Usar primeiros socorros",func():
 			if g.world.gameplay.heal(40): g.state.economy.consume_item("first_aid")
 			g.close_menu(); g.save_game())
-	g._button("Configurações",Callable(g, "show_settings"))
-	g._button("Voltar",Callable(g, "close_menu"))
+	g.button("Configurações",Callable(g, "show_settings"))
+	g.button("Voltar",Callable(g, "close_menu"))
 
 func show_services(service: String) -> void:
-	if g._service_threatened(): return
+	if g.service_threatened(): return
 	g._show_services_available(service)
 	g._service_menu_open = g.modal
 	if g.modal and g.panel.visible: preload("res://ui/ShopPresentation.gd").apply(g.panel)
@@ -326,26 +326,26 @@ func _show_shop(category: String) -> void:
 	for item in g.state.economy.storefront(category):
 		if category == "weapon" and item.id == "katana" and not item.unlocked: continue
 		var label := str(item.get("name",item.get("label",item.id)))
-		g._button(label+(" · Equipar" if item.owned else " · R$ %d"%item.price),func():
+		g.button(label+(" · Equipar" if item.owned else " · R$ %d"%item.price),func():
 			if not item.owned:
-				var result: Dictionary = g.state.economy.purchase(category,item.id,g._transaction())
+				var result: Dictionary = g.state.economy.purchase(category,item.id,g.transaction())
 				if not result.ok: g.show_message("Compra indisponível: "+str(result.reason)); g.close_menu(); return
 			if category == "weapon": g.state.equip_weapon(item.id)
 			else: preload("res://runtime/OutfitDisguise.gd").equip(g, item.id, true)
 			g.close_menu(); g.save_game())
 	if category == "weapon":
-		g._button("Personalizar arma equipada",Callable(g, "_show_customization"))
-		g._button("Munição para arma equipada",func():
-			var purchased: bool = g.state.economy.buy_ammo(g.state.equipped_weapon,30,g._transaction())
+		g.button("Personalizar arma equipada",Callable(g, "_show_customization"))
+		g.button("Munição para arma equipada",func():
+			var purchased: bool = g.state.economy.buy_ammo(g.state.equipped_weapon,30,g.transaction())
 			g.show_message("Munição comprada." if purchased else "Compra indisponível.")
 			g.close_menu(); g.save_game())
 		if g.world.gameplay.armor >= 100:
-			g._button("Proteção completa",func():
+			g.button("Proteção completa",func():
 				g.show_message("O colete já está completo.")
 				g.close_menu())
 		else:
-			g._button("Colete · R$ 500",func():
-				var result: Dictionary = g.state.economy.purchase_body_armor(g.world.gameplay.armor,100,g._transaction())
+			g.button("Colete · R$ 500",func():
+				var result: Dictionary = g.state.economy.purchase_body_armor(g.world.gameplay.armor,100,g.transaction())
 				if result.ok:
 					g.world.gameplay.armor = int(result.armor)
 					g.show_message("Colete equipado.")
@@ -353,7 +353,7 @@ func _show_shop(category: String) -> void:
 					g.show_message("Proteção completa." if result.reason == "protection_full" else "Compra indisponível.")
 				g.close_menu()
 				if result.ok: g.save_game())
-	g._button("Voltar",Callable(g, "close_menu"))
+	g.button("Voltar",Callable(g, "close_menu"))
 	preload("res://ui/ShopPresentation.gd").apply(g.panel)
 
 func _show_customization() -> void:
@@ -369,12 +369,12 @@ func _show_customization() -> void:
 		var owned: bool = catalog.owns(g.world.gameplay.customization,id,part)
 		var selected: bool = catalog.selected(g.world.gameplay.customization,id,data.slot) == part
 		var suffix := " · Remover" if selected else (" · Instalar" if owned else " · R$ %d"%data.price)
-		g._button(str(data.label)+suffix,func():
+		g.button(str(data.label)+suffix,func():
 			var ok: bool = g.world.gameplay.install_attachment(id,part,false) if selected else g.world.gameplay.buy_attachment(id,part)
 			if not ok: g.show_message("Personalização indisponível.")
 			g.save_game()
 			g._show_customization())
-	g._button("Voltar",func(): g._show_shop("weapon"))
+	g.button("Voltar",func(): g._show_shop("weapon"))
 	preload("res://ui/ShopPresentation.gd").apply(g.panel)
 
 func _show_saber_customization() -> void:

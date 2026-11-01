@@ -20,7 +20,7 @@ func _available(machine: String, allow_menu := false) -> bool:
 	if not MACHINES.has(machine) or not is_instance_valid(site) or not site.is_inside_tree(): return false
 	if site.get_tree().paused or not session.ready_for_play or session.is_transition_blocked(): return false
 	if session.state.region_id != "harbor" or not session.state.place_id.is_empty(): return false
-	if session.world.gameplay.health <= 0 or session.world.driving.occupied: return false
+	if session.player_health() <= 0 or session.player_in_vehicle(): return false
 	if session.modal and (not allow_menu or opened != machine): return false
 	if session.world.player.input_locked and (not allow_menu or opened != machine): return false
 	var player: Node3D = session.world.player

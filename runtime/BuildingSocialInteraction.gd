@@ -28,7 +28,7 @@ func _ready() -> void:
 func _can_open() -> bool:
 	if not is_instance_valid(session) or not session.ready_for_play or session.modal or get_tree().paused: return false
 	if session.is_transition_blocked() or session.rescue_pending or session.arrest_pending: return false
-	if session.world.driving.occupied or session.world.player.input_locked or session.world.gameplay.health <= 0: return false
+	if session.player_in_vehicle() or session.world.player.input_locked or session.player_health() <= 0: return false
 	if int(session.world.gameplay.get("stars")) > 0: return false
 	if session.world.gameplay.has_method("police_surrendering") and session.world.gameplay.police_surrendering(): return false
 	if not is_instance_valid(session.building_entrance) or not session.building_entrance.in_building(): return false
@@ -43,7 +43,7 @@ func nearest_action() -> Dictionary:
 	# Só os moradores do andar atual; sem varredura global de grupo por quadro.
 	for resident: Node3D in occupants.residents:
 		if not _accessible(resident, TALK_DISTANCE): continue
-		var distance: float = session.world.player.global_position.distance_squared_to(resident.global_position)
+		var distance: float = session.player_position().distance_squared_to(resident.global_position)
 		if distance <= best:
 			best = distance
 			nearest = resident
@@ -74,7 +74,7 @@ func open(resident: Node3D) -> bool:
 	_room = session.room
 	_generation = session.transition_generation
 	_floor = int(_room.get("floor_index"))
-	_health = float(session.world.gameplay.health)
+	_health = float(session.player_health())
 	_clock = 0.0
 	session.menu_closed = _dismiss
 	if not is_instance_valid(panel):
@@ -148,11 +148,11 @@ func _process(delta: float) -> void:
 		if not active: set_process(false)
 	if not active: return
 	if not _still_owned(): _dismiss(); return
-	if get_tree().paused or not session.ready_for_play or session.rescue_pending or session.arrest_pending or session.is_transition_blocked() or session.world.driving.occupied:
+	if get_tree().paused or not session.ready_for_play or session.rescue_pending or session.arrest_pending or session.is_transition_blocked() or session.player_in_vehicle():
 		close(); return
 	if not is_instance_valid(_room) or session.room != _room or session.transition_generation != _generation or int(_room.get("floor_index")) != _floor:
 		close(); return
-	if float(session.world.gameplay.health) < _health or int(session.world.gameplay.get("stars")) > 0:
+	if float(session.player_health()) < _health or int(session.world.gameplay.get("stars")) > 0:
 		close(); return
 	_clock -= delta
 	if _clock > 0.0: return
@@ -165,7 +165,7 @@ func _position_panel() -> void:
 	if not active or not is_instance_valid(target) or not is_instance_valid(panel): return
 	var camera: Camera3D = session.world.get_viewport().get_camera_3d()
 	if not is_instance_valid(camera): return
-	var midpoint: Vector3 = (session.world.player.global_position + target.global_position) * .5 + Vector3.UP
+	var midpoint: Vector3 = (session.player_position() + target.global_position) * .5 + Vector3.UP
 	if not camera.is_position_behind(midpoint): panel.set_conversation_anchor(camera.unproject_position(midpoint))
 
 func close() -> void:
@@ -205,10 +205,10 @@ func _threat_started(_resident: Node3D) -> void:
 	close()
 
 func _gunfire(origin: Vector3, _direction: Vector3, _shooter: Node3D) -> void:
-	if active and session.world.player.global_position.distance_squared_to(origin) <= 900.0: close()
+	if active and session.player_position().distance_squared_to(origin) <= 900.0: close()
 
 func _explosion(origin: Vector3, radius: float, _source: Node) -> void:
-	if active and session.world.player.global_position.distance_squared_to(origin) <= pow(maxf(30.0, radius * 2.0), 2): close()
+	if active and session.player_position().distance_squared_to(origin) <= pow(maxf(30.0, radius * 2.0), 2): close()
 
 func _exit_tree() -> void:
 	close()

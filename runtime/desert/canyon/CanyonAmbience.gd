@@ -77,7 +77,7 @@ static func presence(point: Vector3) -> Dictionary:
 	return {"bridge":bridge,"camp":camp,"wind":maxf(bridge,camp*.67)}
 
 func _allowed() -> bool:
-	return enabled and L.enabled() and is_instance_valid(session) and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.world.gameplay.health>0 and not session.world.player.dead and (not session.modal or session.dialogue_open) and not session.has_position_transition()
+	return enabled and L.enabled() and is_instance_valid(session) and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.player_health()>0 and not session.world.player.dead and (not session.modal or session.dialogue_open) and not session.has_position_transition()
 
 func _process(delta: float) -> void:
 	_tick+=delta
@@ -90,7 +90,7 @@ func _process(delta: float) -> void:
 	_combat_hold=maxf(0,_combat_hold-elapsed)
 	var fighting := _combat_hold>0 or (is_instance_valid(encounter) and bool(encounter.get("_engaged")))
 	var talking: bool=session.dialogue_open
-	var weights := presence(session.world.player.global_position)
+	var weights := presence(session.player_position())
 	var duck := .22 if fighting else (.28 if talking else 1.0)
 	_gain=lerpf(_gain,float(weights.wind)*duck,1-exp(-elapsed/.65))
 	_shelter_gain=lerpf(_shelter_gain,float(weights.camp)*(0.0 if fighting else (.28 if talking else 1.0)),1-exp(-elapsed/.7))
@@ -110,7 +110,7 @@ func _update_bed(voice: Node, gain: float) -> void:
 	elif gain<.002 and voice.playing: voice.stop()
 
 func _play_detail(weight: float) -> void:
-	var at: Vector3=session.world.player.global_position
+	var at: Vector3=session.player_position()
 	var kind := "vulture" if _last_kind=="metal" else "metal"
 	var variant := _rng.randi_range(0,1)
 	if kind=="vulture":
@@ -137,7 +137,7 @@ func _weapon_fired(_weapon: String, point: Vector3) -> void: _duck_for_shot(poin
 func _npc_gunfire(point: Vector3, _direction: Vector3, _shooter: Node3D) -> void: _duck_for_shot(point)
 func _duck_for_shot(point: Vector3) -> void:
 	if not _allowed(): return
-	if session.world.player.global_position.distance_squared_to(point)<6400:
+	if session.player_position().distance_squared_to(point)<6400:
 		_combat_hold=3.5
 		if is_instance_valid(detail): detail.stop()
 

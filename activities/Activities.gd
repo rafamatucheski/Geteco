@@ -110,7 +110,7 @@ func _update_hideout_gate() -> void:
 		session.world.add_child(_hideout_gate)
 		# Fora dos grupos do Digo: FullSession._set_digo_vehicle_gate fecharia este portão também.
 		for group in [_hideout_gate.GROUP, _hideout_gate.INTERIOR_GROUP]: _hideout_gate.remove_from_group(group)
-	if in_harbor and not _hideout_gate.has_meta("grounded") and _hideout_gate.position.distance_to(session.world.player.position) < 55:
+	if in_harbor and not _hideout_gate.has_meta("grounded") and _hideout_gate.position.distance_to(session.player_local_position()) < 55:
 		var ray := PhysicsRayQueryParameters3D.create(TAPES.HIDEOUT_GROUND_PROBE+Vector3.UP*12,TAPES.HIDEOUT_GROUND_PROBE-Vector3.UP*3,1)
 		ray.exclude = [_hideout_gate._barrier.get_rid()]
 		var hit: Dictionary = session.world.get_world_3d().direct_space_state.intersect_ray(ray)
@@ -264,8 +264,8 @@ func record_external_delivery() -> bool:
 	return true
 
 func _start_motorsport(action: String) -> bool:
-	var car = session.world.driving.car
-	if not session.world.driving.occupied or absf(car.speed) >= 25.0/16.0:
+	var car = session.player_vehicle()
+	if not session.player_in_vehicle() or absf(car.speed) >= 25.0/16.0:
 		session.show_message("Pare com o carro junto ao telefone." if action.begins_with("race:") else "Pare com o carro na marca.")
 		return true
 	_driver = car
@@ -381,7 +381,7 @@ func _create_pickup(id: String, point: Vector3, fixed := false) -> void:
 	art.add_child(mesh)
 	holder.configure(art,id)
 	area.body_entered.connect(func(body):
-		if body != session.world.player or session.world.driving.occupied or session.modal: return
+		if body != session.world.player or session.player_in_vehicle() or session.modal: return
 		if session.state.economy.collect(id):
 			area.set_deferred("monitoring",false)
 			_pickups.erase(id)
@@ -424,7 +424,7 @@ func _tape_found() -> void:
 		_update_hideout_gate()
 		session.save_game()
 	else:
-		session.show_message(TAPES.found_message(collectibles,session.state.region_id,session.world.player.position))
+		session.show_message(TAPES.found_message(collectibles,session.state.region_id,session.player_local_position()))
 
 func _beacon(point: Vector3, color: Color, gate: bool = false) -> Node3D:
 	var root := Node3D.new()

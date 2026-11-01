@@ -122,22 +122,22 @@ func suit_outfit() -> String:
 	return suit if SUITS.has(suit) else "dante_ski"
 
 func _at_counter() -> bool:
-	if session.state.region_id!="mountain" or session.state.place_id!="ski_lodge" or session.world.gameplay.health<=0 or session.controller.save_invalid or session.world.driving.occupied: return false
+	if session.state.region_id!="mountain" or session.state.place_id!="ski_lodge" or session.player_health()<=0 or session.controller.save_invalid or session.player_in_vehicle(): return false
 	if not is_instance_valid(session.room) or not session.room.interaction_points.has("service"): return false
-	return session.world.player.position.distance_to(session.room.interaction_points.service)<1.5
+	return session.player_local_position().distance_to(session.room.interaction_points.service)<1.5
 
 func cancel_attempt() -> void:
 	if is_instance_valid(lift): lift.cancel()
 	_stop()
 
 func _outside() -> bool:
-	return session.state.region_id=="mountain" and session.state.place_id.is_empty() and not session.world.driving.occupied and session.world.gameplay.health>0 and session.state.campaign.active_id.is_empty()
+	return session.state.region_id=="mountain" and session.state.place_id.is_empty() and not session.player_in_vehicle() and session.player_health()>0 and session.state.campaign.active_id.is_empty()
 
 func nearest_action() -> Dictionary:
-	if is_instance_valid(lift) and lift.riding: return _action("ski_lift_skip", "Adiantar viagem", session.world.player.position)
+	if is_instance_valid(lift) and lift.riding: return _action("ski_lift_skip", "Adiantar viagem", session.player_local_position())
 	if session==null or session.modal or session.controller.save_invalid or not _outside(): return {}
 	if session.world.player.input_locked: return {}
-	var point: Vector3 = session.world.player.position
+	var point: Vector3 = session.player_local_position()
 	if race.mode!="": return _action("ski_cancel","Cancelar prova",point)
 	if is_instance_valid(lift) and lift.can_board(): return _action("ski_lift", "Teleférico para o cume", point)
 	for id in COURSES:
@@ -172,7 +172,7 @@ func perform(target: Variant) -> bool:
 	session.world.player.visual.rotation.y = atan2(-heading.x,-heading.z)
 	var points := PackedVector3Array()
 	for point in spec.points: points.append(Definitions.at(point,"mountain"))
-	if race.begin_race(course_id,Definitions.at(spec.start,"mountain"),points,_flat(session.world.player.position)):
+	if race.begin_race(course_id,Definitions.at(spec.start,"mountain"),points,_flat(session.player_local_position())):
 		# A V1 é uma chegada em descida, ao contrário da volta de retorno do pontuador de circuito reaproveitado.
 		race.points.resize(race.points.size()-1)
 	return true
@@ -250,7 +250,7 @@ func _make_ski_pose(carve: float) -> Array:
 	return actor._capture_pose()
 
 func _process(delta: float) -> void:
-	if not skiing or _ski_pose.is_empty() or session.world.gameplay.health <= 0: return
+	if not skiing or _ski_pose.is_empty() or session.player_health() <= 0: return
 	var actor = session.world.player
 	var controls := GameInput
 	var axis: Vector2 = controls.movement()
@@ -311,7 +311,7 @@ func crash(damage: int) -> void:
 
 func _physics_process(delta: float) -> void:
 	if session==null or not session.ready_for_play or session.modal or get_tree().paused: return
-	if skiing and (not _outside() or not _on_slope(session.world.player.position)): _stop()
+	if skiing and (not _outside() or not _on_slope(session.player_local_position())): _stop()
 	if skiing:
 		for index in session.world.player.get_slide_collision_count():
 			var hit: KinematicCollision3D = session.world.player.get_slide_collision(index)
@@ -319,7 +319,7 @@ func _physics_process(delta: float) -> void:
 			if absf(hit.get_normal().y)<.65 and impact>112: crash(clampi(roundi((impact-80)*.18),6,42)); break
 		if session.state.equipped_weapon!="fists": session.state.equip_weapon("fists")
 	if race.mode!="":
-		race.update(delta,_flat(session.world.player.position),glide,heading,skiing)
+		race.update(delta,_flat(session.player_local_position()),glide,heading,skiing)
 		if race.finished: _finish()
 		elif race.cancelled: _stop(); session.show_message("Prova cancelada.")
 		else:
@@ -343,7 +343,7 @@ func _physics_process(delta: float) -> void:
 		for id in starts:
 			var beacon: Node3D = starts[id]
 			var point := Definitions.at(COURSES[id].start,"mountain")
-			beacon.visible=_outside() and _flat(session.world.player.position).distance_to(point)<100
+			beacon.visible=_outside() and _flat(session.player_local_position()).distance_to(point)<100
 			if beacon.visible and not beacon.has_meta("grounded"):
 				var query := PhysicsRayQueryParameters3D.create(point+Vector3.UP*100,point-Vector3.UP*20,1)
 				var hit: Dictionary = session.world.get_world_3d().direct_space_state.intersect_ray(query)
@@ -393,7 +393,7 @@ func on_collectible() -> String:
 func _refresh_shadow() -> void:
 	var active: bool = _outside() and clue_count()>=3
 	var home := Definitions.at(Vector2(7490,-4140),"mountain")
-	active=active and _flat(session.world.player.position).distance_to(home)<90
+	active=active and _flat(session.player_local_position()).distance_to(home)<90
 	if not active:
 		if is_instance_valid(shadow): shadow.queue_free(); shadow=null
 		return

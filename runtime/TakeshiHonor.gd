@@ -50,7 +50,7 @@ static func claim_state(state, choice: String, car_record: Dictionary = {}) -> D
 
 static func claim(session, choice: String) -> Dictionary:
 	if session == null or session.controller.save_invalid or not pending_reward(session.state.world_state): return {"ok":false,"reason":"Prêmio indisponível."}
-	if session.state.region_id != "desert" or not session.state.place_id.is_empty() or session.world.gameplay.health <= 0 or session.desert.drag.active: return {"ok":false,"reason":"Volte ao encontro para receber seu prêmio."}
+	if session.state.region_id != "desert" or not session.state.place_id.is_empty() or session.player_health() <= 0 or session.desert.drag.active: return {"ok":false,"reason":"Volte ao encontro para receber seu prêmio."}
 	var car: CharacterBody3D
 	var record := {}
 	if choice == "car":

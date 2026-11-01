@@ -114,9 +114,9 @@ func refresh() -> void:
 func update_status() -> void:
 	if not is_instance_valid(status): return
 	var cooldown: float=adapter.model.data.cooldown
-	status.text=String(TranslationServer.translate("Vida %d / 100    ·    %s %d / 100    ·    %d / 36 taças"))%[roundi(adapter.session.world.gameplay.health),adapter.model.stage(),roundi(adapter.model.data.alcohol),adapter.model.total_servings()]
+	status.text=String(TranslationServer.translate("Vida %d / 100    ·    %s %d / 100    ·    %d / 36 taças"))%[roundi(adapter.session.player_health()),adapter.model.stage(),roundi(adapter.model.data.alcohol),adapter.model.total_servings()]
 	if is_instance_valid(drink_button):
-		var reason: String=adapter.model.drink_reason(selected,float(adapter.session.world.gameplay.health))
+		var reason: String=adapter.model.drink_reason(selected,float(adapter.session.player_health()))
 		drink_button.disabled=not reason.is_empty()
 		drink_button.text=String(TranslationServer.translate("Aguarde %.1f s"))%cooldown if reason=="cooldown" else "Espere recuperar o equilíbrio" if reason=="alcohol_limit" else "Beber uma taça"
 		drink_button.tooltip_text=adapter.reason_text(reason) if not reason.is_empty() else "Consumir uma taça guardada. Aumenta o efeito do álcool."

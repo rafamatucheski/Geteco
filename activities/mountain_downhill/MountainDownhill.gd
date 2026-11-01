@@ -85,8 +85,8 @@ func nearest_action() -> Dictionary:
 	if active: return {"id":"mountain_downhill","target":"cancel","label":"Abandonar a descida"}
 	if session.controller.save_invalid: return {}
 	if session.state.region_id != "mountain" or not session.state.place_id.is_empty(): return {}
-	var point: Vector3 = session.world.player.global_position
-	if session.world.driving.occupied and is_instance_valid(session.world.driving.car): point = session.world.driving.car.global_position
+	var point: Vector3 = session.player_position()
+	if session.player_in_vehicle() and is_instance_valid(session.player_vehicle()): point = session.player_vehicle().global_position
 	if point.distance_to(course.start_position())>9.0: return {}
 	var coordinator := get_tree().get_first_node_in_group("mountain_activities")
 	if coordinator != null and not coordinator.can_start(self): return {}
@@ -123,13 +123,13 @@ func _stage_start() -> void:
 	staging = true
 	_stage_generation += 1
 	var generation := _stage_generation
-	var car = session.world.driving.car
+	var car = session.player_vehicle()
 	var was_locked: bool = car.input_locked
 	car.input_locked = true
 	await session.door_transition.fade_to(1.0,FADE_OUT)
 	if generation != _stage_generation or not staging: return
 	# O carro vai para a vaga dele antes de qualquer rival nascer (era ele que ocupava a vaga deles).
-	if is_instance_valid(car) and session.world.driving.car == car:
+	if is_instance_valid(car) and session.player_vehicle() == car:
 		_stop_car(car)
 		var pose := course.grid(6)
 		if session.world.production.vehicle_position_clear(car,pose.origin,pose.basis.get_euler().y): car.place(pose.origin,pose.basis.get_euler().y)
@@ -178,7 +178,7 @@ func start_block_reason() -> String:
 	if session.controller.save_invalid: return "Save inválido preservado; atividade indisponível."
 	if session.state.region_id != "mountain" or not session.state.place_id.is_empty(): return "Vá à largada na estrada da serra."
 	if not is_night(): return "A descida acontece entre 20h e 5h."
-	if session.world.gameplay.health<=0 or session.rescue_pending or session.arrest_pending: return "Aguarde a recuperação."
+	if session.player_health()<=0 or session.rescue_pending or session.arrest_pending: return "Aguarde a recuperação."
 	if session.world.gameplay.stars>0: return "Despiste a polícia antes da largada."
 	if not session.state.campaign.active_id.is_empty(): return "Conclua a missão atual antes de disputar a descida."
 	var coordinator := get_tree().get_first_node_in_group("mountain_activities")
@@ -200,7 +200,7 @@ static func eligible_car(car) -> bool:
 	return is_instance_valid(car) and car.health>0 and not bool(car.get("engine_disabled"))
 
 func _start() -> bool:
-	player_car = session.world.driving.car
+	player_car = session.player_vehicle()
 	_old_lock = player_car.input_locked
 	var production = session.world.production
 	var pose := course.grid(6)
@@ -374,12 +374,12 @@ func standings() -> Array[Dictionary]:
 	return result
 
 func _interruption() -> String:
-	if session.world.gameplay.health<=0 or session.rescue_pending: return "player_death"
+	if session.player_health()<=0 or session.rescue_pending: return "player_death"
 	if session.arrest_pending: return "player_arrest"
 	if not session.ready_for_play or session.is_transition_blocked(): return "world_transition"
 	if session.state.region_id!="mountain" or not session.state.place_id.is_empty(): return "region_changed"
 	if not is_instance_valid(player_car) or player_car.health<=0: return "race_vehicle_broken"
-	if not session.world.driving.occupied or session.world.driving.car!=player_car: return "race_vehicle_left"
+	if not session.player_in_vehicle() or session.player_vehicle()!=player_car: return "race_vehicle_left"
 	return ""
 
 func _finish(place: int, seconds: float) -> void:
@@ -395,7 +395,7 @@ func cancel_attempt(reason: String = "cancelled") -> void:
 		# Cortina no meio: nada foi montado ainda (ou _start já desfez); só clareia.
 		staging = false
 		_stage_generation += 1
-		if is_instance_valid(session) and is_instance_valid(session.world.driving.car): session.world.driving.car.input_locked = false
+		if is_instance_valid(session) and is_instance_valid(session.player_vehicle()): session.world.driving.car.input_locked = false
 		if is_instance_valid(session) and is_instance_valid(session.get("door_transition")): session.door_transition.fade_to(0.0,FADE_IN)
 		return
 	if not active: return
@@ -470,7 +470,7 @@ func _clear_rivals() -> void:
 		var car = entry.car
 		# Se o Dante pegar um carro rival, o cancelamento solta a posse dele em vez
 		# de apagar o veículo ocupado debaixo do jogador.
-		if is_instance_valid(session) and is_instance_valid(session.world) and is_instance_valid(session.world.driving) and session.world.driving.occupied and session.world.driving.car==car:
+		if is_instance_valid(session) and is_instance_valid(session.world) and is_instance_valid(session.world.driving) and session.player_in_vehicle() and session.player_vehicle()==car:
 			car.remove_meta("race_owned")
 			car.remove_meta("mountain_downhill_rival")
 			car.set_external_driver(false)

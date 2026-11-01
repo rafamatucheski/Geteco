@@ -120,11 +120,11 @@ func _remember_floor() -> void:
 	session.state.world_state.harbor_building_floors = floors
 
 func nearest_action() -> Dictionary:
-	if session == null or session.modal or session.is_transition_blocked() or session.world.gameplay.health <= 0: return {}
+	if session == null or session.modal or session.is_transition_blocked() or session.player_health() <= 0: return {}
 	if is_instance_valid(secrets):
 		var secret_action: Dictionary = secrets.nearest_action()
 		if not secret_action.is_empty(): return secret_action
-	if session.world.player.global_position.distance_to(to_global(stair_point())) > 1.55: return {}
+	if session.player_position().distance_to(to_global(stair_point())) > 1.55: return {}
 	var label := "Descer da cobertura" if is_rooftop() else ("Subir à cobertura" if int(definition.floor_count)==1 else "Usar escada")
 	return {"id":"building_stairs","provider":self,"label":label}
 
@@ -213,7 +213,7 @@ func _update_camera() -> void:
 	session.world.camera._process(1.0)
 
 func _owns_floor_transition(token: int) -> bool:
-	return is_instance_valid(session) and session.owns_transition(token) and session.room == self and session.world.gameplay.health > 0
+	return is_instance_valid(session) and session.owns_transition(token) and session.room == self and session.player_health() > 0
 
 func _abort_stairs(token: int,was_locked: bool) -> void:
 	# Um resgate que pegou o token também é dono da cortina e do bloqueio de ator.

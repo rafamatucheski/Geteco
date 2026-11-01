@@ -18,6 +18,12 @@ class World extends Node3D:
 class Session extends RefCounted:
 	var state = State.new()
 	var world = World.new()
+	const _PLAYER_QUERY := preload("res://tests/fixtures/SessionPlayerQueryDouble.gd")
+	func player_position() -> Vector3: return _PLAYER_QUERY.position(world)
+	func player_local_position() -> Vector3: return _PLAYER_QUERY.local_position(world)
+	func player_health() -> float: return _PLAYER_QUERY.health(world)
+	func player_in_vehicle() -> bool: return _PLAYER_QUERY.in_vehicle(world)
+	func player_vehicle(): return _PLAYER_QUERY.vehicle(world)
 	var activities = {"residence": RESIDENCE.new()}
 	var mountain_progression = null
 	var return_point := Vector3.ZERO

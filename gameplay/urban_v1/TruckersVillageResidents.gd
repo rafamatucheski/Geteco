@@ -73,7 +73,7 @@ func _process(delta: float) -> void:
 func _update_activity(force := false) -> void:
 	var nearby := region_active
 	if session!=null and is_instance_valid(session.world.player):
-		nearby = nearby and session.world.player.global_position.distance_to(ORIGIN)<135
+		nearby = nearby and session.player_position().distance_to(ORIGIN)<135
 	if nearby==_near and not force: return
 	_near = nearby
 	for resident in residents:

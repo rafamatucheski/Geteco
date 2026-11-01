@@ -16,11 +16,11 @@ func _nearby_station() -> Dictionary:
 	if session == null: return {}
 	for station in COACH_ROUTES.stations():
 		if station.region != session.state.region_id: continue
-		if session.world.player.global_position.distance_to(station.arrival) < BOARD_RADIUS:
+		if session.player_position().distance_to(station.arrival) < BOARD_RADIUS:
 			return station
 		# Mantém os pontos de embarque de ônibus existentes usados por saves/mapas antigos.
 		var legacy: Vector3 = Vector3(1930,0,1220)/16.0 if station.id == "harbor" else station.road_point
-		if station.id != "desert" and session.world.player.global_position.distance_to(legacy) < 3.0:
+		if station.id != "desert" and session.player_position().distance_to(legacy) < 3.0:
 			return station
 	return {}
 
@@ -127,7 +127,7 @@ func _board_coach(instant: bool, generation: int) -> void:
 	trip_updated.emit(get_trip_state())
 
 func _abort_boarding(message: String) -> void:
-	var point: Vector3 = _saved.get("origin_position", session.world.player.global_position)
+	var point: Vector3 = _saved.get("origin_position", session.player_position())
 	cancel_for_transition()
 	session.world.player.teleport(point)
 	if is_instance_valid(session.door_transition): session.door_transition.clear()
@@ -135,7 +135,7 @@ func _abort_boarding(message: String) -> void:
 
 func _physics_process(delta: float) -> void:
 	if session == null or not session.ready_for_play or not riding or landing or _boarding: return
-	if session.world.gameplay.health <= 0 or session.rescue_pending or session.arrest_pending:
+	if session.player_health() <= 0 or session.rescue_pending or session.arrest_pending:
 		cancel_for_transition()
 		return
 	if _arrival_retry > 0.0:

@@ -125,7 +125,7 @@ func handle_game_input(event: InputEvent) -> bool:
 
 func _process(delta: float) -> void:
 	if not game_active: return
-	if not is_instance_valid(session) or session.room != self or not active or session.world.gameplay.health < _opened_health:
+	if not is_instance_valid(session) or session.room != self or not active or session.player_health() < _opened_health:
 		_finish(false)
 		return
 	_age += delta

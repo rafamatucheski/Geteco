@@ -73,9 +73,9 @@ func set_active(value: bool) -> void:
 
 func nearest_action() -> Dictionary:
 	if not _active or specification.is_empty() or opened or session == null or session.modal or session.is_transition_blocked(): return {}
-	if session.world.gameplay.health <= 0 or not is_visible_in_tree(): return {}
+	if session.player_health() <= 0 or not is_visible_in_tree(): return {}
 	var point: Vector3 = room.to_global(specification.door_position + Vector3(.60, 0, 0))
-	if session.world.player.global_position.distance_to(point) > 1.2: return {}
+	if session.player_position().distance_to(point) > 1.2: return {}
 	return {"id":"building_lockpick", "provider":self, "label":"Abrir fechadura · 1 lockpick"}
 
 func perform(_action: Dictionary = {}) -> bool:
@@ -92,15 +92,15 @@ func perform(_action: Dictionary = {}) -> bool:
 
 func _process(_delta: float) -> void:
 	if not _owns_modal: return
-	if session == null or session.world.gameplay.health <= 0 or session.is_transition_blocked() or not is_visible_in_tree():
+	if session == null or session.player_health() <= 0 or session.is_transition_blocked() or not is_visible_in_tree():
 		if lockpick.active: lockpick.finish(false)
 		_cancelled()
 
 func _unlocked() -> void:
 	if not _owns_modal or session == null: return
-	if session.world.gameplay.health <= 0 or session.is_transition_blocked(): _cancelled(); return
+	if session.player_health() <= 0 or session.is_transition_blocked(): _cancelled(); return
 	var target: Vector3 = room.to_global(specification.door_position + Vector3(.60, 0, 0))
-	if session.world.player.global_position.distance_to(target) > 1.4: _cancelled(); return
+	if session.player_position().distance_to(target) > 1.4: _cancelled(); return
 	if not session.state.economy.consume_item("lockpick", 1): _cancelled(); return
 	var state: Dictionary = session.state.world_state.get("harbor_building_unlocks", {}).duplicate()
 	state[specification.id] = true
@@ -108,7 +108,7 @@ func _unlocked() -> void:
 	_open(true)
 	_cancelled()
 	var occupants := room.get_node_or_null("BuildingOccupants")
-	if is_instance_valid(occupants): occupants.notice_intrusion(session.world.player.global_position, session)
+	if is_instance_valid(occupants): occupants.notice_intrusion(session.player_position(), session)
 	session.save_game()
 
 func _cancelled() -> void:

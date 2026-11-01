@@ -426,7 +426,7 @@ func _build_hatch() -> void:
 func _hatch_reachable() -> bool:
 	if session == null or not session.ready_for_play or not session.state.place_id.is_empty() or session.state.region_id != "harbor": return false
 	var player = session.world.player
-	return not hatch_busy and not player.dead and not player.input_locked and not session.world.driving.occupied and not session.is_transition_blocked() and player.global_position.distance_to(ORIGIN+HATCH_POINT)<1.65
+	return not hatch_busy and not player.dead and not player.input_locked and not session.player_in_vehicle() and not session.is_transition_blocked() and player.global_position.distance_to(ORIGIN+HATCH_POINT)<1.65
 
 func _update_hatch_marker() -> void:
 	hatch_marker.visible = _hatch_reachable() and not session.modal
@@ -598,11 +598,11 @@ func nearest_action() -> Dictionary:
 	if is_instance_valid(night_shift):
 		var night_action: Dictionary = night_shift.nearest_action()
 		if not night_action.is_empty(): return night_action
-	if session == null or session.state.region_id != "harbor" or session.world.driving.occupied: return {}
+	if session == null or session.state.region_id != "harbor" or session.player_in_vehicle(): return {}
 	if _hatch_reachable(): return {"id":"urban_v1","target":"vertice_hatch","label":"","silent":true,"position":ORIGIN+HATCH_POINT}
 	if not session.state.place_id.is_empty(): return {}
 	for entry in staff:
-		if not entry.actor.dead and session.world.player.global_position.distance_to(entry.actor.global_position)<2:
+		if not entry.actor.dead and session.player_position().distance_to(entry.actor.global_position)<2:
 			return {"id":"urban_v1","target":"vertice_staff","label":"Conversar","position":entry.actor.global_position}
 	return {}
 
@@ -616,7 +616,7 @@ func perform(target: String) -> bool:
 	var speaker := "GUARDA"
 	var actor: Node3D
 	for entry in staff:
-		if not entry.actor.dead and session.world.player.global_position.distance_to(entry.actor.global_position)<2:
+		if not entry.actor.dead and session.player_position().distance_to(entry.actor.global_position)<2:
 			speaker = "GUARDA" if entry.guard else ("FUNCIONÁRIO" if entry.office else "OPERADOR")
 			actor = entry.actor
 			break

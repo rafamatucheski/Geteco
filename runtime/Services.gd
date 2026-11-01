@@ -46,7 +46,7 @@ func _physics_process(delta: float) -> void:
 	if hospital_cooldown > 0: hospital_cooldown = maxf(0,hospital_cooldown-delta)
 	_update_cross()
 	var gameplay = session.world.gameplay
-	var on_foot: bool = not session.world.driving.occupied and gameplay.health>0
+	var on_foot: bool = not session.player_in_vehicle() and gameplay.health>0
 	if on_foot and session.state.place_id == "harbor_hospital" and _near(HOSPITAL_PICKUP,.75):
 		if hospital_cooldown<=0 and gameplay.heal(100):
 			hospital_cooldown = 180
@@ -81,10 +81,10 @@ func _report_precinct_threat(minimum_stars: int) -> void:
 	gameplay.report_civilian_call(point,point)
 
 func _near(local: Vector3, radius: float) -> bool:
-	return is_instance_valid(session.room) and session.world.player.global_position.distance_to(session.room.to_global(local))<=radius
+	return is_instance_valid(session.room) and session.player_position().distance_to(session.room.to_global(local))<=radius
 
 func nearest_action() -> Dictionary:
-	if session == null or session.world.driving.occupied or not is_instance_valid(session.room): return {}
+	if session == null or session.player_in_vehicle() or not is_instance_valid(session.room): return {}
 	var choices: Dictionary = {}
 	match session.state.place_id:
 		"harbor_hospital": choices = {"hospital_triage":Vector3(2,0,-3.5)}
@@ -96,7 +96,7 @@ func nearest_action() -> Dictionary:
 	var nearest := INF
 	for id in choices:
 		var point: Vector3 = session.room.to_global(choices[id])
-		var distance: float = session.world.player.global_position.distance_to(point)
+		var distance: float = session.player_position().distance_to(point)
 		if distance <= (1.7 if npcs.has(id) else 1.15) and distance < nearest:
 			nearest=distance
 			best={"id":"original_service","target":id,"label":"Conversar" if npcs.has(id) else "Examinar","position":point}
@@ -126,10 +126,10 @@ func perform(service: String) -> bool:
 	# O serviço do Monaliza compatível com a produção fica na bancada física;
 	# o FullSession de propósito não tem recurso genérico de reparo remoto.
 	if service == "garage":
-		if session == null or session.state.place_id != "maciota" or session.world.driving.occupied: return false
+		if session == null or session.state.place_id != "maciota" or session.player_in_vehicle(): return false
 		session.show_message("Use a bancada para cuidar da Monaliza.")
 		return true
-	if not Dialogue.PEOPLE.has(service) or session == null or session.world.driving.occupied: return false
+	if not Dialogue.PEOPLE.has(service) or session == null or session.player_in_vehicle(): return false
 	# Moradores de salas comuns (os esgotos de rua): falam com quem está perto, em qualquer lugar da sala deles.
 	if is_instance_valid(session.room) and _is_room_resident(service):
 		var resident_points := _npc_points()
@@ -146,7 +146,7 @@ func perform(service: String) -> bool:
 		if npcs.has(service):
 			if not _near(npcs[service],1.7): return false
 		elif not npcs.is_empty(): return false
-		elif not is_instance_valid(session.room) or session.world.player.global_position.distance_to(session.room.interaction_points.service)>1.7: return false
+		elif not is_instance_valid(session.room) or session.player_position().distance_to(session.room.interaction_points.service)>1.7: return false
 	session.show_dialogue(_bound_lines(service))
 	return true
 
@@ -174,14 +174,14 @@ func _bound_lines(service: String) -> Array:
 
 func _auto_eligible(car) -> bool:
 	if not is_instance_valid(car) or not session.state.place_id.is_empty() or session.state.region_id != "harbor": return false
-	if not session.world.driving.occupied or session.world.driving.car != car or session.world.gameplay.health<=0 or car.health<=0: return false
+	if not session.player_in_vehicle() or session.player_vehicle() != car or session.player_health()<=0 or car.health<=0: return false
 	# O embarque é dono das travas temporárias de entrada; o serviço só começa depois que o motorista senta.
 	if session.world.driving.is_body_transition_active() or not car.controlled or car.input_locked: return false
 	var relative: Vector3 = car.global_position-AUTO_ORIGIN
 	return absf(car.speed)<.15 and car.horizontal_velocity.length()<.2 and AUTO_BAY.has_point(Vector2(relative.x,relative.z))
 
 func _tick_auto(delta: float) -> void:
-	var car = session.world.driving.car if session.world.driving.occupied else null
+	var car = session.player_vehicle() if session.player_in_vehicle() else null
 	_update_auto_presentation(car)
 	if _auto_phase != "idle" and not is_instance_valid(_car):
 		cancel_auto_service("vehicle_removed")
@@ -242,7 +242,7 @@ func _start_auto_service(target: CharacterBody3D) -> void:
 
 func _auto_still_valid(current) -> bool:
 	if not is_instance_valid(_car) or _car.is_queued_for_deletion() or current != _car: return false
-	if not session.world.driving.occupied or session.world.gameplay.health <= 0 or _car.health <= 0: return false
+	if not session.player_in_vehicle() or session.player_health() <= 0 or _car.health <= 0: return false
 	if session.state.region_id != "harbor" or not session.state.place_id.is_empty(): return false
 	if absf(float(_car.get("speed"))) > .15: return false
 	if session.has_method("is_transition_blocked") and session.is_transition_blocked(): return false

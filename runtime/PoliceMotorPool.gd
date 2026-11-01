@@ -99,7 +99,7 @@ func _spawn(index: int) -> CharacterBody3D:
 	if ground.is_empty(): return null
 	# Checagem barata antes de instanciar o modelo: a viatura roubada devolvida à
 	# vaga, ou o próprio jogador parado nela, bloqueiam a reposição.
-	if session.world.player.global_position.distance_to(bay) < 3.5: return null
+	if session.player_position().distance_to(bay) < 3.5: return null
 	for other in get_tree().get_nodes_in_group("drivable"):
 		if other is Node3D and other.global_position.distance_to(bay) < 3.5: return null
 	var point: Vector3 = ground.position + Vector3.UP * .04
@@ -123,8 +123,8 @@ func begin_lockpick(car: CharacterBody3D) -> bool:
 func _can_complete(car) -> bool:
 	if not is_instance_valid(car) or not car.is_inside_tree() or car.is_queued_for_deletion(): return false
 	if not car.get_meta("police_locked", false) or car.health <= 0 or car.controlled: return false
-	if float(session.world.gameplay.health) <= 0 or session.is_transition_blocked(): return false
-	return session.world.player.global_position.distance_to(car.global_position) <= LOCK_REACH
+	if float(session.player_health()) <= 0 or session.is_transition_blocked(): return false
+	return session.player_position().distance_to(car.global_position) <= LOCK_REACH
 
 func _unlocked() -> void:
 	var car := target

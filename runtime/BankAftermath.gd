@@ -55,7 +55,7 @@ func bank_is_away() -> bool:
 	if session.state.region_id != "harbor": return true
 	if _definition.is_empty(): _definition = PLACES.get_definition("harbor_bank")
 	var exterior: Vector3 = _definition.exterior_position
-	if session.world.player.global_position.distance_squared_to(exterior) < AWAY_DISTANCE * AWAY_DISTANCE: return false
+	if session.player_position().distance_squared_to(exterior) < AWAY_DISTANCE * AWAY_DISTANCE: return false
 	if not session.state.place_id.is_empty(): return true
 	var camera := session.world.camera as Camera3D
 	if not is_instance_valid(camera): return false

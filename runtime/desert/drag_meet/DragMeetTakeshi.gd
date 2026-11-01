@@ -31,8 +31,8 @@ func _process(delta: float) -> void:
 	reconcile()
 
 func reconcile() -> void:
-	var outdoors: bool = session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.world.gameplay.health>0
-	var nearby: bool = outdoors and session.world.player.global_position.distance_to(POINT)<(110.0 if is_instance_valid(actor) else 85.0)
+	var outdoors: bool = session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.player_health()>0
+	var nearby: bool = outdoors and session.player_position().distance_to(POINT)<(110.0 if is_instance_valid(actor) else 85.0)
 	if not nearby or race.active:
 		_clear()
 		if not nearby: retired = false
@@ -111,8 +111,8 @@ func _spawn_display() -> void:
 	add_child(parked)
 
 func nearest_action() -> Dictionary:
-	if not is_instance_valid(actor) or actor.dead or race.active or session.world.driving.occupied or session.modal: return {}
-	if session.world.player.global_position.distance_to(actor.global_position)>2.5: return {}
+	if not is_instance_valid(actor) or actor.dead or race.active or session.player_in_vehicle() or session.modal: return {}
+	if session.player_position().distance_to(actor.global_position)>2.5: return {}
 	return {"id":"desert_drag","target":"takeshi","label":"Falar com Takeshi"}
 
 func _clear() -> void:

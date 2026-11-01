@@ -72,8 +72,8 @@ func collect_nearby() -> int:
 
 func _can_collect() -> bool:
 	return session != null and session.state.region_id == "harbor" and not session.modal \
-		and not session.is_transition_blocked() and session.world.gameplay.health > 0 \
-		and not session.world.driving.occupied and not session.world.player.input_locked
+		and not session.is_transition_blocked() and session.player_health() > 0 \
+		and not session.player_in_vehicle() and not session.world.player.input_locked
 
 func open_wardrobe() -> void:
 	if not _can_collect(): return
@@ -118,8 +118,8 @@ func _remove(slot: String) -> void:
 	_show_wardrobe()
 
 func _wardrobe_alive() -> bool:
-	return session != null and session.modal and session.world.gameplay.health > 0 \
-		and not session.is_transition_blocked() and not session.world.driving.occupied
+	return session != null and session.modal and session.player_health() > 0 \
+		and not session.is_transition_blocked() and not session.player_in_vehicle()
 
 func _save() -> void:
 	# O FullSession já enfileira um checkpoint automático quando o save está bloqueado.

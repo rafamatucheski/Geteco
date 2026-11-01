@@ -19,7 +19,7 @@ static func equip(session, id: String, at_shop: bool = false) -> bool:
 static func police_far(session) -> bool:
 	var gameplay = session.world.gameplay
 	var place: String = session.state.place_id
-	var player_point: Vector3 = session.world.player.global_position
+	var player_point: Vector3 = session.player_position()
 	var exterior_point: Vector3 = session.return_point if not place.is_empty() else player_point
 	var officers: Array = gameplay.police.duplicate()
 	for officer in gameplay.get_tree().get_nodes_in_group("v2_police_officers"):

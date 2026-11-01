@@ -67,7 +67,7 @@ func _campaign_active() -> bool:
 	return session != null and session.state.campaign.active_id == "jessica_bank"
 
 func _eligible() -> bool:
-	return session != null and session.ready_for_play and not session.controller.save_invalid and not session.rescue_pending and not session.arrest_pending and session.world.gameplay.health > 0 and session.state.region_id == "harbor" and session.state.place_id.is_empty() and not session.world.driving.occupied and not session.is_transition_blocked()
+	return session != null and session.ready_for_play and not session.controller.save_invalid and not session.rescue_pending and not session.arrest_pending and session.player_health() > 0 and session.state.region_id == "harbor" and session.state.place_id.is_empty() and not session.player_in_vehicle() and not session.is_transition_blocked()
 
 func _bank() -> Dictionary:
 	return session.robberies.data if session != null and session.robberies != null else {}
@@ -129,8 +129,8 @@ func _safe_point() -> Vector3:
 
 func _contact_valid() -> bool:
 	if not _eligible() or session.world.gameplay.stars > 0 or not is_instance_valid(actor): return false
-	if actor.global_position.distance_to(session.world.player.global_position) > 3.2: return false
-	return _clear_segment(session.world.player.global_position,actor.global_position,[session.world.player.get_rid(),actor.get_rid()])
+	if actor.global_position.distance_to(session.player_position()) > 3.2: return false
+	return _clear_segment(session.player_position(),actor.global_position,[session.world.player.get_rid(),actor.get_rid()])
 
 func _clear_segment(from: Vector3, to: Vector3, exclude: Array[RID]) -> bool:
 	var ray := PhysicsRayQueryParameters3D.create(from+Vector3.UP*.9,to+Vector3.UP*.9,7,exclude)
@@ -202,7 +202,7 @@ func perform(target: String) -> bool:
 
 func _face_player() -> void:
 	if not is_instance_valid(actor): return
-	var toward: Vector3 = session.world.player.global_position-actor.global_position
+	var toward: Vector3 = session.player_position()-actor.global_position
 	actor.rotation.y = atan2(toward.x,toward.z)
 
 func _lines(key: String) -> Array:
@@ -242,7 +242,7 @@ func _observe_bank_escape() -> void:
 	var receipt := "bank_haul:%d:%d" % [progress.bank_cycle,mask]
 	var paid: bool = session.state.economy.has_reward_receipt(receipt)
 	var proof := {"cycle":progress.bank_cycle,"mask":mask,"receipt":receipt,"receipt_paid":paid,
-		"alive":session.world.gameplay.health > 0,"outside_bank":session.state.place_id.is_empty(),"bank_failed":bank.bank_failed}
+		"alive":session.player_health() > 0,"outside_bank":session.state.place_id.is_empty(),"bank_failed":bank.bank_failed}
 	if not PROGRESS.report_world_event(session.state.world_state,"bank_escaped",proof): return
 	if not session.mission_world._event("jessica_bank_haul_escaped","harbor_bank",{
 		"bank_cycle":progress.bank_cycle,"bank_haul_mask":mask,"bank_haul_receipt":receipt,"bank_receipt_paid":paid,
@@ -253,10 +253,10 @@ func _stream_contact() -> void:
 	var exterior: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty()
 	var point := _bank_parking() if _saved_vehicle.is_empty() else Vector3(_saved_vehicle.position[0],_saved_vehicle.position[1],_saved_vehicle.position[2])
 	if is_instance_valid(car): point = car.global_position
-	var nearby: bool = exterior and session.world.player.global_position.distance_to(point) < 70
+	var nearby: bool = exterior and session.player_position().distance_to(point) < 70
 	if not unlocked or not nearby:
 		if is_instance_valid(actor): actor.queue_free(); actor = null
-		if is_instance_valid(car) and not car.controlled and (not exterior or session.world.player.global_position.distance_to(point) > 100): _retire_car()
+		if is_instance_valid(car) and not car.controlled and (not exterior or session.player_position().distance_to(point) > 100): _retire_car()
 		return
 	if not is_instance_valid(car): _ensure_car()
 	if not is_instance_valid(car) or car.has_meta("awaiting_ground") or car.is_queued_for_deletion(): return
@@ -349,7 +349,7 @@ func _board() -> bool:
 		session.show_message("Jessica: ainda não temos uma saída livre até a oficina.")
 		return false
 	var progress := _progress()
-	var proof := {"vehicle_id":car.vehicle_id,"alive":car.health > 0 and session.world.gameplay.health > 0,"passenger":true,"door_clear":true}
+	var proof := {"vehicle_id":car.vehicle_id,"alive":car.health > 0 and session.player_health() > 0,"passenger":true,"door_clear":true}
 	if not PROGRESS.report_world_event(session.state.world_state,"getaway_boarded",proof): return false
 	if not session.mission_world._event("jessica_getaway_boarded","jessica_jetta",{"correct_vehicle":true,"passenger":true,"door_clear":true,"in_vehicle":true}):
 		session.state.world_state.jessica = progress
@@ -570,7 +570,7 @@ func _tick_ride(delta: float) -> void:
 	if not is_instance_valid(car):
 		session.on_death()
 		return
-	if session.rescue_pending or session.arrest_pending or session.world.gameplay.health <= 0:
+	if session.rescue_pending or session.arrest_pending or session.player_health() <= 0:
 		driver.tick(delta,true)
 		return
 	if session.world.player.seated: INTERIOR.follow(session.world.player,car,delta)
@@ -603,7 +603,7 @@ func _tick_ride(delta: float) -> void:
 func getaway_debug() -> Dictionary:
 	var value := {"driver":driver.debug_snapshot(),"stalled":_stalled,"travelled":_travelled,
 		"modal":session.modal,"dialogue_open":session.dialogue_open,"position_transition":session.has_position_transition(),
-		"player_position":str(session.world.player.global_position),"player_layer":session.world.player.collision_layer,
+		"player_position":str(session.player_position()),"player_layer":session.world.player.collision_layer,
 		"player_mask":session.world.player.collision_mask,"player_visible":session.world.player.visible}
 	if is_instance_valid(actor):
 		value.actor = {"position":str(actor.global_position),"layer":actor.collision_layer,"mask":actor.collision_mask,"visible":actor.visible}
@@ -656,7 +656,7 @@ func _leave(completed: bool) -> bool:
 		_notice -= .25
 		if _notice <= 0: session.show_message("Saída ocupada. Aguardando espaço para desembarcar."); _notice = 4
 		return false
-	var proof := {"vehicle_id":car.vehicle_id,"alive":session.world.gameplay.health > 0 and car.health > 0,
+	var proof := {"vehicle_id":car.vehicle_id,"alive":session.player_health() > 0 and car.health > 0,
 		"route_finished":_route_finished(),"safe_exit":true,"exterior":session.state.region_id == "harbor" and session.state.place_id.is_empty(),
 		"inside_courtyard":_inside_courtyard(),
 		"wanted":session.world.gameplay.stars,"travelled":_travelled,"safe_distance":car.global_position.distance_to(_safe_point())}
@@ -741,7 +741,7 @@ func _restore_player(destination := Vector3.INF) -> void:
 	player.collision_mask = _saved_player.mask
 	player.set_physics_process(_saved_player.physics)
 	player.visible = _saved_player.visible
-	player.input_locked = _saved_player.locked or session.rescue_pending or session.arrest_pending or session.world.gameplay.health <= 0
+	player.input_locked = _saved_player.locked or session.rescue_pending or session.arrest_pending or session.player_health() <= 0
 	player.velocity = Vector3.ZERO
 	session.world.camera.target = player
 	_saved_player.clear()
@@ -751,7 +751,7 @@ func _parking_state() -> Dictionary:
 	return {"position":str(car.global_position),"yaw":car.rotation.y,"velocity":str(car.velocity),
 		"horizontal":str(car.horizontal_velocity),"layer":car.collision_layer,"mask":car.collision_mask,
 		"crash_slide":str(car.get_meta("crash_slide",Vector3.ZERO)),"crash_spin":car.get_meta("crash_spin",0),
-		"player_position":str(session.world.player.global_position),"player_layer":session.world.player.collision_layer}
+		"player_position":str(session.player_position()),"player_layer":session.world.player.collision_layer}
 
 func cancel_attempt(reason := "cancelled") -> bool:
 	_generation += 1

@@ -18,7 +18,7 @@ func configure(owner_progression) -> void:
 func can_board() -> bool:
 	var session = progression.session
 	if riding or not progression._outside() or session.modal or session.is_transition_blocked() or session.world.player.input_locked: return false
-	return session.world.player.position.distance_to(DEFINITIONS.at(POINTS[0],"mountain")) < 7.2
+	return session.player_local_position().distance_to(DEFINITIONS.at(POINTS[0],"mountain")) < 7.2
 func board() -> bool:
 	if not can_board(): return false
 	var session = progression.session
@@ -110,7 +110,7 @@ func _release(normal: bool) -> void:
 	var session = progression.session
 	var actor = session.world.player
 	if session.transition_kind == "ski_lift": session.transition_kind = ""
-	if is_instance_valid(actor) and session.world.gameplay.health > 0 and not session.rescue_pending and not session.arrest_pending:
+	if is_instance_valid(actor) and session.player_health() > 0 and not session.rescue_pending and not session.arrest_pending:
 		actor.set_physics_process(bool(saved.get("physics",true)))
 		if normal or not session.is_transition_blocked(): actor.input_locked = bool(saved.get("locked",false))
 	if is_instance_valid(chair): chair.queue_free()

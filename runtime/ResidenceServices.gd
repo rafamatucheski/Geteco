@@ -99,14 +99,14 @@ func _station_menu(title: String) -> void:
 
 func _accessible() -> bool:
 	if session == null or not session.ready_for_play or session.controller.save_invalid: return false
-	if session.world.driving.occupied or session.world.gameplay.health <= 0: return false
+	if session.player_in_vehicle() or session.player_health() <= 0: return false
 	if session.state.region_id != "harbor" or not HOMES.PROPERTIES.has(session.state.place_id): return false
 	if not session.activities.residence.can_enter(session.state.place_id) or not is_instance_valid(session.room): return false
 	return not session.is_transition_blocked()
 
 func _near_station(station: String) -> bool:
 	var point: Variant = session.room.interaction_points.get(station)
-	return point is Vector3 and session.world.player.position.distance_to(point) < .95
+	return point is Vector3 and session.player_local_position().distance_to(point) < .95
 
 func nearest_action() -> Dictionary:
 	if session == null or session.modal or not _accessible(): return {}
@@ -116,7 +116,7 @@ func nearest_action() -> Dictionary:
 		if station == "backpack" and not _backpack_available(): continue
 		var point: Variant = session.room.interaction_points.get(station)
 		if not point is Vector3: continue
-		var separation: float = session.world.player.position.distance_to(point)
+		var separation: float = session.player_local_position().distance_to(point)
 		if separation < distance:
 			distance = separation
 			nearest = station
@@ -133,11 +133,11 @@ func perform(target: String) -> bool:
 func _start_station(station: String) -> void:
 	_station = station
 	_home = session.state.place_id
-	_menu_health = session.world.gameplay.health
+	_menu_health = session.player_health()
 	_open()
 
 func _menu_available() -> bool:
-	if not _accessible() or session.state.place_id != _home or not _near_station(_station) or session.world.gameplay.health < _menu_health:
+	if not _accessible() or session.state.place_id != _home or not _near_station(_station) or session.player_health() < _menu_health:
 		session.close_menu()
 		return false
 	return true

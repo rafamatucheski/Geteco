@@ -38,6 +38,12 @@ class WorldFixture extends Node3D:
 class SessionFixture extends Node:
 	var room: Node3D
 	var world: Node3D
+	const _PLAYER_QUERY := preload("res://tests/fixtures/SessionPlayerQueryDouble.gd")
+	func player_position() -> Vector3: return _PLAYER_QUERY.position(world)
+	func player_local_position() -> Vector3: return _PLAYER_QUERY.local_position(world)
+	func player_health() -> float: return _PLAYER_QUERY.health(world)
+	func player_in_vehicle() -> bool: return _PLAYER_QUERY.in_vehicle(world)
+	func player_vehicle(): return _PLAYER_QUERY.vehicle(world)
 	var state := {"place_id": ""}
 
 func _initialize() -> void: run.call_deferred()

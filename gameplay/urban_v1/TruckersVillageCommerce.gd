@@ -57,7 +57,7 @@ func tick(delta: float) -> void:
 	if not is_finite(delta) or delta <= 0: return
 	data.register_cooldown = maxf(0,float(data.register_cooldown)-delta)
 	data.hostility = maxf(0,float(data.hostility)-delta)
-	if quest.session.world.gameplay.health <= 0: data.hostility = 0.0
+	if quest.session.player_health() <= 0: data.hostility = 0.0
 
 func snapshot() -> Dictionary:
 	return data.duplicate(true)

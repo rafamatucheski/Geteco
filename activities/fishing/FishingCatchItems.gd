@@ -69,7 +69,7 @@ static func next_receipt(session, action: String, offset := 0) -> String:
 	return prefix + str(serial + 1 + offset)
 
 static func _inventory_available(session) -> bool:
-	return session != null and session.field_inventory != null and not session.controller.save_invalid and session.world.gameplay.health > 0
+	return session != null and session.field_inventory != null and not session.controller.save_invalid and session.player_health() > 0
 
 static func can_store(session, fish: Dictionary) -> bool:
 	var id := make_id(fish)
@@ -93,9 +93,9 @@ static func carried(session) -> Array[Dictionary]:
 	return result
 
 static func _at_counter(session) -> bool:
-	if not _inventory_available(session) or session.is_transition_blocked() or session.world.driving.occupied: return false
+	if not _inventory_available(session) or session.is_transition_blocked() or session.player_in_vehicle(): return false
 	var fishing = session.fishing
-	return fishing != null and not fishing.active and fishing._outside() and is_instance_valid(fishing.site) and session.world.player.global_position.distance_to(fishing.site.entry_position()) <= 3.2
+	return fishing != null and not fishing.active and fishing._outside() and is_instance_valid(fishing.site) and session.player_position().distance_to(fishing.site.entry_position()) <= 3.2
 
 static func sell(session, id: String, receipt: String) -> bool:
 	if not _at_counter(session): return false

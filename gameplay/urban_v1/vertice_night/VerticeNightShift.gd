@@ -138,14 +138,14 @@ func _local(point: Vector3) -> Vector3:
 ## Livre para uma ligação: nada mais segurando o jogador e salvar permitido.
 func _free_for_call() -> bool:
 	if not session.ready_for_play or session.modal or _in_dialogue or session.is_transition_blocked(): return false
-	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.gameplay.health <= 0: return false
+	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.player_health() <= 0: return false
 	if session.rescue_pending or session.arrest_pending or session.controller.save_invalid: return false
-	if session.world.driving.occupied and session.world.driving.car.velocity.length() > 1.0: return false
+	if session.player_in_vehicle() and session.player_vehicle().velocity.length() > 1.0: return false
 	return session.save_block_reason().is_empty()
 
 func operational() -> bool:
 	return session.ready_for_play and not session.modal and not _in_dialogue and not session.is_transition_blocked() \
-		and session.state.place_id.is_empty() and session.world.gameplay.health > 0 and not _player().input_locked
+		and session.state.place_id.is_empty() and session.player_health() > 0 and not _player().input_locked
 
 func _process(delta: float) -> void:
 	if session == null or not session.ready_for_play: return
@@ -198,7 +198,7 @@ func lines(id: String) -> Array:
 # --- Operação --------------------------------------------------------------------------------
 
 func _should_run() -> bool:
-	if session.state.region_id != "harbor" or session.world.gameplay.health <= 0: return false
+	if session.state.region_id != "harbor" or session.player_health() <= 0: return false
 	if not session.state.place_id.is_empty() and session.state.place_id != PLACE_UNDERCROFT: return false
 	if not running and (not night_window() or _night_id() == _failed_night): return false
 	if session.state.place_id == PLACE_UNDERCROFT: return true
@@ -315,7 +315,7 @@ func _sense(elapsed: float) -> void:
 	for guard in guards:
 		if is_instance_valid(guard): exclude.append(guard.get_rid())
 	# Com o pátio aceso o vigia enxerga mais longe; um carro chama atenção de longe.
-	var range_scale := (1.6 if alarm else 1.0)*(1.5 if session.world.driving.occupied else 1.0)
+	var range_scale := (1.6 if alarm else 1.0)*(1.5 if session.player_in_vehicle() else 1.0)
 	for guard in _live_guards():
 		if guard.engaged: continue
 		var seen: bool = target.visible and guard.can_see(point,target,range_scale,exclude)
@@ -403,7 +403,7 @@ func fire_seconds_left() -> float:
 
 func nearest_action() -> Dictionary:
 	if session == null or not session.ready_for_play or session.modal or _in_dialogue: return {}
-	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied: return {}
+	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.player_in_vehicle(): return {}
 	var player := _player()
 	if player.dead or player.input_locked: return {}
 	var p := _local(player.global_position)
@@ -496,7 +496,7 @@ func _try_maciota_call() -> void:
 func _maciota_call_done() -> void:
 	_in_dialogue = false
 	var state := data()
-	if state.is_empty() or state.stage != "escaping" or session.world.gameplay.health <= 0: return
+	if state.is_empty() or state.stage != "escaping" or session.player_health() <= 0: return
 	state.stage = "done"
 	if state.route == "loud": state.closed_until = _moon_day()+STATE.CLOSED_DAYS
 	session.show_message("Turno da noite concluído.")

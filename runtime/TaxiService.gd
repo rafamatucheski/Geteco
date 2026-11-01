@@ -30,7 +30,7 @@ func nearest() -> CharacterBody3D:
 	var distance := 5.0
 	for vehicle in session.controller.vehicles:
 		if not available(vehicle): continue
-		var separation: float = vehicle.position.distance_to(session.world.player.position)
+		var separation: float = vehicle.position.distance_to(session.player_local_position())
 		if separation < distance and absf(vehicle.speed) <= 11:
 			closest = vehicle; distance = separation
 	return closest
@@ -41,12 +41,12 @@ func offer(vehicle, door_side := 1) -> bool:
 	if is_instance_valid(transport.car) and transport.car != vehicle:
 		session.show_message("Há um veículo esperando seu embarque."); return true
 	if is_instance_valid(offered): return true
-	if session.world.player.position.distance_to(vehicle.position) > 6: return false
-	var q := PhysicsRayQueryParameters3D.create(session.world.player.position+Vector3.UP,vehicle.position+Vector3.UP,7,[session.world.player.get_rid(),vehicle.get_rid()])
+	if session.player_local_position().distance_to(vehicle.position) > 6: return false
+	var q := PhysicsRayQueryParameters3D.create(session.player_local_position()+Vector3.UP,vehicle.position+Vector3.UP,7,[session.world.player.get_rid(),vehicle.get_rid()])
 	if not session.world.get_world_3d().direct_space_state.intersect_ray(q).is_empty(): return false
 	offered = vehicle; side = door_side
 	vehicle.set_meta("taxi_service",true)
-	source = session.world.player.position
+	source = session.player_local_position()
 	saved_traffic = vehicle.traffic; saved_brake = vehicle.brake_input
 	vehicle.traffic = false; vehicle.brake_input = true
 	session.menu("Táxi")
@@ -64,7 +64,7 @@ func board_waiting() -> void:
 	transport._board()
 
 func valid_offer() -> bool:
-	return available(offered) and transport._eligible() and session.world.player.position.distance_to(source) < 2 and session.world.player.position.distance_to(offered.position) < 7
+	return available(offered) and transport._eligible() and session.player_local_position().distance_to(source) < 2 and session.player_local_position().distance_to(offered.position) < 7
 
 func cancel() -> void:
 	if is_instance_valid(offered) and offered.health > 0:

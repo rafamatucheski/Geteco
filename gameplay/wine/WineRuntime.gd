@@ -33,14 +33,14 @@ func recover() -> void:
 	if is_instance_valid(overlay): overlay.hide()
 
 func _available() -> bool:
-	return session!=null and session.ready_for_play and not session.get_tree().paused and session.world.gameplay.health>0 and not session.is_transition_blocked() and not session.world.driving.occupied
+	return session!=null and session.ready_for_play and not session.get_tree().paused and session.player_health()>0 and not session.is_transition_blocked() and not session.player_in_vehicle()
 
 func _near(target: String) -> bool:
 	if not _available() or session.state.place_id!=PLACE or not is_instance_valid(session.room): return false
 	if session.has_method("service_threatened") and session.service_threatened(): return false
 	var key := "luisa" if target=="luisa" else "service"
 	if not session.room.interaction_points.has(key): return false
-	return session.world.player.global_position.distance_to(session.room.interaction_points[key])<1.85
+	return session.player_position().distance_to(session.room.interaction_points[key])<1.85
 
 func nearest_action() -> Dictionary:
 	if session==null or session.modal: return {}
@@ -65,7 +65,7 @@ func _open(shop: bool) -> void:
 	session.menu("Curitiba Cellar" if shop else "Vinhos")
 	session.panel.hide()
 	session.menu_closed=dismiss
-	opened_health=float(session.world.gameplay.health)
+	opened_health=float(session.player_health())
 	ui.shop=shop
 	ui.show()
 	ui.refresh()
@@ -85,7 +85,7 @@ func buy(id: String) -> bool:
 
 func drink(id: String) -> bool:
 	if not _available(): return false
-	var result: Dictionary=model.drink(id,float(session.world.gameplay.health))
+	var result: Dictionary=model.drink(id,float(session.player_health()))
 	if not result.ok:
 		_feedback(reason_text(str(result.reason)))
 		if ui.visible: ui.refresh()
@@ -146,7 +146,7 @@ func _feedback(text: String) -> void:
 
 func _process(delta: float) -> void:
 	if session==null or not session.ready_for_play: return
-	if session.world.gameplay.health<=0:
+	if session.player_health()<=0:
 		if model.intensity()>0.0: recover()
 		return
 	if session.get_tree().paused: return
@@ -163,7 +163,7 @@ func _process(delta: float) -> void:
 	if is_instance_valid(overlay):
 		overlay.update_effect(model.intensity(),phase,model.stage(),not session.modal and not session.is_transition_blocked())
 	if ui.visible:
-		if session.world.gameplay.health<opened_health or not _available() or (ui.shop and not _near("nelson")):
+		if session.player_health()<opened_health or not _available() or (ui.shop and not _near("nelson")):
 			session.close_menu()
 		else:
 			refresh_clock+=delta

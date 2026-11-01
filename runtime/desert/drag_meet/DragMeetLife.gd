@@ -56,24 +56,24 @@ func _update_score() -> void:
 		if drag.active: phase=str(drag.phase)
 		elif is_instance_valid(drag.board_controller) and is_instance_valid(drag.board_controller.results_layer) and drag.board_controller.results_layer.visible:
 			phase="results"
-	var blocked: bool = session.world.gameplay.health<=0 or session.state.region_id!="desert" or not session.state.place_id.is_empty() or session.is_transition_blocked()
+	var blocked: bool = session.player_health()<=0 or session.state.region_id!="desert" or not session.state.place_id.is_empty() or session.is_transition_blocked()
 	var radio_active := false
 	if is_instance_valid(session.controller.world_audio):
 		var radio = session.controller.world_audio.radio
 		radio_active=is_instance_valid(radio) and radio.playing
 	var speaking: bool = session.dialogue_open or barks.is_speaking()
-	score.update_context(session.world.player.global_position,phase,blocked,speaking,radio_active,_elapsed)
+	score.update_context(session.player_position(),phase,blocked,speaking,radio_active,_elapsed)
 
 func reconcile() -> void:
-	if session==null or not session.ready_for_play or session.world.gameplay.health<=0:
+	if session==null or not session.ready_for_play or session.player_health()<=0:
 		_clear(); return
-	var point: Vector3 = session.world.player.global_position
+	var point: Vector3 = session.player_position()
 	var outdoors: bool = session.state.region_id=="desert" and session.state.place_id.is_empty()
 	var radius := RELEASE_RADIUS if active else ADMIT_RADIUS
 	if not outdoors or point.distance_to(LAYOUT.drag_meet_center())>radius:
 		_clear(); return
 	active = true
-	var suppressed: bool = session.modal or session.world.gameplay.health<=0 or session.is_transition_blocked()
+	var suppressed: bool = session.modal or session.player_health()<=0 or session.is_transition_blocked()
 	if is_instance_valid(session.desert) and session.desert.busy(): suppressed=true
 	if not is_instance_valid(ambience):
 		ambience = AMBIENCE.new()
@@ -89,7 +89,7 @@ func reconcile() -> void:
 	barks.update(session,point,suppressed or session.world.gameplay.stars>0,_elapsed)
 	# A posse pela atividade congela as pessoas mas não é um mudo de diálogo/música. Mantém
 	# o som local dos espectadores em volta da largada enquanto a trilha segue a corrida.
-	var audio_suppressed: bool = session.modal or session.dialogue_open or session.world.gameplay.health<=0 or session.is_transition_blocked()
+	var audio_suppressed: bool = session.modal or session.dialogue_open or session.player_health()<=0 or session.is_transition_blocked()
 	ambience.update(point,audio_suppressed,_elapsed,workshop_active,heat_phase,barks.is_speaking())
 	var admitted := false
 	for slot in MAX_RESIDENTS:

@@ -37,9 +37,9 @@ func _physics_process(delta: float) -> void:
 	if _access_poll < .1: return
 	_access_poll = 0.0
 	if session == null or _busy or _cooldown > 0 or not session.ready_for_play or session.modal or session.is_transition_blocked(): return
-	if session.state.region_id != "desert" or not session.world.driving.occupied or session.desert.busy(): return
+	if session.state.region_id != "desert" or not session.player_in_vehicle() or session.desert.busy(): return
 	var car := candidate_car()
-	if not is_instance_valid(car) or session.world.gameplay.health <= 0 or absf(car.speed) > 2.2: return
+	if not is_instance_valid(car) or session.player_health() <= 0 or absf(car.speed) > 2.2: return
 	var pedal: Vector2 = GameInput.vehicle_input()
 	var intended_z: float = -car.global_basis.z.z*pedal.y
 	# The authored doorway faces south. A crossing, never proximity alone, owns admission.
@@ -76,7 +76,7 @@ func _access_notice(message: String) -> void:
 
 func candidate_car() -> CharacterBody3D:
 	if session == null: return null
-	var car: CharacterBody3D = session.world.driving.car
+	var car: CharacterBody3D = session.player_vehicle()
 	if not is_instance_valid(car) or car.health <= 0 or car.engine_disabled or car.external_input: return null
 	if not PERF.eligible(str(car.archetype)) or car.half_width > 1.45 or car.half_length > 3.1: return null
 	# Estes carros têm outro dono de história/residência e não podem ser realocados pelo serviço.
@@ -85,9 +85,9 @@ func candidate_car() -> CharacterBody3D:
 
 func nearest_action() -> Dictionary:
 	if session == null or _busy or not session.ready_for_play or session.modal or session.is_transition_blocked(): return {}
-	if session.state.region_id != "desert" or session.world.gameplay.health <= 0 or not session.world.driving.occupied: return {}
+	if session.state.region_id != "desert" or session.player_health() <= 0 or not session.player_in_vehicle(): return {}
 	if session.desert.busy(): return {}
-	var car: CharacterBody3D = session.world.driving.car
+	var car: CharacterBody3D = session.player_vehicle()
 	if not is_instance_valid(car) or car.health <= 0 or absf(car.speed) > .5: return {}
 	var definition := PLACES.get_definition(PLACE)
 	if session.state.place_id == PLACE and is_instance_valid(session.room):
@@ -117,7 +117,7 @@ func perform(target: String) -> bool:
 		return false
 	var car := candidate_car()
 	if not is_instance_valid(car):
-		var selected: CharacterBody3D = session.world.driving.car
+		var selected: CharacterBody3D = session.player_vehicle()
 		var reason := "Este veículo não cabe na baia ou não tem preparação disponível."
 		if is_instance_valid(selected):
 			if selected.get_meta("residence_vehicle",false): reason = "Este carro está vinculado à residência. Estacione e fale com Digo a pé."
@@ -158,12 +158,12 @@ func _open_service() -> void:
 
 func write_snapshot() -> void:
 	if session == null: return
-	var car: CharacterBody3D = session.world.driving.car
+	var car: CharacterBody3D = session.player_vehicle()
 	if session.state.place_id != PLACE or not is_instance_valid(car) or car.get_meta("garage_place","") != PLACE:
 		session.state.world_state.erase(KEY)
 		return
 	# Só os metadados de acesso vivem aqui; o corpo fica com o dono existente.
-	session.state.world_state[KEY] = {"version":1,"vehicle_id":car.vehicle_id,"garage_owned":bool(car.get_meta("garage_reward",false)),"was_driven":session.world.driving.occupied}
+	session.state.world_state[KEY] = {"version":1,"vehicle_id":car.vehicle_id,"garage_owned":bool(car.get_meta("garage_reward",false)),"was_driven":session.player_in_vehicle()}
 
 static func valid(value: Variant) -> bool:
 	return value is Dictionary and value.get("version") == 1 and value.get("vehicle_id") is String and not value.vehicle_id.is_empty() and value.vehicle_id.length() <= 128 and value.get("garage_owned") is bool and value.get("was_driven") is bool
@@ -198,7 +198,7 @@ func restore_saved_driver() -> bool:
 		# O on_location_changed normal dele restaura este dono depois de ready_for_play.
 		return session.garage_rewards.data.vehicles.has(saved.vehicle_id)
 	var record: Dictionary = session.controller.starting_vehicle()
-	var car: CharacterBody3D = session.world.driving.car
+	var car: CharacterBody3D = session.player_vehicle()
 	if record.get("vehicle_id","") != saved.vehicle_id or not is_instance_valid(car) or car.vehicle_id != saved.vehicle_id:
 		restore_diagnostic["stage"] = "identity_mismatch"
 		return false
@@ -222,7 +222,7 @@ func restore_saved_driver() -> bool:
 	restore_diagnostic["stage"] = "driver_boarding"
 	var restored: bool = await session.restore_garage_driver(car)
 	session._restoring_saved_driver = false
-	restore_diagnostic.merge({"stage":"driver_result","restored":restored,"occupied":session.world.driving.occupied,"player_position":str(session.world.player.global_position),"car_position":str(car.global_position)},true)
+	restore_diagnostic.merge({"stage":"driver_result","restored":restored,"occupied":session.player_in_vehicle(),"player_position":str(session.player_position()),"car_position":str(car.global_position)},true)
 	return restored
 
 func service_admission_reason(car: CharacterBody3D) -> String:

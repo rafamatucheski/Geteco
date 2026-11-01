@@ -26,7 +26,7 @@ func _process(delta: float) -> void:
 	if _clock>0 or session==null or not session.ready_for_play: return
 	_clock=.5
 	var id: String=session.state.region_id
-	var near: bool=id in SITES and session.state.place_id.is_empty() and session.world.player.global_position.distance_to(SITES[id].point)<105
+	var near: bool=id in SITES and session.state.place_id.is_empty() and session.player_position().distance_to(SITES[id].point)<105
 	if is_instance_valid(site) and (not near or site_id!=id): site.queue_free(); site=null; site_id=""
 	if near and not is_instance_valid(site):
 		site_id=id
@@ -52,14 +52,14 @@ func _process(delta: float) -> void:
 
 func _near_origin(id: String) -> bool:
 	if id not in SITES or session.state.region_id!=id or not session.state.place_id.is_empty() or not is_instance_valid(site) or site.is_queued_for_deletion() or site_id!=id: return false
-	var player: Vector3=session.world.player.global_position
+	var player: Vector3=session.player_position()
 	var point: Vector3=SITES[id].point
 	if player.z<point.z+.4 or player.distance_to(point+Vector3(0,0,1.1))>=1.6: return false
 	var ray:=PhysicsRayQueryParameters3D.create(player+Vector3.UP,point+Vector3(0,.97,.30),1)
 	return session.world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
 
 func _available() -> bool:
-	return session!=null and session.ready_for_play and not session.controller.save_invalid and not transferring and not session.modal and not get_tree().paused and not session.is_transition_blocked() and session.world.gameplay.health>0 and not session.world.player.dead and not session.world.player.input_locked and not session.world.driving.occupied and not session.world.driving.is_body_transition_active() and session.world.player.is_on_floor()
+	return session!=null and session.ready_for_play and not session.controller.save_invalid and not transferring and not session.modal and not get_tree().paused and not session.is_transition_blocked() and session.player_health()>0 and not session.world.player.dead and not session.world.player.input_locked and not session.player_in_vehicle() and not session.world.driving.is_body_transition_active() and session.world.player.is_on_floor()
 
 func nearest_action() -> Dictionary:
 	if not _available() or not _near_origin(session.state.region_id): return {}

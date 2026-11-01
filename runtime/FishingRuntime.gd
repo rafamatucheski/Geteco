@@ -18,7 +18,7 @@ func _process(delta: float) -> void:
 
 func refresh() -> void:
 	if session == null or not is_instance_valid(session.world.player): return
-	var point: Vector3 = session.world.player.global_position
+	var point: Vector3 = session.player_position()
 	var distance := Vector2(point.x-SITE.ANCHOR.x,point.z-SITE.ANCHOR.z).length()
 	var outdoors: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty()
 	if not outdoors or distance > 250.0:

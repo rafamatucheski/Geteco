@@ -28,7 +28,7 @@ func parked_for_loading(vehicle, index: int) -> bool:
 func _driver_action() -> Dictionary:
 	if active_bay >= 0 or not cargo._shift_open(): return {}
 	if session.state.intro.stage != "complete" or not session.state.campaign.active_id.is_empty(): return {}
-	var vehicle = session.world.driving.car
+	var vehicle = session.player_vehicle()
 	for index in cargo.work_trucks.size():
 		var entry: Dictionary = cargo.work_trucks[index]
 		if not bay_available(index) or entry.truck != vehicle or not parked_for_loading(vehicle,index): continue
@@ -70,13 +70,13 @@ func bay_available(index: int) -> bool:
 
 func _available() -> bool:
 	return session.ready_for_play and not session.modal and session.state.region_id == "harbor" \
-		and session.state.place_id.is_empty() and session.world.gameplay.health > 0 \
+		and session.state.place_id.is_empty() and session.player_health() > 0 \
 		and session.world.gameplay.stars == 0 and not session.world.driving.is_body_transition_active()
 
 func _reachable(vehicle: CharacterBody3D) -> bool:
 	if not is_instance_valid(vehicle) or vehicle.health <= 0 or vehicle.is_queued_for_deletion(): return false
 	if not vehicle.is_visible_in_tree() or vehicle.has_meta("awaiting_ground") or absf(vehicle.speed) > .25: return false
-	if vehicle.global_position.distance_squared_to(session.world.player.global_position) > 36.0: return false
+	if vehicle.global_position.distance_squared_to(session.player_position()) > 36.0: return false
 	# Usa a mesma checagem de porta e obstrução do embarque, para que uma oferta não possa
 	# aparecer do outro lado de uma parede, do outro lado de um caminhão ou sem piso.
 	var option: Dictionary = session.world.driving._entry_option(true)
@@ -84,7 +84,7 @@ func _reachable(vehicle: CharacterBody3D) -> bool:
 
 func nearest_action() -> Dictionary:
 	if not _available(): return {}
-	if session.world.driving.occupied: return _driver_action()
+	if session.player_in_vehicle(): return _driver_action()
 	if active_bay >= 0:
 		if not pending_truck.is_empty(): return {}
 		var vehicle = cargo.work_trucks[active_bay].truck
@@ -111,7 +111,7 @@ func perform(target: String) -> bool:
 	if not session.save_game(true): return false
 	session.controller.capture_player_vehicle()
 	previous_vehicle = session.controller.starting_vehicle().duplicate(true)
-	var previous = session.world.driving.car
+	var previous = session.player_vehicle()
 	_previous_ref = weakref(previous) if is_instance_valid(previous) and previous.vehicle_id == previous_vehicle.get("vehicle_id", "") else null
 	_watch_previous(previous)
 	active_bay = target.trim_prefix(PREFIX).to_int()
@@ -136,7 +136,7 @@ func freight_status() -> Dictionary:
 	var vehicle = cargo.work_trucks[active_bay].truck
 	var depot := depot_position(active_bay)
 	if not is_instance_valid(vehicle): return {"active":true, "objective":"Retome o frete no cais.", "target":depot}
-	var driving: bool = session.world.driving.occupied and session.world.driving.car == vehicle
+	var driving: bool = session.player_in_vehicle() and session.player_vehicle() == vehicle
 	if not cargo.work_trucks[active_bay].loaded:
 		return {"active":true,"objective":"Aguarde o guindaste" if parked_for_loading(vehicle,active_bay) else "Estacione o caminhão na vaga do guindaste","target":cargo.work_trucks[active_bay].stop}
 	var at_depot: bool = vehicle.global_position.distance_to(depot) <= 6.0
@@ -181,7 +181,7 @@ func _deliver() -> bool:
 		cargo.start_journey(index,true)
 	# A devolução também libera a seleção salva do jogador. Senão a restauração
 	# genérica da frota e o spawner de NPCs do porto criariam o mesmo caminhão duas vezes.
-	if session.world.driving.car == vehicle: session.world.driving.car = null
+	if session.player_vehicle() == vehicle: session.world.driving.car = null
 	var saved: Array = session.state.world_state.get("vehicles", [])
 	session.state.world_state.vehicles = saved.filter(func(record): return record.get("vehicle_id", "") != _vehicle_id(index))
 	_restore_previous_selection()
@@ -225,8 +225,8 @@ func _save_after_removal(index: int) -> void:
 		session.save_game()
 
 func _release_retired_selection(index: int) -> void:
-	var selected = session.world.driving.car
-	if is_instance_valid(selected) and selected.vehicle_id == _vehicle_id(index) and not session.world.driving.occupied:
+	var selected = session.player_vehicle()
+	if is_instance_valid(selected) and selected.vehicle_id == _vehicle_id(index) and not session.player_in_vehicle():
 		session.world.driving.car = null
 	var saved: Array = session.state.world_state.get("vehicles", [])
 	session.state.world_state.vehicles = saved.filter(func(record): return record.get("vehicle_id", "") != _vehicle_id(index))
@@ -276,7 +276,7 @@ func _restore_previous_selection() -> void:
 	_return_pending = false
 	_refresh_previous()
 	if previous_vehicle.is_empty(): return
-	var selected = session.world.driving.car
+	var selected = session.player_vehicle()
 	var saved: Array = session.state.world_state.get("vehicles", [])
 	# Um carro diferente escolhido durante a entrega também pertence ao jogador.
 	# Devolver um empréstimo nunca pode desfazer essa nova seleção.
@@ -329,7 +329,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 func _restore_truck() -> void:
 	var vehicle: CharacterBody3D
 	var candidates: Array = session.controller.vehicles.duplicate()
-	if is_instance_valid(session.world.driving.car): candidates.append(session.world.driving.car)
+	if is_instance_valid(session.player_vehicle()): candidates.append(session.player_vehicle())
 	for candidate in candidates:
 		if is_instance_valid(candidate) and not candidate.is_queued_for_deletion() and candidate.vehicle_id == _vehicle_id(active_bay):
 			vehicle = candidate

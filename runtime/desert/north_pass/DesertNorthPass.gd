@@ -34,7 +34,7 @@ func refresh() -> void:
 	if is_instance_valid(region) and region.has_method("set_north_pass_completed"): region.set_north_pass_completed(done)
 	for gate in get_tree().get_nodes_in_group(L.GROUP): ART.set_completed(gate,done)
 	var active: bool=session.ready_for_play and L.enabled() and not done and session.state.region_id=="desert" and session.state.place_id.is_empty()
-	if active: active=session.world.player.global_position.distance_to(L.GATE)<(110.0 if is_instance_valid(_workers) else 85.0)
+	if active: active=session.player_position().distance_to(L.GATE)<(110.0 if is_instance_valid(_workers) else 85.0)
 	if not active:
 		_clear_workers()
 		return

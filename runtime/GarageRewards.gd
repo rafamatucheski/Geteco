@@ -139,7 +139,7 @@ func _sync() -> void:
 			if cars.has(id) and is_instance_valid(cars[id]): _suspend(cars[id])
 			continue
 		var point := Vector3(record.position[0],record.position[1],record.position[2])+_origin(record.place_id)
-		if record.place_id.is_empty() and point.distance_to(session.world.player.position)>120: continue
+		if record.place_id.is_empty() and point.distance_to(session.player_local_position())>120: continue
 		_bind_existing(id)
 		var car = cars.get(id)
 		if not is_instance_valid(car):
@@ -197,7 +197,7 @@ func _residence_owns(id: String) -> bool:
 	return session.activities.residence.owns_garage_vehicle(id)
 
 func _suspend(car) -> void:
-	if session.world.driving.occupied and session.world.driving.car==car: return
+	if session.player_in_vehicle() and session.player_vehicle()==car: return
 	car.hide()
 	car.set_physics_process(false)
 	car.collision_layer=0
@@ -215,7 +215,7 @@ func _capture_all() -> void:
 		var place: String=car.get_meta("garage_place","")
 		var origin: Vector3=car.get_meta("garage_origin",Vector3.ZERO)
 		var point: Vector3=car.global_position-origin
-		data.vehicles[id]={"archetype":car.archetype,"region_id":car.get_meta("region_id","harbor"),"place_id":place,"position":[point.x,point.y,point.z],"yaw":car.rotation.y,"health":maxf(0,car.health),"paint":car.paint_color.to_html(true),"was_driven":session.world.driving.occupied and session.world.driving.car==car}
+		data.vehicles[id]={"archetype":car.archetype,"region_id":car.get_meta("region_id","harbor"),"place_id":place,"position":[point.x,point.y,point.z],"yaw":car.rotation.y,"health":maxf(0,car.health),"paint":car.paint_color.to_html(true),"was_driven":session.player_in_vehicle() and session.player_vehicle()==car}
 		data.vehicles[id]["heavy_crush_ratio"]=float(car.get_meta("heavy_crush_ratio",1.0))
 		data.vehicles[id]["blood_stains"]=int(car.get_meta("blood_stains",0))
 		data.vehicles[id]["body_dents"]=car.body_dents.snapshot() if is_instance_valid(car.body_dents) else []
@@ -239,13 +239,13 @@ func nearest_action() -> Dictionary:
 		return {}
 	if session.state.place_id=="maciota" and _authorized() and session.world.gameplay.stars==0 and session.state.campaign.active_id.is_empty():
 		var bay := _origin("maciota")+Vector3(0,.04,0)
-		if session.world.player.position.distance_to(bay)<180.0/16.0:
+		if session.player_local_position().distance_to(bay)<180.0/16.0:
 			var car=cars.get(IRONBACK)
 			if is_instance_valid(car) and not car.controlled and car.position.distance_to(bay)<45.0/16.0 and car.health<car.max_health: return _action("ironback_repair","Reparar Ironback",bay)
 			if not _residence_owns(IRONBACK): return _action("ironback_recover","Recolher Ironback à baia",bay)
 	if _porto_deliverable(): return _action("porto_deliver","Entregar Porto Rosso · R$ 50.000",cars[PORT_ID].position)
 	var yard := _neco_yard()
-	if yard != null and session.world.player.global_position.distance_to(yard.button_point()) < BUTTON_REACH:
+	if yard != null and session.player_position().distance_to(yard.button_point()) < BUTTON_REACH:
 		var car = _car_on_bay(yard)
 		var label := "Acionar prensa"
 		if car != null and _scrappable(car): label = String(TranslationServer.translate("Acionar prensa · R$ %d")) % scrap_value(car)
@@ -254,7 +254,7 @@ func nearest_action() -> Dictionary:
 
 ## Pátio do Neco carregado (o chunk pode estar fora do streaming).
 func _neco_yard() -> Node3D:
-	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied: return null
+	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.player_in_vehicle(): return null
 	for button in get_tree().get_nodes_in_group("neco_press_button"):
 		var yard := (button as Node).get_parent() as Node3D
 		if yard != null and yard.has_method("button_point"): return yard
@@ -336,7 +336,7 @@ func perform(id: String) -> bool:
 
 func _transfer(place: String, entering: bool) -> void:
 	if not session.has_method("transfer_garage_vehicle"): session.show_message("Acesso de veículos indisponível."); return
-	var car=session.world.driving.car
+	var car=session.player_vehicle()
 	_transition=true
 	var success: bool=await session.transfer_garage_vehicle(place,car,entering)
 	if success and is_instance_valid(car):
@@ -382,12 +382,12 @@ static func is_guest_id(id: Variant) -> bool:
 	return suffix.is_valid_int() and int(suffix)>0 and int(suffix)<1000000000 and str(int(suffix))==suffix
 
 func _porto_deliverable() -> bool:
-	if data.port_status!="stolen" or session.state.region_id!="harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.gameplay.stars>0: return false
+	if data.port_status!="stolen" or session.state.region_id!="harbor" or not session.state.place_id.is_empty() or session.player_in_vehicle() or session.world.gameplay.stars>0: return false
 	var car=cars.get(PORT_ID)
 	if not is_instance_valid(car) or car.health<=0 or car.controlled or absf(car.speed)>.5 or car.get_meta("garage_stored",false): return false
 	if session.activities==null or session.activities.salvage_available()<=0: return false
 	var bay: Vector3=session.mission_world.targets.neco_bay
-	return car.position.distance_to(bay)<52.0/16.0 and session.world.player.position.distance_to(car.position)<90.0/16.0
+	return car.position.distance_to(bay)<52.0/16.0 and session.player_local_position().distance_to(car.position)<90.0/16.0
 
 func _deliver_porto() -> bool:
 	if _transition or not _porto_deliverable(): return false

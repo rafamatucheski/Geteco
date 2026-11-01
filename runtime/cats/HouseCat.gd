@@ -63,7 +63,7 @@ func _process(delta: float) -> void:
 	if runtime == null or not runtime.can_animate(): return
 	model.animate(delta,Vector2(velocity.x,velocity.z).length())
 	meow_cooldown = maxf(0,meow_cooldown-delta)
-	var distance: float = runtime.session.world.player.global_position.distance_to(global_position)
+	var distance: float = runtime.session.player_position().distance_to(global_position)
 	if distance < 4.2 and not near_player and meow_cooldown <= 0:
 		voice.play()
 		second_meow = .8 if coat%2 == 0 else -1.0

@@ -29,7 +29,7 @@ func is_active() -> bool:
 func update(delta: float) -> void:
 	if session==null or not session.ready_for_play or get_tree().paused: return
 	if is_active():
-		if session.world.gameplay.health<=0 or session.rescue_pending or session.arrest_pending or session.state.region_id!="harbor":
+		if session.player_health()<=0 or session.rescue_pending or session.arrest_pending or session.state.region_id!="harbor":
 			clear(true)
 			return
 		if falling:
@@ -38,7 +38,7 @@ func update(delta: float) -> void:
 		if not str(definition.place).is_empty() and (not is_instance_valid(owner_room) or session.room!=owner_room or session.state.place_id!=definition.place):
 			clear(true)
 			return
-		var point: Vector3 = roof.to_local(session.world.player.global_position)
+		var point: Vector3 = roof.to_local(session.player_position())
 		session.world.player.air_movement.roof = roof
 		if absf(point.x)>definition.size.x*.5+.12 or absf(point.z)>definition.size.y*.5+.12: _begin_fall()
 		return
@@ -49,10 +49,10 @@ func update(delta: float) -> void:
 	_update_ground_access()
 
 func _blocked() -> bool:
-	return busy or session.modal or session.is_transition_blocked() or session.world.driving.occupied or session.world.player.input_locked or session.world.gameplay.health<=0
+	return busy or session.modal or session.is_transition_blocked() or session.player_in_vehicle() or session.world.player.input_locked or session.player_health()<=0
 
 func _update_ground_access() -> void:
-	if session.state.region_id!="harbor" or session.world.driving.occupied:
+	if session.state.region_id!="harbor" or session.player_in_vehicle():
 		_release_access()
 		return
 	var wanted := CATALOG.find(str(session.state.place_id))
@@ -130,7 +130,7 @@ func _update_ground_access() -> void:
 func _physical_owner() -> Dictionary:
 	var urban = session.urban_operations
 	if urban==null: return {}
-	var actor_position: Vector3 = session.world.player.global_position
+	var actor_position: Vector3 = session.player_position()
 	if is_instance_valid(urban.village) and is_instance_valid(urban.village.homes):
 		var homes = urban.village.homes
 		var index: int = homes.house_at(actor_position)
@@ -211,7 +211,7 @@ func _release_access() -> void:
 
 func nearest_action() -> Dictionary:
 	if session==null or _blocked(): return {}
-	var player_position: Vector3 = session.world.player.global_position
+	var player_position: Vector3 = session.player_position()
 	if is_active():
 		if falling: return {}
 		if player_position.distance_to(roof.to_global(roof.stair_point()))<1.55: return {"id":"service_roof_stairs","provider":self,"label":"Descer da cobertura"}
@@ -223,13 +223,13 @@ func nearest_action() -> Dictionary:
 func use_stairs() -> bool:
 	if nearest_action().get("id","")!="service_roof_stairs": return false
 	if is_active(): return await _descend()
-	return await _ascend(access_definition,session.world.player.global_position,true)
+	return await _ascend(access_definition,session.player_position(),true)
 
 func _source_context() -> Dictionary:
 	return {"region":session.state.region_id,"place":session.state.place_id,"room":session.room,"epoch":_transition_epoch}
 
 func _source_valid(token: int, context: Dictionary) -> bool:
-	return session.owns_transition(token) and context.epoch==_transition_epoch and session.world.gameplay.health>0 and not session.rescue_pending and not session.arrest_pending and session.state.region_id==context.region and session.state.place_id==context.place and session.room==context.room
+	return session.owns_transition(token) and context.epoch==_transition_epoch and session.player_health()>0 and not session.rescue_pending and not session.arrest_pending and session.state.region_id==context.region and session.state.place_id==context.place and session.room==context.room
 
 func _abort_transition(token: int, was_locked: bool, context: Dictionary) -> void:
 	if session.owns_transition(token):
@@ -430,7 +430,7 @@ func restore_saved() -> bool:
 func _begin_fall() -> void:
 	if falling: return
 	falling = true
-	fall_peak = session.world.player.global_position.y
+	fall_peak = session.player_position().y
 	session.world.player.set_meta("harbor_service_rooftop",false)
 	if is_instance_valid(owner_room):
 		if definition.id=="maciota": owner_room.set_interior_active(false)
@@ -454,7 +454,7 @@ func _tick_fall() -> void:
 	if not actor.is_on_floor() or fall_peak-actor.global_position.y<.2: return
 	var drop: float = fall_peak-actor.global_position.y
 	clear(true)
-	if session.world.gameplay.health>0: session.save_game()
+	if session.player_health()>0: session.save_game()
 
 func clear(interrupted := true) -> void:
 	_transition_epoch += 1

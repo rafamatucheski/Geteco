@@ -125,8 +125,8 @@ func _yard(g: RefCounted) -> void:
 ## Catre: dormir até as 7h (curado e salvo), a pé, fora do carro.
 func nearest_action() -> Dictionary:
 	if not _session_ready() or not session.ready_for_play or session.modal or not session.state.place_id.is_empty(): return {}
-	if session.world.driving.occupied or session.world.gameplay.health <= 0: return {}
-	var player: Vector3 = session.world.player.global_position
+	if session.player_in_vehicle() or session.player_health() <= 0: return {}
+	var player: Vector3 = session.player_position()
 	var cot := to_global(COT)
 	if Vector2(player.x-cot.x,player.z-cot.z).length() > COT_REACH or absf(player.y-cot.y) > 2.0: return {}
 	return {"id":"mountain_refuge", "target":"rest", "label":"Dormir no catre até as 7h", "provider":self}

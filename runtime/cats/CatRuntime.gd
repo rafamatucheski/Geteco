@@ -59,7 +59,7 @@ func refresh() -> void:
 	var indoors: bool = session.state.place_id == id and is_instance_valid(session.room)
 	var rooftop: bool = session.service_roofs != null and session.service_roofs.is_active()
 	var exterior: Vector3 = _home_definition.exterior_position
-	var at_home: bool = (indoors or (session.state.place_id.is_empty() and session.world.player.global_position.distance_to(exterior) < 32)) and not rooftop
+	var at_home: bool = (indoors or (session.state.place_id.is_empty() and session.player_position().distance_to(exterior) < 32)) and not rooftop
 	if not at_home:
 		_clear_home()
 		return
@@ -79,7 +79,7 @@ func _rebuild_home(indoors: bool, context: String, epoch: int) -> void:
 	_build_home(indoors)
 
 func _refresh_discoveries() -> void:
-	var point: Vector3 = session.world.player.global_position
+	var point: Vector3 = session.player_position()
 	var adopted: Array[String] = session.activities.residence.adopted_cats()
 	var on_roof: bool = session.service_roofs != null and session.service_roofs.is_active()
 	for row in discoveries:
@@ -108,15 +108,15 @@ func nearest_action() -> Dictionary:
 	var distance := 1.45
 	for cat in cats.values():
 		if not is_instance_valid(cat): continue
-		var next: float = session.world.player.global_position.distance_to(cat.global_position)
+		var next: float = session.player_position().distance_to(cat.global_position)
 		if next < distance and _visible_reach(cat): nearest_cat = cat; distance = next
 	return {} if nearest_cat == null else {"id":"cat_adopt","target":nearest_cat.cat_id,"label":"Adotar gato"}
 
 func _can_adopt() -> bool:
-	return session != null and session.ready_for_play and session.state.region_id == "harbor" and session.activities.residence.cats_unlocked() and not session.modal and not session.controller.save_invalid and not session.is_transition_blocked() and not session.world.driving.occupied and not session.world.player.input_locked and session.world.gameplay.health > 0 and not session.rescue_pending and not session.arrest_pending
+	return session != null and session.ready_for_play and session.state.region_id == "harbor" and session.activities.residence.cats_unlocked() and not session.modal and not session.controller.save_invalid and not session.is_transition_blocked() and not session.player_in_vehicle() and not session.world.player.input_locked and session.player_health() > 0 and not session.rescue_pending and not session.arrest_pending
 
 func _visible_reach(cat: CharacterBody3D) -> bool:
-	var from: Vector3 = session.world.player.global_position+Vector3.UP*.35
+	var from: Vector3 = session.player_position()+Vector3.UP*.35
 	var to: Vector3 = cat.global_position+Vector3.UP*.25
 	var query := PhysicsRayQueryParameters3D.create(from,to,1)
 	return session.world.get_world_3d().direct_space_state.intersect_ray(query).is_empty()

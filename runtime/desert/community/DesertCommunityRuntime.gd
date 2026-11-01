@@ -44,7 +44,7 @@ func nearest_action() -> Dictionary:
 	var step:=int(STATE.data(session.state.world_state).step)
 	var definition:=step_definition(step)
 	if definition.is_empty(): return {}
-	var point: Vector3=session.world.player.global_position
+	var point: Vector3=session.player_position()
 	if point.distance_to(definition.point)>1.35: return {}
 	if not session.desert.discoveries._line_clear(point,definition.target): return {}
 	return {"id":"desert","target":"community:"+str(step),"label":definition.label}

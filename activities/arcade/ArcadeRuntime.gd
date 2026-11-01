@@ -22,7 +22,7 @@ func configure(owner_session) -> void:
 	set_process(false)
 
 func available() -> bool:
-	return session != null and session.ready_for_play and session.state.place_id == PLACE and is_instance_valid(session.room) and session.world.gameplay.health > 0 and not session.world.driving.occupied and not session.is_transition_blocked() and not get_tree().paused
+	return session != null and session.ready_for_play and session.state.place_id == PLACE and is_instance_valid(session.room) and session.player_health() > 0 and not session.player_in_vehicle() and not session.is_transition_blocked() and not get_tree().paused
 
 func nearest_action() -> Dictionary:
 	if not available() or session.modal: return {}
@@ -31,7 +31,7 @@ func nearest_action() -> Dictionary:
 	for id in TITLES:
 		var point: Variant = session.room.interaction_points.get("arcade_"+id)
 		if not point is Vector3: continue
-		var separation: float = session.world.player.global_position.distance_to(point)
+		var separation: float = session.player_position().distance_to(point)
 		if separation < distance:
 			distance = separation
 			nearest = id
@@ -47,8 +47,8 @@ func perform(id: String) -> bool:
 	session.panel.hide()
 	session.menu_closed = dismiss
 	cabinet = id
-	origin = session.world.player.global_position
-	opened_health = float(session.world.gameplay.health)
+	origin = session.player_position()
+	opened_health = float(session.player_health())
 	active = true
 	ui.open_game(id,int(records.get(id,0)))
 	set_process(true)
@@ -83,11 +83,11 @@ func dismiss() -> void:
 	_save_records.call_deferred()
 
 func _save_records() -> void:
-	if is_instance_valid(session) and session.ready_for_play and not active and not session.is_transition_blocked() and session.world.gameplay.health > 0:
+	if is_instance_valid(session) and session.ready_for_play and not active and not session.is_transition_blocked() and session.player_health() > 0:
 		session.save_game()
 
 func _process(_delta: float) -> void:
-	if active and (not available() or not session.modal or session.world.gameplay.health < opened_health or session.world.player.global_position.distance_to(origin) > 1.2): close()
+	if active and (not available() or not session.modal or session.player_health() < opened_health or session.player_position().distance_to(origin) > 1.2): close()
 
 func _exit_tree() -> void:
 	if is_instance_valid(ui): ui.dismiss()

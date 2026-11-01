@@ -28,14 +28,14 @@ func configure(owner_session, visuals: Node3D) -> void:
 func _context_ok() -> bool:
 	if session == null or not session.ready_for_play or not is_instance_valid(session.world.player): return false
 	if session.state.region_id != "harbor" or not session.state.place_id.is_empty(): return false
-	if session.world.gameplay.health <= 0 or session.world.gameplay.stars > 0 or session.world.driving.occupied: return false
+	if session.player_health() <= 0 or session.world.gameplay.stars > 0 or session.player_in_vehicle(): return false
 	if session.is_transition_blocked(): return false
 	var quest = session.urban_operations.get("village_quest")
 	return not is_instance_valid(quest) or quest.commerce.data.hostility <= 0
 
 func nearest_action() -> Dictionary:
 	if playing or session.modal or not _context_ok() or session.world.player.input_locked: return {}
-	var at: Vector3 = session.world.player.global_position
+	var at: Vector3 = session.player_position()
 	if at.distance_to(ART.PLAY_POINT) <= REACH:
 		return {"id":"urban_v1","target":PREFIX+"play","label":String(TranslationServer.translate("Jogar ferraduras · recorde %d/3"))%best_score}
 	if best_score == 3 and not cache_opened and at.distance_to(ART.CACHE_POINT) <= REACH:
@@ -60,11 +60,11 @@ func perform(target: String) -> bool:
 	return true
 
 func _process(_delta: float) -> void:
-	if playing and (not _context_ok() or not session.modal or session.menu_closed != Callable(self,"_menu_closed") or session.world.player.global_position.distance_to(ART.PLAY_POINT) > REACH):
+	if playing and (not _context_ok() or not session.modal or session.menu_closed != Callable(self,"_menu_closed") or session.player_position().distance_to(ART.PLAY_POINT) > REACH):
 		ui.cancel_game()
 	if _release_controls and not _held():
 		_release_controls = false
-		if not session.modal and session.world.gameplay.health > 0 and not session.is_transition_blocked():
+		if not session.modal and session.player_health() > 0 and not session.is_transition_blocked():
 			session.world.player.input_locked = false
 	if not playing and not _release_controls: set_process(false)
 
@@ -90,7 +90,7 @@ func _guard_controls_after_close() -> void:
 
 func _finish_game(hits: int) -> void:
 	if not playing: return
-	var valid_result: bool = _context_ok() and session.modal and session.menu_closed == Callable(self,"_menu_closed") and session.world.player.global_position.distance_to(ART.PLAY_POINT) <= REACH
+	var valid_result: bool = _context_ok() and session.modal and session.menu_closed == Callable(self,"_menu_closed") and session.player_position().distance_to(ART.PLAY_POINT) <= REACH
 	playing = false
 	if session.menu_closed == Callable(self,"_menu_closed"):
 		session.menu_closed = Callable()

@@ -13,7 +13,7 @@ func configure(owner_race: Node3D) -> void:
 	session = race.session
 
 func available() -> bool:
-	return not race.active and session.ready_for_play and not session.controller.save_invalid and not session.is_transition_blocked() and session.world.gameplay.health>0 and not session.rescue_pending and not session.arrest_pending
+	return not race.active and session.ready_for_play and not session.controller.save_invalid and not session.is_transition_blocked() and session.player_health()>0 and not session.rescue_pending and not session.arrest_pending
 
 func open() -> bool:
 	if not available() or session.modal: return false

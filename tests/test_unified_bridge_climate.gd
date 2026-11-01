@@ -11,6 +11,12 @@ var checks := 0
 class SessionStub extends Node:
 	var state := {"region_id":"mountain","place_id":""}
 	var world: Dictionary
+	const _PLAYER_QUERY := preload("res://tests/fixtures/SessionPlayerQueryDouble.gd")
+	func player_position() -> Vector3: return _PLAYER_QUERY.position(world)
+	func player_local_position() -> Vector3: return _PLAYER_QUERY.local_position(world)
+	func player_health() -> float: return _PLAYER_QUERY.health(world)
+	func player_in_vehicle() -> bool: return _PLAYER_QUERY.in_vehicle(world)
+	func player_vehicle(): return _PLAYER_QUERY.vehicle(world)
 
 func check(ok: bool, message: String) -> void:
 	checks += 1

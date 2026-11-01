@@ -118,7 +118,7 @@ func update(delta: float) -> void:
 	if handles_place(session.state.place_id):
 		_update_exit()
 		return
-	if not session.state.place_id.is_empty() or session.world.driving.occupied:
+	if not session.state.place_id.is_empty() or session.player_in_vehicle():
 		return
 	var player: CharacterBody3D = session.world.player
 	var id := ""
@@ -198,7 +198,7 @@ func update(delta: float) -> void:
 	_enter(id, definition)
 
 func _blocked() -> bool:
-	return session.modal or session.is_transition_blocked() or session.world.player.input_locked or session.world.gameplay.health <= 0 or session.world.driving.occupied or session.world.driving.is_body_transition_active()
+	return session.modal or session.is_transition_blocked() or session.world.player.input_locked or session.player_health() <= 0 or session.player_in_vehicle() or session.world.driving.is_body_transition_active()
 
 func _entry_available(id: String) -> bool:
 	if not preload("res://runtime/ShopSafety.gd").admission_allowed(id, session.world.gameplay.stars):
@@ -228,7 +228,7 @@ func _leader_accessible() -> bool:
 	return session.state.campaign.has_progress("cobra_finale") or (session.state.campaign.active_id == "cobra_finale" and session.state.campaign.step >= 6)
 
 func _entry_interrupted() -> bool:
-	return session.modal or session.is_transition_blocked() or session.transition_generation != _entry_generation or session.world.gameplay.health <= 0 or session.world.driving.occupied or session.world.driving.is_body_transition_active()
+	return session.modal or session.is_transition_blocked() or session.transition_generation != _entry_generation or session.player_health() <= 0 or session.player_in_vehicle() or session.world.driving.is_body_transition_active()
 
 func _update_facade(id: String, near: bool, delta: float) -> void:
 	# Estas garagens já têm portões erguidos/abertos; não procura dobradiças.

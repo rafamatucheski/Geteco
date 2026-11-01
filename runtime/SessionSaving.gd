@@ -158,7 +158,7 @@ func load_game() -> void:
 		g.show_message("Aguarde a conclusão da transição para carregar.")
 		return
 	# Ilusão, pesca, mirante e parque terminam antes das recusas abaixo, como sempre foi.
-	g._cancel_for(&"load_1")
+	g.cancel_for(&"load_1")
 	if g.desert != null and g.desert.busy(): g.show_message("Encerre a prova para carregar."); return
 	if g.jessica != null and g.jessica.riding:
 		g.show_message("Aguarde Jessica estacionar para carregar."); return
@@ -167,7 +167,7 @@ func load_game() -> void:
 	if g.passenger_transport != null and g.passenger_transport.riding:
 		g.show_message("Aguarde o desembarque para carregar."); return
 	if g.world.driving.occupied: g.show_message("Saia do veículo para carregar."); return
-	g._cancel_for(&"load_2")
+	g.cancel_for(&"load_2")
 	var result: Error = g.get_tree().reload_current_scene()
 	if result != OK: g.show_message(String(TranslationServer.translate("Não foi possível carregar o jogo (%d).")) % result)
 
@@ -176,11 +176,11 @@ func return_to_main_menu() -> void:
 		g.show_message("Aguarde a conclusão da transição.")
 		return
 	# Deserto e mineração já são cancelados quando o menu recusa abaixo, como sempre foi.
-	g._cancel_for(&"menu_1")
+	g.cancel_for(&"menu_1")
 	if g.is_transition_blocked() or (g.passenger_transport != null and g.passenger_transport.riding):
 		g.show_message("Aguarde a conclusão da chegada, do resgate ou da transição.")
 		return
-	g._cancel_for(&"menu_2")
+	g.cancel_for(&"menu_2")
 	var launch = g.get_node_or_null("/root/V2Launch")
 	if launch != null: launch.direct_start_consumed = true
 	var was_paused: bool = g.get_tree().paused

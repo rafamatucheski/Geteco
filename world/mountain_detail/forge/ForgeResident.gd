@@ -41,11 +41,11 @@ func available() -> bool:
 ## Vivo e ao alcance da conversa, sem olhar se a sessão está num menu.
 func in_reach() -> bool:
 	if not _session_ready() or not available(): return false
-	return actor.global_position.distance_to(session.world.player.global_position) <= TALK_RADIUS
+	return actor.global_position.distance_to(session.player_position()) <= TALK_RADIUS
 
 func nearest_action() -> Dictionary:
 	if not _session_ready() or not session.ready_for_play or session.modal or not session.state.place_id.is_empty(): return {}
-	if session.world.driving.occupied or session.world.gameplay.health <= 0 or not in_reach(): return {}
+	if session.player_in_vehicle() or session.player_health() <= 0 or not in_reach(): return {}
 	return {"id":"blade_forge", "target":site_id, "label":String(TranslationServer.translate("Falar com %s")) % speaker, "provider":self}
 
 func _physics_process(delta: float) -> void:

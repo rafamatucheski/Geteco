@@ -38,7 +38,7 @@ func configure(owner_session) -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 
 func _eligible() -> bool:
-	return session.ready_for_play and not session.rescue_pending and not session.controller.save_invalid and session.state.region_id == "harbor" and session.state.place_id.is_empty() and not session.world.driving.occupied and session.world.gameplay.health > 0 and session.world.gameplay.stars == 0 and not session.arrival.active and session.state.campaign.active_id.is_empty() and not session.vehicle_transition_busy and session.activities.can_rest()
+	return session.ready_for_play and not session.rescue_pending and not session.controller.save_invalid and session.state.region_id == "harbor" and session.state.place_id.is_empty() and not session.player_in_vehicle() and session.player_health() > 0 and session.world.gameplay.stars == 0 and not session.arrival.active and session.state.campaign.active_id.is_empty() and not session.vehicle_transition_busy and session.activities.can_rest()
 
 func _service_open() -> bool:
 	var hour: float = float(session.state.world_state.get("time",.32))*24.0
@@ -50,7 +50,7 @@ func _station() -> int:
 	if presentation == null: return -1
 	for index in presentation.definitions.size():
 		if presentation.definitions[index].get("deleted",false): continue
-		if session.world.player.position.distance_to(presentation.definitions[index].position) < 9.0: return index
+		if session.player_local_position().distance_to(presentation.definitions[index].position) < 9.0: return index
 	return -1
 
 func nearest_action() -> Dictionary:
@@ -61,7 +61,7 @@ func nearest_action() -> Dictionary:
 	if urban != null and urban.boardable_bus() != null:
 		return {"id":"passenger_transport","label":"Embarcar · linha 510","target":"urban_board"}
 	if is_instance_valid(car) and car.health > 0:
-		if session.world.player.position.distance_to(car.position) < 7:
+		if session.player_local_position().distance_to(car.position) < 7:
 			return {"id":"passenger_transport","label":"Embarcar como passageiro","target":"board"}
 	if taxis != null and taxis.nearest() != null:
 		return {"id":"passenger_transport","label":"Táxi · corrida ou roubo","target":"taxi"}
@@ -83,7 +83,7 @@ func perform(target: String) -> bool:
 		_focus()
 		return true
 	_origin_stop = _station()
-	_source = session.world.player.position
+	_source = session.player_local_position()
 	session.menu("Transporte")
 	session.button("Táxi",_destinations.bind("taxi"))
 	if _origin_stop < PRESENTATION.STOPS.size(): session.button("Ônibus · linha 510",_destinations.bind("bus"))
@@ -93,7 +93,7 @@ func perform(target: String) -> bool:
 	return true
 
 func _menu_valid() -> bool:
-	return _eligible() and _station() == _origin_stop and session.world.player.position.distance_to(_source) < 2
+	return _eligible() and _station() == _origin_stop and session.player_local_position().distance_to(_source) < 2
 
 func _destinations(service: String) -> void:
 	if not _menu_valid(): session.close_menu(); return
@@ -161,12 +161,12 @@ func _request(point: Vector3, label: String, stop_index: int) -> void:
 	if kind == "bus" and (next < 0 or next == bus_stop):
 		session.show_message("A linha precisa de pelo menos duas paradas."); return
 	var goal := _stop_point(next) if kind == "bus" else point
-	var plan: Dictionary = router.plan(session.world.player.position,goal)
+	var plan: Dictionary = router.plan(session.player_local_position(),goal)
 	if not plan.ok or float(plan.get("end_gap",INF)) > 20:
 		session.show_message("Não há trajeto viário até esse destino."); return
 	route = plan.curve
 	var spawn: Vector3 = route.sample_baked(0,true)+Vector3.UP*.12
-	if spawn.distance_to(session.world.player.position) > 22:
+	if spawn.distance_to(session.player_local_position()) > 22:
 		session.show_message("Aproxime-se da rua para embarcar."); return
 	var direction := route.sample_baked(minf(1,route.get_baked_length()),true)-route.sample_baked(0,true)
 	car = session.controller.spawn_vehicle("route_city" if kind == "bus" else "taxi_yellow",spawn,atan2(-direction.x,-direction.z))
