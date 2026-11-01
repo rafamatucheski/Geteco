@@ -99,6 +99,7 @@ mudaria o espelho C# e o `_curve` das rotas). Teste:
 | `DispatchOfficer.gd` | `PoliceAgent` original com modo "voltar e embarcar" |
 | `DispatchIncidentBridge.gd` | Adaptador entre o `Responder` original e o `EmergencyManager` real |
 | `DispatchController.gd` | Laço, limites, despacho, eventos, API pública |
+| `DispatchSpaceQueries.gd`, `DispatchPoliceAssign.gd`, `DispatchEmergencyAssign.gd` | Corpo das consultas de espaço e do despacho de polícia/serviços (o controlador delega; o estado fica nele) |
 
 Nenhum asset novo: os veículos são `police_cruiser`, `medic_box`,
 `rescue_pumper` e `station_wagon` (legista) do catálogo original; as equipes
