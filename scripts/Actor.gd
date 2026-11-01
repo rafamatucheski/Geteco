@@ -899,11 +899,6 @@ func _two_hand_sword_transform(grip: Transform3D) -> Transform3D:
 			result.basis = result.basis.slerp(aligned, weight)
 	return result
 
-## Lâmina carregada (pose procedural): orientação pedida, cabo na palma realizada.
-func _carried_sword_transform(local_basis: Basis) -> Transform3D:
-	var blade_basis := (visual.global_basis * local_basis).orthonormalized()
-	return Transform3D(blade_basis, combat_palm_position("Right") - blade_basis * combat_weapon_grip)
-
 ## Mistura da troca clipe ↔ carregar. A orientação parte da lâmina apresentada no quadro da troca (fixa
 ## no corpo) e chega à do modo novo; derivá-la da mão a cada quadro fazia a lâmina herdar o giro do
 ## pulso, que o IK limita a 18 rad/s (picos de 34°/quadro na saída do golpe). A posição fica presa à mão
