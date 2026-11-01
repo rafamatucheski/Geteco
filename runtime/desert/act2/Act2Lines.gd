@@ -1,9 +1,208 @@
 extends RefCounted
-## Falas das missões A2-05 a A2-13 (roteiro em docs/roteiro-diretor-geteco-20261021.md, seção "Ato 2").
+## Falas das missões A2-01 a A2-13 (roteiro em docs/roteiro-diretor-geteco-20261021.md, seção "Ato 2").
 ## Escritas pela seção "Como escrever as falas" do roteiro: fala curta, português falado, subtexto,
 ## ninguém explica o que o outro já sabe. Parênteses são direção (o registro de vozes tira do texto
 ## falado). Só legenda por enquanto: tools/build_voice_registry.py lista cada fala com a chave da voz.
 ## Cada função devolve linhas [quem fala, texto] para VicenteReunion._say.
+
+const LETTERS := preload("res://data/catalogs/VicenteLetters.gd")
+
+# --- A2-01 a A2-04 (vieram da VicenteReunion em 01/11; lá ficam as delegações *_lines) ---------------
+# Escritas pela seção "Como escrever as falas" de docs/roteiro-diretor-geteco-20261021.md: fala
+# curta, português falado, subtexto; ninguém explica o que o outro já sabe. Vicente lê os oito anos
+# como abandono e hoje rouba carro para os Cobras (a chave de cliente de Harbor no motel). Sementes
+# para depois: as cartas voltaram com "destinatário desconhecido" para um endereço que nunca mudou, e
+# o advogado mentia para os dois.
+
+static func meet_lines() -> Array:
+	return [
+		["Vicente", "Ó. Parou todo mundo. Dante Ferraz no meu encontro."],
+		["Dante", "Vicente."],
+		["Vicente", "Oito anos. (ri) Oito anos e cê chega de carro emprestado."],
+		["Dante", "Eu pedi o processo de volta. Saí da polícia por causa dele."],
+		["Vicente", "Que bonito. Lá dentro eu tinha uma parede e um prego. Riscava um dia por vez."],
+		["Dante", "Eu sei."],
+		["Vicente", "Sabe nada."],
+		["Vicente", "Aqui ninguém resolve nada na bala. Nem no distintivo. Essa turma é minha."],
+		["Vicente", "Motel Oásis, na Estrada do Sal. Quarto seis. Não vou fazer isso na frente deles."],
+		["Vicente", "E vem sem sirene, se ainda souber."],
+	]
+
+static func motel_lines(collectibles: Array) -> Array:
+	var found := LETTERS.found(collectibles)
+	var rows: Array = [
+		["Vicente", "Veio sozinho. Já é alguma coisa."],
+		["Dante", "Que chave é essa?"],
+		["Vicente", "(enfia no bolso) De carro. Tem carro no deserto, sabia?"],
+		["Dante", "Com chaveiro de oficina de Harbor."],
+		["Vicente", "Cê vai me revistar também? Senta aí."],
+		["Vicente", "Primeira noite que eu saí, dormi aqui. Luz acesa, porta aberta. A Dona Lurdes achou que eu ia fugir sem pagar."],
+	]
+	if found == 0:
+		rows.append_array([
+			["Vicente", "Eu te escrevi. Dez vezes. Voltou tudo. Destinatário desconhecido."],
+			["Dante", "Eu morei no mesmo lugar os oito anos."],
+			["Vicente", "Então alguém não queria que cê lesse. Ou cê tá mentindo."],
+			["Vicente", "Deixei as cartas pelo caminho. Harbor, a serra, aqui. Quer saber o que eu pensei lá dentro? Vai buscar."],
+		])
+	elif found < LETTERS.IDS.size():
+		rows.append_array([
+			["Vicente", "O Maciota disse que cê anda catando carta minha por aí."],
+			["Dante", String(TranslationServer.translate("Achei %d. Todas voltaram. Eu nunca mudei de endereço.")) % found],
+			["Vicente", "Então alguém fez questão. Ou cê tá mentindo."],
+			["Vicente", "Continua catando. O que eu tinha pra dizer tá ali."],
+		])
+	else:
+		rows.append_array([
+			["Vicente", "Achou todas. Até a da mesa de pedra."],
+			["Dante", "Todas voltaram. Eu nunca mudei de endereço, Vicente."],
+			["Vicente", "Então alguém fez questão. Isso eu vou querer saber quem."],
+			["Vicente", "Se cê já viu o Coyote, sabe onde a gente vai conversar de verdade. Hoje não."],
+		])
+	rows.append_array([
+		["Vicente", "A mãe perguntava de você até o fim."],
+		["Dante", "E você dizia o quê?"],
+		["Vicente", "Que cê tava ocupado. Prendendo gente."],
+		["Dante", "Eu ia toda semana no fórum. Teu advogado nunca me deixou chegar perto."],
+		["Vicente", "O Teodoro? Ele jurava que cê nunca apareceu."],
+		["Dante", "Então um de nós ouviu mentira oito anos."],
+		["Vicente", "Para. (levanta) Tem uma capela mais pra frente, na mesma estrada. Eu acendo vela lá."],
+		["Vicente", "Vou na frente. Se quiser terminar, me acha lá."],
+	])
+	return rows
+
+static func bia_lines() -> Array:
+	return [
+		["Bia", "Cê que é o irmão. O Vicente avisou."],
+		["Dante", "Avisou o quê?"],
+		["Bia", "\"Se ele aparecer, mostra a reta e não deixa ele se matar.\" Palavra por palavra."],
+		["Bia", "Oitocentos metros. Relação curta sai forte e morre cedo. Turbo grande pede giro."],
+		["Bia", "Espaço é marcha. Shift é nitro, guarda pro fim. Queimou a largada, vai pro fim da fila."],
+		["Dante", "E o Digo?"],
+		["Bia", "O Digo corre com todo mundo que chega. Ganhando ou perdendo, a oficina abre pra você depois."],
+		["Bia", "Vai lá no quadro da concentração. Ele já tá te esperando."],
+	]
+
+static func grandstand_lines(won: bool, seconds: float) -> Array:
+	var rows: Array = []
+	if seconds > 0.0:
+		# Vírgula decimal, como o Seu Zé escreve no caderno.
+		rows.append(["Seu Zé do Cronômetro", String(TranslationServer.translate("Oitocentos em %s. Anotei, rapaz.")) % ("%.2f" % seconds).replace(".", ",")])
+	else:
+		rows.append(["Seu Zé do Cronômetro", "Anotei tua prova, rapaz."])
+	rows.append_array([
+		["Vicente", "Ele anota todo mundo. Antes de eu ser preso já anotava."],
+		["Seu Zé do Cronômetro", "Teu irmão fazia essa reta num Coyote sem nitro. Largava igualzinho: segurando o giro até doer."],
+		["Vicente", "Ganhou do Digo. Ele vai falar disso uma semana." if won else "Perdeu pro Digo. Pelo menos devolveu o carro inteiro."],
+		["Dante", "Cê ficou olhando de longe."],
+		["Vicente", "Queria ver se cê corria pra ganhar ou pra provar alguma coisa."],
+		["Dante", "E aí?"],
+		["Vicente", "Sei lá."],
+		["Vicente", "Eu corria aqui pra pagar o Teodoro. Cada largada, um mês de advogado. Quando me prenderam o dinheiro já tinha acabado."],
+		["Dante", "E agora cê corre pra pagar quem?"],
+		["Vicente", "(olha pra ele um tempo) O Raul tem um papel que não é dele. Pergunta pro velho no Miragem."],
+	])
+	return rows
+
+# A2-03 "Peso morto": Raul, o caixote, a Fiscal Rosa. A carga que passou na balança pesava duas
+# toneladas menos que a apreendida. Dante já sabe das Salinas pela Vértice (M06-C).
+static func raul_start_lines() -> Array:
+	return [
+		["Raul", "O Vicente te mandou? Ele não manda ninguém em lugar nenhum. Deve gostar de você."],
+		["Dante", "Disse que cê tem um papel que não é seu."],
+		["Raul", "Semana passada parou um bitrem dos Cobras pra abastecer. Saiu correndo. Deixou um caixote no pátio."],
+		["Raul", "Ninguém voltou. Trinta anos de estrada, filho: carga que ninguém volta pra buscar não devia existir."],
+		["Dante", "Cê abriu?"],
+		["Raul", "Eu tenho neto. Tá do lado das bombas, coberto. Abre você."],
+		["Raul", "Se tiver lacre, leva pra Rosa, na Balança. Ela pesa caminhão nessa estrada desde antes de cê usar farda."],
+	]
+
+static func crate_lines() -> Array:
+	return [
+		["Dante", "Lacre de chumbo. Número da salina, raspado no fim."],
+		["Dante", "Igual ao da apreensão. Eu assinei o auto com um desses na mão."],
+		["Dante", "Manifesto. Código dos Cobras. Pagamento pelo Cobre."],
+		["Dante", "Dois dias antes da operação."],
+	]
+
+static func rosa_lines() -> Array:
+	return [
+		["Fiscal Rosa", "Lacre da salina. Faz tempo que eu não vejo um desses."],
+		["Dante", "Desde quando?"],
+		["Fiscal Rosa", "Desde aquela confusão. O rapaz das corridas. O caminhão dele passou aqui na noite da operação."],
+		["Fiscal Rosa", "Eu mesma pesei. Vinte toneladas."],
+		["Dante", "A apreensão diz vinte e duas."],
+		["Fiscal Rosa", "Eu sei o que a apreensão diz. (abre o livro) E sei o que a minha balança disse."],
+		["Fiscal Rosa", "Ninguém da polícia veio perguntar. Nem o advogado dele."],
+		["Dante", "Alguém mexeu na carga depois daqui."],
+		["Fiscal Rosa", "Isso cê que vai dizer, não eu. A página eu copio. E se precisar de mim no fórum, eu vou."],
+	]
+
+static func raul_end_lines() -> Array:
+	return [
+		["Raul", "Abriu. Tá na tua cara."],
+		["Dante", "O caminhão do Vicente pesou duas toneladas a menos do que diz a apreensão."],
+		["Raul", "Então o menino carregou uma coisa e prenderam ele com outra."],
+		["Raul", "Toma. O posto me pagou pra guardar o caixote. Não quero esse dinheiro."],
+		["Raul", "O manifesto tem número do Cobre. A Irene lê isso melhor que eu."],
+		["Raul", "E, Dante. O Vicente não pode saber disso pela boca de outro. Quando tiver certeza, fala você."],
+	]
+
+# A2-04 "A ordem alterada": a primeira pista de quem armou. A Irene não pode ir além do balcão; quem lê
+# o registro à noite é a Helena, que voltou para Santa Lua e faz as contas da cooperativa.
+static func irene_bank_lines() -> Array:
+	return [
+		["Irene", "Essa transferência é nossa. (vira a tela pra si) Paga dois dias antes da apreensão."],
+		["Dante", "E a ordem de frete?"],
+		["Irene", "Saiu sem motorista. O nome entrou depois."],
+		["Dante", "Vicente Ferraz."],
+		["Irene", "Daqui eu não passo. Tem câmera, tem gerente regional."],
+		["Irene", "Mas tem uma moça de Harbor fazendo as contas da cooperativa. Conhece esse sistema melhor que eu."],
+		["Irene", "Ela busca o extrato da cooperativa depois das oito. Pela porta dos fundos."],
+	]
+
+static func irene_night_lines() -> Array:
+	return [
+		["Helena", "Você não sabe mesmo ficar quieto."],
+		["Dante", "Helena."],
+		["Helena", "A Irene me ligou. Disse que tinha um homem de Harbor fazendo pergunta errada."],
+		["Helena", "(entrega uma folha) A ordem original e a alteração. Olha o campo de autorização."],
+		["Dante", "Zero, quatro, um, sete."],
+		["Helena", "Eu vi esse número cinco anos seguidos. Na conta dos Cobras, em Harbor."],
+		["Dante", "Isso é matrícula de polícia."],
+		["Helena", "Do mesmo formato da sua?"],
+		["Dante", "(silêncio)"],
+		["Helena", "Vai embora antes que alguém veja a gente. (vira, para) Santa Lua tem um rádio só. Se você aparecer, todo mundo vai saber."],
+	]
+
+static func phone_lines() -> Array:
+	return [
+		["Maciota", "Dante? Essa hora? Aconteceu alguma coisa com o Vicente?"],
+		["Dante", "Ele tá bem. Preciso saber de quem é uma matrícula. Zero, quatro, um, sete."],
+		["Maciota", "Matrícula de polícia? Dante, isso faz barulho."],
+		["Dante", "Foi ela que pôs o Vicente no caminhão."],
+		["Maciota", "(suspira) Conheço gente que conhece gente. Vai demorar."],
+		["Maciota", "E a moça do banco? A Helena tá aí?"],
+		["Dante", "Por que?"],
+		["Maciota", "Nada. Cê respondeu rápido demais, só isso."],
+		["Maciota", "E fala com teu irmão logo. Oito anos já foi tempo de sobra pra ele achar que cê escondia coisa."],
+	]
+
+static func chapel_lines() -> Array:
+	return [
+		["Vicente", "Eu não sei mais rezar. Só sento e fico olhando a vela."],
+		["Dante", "A mãe rezava por nós dois."],
+		["Vicente", "Por você mais. Dizia que quem prende os outros precisa de mais proteção."],
+		["Vicente", "Lá dentro caía um depósito todo mês na minha conta da cantina. Sem nome. Eu sabia de quem era."],
+		["Vicente", "Não gastei. Mil e quinhentos. Tá aqui."],
+		["Dante", "Não era dívida."],
+		["Vicente", "Pra mim era. Pega. Pronto, agora não é mais."],
+		["Vicente", "Quer ficar no deserto? Fica. Mas aqui cê é piloto, não polícia."],
+		["Vicente", "Corre com o Digo na reta. Ganha, perde, tanto faz. Mostra que respeita a pista. Depois a gente fala daquela noite."],
+		["Dante", "E se eu provar que armaram pra você?"],
+		["Vicente", "Então prova. Promessa eu já ouvi demais."],
+	]
+
 
 # --- A2-05 "Racha de irmãos" ---------------------------------------------------------------------
 
