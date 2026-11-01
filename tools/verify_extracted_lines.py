@@ -40,6 +40,14 @@ def norm(line: str) -> str:
 def helper_body(lines: list[str]) -> list[str]:
     # Auxiliar estático (só `static func`, ex.: CityNightLamps) também vale; o `##` e a `static var`
     # colados acima do primeiro func (sem linha em branco) contam como corpo, como no dono.
+    # Com `_init(host)`, o corpo é tudo o que vem depois dele: constantes e campos que saíram do dono no
+    # meio do bloco (ex.: CACHED_* do NativeRecordCache, antes do primeiro func movido) também contam.
+    init = next((i for i, l in enumerate(lines) if l.startswith('func _init(')), None)
+    if init is not None:
+        start = init + 1
+        while start < len(lines) and (lines[start].startswith('\t') or not lines[start].strip()):
+            start += 1
+        return [norm(l) for l in lines[start:] if l.strip()]
     start = next(i for i, l in enumerate(lines) if (l.startswith('func ') or l.startswith('static func '))
                  and not l.startswith('func _init('))
     while start > 0 and (lines[start - 1].startswith('##') or lines[start - 1].startswith('static var ')):
