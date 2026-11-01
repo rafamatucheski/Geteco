@@ -1,13 +1,22 @@
 extends Node3D
 var lid: Node3D
-var kind := "backpack"
+var kind := "backpack":
+	set(value):
+		kind = value
+		_sync_process()
 var pose_tween: Tween
 var carry_space: Node3D
 var actor_space: Node3D
 var straps: Node3D
 var hand_skeleton: Skeleton3D
-var hand_bone := -1
-var opened := false
+var hand_bone := -1:
+	set(value):
+		hand_bone = value
+		_sync_process()
+var opened := false:
+	set(value):
+		opened = value
+		_sync_process()
 const BACKPACK_COLOR := Color("6d4d37")
 
 static func pickup_size(bag_kind: String) -> Vector3:
@@ -32,6 +41,11 @@ var _sway := Vector2.ZERO
 var _sway_velocity := Vector2.ZERO
 var _handle_world := Vector3.INF
 var _handle_velocity := Vector3.ZERO
+
+## O balanço só existe na mala de mão segura pela mão; mochila e bolsas no chão (pickups)
+## não processam. Os três campos que decidem isso são escritos de fora e religam aqui.
+func _sync_process() -> void:
+	set_process(kind=="handbag" and not opened and hand_bone>=0)
 
 func _process(_delta: float) -> void:
 	# A mala pende da mão a cada quadro; o carry de 4 Hz do inventário não basta e a
@@ -71,6 +85,7 @@ func _hand_hang() -> Array:
 	return [Vector3(palm.x+side*HAND_OUTWARD,palm.y-HANDLE_HEIGHT,palm.z),-side*PI*.5]
 
 func _ready() -> void:
+	_sync_process()
 	if kind=="backpack":
 		_build_backpack()
 		return

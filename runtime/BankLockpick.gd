@@ -15,6 +15,8 @@ var required_pins := 3
 var allowed_mistakes := 3
 
 func _ready() -> void:
+	# Só processa entre begin() e finish(); begin() pode vir antes de entrar na árvore.
+	set_process(active)
 	layer=75
 	panel=PanelContainer.new()
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
@@ -53,6 +55,7 @@ func begin() -> void:
 	angle=0
 	target_angle=randf_range(.8,5.5)
 	active=true
+	set_process(true)
 	show()
 	_refresh()
 func _process(delta: float) -> void:
@@ -87,6 +90,7 @@ func attempt() -> void:
 	_refresh()
 func finish(success: bool) -> void:
 	active=false
+	set_process(false)
 	hide()
 	if success: unlocked.emit()
 	else: cancelled.emit()

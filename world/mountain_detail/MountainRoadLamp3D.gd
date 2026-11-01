@@ -10,6 +10,10 @@ const LIGHT_BUDGET := preload("res://gameplay/lights/LightBudget.gd")
 var lamp: OmniLight3D
 var _player: Node3D
 var _region: Node
+# De dia e apagado o poste só confere a noite a cada IDLE_CHECK_S, com fase por poste para os
+# dezenas da serra não conferirem no mesmo quadro. Aceso ou de noite, confere todo quadro como antes.
+const IDLE_CHECK_S := .25
+var _idle_left := 0.0
 
 func _ready() -> void:
 	name = "MountainRoadLamp"
@@ -53,6 +57,9 @@ func _ready() -> void:
 		var world = node.session.get("world")
 		if world != null: _player = world.get("player")
 	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.register(self)
+	# Sem orçamento o _process não faz nada; enabled é lido uma vez do ambiente e não muda no jogo.
+	else: set_process(false)
+	_idle_left = randf()*IDLE_CHECK_S
 
 func _exit_tree() -> void:
 	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.unregister(self)
@@ -76,11 +83,21 @@ func _budget_request() -> Dictionary:
 	var lights: Array[Light3D] = [lamp]
 	return {"lights": lights, "wanted": wanted, "player": false, "camera": _reference()}
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not LIGHT_BUDGET.enabled: return
 	# De dia e apagada não custa nada; à noite pede a rodada do quadro (refresh ignora repetidos),
 	# porque sem veículo por perto ninguém mais a chamaria (mesmo motivo de RoadsideLamp).
-	if lamp.visible or (_night() > .05 and is_visible_in_tree()): LIGHT_BUDGET.refresh()
+	# Ao anoitecer o primeiro pedido sai no máximo IDLE_CHECK_S depois de a noite passar de .05,
+	# quando a energia ainda é ~6% da cheia; com qualquer outro poste aceso a rodada já acontece.
+	if lamp.visible:
+		LIGHT_BUDGET.refresh()
+		return
+	_idle_left -= delta
+	if _idle_left > 0.0: return
+	if _night() > .05 and is_visible_in_tree():
+		_idle_left = 0.0
+		LIGHT_BUDGET.refresh()
+	else: _idle_left = IDLE_CHECK_S
 
 func _box(label: String,at: Vector3,size: Vector3,color: Color) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()

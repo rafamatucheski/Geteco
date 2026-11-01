@@ -16,6 +16,8 @@ var torque_armed := false
 var pulse := 0.0
 
 func _ready() -> void:
+	# Só processa entre begin() e finish(); begin() pode vir antes de entrar na árvore.
+	set_process(active)
 	layer = 85
 	var shade := ColorRect.new()
 	shade.color = Color(0.015,.022,.025,.76)
@@ -61,6 +63,7 @@ func begin(count: int, secret_angle: float) -> void:
 	wear = 0
 	torque_armed = false
 	active = true
+	set_process(true)
 	show()
 	_refresh()
 
@@ -102,6 +105,7 @@ func _input(event: InputEvent) -> void:
 func finish(result: String) -> void:
 	if not active: return
 	active = false
+	set_process(false)
 	hide()
 	resolved.emit(result)
 

@@ -169,7 +169,11 @@ func player_is_aiming_at_me() -> bool:
 	return aim.normalized().dot(offset.normalized()) > .94 and can_see_player()
 
 func _physics_process(delta: float) -> void:
-	if dead or not is_instance_valid(convoy) or not convoy.crew_operational(): return
+	# Morte não tem volta (RobberyActor._fall); o corpo não precisa mais do quadro de física.
+	if dead:
+		set_physics_process(false)
+		return
+	if not is_instance_valid(convoy) or not convoy.crew_operational(): return
 	var gameplay = convoy.session.world.gameplay
 	var combat_allowed := _exterior_combat_allowed()
 	_scan_clock -= delta
