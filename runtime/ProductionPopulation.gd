@@ -90,7 +90,9 @@ func _count_p1_population() -> void:
 		elif not car.traffic: parked += 1
 		elif g._is_ambient_traffic(car) and car.health > 0.0:
 			farthest_traffic = maxf(farthest_traffic,car.global_position.distance_to(g.world.player.global_position))
-	var report := {"population_vc":g.population_vc_enabled,"sun_shadow_near":g.sun_shadow_near_enabled,
+	# population_vc_enabled e sun_shadow_near_enabled são static var do dono: lidas pelo script,
+	# não pela instância, para não depender de como o GDScript resolve estático via objeto.
+	var report := {"population_vc":g.get_script().population_vc_enabled,"sun_shadow_near":g.get_script().sun_shadow_near_enabled,
 		"region":g.state.region_id,"focus":str(g.world.player.global_position),"pedestrians":people,
 		"pedestrian_cap":g.population_cap(),"ambient_traffic":g._ambient_traffic_count(),"traffic_cap":g.traffic_cap(),
 		"farthest_visible_m":farthest_visible,"farthest_hidden_m":farthest_hidden,"farthest_traffic_m":farthest_traffic,
@@ -99,7 +101,7 @@ func _count_p1_population() -> void:
 		"parked":parked,"persistent":persistent,"sun_shadow_distance_m":g.sun.directional_shadow_max_distance,
 		"native_dispatch_router":is_instance_valid(g.world.dispatch) and g.world.dispatch.router._native != null}
 	print("P1_CONTAGEM ",JSON.stringify(report))
-	g.get_tree().quit(0 if not g.population_vc_enabled or (people <= g.VC_MAX_POPULATION and g._ambient_traffic_count() <= g.VC_TRAFFIC_TARGET) else 1)
+	g.get_tree().quit(0 if not g.get_script().population_vc_enabled or (people <= g.VC_MAX_POPULATION and g._ambient_traffic_count() <= g.VC_TRAFFIC_TARGET) else 1)
 
 ## Alvo da densidade: cada unidade de despacho em cena tira `DENSITY_PER_UNIT`, e de
 ## `DENSITY_STARS` estrelas para cima o teto não passa de `DENSITY_STARS_SCALE`.
