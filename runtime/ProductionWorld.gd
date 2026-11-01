@@ -1736,7 +1736,7 @@ func _process_traced(delta: float) -> void:
 	# por quadro seguinte, preservando as metas de população e todo equipamento de veículo.
 	_trim_density()
 	if _population_jobs.is_empty(): _population_jobs.assign(["citizen","traffic","equipment","equipment"])
-	footbridge_crossers.update(world, world.player.position, state.region_id, _population_cap())
+	footbridge_crossers.update(world, world.player.position, state.region_id, population_cap())
 	ambient_journeys.update(self)
 	for index in range(vehicles.size()-1,-1,-1):
 		var car = vehicles[index]
@@ -1852,7 +1852,7 @@ func _count_p1_population() -> void:
 			farthest_traffic = maxf(farthest_traffic,car.global_position.distance_to(world.player.global_position))
 	var report := {"population_vc":population_vc_enabled,"sun_shadow_near":sun_shadow_near_enabled,
 		"region":state.region_id,"focus":str(world.player.global_position),"pedestrians":people,
-		"pedestrian_cap":_population_cap(),"ambient_traffic":_ambient_traffic_count(),"traffic_cap":_traffic_cap(),
+		"pedestrian_cap":population_cap(),"ambient_traffic":_ambient_traffic_count(),"traffic_cap":traffic_cap(),
 		"farthest_visible_m":farthest_visible,"farthest_hidden_m":farthest_hidden,"farthest_traffic_m":farthest_traffic,
 		"authored_pedestrians":authored_people,"common_farthest_visible_m":farthest_common_visible,
 		"common_farthest_hidden_m":farthest_common_hidden,"viewport":str(get_viewport().get_visible_rect().size),
@@ -1916,7 +1916,7 @@ func _traffic_cap() -> int: return traffic_cap()
 ## do quadro, enquanto houver mais que o teto atual.
 func _trim_density() -> void:
 	var origin: Vector3 = world.player.position
-	if world.people.size() > _population_cap():
+	if world.people.size() > population_cap():
 		var worst := -1
 		var farthest := DENSITY_TRIM_MIN_DISTANCE
 		for index in world.people.size():
@@ -1930,7 +1930,7 @@ func _trim_density() -> void:
 			var removed = world.people[worst]
 			world.people.remove_at(worst)
 			removed.queue_free()
-	if _ambient_traffic_count() > _traffic_cap():
+	if _ambient_traffic_count() > traffic_cap():
 		var worst_car := -1
 		var farthest_car := DENSITY_TRIM_MIN_DISTANCE
 		for index in vehicles.size():
@@ -1951,9 +1951,9 @@ func _service_population_job() -> void:
 	var began := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	match job:
 		"citizen":
-			if world.people.size() < _population_cap(): _spawn_citizen()
+			if world.people.size() < population_cap(): _spawn_citizen()
 		"traffic":
-			if _ambient_traffic_count() < _traffic_cap() and not "--no-traffic" in OS.get_cmdline_user_args(): _spawn_vehicle()
+			if _ambient_traffic_count() < traffic_cap() and not "--no-traffic" in OS.get_cmdline_user_args(): _spawn_vehicle()
 		"equipment":
 			for car in vehicles:
 				if not is_instance_valid(car) or car.is_queued_for_deletion() or is_instance_valid(car.equipment): continue

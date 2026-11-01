@@ -129,14 +129,14 @@ func _finish_recovery_presentation() -> void:
 
 func _on_arrest() -> void:
 	if g.arrest_pending or g.rescue_pending: return
-	g._cancel_for(&"arrest_1")
+	g.cancel_for(&"arrest_1")
 	g.arrest_pending = true
 	# O sinal de prisão do Gameplay já é dono desta trava; a limpeza da ilusão não
 	# pode soltá-la enquanto a apresentação da custódia está rodando.
 	g.world.player.input_locked = true
-	g._cancel_for(&"arrest_2")
+	g.cancel_for(&"arrest_2")
 	g.prompt.text = ""
-	g._cancel_for(&"arrest_3")
+	g.cancel_for(&"arrest_3")
 	# A desmontagem de serviço/missão pode restaurar um snapshot de entrada anterior.
 	# A custódia toma a posse final antes de ceder à apresentação.
 	g.world.player.input_locked = true
@@ -145,9 +145,9 @@ func _on_arrest() -> void:
 	await g._respawn()
 
 func _on_death() -> void:
-	g._cancel_for(&"death_1")
+	g.cancel_for(&"death_1")
 	if g.rescue_pending: return
-	g._cancel_for(&"death_2")
+	g.cancel_for(&"death_2")
 	# Fora do registro: a resposta é o saque perdido, mostrado no "SE FODEU".
 	g.bank_death_loss = g.robberies.player_died() if g.robberies != null else 0
 	# A corrotina antiga de prisão não pode escolher custódia nem consumir este resgate.
@@ -156,16 +156,16 @@ func _on_death() -> void:
 	# escolhida, cortina abrindo; a rendição não para as balas de civis hostis) ou o da chegada.
 	# Ele terminava depois desta morte, limpava rescue_pending, cobrava a multa e deixava o corpo
 	# morto e travado na delegacia; esta morte via rescue_pending falso e pulava o próprio resgate.
-	# Soltar a transição dele o faz parar no próximo _owns_transition, sem mexer nas bandeiras nem
+	# Soltar a transição dele o faz parar no próximo owns_transition, sem mexer nas bandeiras nem
 	# cobrar nada, e deixa o _respawn desta morte começar (morte prevalece, como na apresentação).
 	if g.respawn_busy:
 		g.respawn_busy = false
-		if g.transition_kind == "rescue": g._finish_transition(g.transition_generation)
+		if g.transition_kind == "rescue": g.finish_transition(g.transition_generation)
 	# Cair para fora do mundo e uma posição restaurada inválida chegam a este caminho
 	# direto, sem damage_player. Estabelece o mesmo estado de morto antes que qualquer
 	# limpeza de embarque ou apresentação de morte o leia.
 	g.world.gameplay.health = 0
-	g._cancel_for(&"death_3")
+	g.cancel_for(&"death_3")
 	g.world.player.input_locked = true
 	g.world.player.on_player_death()
 	# O dano pode ter posto a pose de morte antes de o Driving restaurar a cápsula a pé.
@@ -180,7 +180,7 @@ func _on_death() -> void:
 	g.rescue_pending = true
 	g.prompt.text = ""
 	g.world.hud.refresh_from_state()
-	g._cancel_for(&"death_4")
+	g.cancel_for(&"death_4")
 	await g._show_v1_death_presentation()
 	if not g.rescue_pending or not g.is_inside_tree(): return
 	await g._respawn()
@@ -206,9 +206,9 @@ func _region_fallback(arrested: bool) -> Vector3:
 	return g.controller.region.spawn_position+Vector3.UP*.1
 
 func _respawn() -> void:
-	g._cancel_for(&"rescue_1")
+	g.cancel_for(&"rescue_1")
 	if g.respawn_busy: return
-	var token: int = g._begin_transition("rescue")
+	var token: int = g.begin_transition("rescue")
 	if token < 0:
 		g.show_message("Aguarde a transição atual e tente novamente.")
 		return
@@ -235,7 +235,7 @@ func _respawn() -> void:
 	if g.cold != null: g.cold.prepare_collision_at(destination)
 	for i in 3:
 		await g.get_tree().physics_frame
-		if not g._owns_transition(token): return
+		if not g.owns_transition(token): return
 	if not g.position_clear(destination) and destination != fallback:
 		# Porta ocupada (ambulância, viatura estacionada): usa o ponto de resgate da região.
 		destination = fallback
@@ -244,15 +244,15 @@ func _respawn() -> void:
 		if g.cold != null: g.cold.prepare_collision_at(destination)
 		for i in 3:
 			await g.get_tree().physics_frame
-			if not g._owns_transition(token): return
+			if not g.owns_transition(token): return
 	if not g.position_clear(destination):
 		g.respawn_busy = false
-		g._finish_transition(token)
+		g.finish_transition(token)
 		g._restore_recovery_time_scale()
 		if is_instance_valid(g.death_presentation): g.death_presentation.queue_free()
 		g.death_presentation = null
 		g._menu("Local de custódia ocupado. Aguarde e tente novamente." if g.arrest_pending else "Local de resgate ocupado. Aguarde e tente novamente.")
-		g._button("Tentar novamente",Callable(g, "_respawn"))
+		g.button("Tentar novamente",Callable(g, "_respawn"))
 		return
 	if g.world.driving.occupied:
 		g.world.driving.occupied = false
@@ -260,7 +260,7 @@ func _respawn() -> void:
 			g.world.driving.car.controlled = false
 			g.world.driving.car.external_input = false
 			g.world.driving.car.throttle_input = 0
-	g._cancel_for(&"rescue_2")
+	g.cancel_for(&"rescue_2")
 	if is_instance_valid(g.room):
 		if g.room == g.world.maciota_place: g.room.set_interior_active(false)
 		else: g.room.queue_free()
@@ -269,12 +269,12 @@ func _respawn() -> void:
 	g.state.set_location(g.state.region_id)
 	g.world.gameplay.respawn()
 	g.world.player.respawn_player()
-	g._cancel_for(&"rescue_3")
+	g.cancel_for(&"rescue_3")
 	g.sync_dispatch_location()
 	if g.cold != null: g.cold.recover_after_rescue()
 	if g.wine != null: g.wine.recover()
 	g.world.player.teleport(destination)
-	g._sync_location_presentation()
+	g.sync_location_presentation()
 	g.world.player.collision_layer = 2
 	g.world.player.collision_mask = 7
 	g.world.player.show()
@@ -287,14 +287,14 @@ func _respawn() -> void:
 	g.world.camera.locked = false
 	g.world.camera.initialized = false
 	g.world.camera._process(1)
-	g._refresh_routine_context()
+	g.refresh_routine_context()
 	g.world.player.input_locked = true
 	await g._finish_recovery_presentation()
-	if not g._owns_transition(token): return
+	if not g.owns_transition(token): return
 	g.rescue_pending = false
 	g.arrest_pending = false
 	g.respawn_busy = false
-	g._finish_transition(token)
+	g.finish_transition(token)
 	g.close_menu()
 	# Só depois do resgate concluído: "Tentar novamente" não pode cobrar duas vezes.
 	var notices: Array[String] = []

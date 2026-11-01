@@ -240,7 +240,7 @@ const CANCEL_STEPS := {
 		["mountain_activities", "cancel_attempt"],
 		["mission_world", "cancel_attempt", ["player_arrest"]],
 	],
-	# O resgate também passa por "transition" (_begin_transition) entre rescue_1 e rescue_2.
+	# O resgate também passa por "transition" (begin_transition) entre rescue_1 e rescue_2.
 	&"rescue_1": [["upside_world", "cancel", ["rescue", false]]],
 	&"rescue_2": [
 		["passenger_transport", "cancel_for_transition"],
@@ -324,7 +324,7 @@ func _cancel_system(path: String) -> Object:
 
 func begin_transition(kind: String, _vehicle := false) -> int:
 	if not transition_kind.is_empty() or (controller != null and controller.travel_busy): return -1
-	if not _cancel_for(&"transition"): return -1
+	if not cancel_for(&"transition"): return -1
 	transition_generation += 1
 	transition_kind = kind
 	# Consumidores antigos já tratam esta flag pública como a trava de transição
@@ -338,7 +338,7 @@ func owns_transition(token: int) -> bool:
 func _owns_transition(token: int) -> bool: return owns_transition(token)
 
 func finish_transition(token: int) -> void:
-	if not _owns_transition(token): return
+	if not owns_transition(token): return
 	transition_kind = ""
 	vehicle_transition_busy = false
 func _finish_transition(token: int) -> void: finish_transition(token)
@@ -348,7 +348,7 @@ func routine_director():
 func _routine_director(): return routine_director()
 
 func refresh_routine_context() -> void:
-	var routines = _routine_director()
+	var routines = routine_director()
 	if routines != null: routines.refresh_context()
 	if urban_operations != null: urban_operations.refresh_context()
 func _refresh_routine_context() -> void: refresh_routine_context()
@@ -421,7 +421,7 @@ func _discard_place_candidate(candidate: Node3D, owned: bool) -> void:
 	elif owned: candidate.queue_free()
 
 func _garage_transfer_valid(token: int, car: CharacterBody3D, place_id: String, entering: bool, expected_room: Node3D) -> bool:
-	if not _owns_transition(token) or not is_instance_valid(car) or car.health <= 0 or world.gameplay.health <= 0: return false
+	if not owns_transition(token) or not is_instance_valid(car) or car.health <= 0 or world.gameplay.health <= 0: return false
 	if not world.driving.occupied or world.driving.car != car or room != expected_room: return false
 	if car.get("engine_disabled") == true: return false
 	if entering and not preload("res://runtime/ShopSafety.gd").admission_allowed(place_id,world.gameplay.stars): return false
@@ -441,7 +441,7 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 		if state.region_id != "harbor": return false
 	elif definition.is_empty() or definition.get("region","") != state.region_id or not definition.has("vehicle_spawn"):
 		return false
-	var token := _begin_transition("garage_vehicle",true)
+	var token := begin_transition("garage_vehicle",true)
 	if token < 0: return false
 	var snapshot := _vehicle_transition_snapshot(car)
 	var expected_room: Node3D = room
@@ -452,7 +452,7 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 	if place_id == "desert_digo": await door_transition.fade_to(1.0,.18)
 	if place_id == "desert_digo" and not _set_digo_vehicle_gate(true,token,car):
 		_restore_vehicle_transition_snapshot(snapshot,car)
-		_finish_transition(token)
+		finish_transition(token)
 		show_message("Aguarde o portão da oficina ficar disponível.")
 		return false
 	var destination: Vector3
@@ -469,7 +469,7 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 			if next_room == null:
 				if place_id == "desert_digo": _set_digo_vehicle_gate(false)
 				_restore_vehicle_transition_snapshot(snapshot,car)
-				_finish_transition(token)
+				finish_transition(token)
 				return false
 			owns_next_room = true
 			next_room.position = Vector3(0,0,-2400)
@@ -487,14 +487,14 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 			_discard_place_candidate(next_room,owns_next_room)
 			controller.region.set_focus(car.global_position if is_instance_valid(car) else world.player.global_position)
 			_restore_vehicle_transition_snapshot(snapshot,car)
-			_finish_transition(token)
+			finish_transition(token)
 			return false
 	if not controller.vehicle_position_clear(car,destination,yaw):
 		if place_id == "desert_digo": _set_digo_vehicle_gate(false)
 		_discard_place_candidate(next_room,owns_next_room)
 		controller.region.set_focus(car.global_position)
 		_restore_vehicle_transition_snapshot(snapshot,car)
-		_finish_transition(token)
+		finish_transition(token)
 		show_message("Passagem do veículo ocupada. Aguarde espaço livre.")
 		return false
 	if entering:
@@ -530,23 +530,23 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 	if car.has_method("shows_seated_driver") and car.shows_seated_driver():
 		preload("res://gameplay/VehicleInterior.gd").attach(car)
 		preload("res://gameplay/VehicleInterior.gd").seat_driver(world.player,car,0.0)
-	_sync_location_presentation()
+	sync_location_presentation()
 	world.camera.initialized = false
 	world.camera._process(1)
 	if place_id == "desert_digo": _set_digo_vehicle_gate(false)
 	car.input_locked = bool(snapshot.car_locked)
 	world.player.input_locked = bool(snapshot.player_locked)
-	_finish_transition(token)
+	finish_transition(token)
 	if entering and place_id != "maciota": _install_service_npc()
 	arrival.on_location_changed()
-	_refresh_routine_context()
+	refresh_routine_context()
 	sync_dispatch_location()
 	return true
 
 func _set_digo_vehicle_gate(opened: bool, token := -1, car: CharacterBody3D = null) -> bool:
 	var from_inside: bool = state.place_id == "desert_digo"
 	var authorize := func() -> bool:
-		if not is_instance_valid(car) or not _owns_transition(token) or transition_kind != "garage_vehicle" or not car.input_locked or not world.player.input_locked or not world.driving.occupied or world.driving.car != car or state.region_id != "desert" or car.health <= 0 or world.gameplay.health <= 0: return false
+		if not is_instance_valid(car) or not owns_transition(token) or transition_kind != "garage_vehicle" or not car.input_locked or not world.player.input_locked or not world.driving.occupied or world.driving.car != car or state.region_id != "desert" or car.health <= 0 or world.gameplay.health <= 0: return false
 		if from_inside: return state.place_id == "desert_digo" and is_instance_valid(room)
 		return state.place_id.is_empty() and preload("res://runtime/ShopSafety.gd").admission_allowed("desert_digo",world.gameplay.stars) and preload("res://systems/campaign/DigoProgress.gd").workshop_unlocked(state.world_state)
 	var changed := false
@@ -565,20 +565,20 @@ func restore_garage_driver(car: CharacterBody3D) -> bool:
 	if place == "maciota" and state.region_id != "harbor": return false
 	var definition := PLACES.get_definition(place)
 	if not place.is_empty() and place != "maciota" and (definition.is_empty() or definition.get("region","") != state.region_id): return false
-	var token := _begin_transition("restore_garage_driver",true)
+	var token := begin_transition("restore_garage_driver",true)
 	if token < 0: return false
 	var snapshot := _vehicle_transition_snapshot(car)
 	var expected_room: Node3D = room
 	car.input_locked = true
 	for i in 3:
 		await get_tree().physics_frame
-		if not _owns_transition(token) or not is_instance_valid(car) or state.place_id != place or room != expected_room or world.driving.occupied or modal or world.gameplay.health <= 0:
+		if not owns_transition(token) or not is_instance_valid(car) or state.place_id != place or room != expected_room or world.driving.occupied or modal or world.gameplay.health <= 0:
 			_restore_vehicle_transition_snapshot(snapshot,car)
-			_finish_transition(token)
+			finish_transition(token)
 			return false
 	if car.health<=0 or not car.is_visible_in_tree() or car.collision_layer == 0 or not controller.vehicle_position_clear(car,car.position,car.rotation.y):
 		_restore_vehicle_transition_snapshot(snapshot,car)
-		_finish_transition(token)
+		finish_transition(token)
 		return false
 	var checkpoint: Vector3 = world.player.position
 	var previous_car: CharacterBody3D = world.driving.car
@@ -627,11 +627,11 @@ func restore_garage_driver(car: CharacterBody3D) -> bool:
 			world.camera.target = car if place.is_empty() else anchor
 			world.camera.locked = not place.is_empty()
 			state.set_location(state.region_id,place)
-			_sync_location_presentation()
+			sync_location_presentation()
 			# Solta só a trava da sessão enquanto a apresentação existente de corpo/porta
 			# é dona da entrada. Senão o Driving vê a nossa trava como interrupção e aborta
 			# a entrada no primeiro quadro.
-			_finish_transition(token)
+			finish_transition(token)
 			for frame in 180:
 				if not world.driving.is_body_transition_active(): break
 				await get_tree().physics_frame
@@ -652,7 +652,7 @@ func restore_garage_driver(car: CharacterBody3D) -> bool:
 	world.player.teleport(checkpoint)
 	world.driving.car = previous_car
 	_restore_vehicle_transition_snapshot(snapshot,car)
-	_finish_transition(token)
+	finish_transition(token)
 	return false
 
 func _garage_restore_spawn(place: String, preferred: Vector3, candidate_room: Node3D = null) -> Vector3:
@@ -777,7 +777,7 @@ func _ready() -> void:
 	arrow.pivot_offset = Vector2(12,20)
 	# O HUD ancorado no mundo precisa seguir a câmera final em todo quadro renderizado,
 	# não a atualização de texto de 10 Hz (que fazia o marcador laranja pular).
-	marker.update_position = _update_world_indicator
+	marker.update_position = update_world_indicator
 	panel = PanelContainer.new()
 	panel.position = Vector2(330,110)
 	panel.custom_minimum_size = Vector2(620,440)
@@ -795,8 +795,8 @@ func _ready() -> void:
 	scroll.add_child(column)
 	panel.hide()
 	world.gameplay.message.connect(show_message)
-	world.gameplay.player_died.connect(_on_death)
-	world.gameplay.player_arrested.connect(_on_arrest)
+	world.gameplay.player_died.connect(on_death)
+	world.gameplay.player_arrested.connect(on_arrest)
 	world.gameplay.police_warning_issued.connect(_police_voice_warning)
 	mission_world = preload("res://runtime/MissionWorld.gd").new()
 	mission_world.session = self
@@ -1207,7 +1207,7 @@ func restore_location() -> void:
 	if activities != null: activities.refresh_achievements()
 	garage_rewards.on_location_changed()
 	apply_outfit()
-	_refresh_routine_context()
+	refresh_routine_context()
 	# O menu acabou de recuperar este slot (SessionLaunch._publish_recovery): diga o que voltou ao padrão.
 	var launch := get_node_or_null("/root/V2Launch")
 	var load_notices: Array[String] = []
@@ -1221,7 +1221,7 @@ func restore_location() -> void:
 		load_notices.append(String(TranslationServer.translate("Bônus das missões já concluídas: + R$ %d")) % back_pay)
 		world.gameplay.changed.emit()
 	if not load_notices.is_empty(): show_message(" · ".join(load_notices))
-	if world.gameplay.health <= 0 or restore_blocked: _on_death()
+	if world.gameplay.health <= 0 or restore_blocked: on_death()
 
 func _saved_garage_driver() -> Dictionary:
 	if garage_rewards == null or not state.place_id.is_empty(): return {}
@@ -1308,7 +1308,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	if activities != null and not activities.can_enter_home(id):
 		show_message("Esta casa ainda não é sua.")
 		return false
-	var token := _begin_transition("enter_place")
+	var token := begin_transition("enter_place")
 	if token < 0: return false
 	var origin_region: String = state.region_id
 	var origin_room: Node3D = room
@@ -1320,7 +1320,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	var owns_candidate := false
 	var candidate_return := Vector3.ZERO
 	if SEWER_NETWORK.is_manhole(id):
-		sewer_hatch = _find_sewer_hatch(id)
+		sewer_hatch = find_sewer_hatch(id)
 		sewer_entry_origin = world.player.global_position
 	if id == "maciota":
 		candidate_room = world.maciota_place
@@ -1335,8 +1335,8 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 				world.player.teleport(sewer_entry_origin)
 				_close_sewer_hatch_for_transition(token)
 				sewer_entry_origin = Vector3.ZERO
-			_restore_transition_player_lock(was_player_locked,token)
-			_finish_transition(token)
+			restore_transition_player_lock(was_player_locked,token)
+			finish_transition(token)
 			return false
 		owns_candidate = true
 		if not embedded_building:
@@ -1353,15 +1353,15 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	controller.region.set_focus(candidate_return)
 	for i in 2:
 		await get_tree().physics_frame
-		if not _owns_transition(token) or state.region_id != origin_region or not state.place_id.is_empty() or room != origin_room or world.driving.occupied or world.gameplay.health <= 0 or not is_instance_valid(candidate_room) or not preload("res://runtime/ShopSafety.gd").admission_allowed(id, world.gameplay.stars):
+		if not owns_transition(token) or state.region_id != origin_region or not state.place_id.is_empty() or room != origin_room or world.driving.occupied or world.gameplay.health <= 0 or not is_instance_valid(candidate_room) or not preload("res://runtime/ShopSafety.gd").admission_allowed(id, world.gameplay.stars):
 			_discard_place_candidate(candidate_room,owns_candidate)
 			controller.region.set_focus(world.player.global_position)
 			if SEWER_NETWORK.is_manhole(id) and sewer_entry_origin.is_finite():
 				world.player.teleport(sewer_entry_origin)
 				_close_sewer_hatch_for_transition(token)
 				sewer_entry_origin = Vector3.ZERO
-			_restore_transition_player_lock(was_player_locked,token)
-			_finish_transition(token)
+			restore_transition_player_lock(was_player_locked,token)
+			finish_transition(token)
 			return false
 	destination = _garage_restore_spawn(id,destination,candidate_room)
 	if not destination.is_finite() or not position_clear(destination+Vector3.UP*.04):
@@ -1370,15 +1370,15 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		if SEWER_NETWORK.is_manhole(id) and sewer_entry_origin.is_finite():
 			world.player.teleport(sewer_entry_origin)
 			_close_sewer_hatch_for_transition(token)
-		_restore_transition_player_lock(was_player_locked,token)
-		_finish_transition(token)
+		restore_transition_player_lock(was_player_locked,token)
+		finish_transition(token)
 		show_message("Entrada bloqueada.")
 		return false
 	# Bueiro: Dante anda até a borda, a tampa desliza e ele desce a escada antes do véu cobrir a troca.
 	# Loading a saved interior admits Dante directly; it is not a street approach.
 	if ready_for_play and SEWER_NETWORK.is_manhole(id) and is_instance_valid(sewer_hatch):
 		var descent: Node = SEWER_DESCENT.new()
-		descent.setup(world.player, sewer_hatch, func() -> bool: return _owns_transition(token) and world.gameplay.health > 0)
+		descent.setup(world.player, sewer_hatch, func() -> bool: return owns_transition(token) and world.gameplay.health > 0)
 		if descent.can_run():
 			add_child(descent)
 			var descended: bool = await descent.descend()
@@ -1390,8 +1390,8 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 					world.player.teleport(sewer_entry_origin)
 					_close_sewer_hatch_for_transition(token)
 					sewer_entry_origin = Vector3.ZERO
-				_restore_transition_player_lock(was_player_locked,token)
-				_finish_transition(token)
+				restore_transition_player_lock(was_player_locked,token)
+				finish_transition(token)
 				return false
 		else:
 			descent.free()
@@ -1403,7 +1403,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		world.camera.focus_on_transition(door_focus, maxf(8.0, world.camera.size * 0.78), world.camera.STORE_FOCUS_OFFSET, 0.42)
 		await get_tree().create_timer(0.12).timeout
 		await door_transition.fade_to(1.0, 0.30)
-		if not _owns_transition(token) or state.region_id != origin_region or not state.place_id.is_empty() or room != origin_room or world.driving.occupied or world.gameplay.health <= 0 or not is_instance_valid(candidate_room) or not preload("res://runtime/ShopSafety.gd").admission_allowed(id, world.gameplay.stars):
+		if not owns_transition(token) or state.region_id != origin_region or not state.place_id.is_empty() or room != origin_room or world.driving.occupied or world.gameplay.health <= 0 or not is_instance_valid(candidate_room) or not preload("res://runtime/ShopSafety.gd").admission_allowed(id, world.gameplay.stars):
 			_discard_place_candidate(candidate_room,owns_candidate)
 			controller.region.set_focus(world.player.global_position)
 			world.camera.clear_store_focus()
@@ -1413,8 +1413,8 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 				_close_sewer_hatch_for_transition(token)
 				sewer_entry_origin = Vector3.ZERO
 			await door_transition.fade_to(0.0, 0.22)
-			_restore_transition_player_lock(was_player_locked,token)
-			_finish_transition(token)
+			restore_transition_player_lock(was_player_locked,token)
+			finish_transition(token)
 			return false
 	saved_heading = world.camera.heading
 	saved_size = world.camera.target_size
@@ -1426,7 +1426,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		mission_world._event("leader_house_entered","cobra_leader_house")
 	state.checkpoint_id = local_access_id if not local_access_id.is_empty() else id
 	world.player.teleport(destination+Vector3.UP*.04)
-	_sync_location_presentation()
+	sync_location_presentation()
 	anchor.position = room.camera_target
 	world.camera.clear_store_focus()
 	world.camera.target = anchor
@@ -1445,16 +1445,16 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	# por 0,34 s e só então sumiam (reentrada no esconderijo do Vértice, test_vertice_hideout).
 	if id != "maciota": _update_reward()
 	if animated: await door_transition.fade_to(0.0, 0.34)
-	_restore_transition_player_lock(was_player_locked,token)
+	restore_transition_player_lock(was_player_locked,token)
 	if id != "maciota":
 		_install_service_npc()
 		_update_reward()
 	if room.has_method("on_session_entered"): room.on_session_entered(self)
 	if building_entrance != null and building_entrance.handles_place(id): building_entrance.entered()
-	_finish_transition(token)
+	finish_transition(token)
 	arrival.on_location_changed()
 	garage_rewards.on_location_changed()
-	_refresh_routine_context()
+	refresh_routine_context()
 	sync_dispatch_location()
 	if autosave: save_game()
 	if upside_world != null: upside_world.arm_entry(id, not autosave)
@@ -1529,13 +1529,13 @@ func _upside_landing_clear(point: Vector3) -> bool:
 func leave_place() -> bool:
 	if is_transition_blocked() or state.place_id.is_empty() or not is_instance_valid(room): return false
 	if service_roofs != null and service_roofs.is_active(): service_roofs.clear(true)
-	var token := _begin_transition("leave_place")
+	var token := begin_transition("leave_place")
 	if token < 0: return false
 	var leaving_room: Node3D = room
 	var was_player_locked: bool = world.player.input_locked
 	var was_sewer_exit: bool = SEWER_NETWORK.is_manhole(state.place_id)
 	if SEWER_NETWORK.is_manhole(state.place_id):
-		sewer_hatch = _find_sewer_hatch(state.place_id)
+		sewer_hatch = find_sewer_hatch(state.place_id)
 		if is_instance_valid(sewer_hatch):
 			world.player.input_locked = true
 	var continuous_departure: bool = building_entrance != null and building_entrance.handles_place(state.place_id) and building_entrance.walking_departure
@@ -1545,9 +1545,9 @@ func leave_place() -> bool:
 		controller.region.prepare_collision_at(return_point)
 		controller.region.set_focus(return_point)
 		for i in 3: await get_tree().physics_frame
-		if not _owns_transition(token) or room != leaving_room or world.gameplay.health <= 0:
-			_restore_transition_player_lock(was_player_locked,token)
-			_finish_transition(token)
+		if not owns_transition(token) or room != leaving_room or world.gameplay.health <= 0:
+			restore_transition_player_lock(was_player_locked,token)
+			finish_transition(token)
 			return false
 	var leaving_return: Vector3 = world.player.global_position-Vector3.UP*.08 if continuous_departure else _clear_return_point(state.place_id, return_point)
 	if continuous_departure and not position_clear(world.player.global_position): leaving_return = Vector3.INF
@@ -1557,7 +1557,7 @@ func leave_place() -> bool:
 			sewer_hatch.set_open_amount(0.0)
 			sewer_hatch = null
 		world.player.input_locked = was_player_locked
-		_finish_transition(token)
+		finish_transition(token)
 		show_message("Passagem ocupada. Aguarde.")
 		return false
 	var animated := not _uses_walkup_access(state.place_id)
@@ -1567,15 +1567,15 @@ func leave_place() -> bool:
 		await get_tree().create_timer(0.10).timeout
 		await door_transition.fade_to(1.0, 0.28)
 		leaving_return = _clear_return_point(state.place_id, return_point)
-		if not _owns_transition(token) or world.gameplay.health <= 0 or room != leaving_room or not leaving_return.is_finite():
+		if not owns_transition(token) or world.gameplay.health <= 0 or room != leaving_room or not leaving_return.is_finite():
 			world.camera.clear_store_focus()
 			world.camera._process(0.0)
 			await door_transition.fade_to(0.0, 0.22)
 			if is_instance_valid(sewer_hatch):
 				sewer_hatch.set_open_amount(0.0)
 				sewer_hatch = null
-			_restore_transition_player_lock(was_player_locked,token)
-			_finish_transition(token)
+			restore_transition_player_lock(was_player_locked,token)
+			finish_transition(token)
 			if not leaving_return.is_finite(): show_message("Passagem ocupada. Aguarde.")
 			return false
 	controller.region.set_focus(leaving_return)
@@ -1588,12 +1588,12 @@ func leave_place() -> bool:
 	room = null
 	state.set_location(state.region_id)
 	world.player.teleport(leaving_return+Vector3.UP*.08)
-	_sync_location_presentation()
+	sync_location_presentation()
 	# Saída do bueiro: Dante reaparece no fundo do poço com a tampa aberta e sobe a escada depois do véu abrir.
 	var ascent: Node
 	if was_sewer_exit and is_instance_valid(sewer_hatch):
 		ascent = SEWER_DESCENT.new()
-		ascent.setup(world.player, sewer_hatch, func() -> bool: return _owns_transition(token) and world.gameplay.health > 0)
+		ascent.setup(world.player, sewer_hatch, func() -> bool: return owns_transition(token) and world.gameplay.health > 0)
 		if ascent.can_run():
 			add_child(ascent)
 			ascent.prepare_exit()
@@ -1622,11 +1622,11 @@ func leave_place() -> bool:
 			sewer_hatch = null
 		world.player.teleport(leaving_return+Vector3.UP*.08)
 	world.player.input_locked = was_player_locked
-	_finish_transition(token)
+	finish_transition(token)
 	close_menu()
 	arrival.on_location_changed()
 	garage_rewards.on_location_changed()
-	_refresh_routine_context()
+	refresh_routine_context()
 	sync_dispatch_location()
 	save_game()
 	return true
@@ -1650,7 +1650,7 @@ func _find_sewer_hatch(place_id := "harbor_sewer") -> Node3D: return find_sewer_
 
 func _close_sewer_hatch_for_transition(token: int) -> void:
 	if not is_instance_valid(sewer_hatch) or not sewer_hatch.has_method("set_open_amount"): return
-	if _owns_transition(token): sewer_hatch.set_open_amount(0.0)
+	if owns_transition(token): sewer_hatch.set_open_amount(0.0)
 
 func _close_sewer_hatch_after_exit(hatch: Node3D) -> void:
 	if is_instance_valid(hatch): hatch.set_open_amount(0.0)
@@ -1872,13 +1872,13 @@ func nearest() -> Dictionary:
 		var act1_indoor: Dictionary = helena_act1.nearest_action() if helena_act1 != null else {}
 		if not act1_indoor.is_empty(): return act1_indoor
 		var original_action: Dictionary = services.nearest_action()
-		if not original_action.is_empty() and not _service_threatened(str(original_action.get("target", ""))): return original_action
+		if not original_action.is_empty() and not service_threatened(str(original_action.get("target", ""))): return original_action
 		if wine != null:
 			var wine_action: Dictionary = wine.nearest_action()
 			if not wine_action.is_empty(): return wine_action
 		var branch_urban_action: Dictionary = urban_operations.nearest_action() if urban_operations != null else {}
 		if not branch_urban_action.is_empty(): return branch_urban_action
-		var interior_routine_action: Dictionary = _routine_director().nearest_action() if _routine_director() != null else {}
+		var interior_routine_action: Dictionary = routine_director().nearest_action() if routine_director() != null else {}
 		if not interior_routine_action.is_empty(): return interior_routine_action
 		if state.place_id == "maciota":
 			for id in ["maciota","mechanic","part"]:
@@ -1896,7 +1896,7 @@ func nearest() -> Dictionary:
 			if state.place_id == "harbor_bank": primary_available = state.campaign.target_id() == "helena"
 			# A conveniência não tinha balcão de compras no V1: sua operação é o
 			# caixa do assalto. Não exponha um "Atender" que não produz resultado.
-			if primary_available and not _service_threatened() and point.distance_to(service_point) < 1.5:
+			if primary_available and not service_threatened() and point.distance_to(service_point) < 1.5:
 				return {"id":"service","label":"Comprar" if service == "supermarket" else "Falar com Vance" if state.place_id in ["harbor_ammunation", "mountain_gunshop"] else "Atender"}
 		if building_social != null:
 			var social_action: Dictionary = building_social.nearest_action()
@@ -1912,7 +1912,7 @@ func nearest() -> Dictionary:
 	if not activity_action.is_empty(): return activity_action
 	var urban_action: Dictionary = urban_operations.nearest_action() if urban_operations != null else {}
 	if not urban_action.is_empty(): return urban_action
-	var outdoor_routine_action: Dictionary = _routine_director().nearest_action() if _routine_director() != null else {}
+	var outdoor_routine_action: Dictionary = routine_director().nearest_action() if routine_director() != null else {}
 	if not outdoor_routine_action.is_empty(): return outdoor_routine_action
 	if state.region_id == "harbor" and not _uses_walkup_access("maciota") and point.distance_to(world.maciota_place.entry_position) < 1.5: return {"id":"enter","place":"maciota","access":"maciota","label":"Entrar"}
 	for entry in controller.region.entries:
@@ -1970,13 +1970,13 @@ func interact() -> bool:
 		"garage_reward": return garage_rewards.perform(action.target)
 		"robbery": return robberies.perform(action.target)
 		"original_service":
-			if _service_threatened(str(action.target)): return false
+			if service_threatened(str(action.target)): return false
 			var performed: bool = services.perform(action.target)
 			_service_menu_open = performed and modal and str(action.target) not in ["hospital_triage", "police_terminal", "fire_alarm"]
 			return performed
-		"urban_v1": return _perform_urban_action(str(action.target))
+		"urban_v1": return perform_urban_action(str(action.target))
 		"v1_routine":
-			var routines = _routine_director()
+			var routines = routine_director()
 			return routines != null and routines.perform(str(action.target))
 		"exit": return await leave_place()
 		"enter":
@@ -2110,7 +2110,7 @@ func _input(event: InputEvent) -> void:
 		# Botões focados são donos de ui_accept. Consumi-lo aqui impedia o Enter e o
 		# botão de confirmar do controle de chegarem a lojas, diários e resgate na morte.
 		if dialogue_open and (event.is_action_pressed("interact") or event.is_action_pressed("ui_accept")):
-			_advance_dialogue()
+			advance_dialogue()
 			get_viewport().set_input_as_handled()
 		elif (event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel")) and not rescue_pending:
 			# Esta conversa guiada é dona do callback de chegada. Dispensar só
@@ -2194,7 +2194,7 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("unarmed"): state.equip_weapon("fists")
 	elif event.is_action_pressed("weapon_next") and not world.driving.occupied: world.gameplay.cycle_weapon(1)
 	elif event.is_action_pressed("weapon_flashlight") and not event.is_echo():
-		_toggle_weapon_flashlight()
+		toggle_weapon_flashlight()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.physical_keycode == KEY_F5: save_game(true)
@@ -2266,16 +2266,16 @@ func _process_traced(delta: float) -> void:
 		var data: Dictionary = WEAPONS.WEAPONS.get(state.equipped_weapon,{})
 		if Input.is_action_pressed("fire") and (data.get("automatic",false) or Input.is_action_just_pressed("fire")): world.gameplay.fire_at(aim)
 	var fall_limit: float = mining.fall_limit(world.player.position) if mining != null else -12.0
-	if world.player.position.y < fall_limit and not modal: _on_death()
+	if world.player.position.y < fall_limit and not modal: on_death()
 	tick += delta
 	if tick < .1: return
 	tick = 0
 	_refresh_reward_feedback()
 	if not modal and not world.driving.occupied:
 		if service_roofs.is_active(): pass
-		elif not state.place_id.is_empty() and state.place_id != "maciota": _collect_reward(room)
+		elif not state.place_id.is_empty() and state.place_id != "maciota": collect_reward(room)
 		elif state.place_id.is_empty():
-			for source in get_tree().get_nodes_in_group("native_world_rewards"): _collect_reward(source)
+			for source in get_tree().get_nodes_in_group("native_world_rewards"): collect_reward(source)
 	var ammo: Dictionary = state.get_ammo(state.equipped_weapon)
 	if cold != null:
 		var thermal: Dictionary = cold.status()

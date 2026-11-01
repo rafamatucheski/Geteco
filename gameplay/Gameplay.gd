@@ -301,7 +301,7 @@ var god_mode := false
 var _god_marked: Array[Node] = []
 ## Estado de mira (leitura externa): `aiming` = V1 `is_aiming`; `aim_active` = V1 `weapon_aim_active`.
 var aiming := false
-## Espada e escudo: segurar mira levanta o escudo (`_update_aim`); corta o dano que vem pela frente.
+## Espada e escudo: segurar mira levanta o escudo (`update_aim`); corta o dano que vem pela frente.
 var shield_block := false
 ## Série da academia (GymPlace): clipe da biblioteca "mixgym" no corpo do Dante, por cima do combate.
 var exercise_clip := ""
@@ -608,7 +608,7 @@ func _stall_physics_tick(delta: float) -> void:
 	# de ataque/animação do Dante usam o tempo normal dele enquanto o RAGE é dono da câmera lenta.
 	var player_delta := delta / RAGE.WORLD_SCALE if is_instance_valid(rage) and rage.active else delta
 	_combat_clock += player_delta
-	if god_mode or not _god_marked.is_empty(): _sync_god_mode()
+	if god_mode or not _god_marked.is_empty(): sync_god_mode()
 	_advance_police_rounds(delta)
 	cooldown = maxf(0, cooldown - player_delta)
 	if reload_timer > 0:
@@ -621,11 +621,11 @@ func _stall_physics_tick(delta: float) -> void:
 			state.reload_weapon(reloading_id, int(weapon_data(reloading_id).magazine_size))
 			reloading_id = ""
 			changed.emit()
-	_update_aim(player_delta)
+	update_aim(player_delta)
 	if "sprint_scale" in player: player.sprint_scale = GYM.sprint_scale(_gym_world())
-	_update_melee_buffer()
-	_update_weapon_pose(player_delta)
-	_update_visual()
+	update_melee_buffer()
+	update_weapon_pose(player_delta)
+	update_visual()
 	_update_saber_audio()
 	if is_instance_valid(katana_wounds): katana_wounds.effects = effects
 	effects.update_weapon_feedback(self, delta)
@@ -640,7 +640,7 @@ func _stall_physics_tick(delta: float) -> void:
 	_update_muzzle_and_flame(delta)
 	_update_police(delta)
 	_update_effects(delta)
-	_update_loot(delta)
+	update_loot(delta)
 
 func update_visual() -> void: _weapon_visuals._update_visual()
 func _update_visual() -> void: update_visual()
@@ -748,7 +748,7 @@ func update_aim(delta: float) -> void:
 	player.set_meta("melee_movement_scale", 1.0)
 	if _aim_hold > 0.0: _aim_hold -= delta
 	# Tipos explícitos: `player.input_locked` é acesso dinâmico (Variant); não se apoia a inferência do `:=` numa cadeia `and`.
-	var permitted: bool = attack_allowed() and not bool(player.input_locked) and _free_play_ok()
+	var permitted: bool = attack_allowed() and not bool(player.input_locked) and free_play_ok()
 	var aim_pressed: bool = permitted and InputMap.has_action("aim") and Input.is_action_pressed("aim")
 	var fire_pressed: bool = permitted and InputMap.has_action("fire") and Input.is_action_pressed("fire")
 	var lantern: bool = permitted and is_instance_valid(flashlight) and flashlight.visible
@@ -757,7 +757,7 @@ func update_aim(delta: float) -> void:
 	if shield_block: player.set_meta("melee_movement_scale", SHIELD_BLOCK_MOVE)
 	aiming = permitted and (aim_pressed or fire_pressed or lantern or _aim_hold > 0.0)
 	_scope_active = aim_pressed and CUSTOM.selected(customization, equipped(), "scope") != "none" and not bool(player.get_meta("isolated_interior", false))
-	var direction: Vector3 = _aim_direction() if aiming else Vector3.ZERO
+	var direction: Vector3 = aim_direction() if aiming else Vector3.ZERO
 	if not _melee_action.is_empty():
 		var held_id := equipped() if not equipped().is_empty() else "fists"
 		if not permitted or _melee_action.id != held_id:
@@ -864,7 +864,7 @@ func _cancel_combat_clip() -> void:
 ## (garagem, veículo, ski, transição) ou terminar o trecho. Na pausa este método não roda, então o clipe congela junto.
 func _update_combat_clip(delta: float) -> void:
 	if exercise_clip != "":
-		# O Dante está travado no aparelho: `_update_aim` acabou de limpar o clipe de combate.
+		# O Dante está travado no aparelho: `update_aim` acabou de limpar o clipe de combate.
 		if is_instance_valid(player) and "combat_clip" in player:
 			player.combat_clip = exercise_clip
 			player.combat_clip_time = exercise_time
@@ -1035,7 +1035,7 @@ func _play_katana_clip(id := "katana") -> void:
 
 func request_rage() -> bool:
 	# Teclado, controle e HUD compartilham as checagens de contexto e o retorno.
-	if not is_instance_valid(rage) or not rage.unlocked() or not _free_play_ok() or get_tree().paused: return false
+	if not is_instance_valid(rage) or not rage.unlocked() or not free_play_ok() or get_tree().paused: return false
 	if rage.activate(): return true
 	if rage.active: return true
 	if equipped() != "katana":
@@ -1152,13 +1152,13 @@ func aim_from_screen(screen: Vector2) -> Vector3:
 	return aim_point
 
 func aim_feedback_active() -> bool:
-	return aiming and equipped() not in NON_AIM_WEAPONS and attack_allowed() and _free_play_ok() and not player.input_locked
+	return aiming and equipped() not in NON_AIM_WEAPONS and attack_allowed() and free_play_ok() and not player.input_locked
 
 func melee_feedback_active() -> bool:
 	# Estados de teste (FakeState) não têm arma equipada nem regra de ataque: sem aviso de mira.
 	if state == null or not "equipped_weapon" in state or not state.has_method("can_attack"): return false
 	var id := equipped() if not equipped().is_empty() else "fists"
-	if not is_instance_valid(player) or not CATALOG.WEAPONS.get(id, {}).get("is_melee", false) or not attack_allowed() or not _free_play_ok() or player.input_locked: return false
+	if not is_instance_valid(player) or not CATALOG.WEAPONS.get(id, {}).get("is_melee", false) or not attack_allowed() or not free_play_ok() or player.input_locked: return false
 	var preparing := InputMap.has_action("aim") and Input.is_action_pressed("aim")
 	var striking: bool = not _melee_action.is_empty() and _melee_action.id == id and _rig_pose.action_age <= float(_melee_action.contact) + float(_melee_action.window)
 	return preparing or striking
@@ -1178,7 +1178,7 @@ func melee_feedback() -> Dictionary:
 
 func _melee_direction() -> Vector3:
 	if not _melee_action.is_empty() and bool(_melee_action.locked) and _rig_pose.action_age <= float(_melee_action.contact) + float(_melee_action.window): return _melee_action.direction
-	var direction := _aim_direction()
+	var direction := aim_direction()
 	if direction.length_squared() > 0.001: _last_melee_direction = direction
 	return _last_melee_direction
 
@@ -1199,7 +1199,7 @@ func update_melee_buffer() -> void:
 	if _melee_buffer.is_empty(): return
 	var id := equipped()
 	if id.is_empty(): id = "fists"
-	if not attack_allowed() or not _free_play_ok() or player.input_locked or id != _melee_buffer.id or _combat_clock > float(_melee_buffer.until):
+	if not attack_allowed() or not free_play_ok() or player.input_locked or id != _melee_buffer.id or _combat_clock > float(_melee_buffer.until):
 		_melee_buffer.clear()
 		return
 	if cooldown > 0.0 or not _pending_contact.is_empty(): return
@@ -1209,7 +1209,7 @@ func _update_melee_buffer() -> void: update_melee_buffer()
 
 ## Mesma boca do cano, trajetória horizontal, máscara e alcance do tiro, sem dispersão.
 func aim_feedback() -> Dictionary:
-	var origin := _muzzle_world_position()
+	var origin := muzzle_world_position()
 	var data := weapon_data(equipped())
 	if not data.get("is_explosive", false) and not data.get("is_grenade", false) and not data.get("is_flame", false):
 		var bridge := _muzzle_obstruction(origin)
@@ -1243,7 +1243,7 @@ func fire_at(target: Vector3) -> bool:
 	return fired
 
 func _stall_fire_at(target: Vector3) -> bool:
-	if not attack_allowed() or not _free_play_ok() or not is_instance_valid(player) or player.input_locked:
+	if not attack_allowed() or not free_play_ok() or not is_instance_valid(player) or player.input_locked:
 		_clear_melee_action()
 		return false
 	var id := equipped()
@@ -1285,7 +1285,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 	if not melee_weapon and not data.get("is_grenade", false): _flash_muzzle(id)
 	STALL_WORK.finish_slow("gameplay.fire_at.muzzle", part_span, 2000, self)
 	aim_point = target
-	var origin := _muzzle_world_position()
+	var origin := muzzle_world_position()
 	var direction := target - origin
 	direction.y = 0
 	if direction.length_squared() < 0.001: direction = Vector3.FORWARD
@@ -1386,7 +1386,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 							if is_instance_valid(damage_look) and damage_look.has_method("ignite"): damage_look.ignite(player)
 				else:
 					part_span = STALL_WORK.begin()
-					_damage_bullet(hit.collider, amount, player, shot_from, shot_to, end, data)
+					damage_bullet(hit.collider, amount, player, shot_from, shot_to, end, data)
 					STALL_WORK.finish_slow("gameplay.fire_at.damage", part_span, 2000, hit.collider as Node)
 					confirm_player_hit(hit.collider, amount)
 					part_span = STALL_WORK.begin()
@@ -1441,7 +1441,7 @@ func _update_contact() -> void:
 	var id: String = _pending_contact.id
 	var current_id := equipped()
 	if current_id.is_empty(): current_id = "fists"
-	if not attack_allowed() or not _free_play_ok() or player.input_locked or current_id != id:
+	if not attack_allowed() or not free_play_ok() or player.input_locked or current_id != id:
 		_pending_contact.clear()
 		_clear_melee_action()
 		return
@@ -1455,7 +1455,7 @@ func _update_contact() -> void:
 		if not _melee_action.is_empty():
 			_melee_action.locked = true
 			direction = _melee_action.direction
-		var hit := _melee(origin, direction, contact.data, id)
+		var hit := melee(origin, direction, contact.data, id)
 		if hit or _rig_pose.action_age >= float(contact.time) + float(MELEE_CONTROL.profile(id).window):
 			_pending_contact = {}
 		return
@@ -1878,7 +1878,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Circle also closes menus. Only unconsumed gameplay events may surrender;
 	# polling Input after closing a modal used the same press a second time.
 	if event.is_action_pressed("surrender") and not event.is_echo():
-		if not enabled or get_tree().paused or not _free_play_ok() or state == null or not state.can_attack(): return
+		if not enabled or get_tree().paused or not free_play_ok() or state == null or not state.can_attack(): return
 		if police_surrendering(): police_case.cancel_surrender()
 		elif is_instance_valid(police_case): police_case.request_surrender()
 		get_viewport().set_input_as_handled()
@@ -1891,7 +1891,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	for index in SLOT_ORDER.size():
 		if event.is_action_pressed("weapon_slot_%d" % (index + 1)): slot = index
 	if not previous and slot < 0: return
-	if not _free_play_ok(): return
+	if not free_play_ok(): return
 	if previous: cycle_weapon(-1)
 	else: equip_slot(SLOT_ORDER[slot])
 	get_viewport().set_input_as_handled()
@@ -1903,7 +1903,7 @@ func handle_arsenal_input(event: InputEvent) -> bool:
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo: return false
 	var focus := get_viewport().gui_get_focus_owner()
-	if not attack_allowed() or not _free_play_ok() or focus is LineEdit or focus is TextEdit or key.ctrl_pressed or key.alt_pressed or key.meta_pressed:
+	if not attack_allowed() or not free_play_ok() or focus is LineEdit or focus is TextEdit or key.ctrl_pressed or key.alt_pressed or key.meta_pressed:
 		_cheat_buffer = ""
 		return false
 	if _combat_clock - _cheat_last > CHEAT_GAP: _cheat_buffer = ""
@@ -1943,7 +1943,7 @@ func toggle_infinite_money() -> bool:
 func toggle_god_mode() -> bool:
 	if state == null: return false
 	god_mode = not god_mode
-	_sync_god_mode()
+	sync_god_mode()
 	changed.emit()
 	message.emit("Invencibilidade ligada" if god_mode else "Invencibilidade desligada")
 	return true
@@ -2108,7 +2108,7 @@ func register_crime(points: int, point: Vector3, kind: String = "reported", test
 		points = police_case.escalation.accept(points, crime_points, kind)
 	var old_stars := stars
 	crime_points = mini(MAX_CRIME_POINTS, crime_points + points)
-	_update_stars()
+	update_stars()
 	last_known = testimony.get("exterior", point)
 	last_known_valid = true
 	set_meta("police_contact_place_id", "" if not testimony.is_empty() else (String(state.place_id) if "place_id" in state else ""))
@@ -2291,7 +2291,7 @@ func _update_police(delta: float) -> void:
 	if police_case != null: police_case.tick(delta)
 	police = police.filter(func(unit): return is_instance_valid(unit) and not unit.dead)
 	contact_age += delta
-	if crime_points > 0 and contact_age > 1.0: hidden_time += delta * _evasion_rate()
+	if crime_points > 0 and contact_age > 1.0: hidden_time += delta * evasion_rate()
 	elif crime_points == 0: hidden_time = 0.0
 	if crime_points > 0 and stars == 0 and hidden_time > 12.0:
 		crime_points = 0
@@ -2304,7 +2304,7 @@ func _update_police(delta: float) -> void:
 			message.emit("Você despistou a polícia.")
 		else:
 			crime_points = STAR_THRESHOLDS[stars - 1]
-			_update_stars()
+			update_stars()
 			hidden_time = 0.0
 			if police_case != null: police_case.descending = true
 			changed.emit()
@@ -2327,7 +2327,7 @@ func spawn_officer() -> CharacterBody3D:
 		if tunnel.below_grade(last_known):
 			point = Vector3(last_known.x + (16.0 if attempt % 2 == 0 else -16.0), 0.0, tunnel.CENTER_Z)
 			point.y = tunnel.floor_y(point.x) + 0.05
-		if not _clear_at(point): continue
+		if not clear_at(point): continue
 		var floor_ray := PhysicsRayQueryParameters3D.create(point + Vector3.UP, point - Vector3.UP * 2.0, 1)
 		var floor_hit := get_world_3d().direct_space_state.intersect_ray(floor_ray)
 		if floor_hit.is_empty(): continue
@@ -2410,7 +2410,7 @@ func clear_at(point: Vector3, mask: int = 1) -> bool:
 func _clear_at(point: Vector3, mask: int = 1) -> bool: return clear_at(point, mask)
 
 func _walkable_at(point: Vector3) -> bool:
-	if not _clear_at(point): return false
+	if not clear_at(point): return false
 	var floor_ray := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 0.6, point - Vector3.UP * 0.8, 1)
 	return not get_world_3d().direct_space_state.intersect_ray(floor_ray).is_empty()
 
@@ -2441,7 +2441,7 @@ func _find_grid_path(start: Vector3, finish: Vector3) -> PackedVector3Array:
 	# Mantém o contrato público síncrono para chamadores que não são a polícia. A busca
 	# compartilhada preserva a ordem dos vizinhos, o limite de 256 nós e as sondas físicas.
 	var search := LOCAL_GRID_SEARCH.new()
-	search.configure(start, finish, _occupancy, _walkable_at, _clear_at)
+	search.configure(start, finish, _occupancy, _walkable_at, clear_at)
 	search.advance()
 	return search.path
 
@@ -2506,7 +2506,7 @@ func restore_state(data: Dictionary) -> bool:
 	hidden_time = float(data.hidden_time)
 	customization = restored_customization
 	refresh_blade_visuals()
-	_update_stars()
+	update_stars()
 	last_known = player.global_position if is_instance_valid(player) else Vector3.ZERO
 	last_known_valid = stars > 0
 	dispatch_timer = 3

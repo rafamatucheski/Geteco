@@ -71,7 +71,7 @@ func _update_visual() -> void:
 		else:
 			var local_basis: Basis = g._pose_frame.basis
 			g.gun.global_transform = Transform3D((g.player.visual.global_basis * local_basis).orthonormalized(), g.player.visual.to_global(g._pose_frame.gun_origin))
-		g._update_weapon_parts(id)
+		g.update_weapon_parts(id)
 	g._update_left_knuckles(id)
 	g.flashlight.visible = g.gun.visible and g.flashlight_enabled and CUSTOM.installed(g.customization, id)
 	var laser_part: String = CUSTOM.selected(g.customization, id, "laser")
@@ -84,7 +84,7 @@ func _update_visual() -> void:
 		var origin := lens.global_position
 		var direction: Vector3 = -g.gun.global_basis.z
 		direction.y = 0.0
-		if direction.length_squared() < 0.001: direction = g._aim_direction()
+		if direction.length_squared() < 0.001: direction = g.aim_direction()
 		if direction.length_squared() < 0.001: direction = Vector3.FORWARD
 		var ray := PhysicsRayQueryParameters3D.create(origin, origin + direction.normalized() * 35, 7, [(g.player as CharacterBody3D).get_rid()])
 		var hit: Dictionary = g.get_world_3d().direct_space_state.intersect_ray(ray)
@@ -286,7 +286,7 @@ func _flash_muzzle(id: String) -> void:
 	g._muzzle_light.visible = not suppressed
 	g._muzzle_timer = 0.075 if id == "flamethrower" else (0.09 if id == "rpg" else (0.065 if heavy else 0.035))
 	if is_instance_valid(g.effects) and id != "flamethrower":
-		var muzzle_pos: Vector3 = g._muzzle_world_position()
+		var muzzle_pos: Vector3 = g.muzzle_world_position()
 		var aim_dir: Vector3 = -g.gun.global_transform.basis.z if is_instance_valid(g.gun) else -g.player.global_transform.basis.z
 		g.effects.muzzle_smoke(muzzle_pos, aim_dir)
 
