@@ -99,6 +99,16 @@ var _search_stars := -1
 var _search_rng := RandomNumberGenerator.new()
 var _had_contact := false
 var _radio_stars := 0
+## Auxiliares sem estado (01/11, só para este arquivo caber na leitura): o estado continua aqui, e cada
+## função antiga virou delegação de uma linha, então DispatchUnit, PoliceHelicopter e os testes que
+## chamam `_space_clear`, `_active_police`, `dispatch_police_to` etc. por nome não mudam. Criados na
+## declaração, e não em _ready, para valer também num controlador montado fora da árvore.
+const SPACE_QUERIES := preload("res://gameplay/dispatch/DispatchSpaceQueries.gd")
+const POLICE_ASSIGN := preload("res://gameplay/dispatch/DispatchPoliceAssign.gd")
+const EMERGENCY_ASSIGN := preload("res://gameplay/dispatch/DispatchEmergencyAssign.gd")
+var _space_queries: SPACE_QUERIES = SPACE_QUERIES.new(self)
+var _police_assign: POLICE_ASSIGN = POLICE_ASSIGN.new(self)
+var _emergency_assign: EMERGENCY_ASSIGN = EMERGENCY_ASSIGN.new(self)
 
 func configure(p_world: Node3D, p_gameplay: Node3D, p_routes: RefCounted) -> void:
 	world = p_world
@@ -439,101 +449,13 @@ func _active_services() -> Array:
 func stranded_count() -> int:
 	return units.filter(func(u): return not u.finished and u.state == "departing" and u.stranded).size()
 
-func _space_clear(size: Vector3, point: Vector3, yaw: float, exclude: Array[RID]) -> bool:
-	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
-	var orientation := Basis(Vector3.UP, yaw)
-	var query := PhysicsShapeQueryParameters3D.new()
-	var box := BoxShape3D.new()
-	box.size = size
-	query.shape = box
-	query.transform = Transform3D(orientation, point + orientation * Vector3(0.0, size.y * 0.5 + 0.1, 0.0))
-	query.collision_mask = 7
-	query.exclude = exclude
-	for x in [-size.x * 0.4, size.x * 0.4]:
-		for z in [-size.z * 0.4, size.z * 0.4]:
-			var support: Vector3 = point + orientation * Vector3(x, 0.0, z)
-			var ray := PhysicsRayQueryParameters3D.create(support + Vector3.UP * 0.6, support - Vector3.UP * 0.8, 1)
-			if space.intersect_ray(ray).is_empty(): return false
-	var session: Variant = world.get("session")
-	if session != null and session.cold != null and not session.cold.prepare_collision_at(point): return false
-	return space.intersect_shape(query,1).is_empty()
-
-func capsule_clear(point: Vector3, exclude: Array[RID]) -> bool:
-	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.32
-	capsule.height = 1.72
-	var query := PhysicsShapeQueryParameters3D.new()
-	query.shape = capsule
-	query.transform = Transform3D(Basis.IDENTITY, point + Vector3.UP * 0.9)
-	query.collision_mask = 7
-	query.exclude = exclude
-	return world.get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
-
-func footprint_clear(car: CharacterBody3D, point: Vector3, yaw: float) -> bool:
-	var size: Vector3 = (car.shape.shape as BoxShape3D).size
-	var exclude: Array[RID] = [car.get_rid()]
-	return _space_clear(size, point, yaw, exclude)
-
-func _archetype_size(archetype: String) -> Vector3:
-	var spec: Dictionary = preload("res://runtime/FleetCatalog.gd").spec(archetype)
-	if spec.is_empty(): return Vector3(2.08, 1.4, 4.6)
-	var bounds: Array = spec.bounds_size
-	return Vector3(maxf(0.65, bounds[0]), clampf(bounds[1], 1.1, 3.6), bounds[2])
-
-## Ponto ao lado da porta onde uma pessoa cabe: chão sólido, sem corpo dentro,
-## sem parede entre o veículo e o ponto. Vazio quando não há saída segura.
-## A equipe policial alterna os lados: o primeiro desce pela porta do motorista (-1), o
-## segundo pela do carona (+1). Antes o lado +1 era sempre testado primeiro e, havendo
-## espaço, a dupla inteira descia pelo mesmo lado, um atrás do outro.
-func exit_point_at(car: CharacterBody3D, point: Vector3, yaw: float) -> Dictionary:
-	var taken: Array[Vector3] = []
-	return exit_point(car,taken,true,Transform3D(Basis(Vector3.UP,yaw),point))
-
-func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool, at := Transform3D.IDENTITY) -> Dictionary:
-	var pose: Transform3D = car.global_transform if at==Transform3D.IDENTITY else at
-	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
-	var sides: Array[float] = [1.0]
-	var longitudinal: Array[float] = [0.0, 0.3, -0.3]
-	if not right_only:
-		sides.assign([-1.0, 1.0] if taken.size() % 2 == 0 else [1.0, -1.0])
-		var door := -clampf(float(car.half_length) * .18, .30, .62)
-		longitudinal.assign([door, 0.3, -1.0, 1.4])
-		# Camburão: porta lateral, meio e as duas portas de trás; com os pontos já usados de fora,
-		# os seis agentes saem espalhados.
-		if car.archetype == "police_transport": longitudinal.assign([-1.1, 0.2, 1.5, 2.3, -0.4])
-	var reach: float = car.half_width + (0.9 if right_only else 0.75)
-	var excluded: Array[RID] = [car.get_rid()]
-	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.32
-	capsule.height = 1.72
-	for side in sides:
-		for shift in longitudinal:
-			var point: Vector3 = pose * Vector3(side * reach, 0.0, shift)
-			var ground := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 0.8, point - Vector3.UP * 0.8, 1)
-			var ground_hit := space.intersect_ray(ground)
-			if ground_hit.is_empty(): continue
-			point.y = ground_hit.position.y + 0.04
-			var query := PhysicsShapeQueryParameters3D.new()
-			query.shape = capsule
-			query.transform = Transform3D(Basis.IDENTITY, point + Vector3.UP * 0.9)
-			query.collision_mask = 7
-			query.exclude = excluded
-			# Meio-fio e parede do túnel do canal ficam a menos de 1 m da porta: sem
-			# esta exceção a equipe nunca descia lá dentro ("no_exit" e a viatura ia embora).
-			var blocked := false
-			for hit in space.intersect_shape(query, 4):
-				if is_instance_valid(hit.collider) and hit.collider.has_meta("vehicle_ramp_structure"): continue
-				blocked = true
-				break
-			if blocked: continue
-			var sight := PhysicsRayQueryParameters3D.create(pose.origin + Vector3.UP * 0.9, point + Vector3.UP * 0.9, 1, excluded)
-			if not space.intersect_ray(sight).is_empty(): continue
-			var crowded := false
-			for other in taken:
-				if point.distance_to(other) < 0.9: crowded = true
-			if crowded: continue
-			return {"point": point, "side": side}
-	return {}
+## Consultas de espaço (vaga livre, cápsula, saída pela porta): corpo em DispatchSpaceQueries.gd (delegação de uma linha; mesmo nome e padrões).
+func _space_clear(size: Vector3, point: Vector3, yaw: float, exclude: Array[RID]) -> bool: return _space_queries._space_clear(size, point, yaw, exclude)
+func capsule_clear(point: Vector3, exclude: Array[RID]) -> bool: return _space_queries.capsule_clear(point, exclude)
+func footprint_clear(car: CharacterBody3D, point: Vector3, yaw: float) -> bool: return _space_queries.footprint_clear(car, point, yaw)
+func _archetype_size(archetype: String) -> Vector3: return _space_queries._archetype_size(archetype)
+func exit_point_at(car: CharacterBody3D, point: Vector3, yaw: float) -> Dictionary: return _space_queries.exit_point_at(car, point, yaw)
+func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool, at := Transform3D.IDENTITY) -> Dictionary: return _space_queries.exit_point(car, taken, right_only, at)
 
 # --- Criação de veículos e equipes ---------------------------------------------
 
@@ -672,404 +594,23 @@ func _tidy_wrecks() -> void:
 
 # --- Polícia -----------------------------------------------------------------
 
-func _dispatch_police(delta: float) -> void:
-	var stars: int = gameplay.stars
-	if stars <= 0:
-		deployed_this_pursuit = 0
-		_last_stars = 0
-		_investigation_clock = maxf(0.0, _investigation_clock - delta)
-		var investigating: bool = gameplay.has_method("police_investigation_active") and gameplay.police_investigation_active()
-		# A viatura de averiguação não pode aparecer no instante do tiro/explosão.
-		if investigating and not _investigation_seen: _investigation_clock = RULES.INVESTIGATION_DELAY
-		_investigation_seen = investigating
-		if investigating and _investigation_clock <= 0.0:
-			_investigation_clock = 20.0
-			if (investigation_unit == null or investigation_unit.finished) and _active_police().is_empty():
-				var responder := dispatch_police_to(gameplay.police_investigation_point(), true)
-				if responder != null:
-					investigation_unit = responder
-					responder._set_siren(false)
-					responder._set_state("investigating")
-		return
-	investigation_unit = null
-	if gameplay.has_method("police_surrendering") and gameplay.police_surrendering(): return
-	if _last_stars == 0: _police_clock = RULES.INITIAL_DELAY[stars]
-	elif stars > _last_stars: _police_clock = maxf(_police_clock, RULES.INITIAL_DELAY[stars])
-	_last_stars = stars
-	_police_clock -= delta
-	if _police_clock > 0.0: return
-	# Como em WantedManager._process: o intervalo reinicia mesmo sem despachar.
-	_police_clock = RULES.INTERVAL[stars]
-	# Reforços de alerta alto continuam enquanto a perseguição está ativa. Os limites de unidades
-	# vivas e de agentes a pé continuam valendo; limpar a primeira onda não pode esvaziar 6 estrelas.
-	if (stars < 5 and deployed_this_pursuit >= RULES.DEPLOYMENT[stars]) or not gameplay.last_known_valid: return
-	if units.size() >= RULES.MAX_UNITS: return
-	var anchor: Vector3 = gameplay.last_known
-	if player_position_override != Vector3.INF:
-		anchor = player_position_override
-	else:
-		var target: Variant = gameplay.pursuit_target()
-		if is_instance_valid(target) and gameplay.contact_age <= 1.0: anchor = target.global_position
-	dispatch_police_to(anchor)
-
-## Seleciona uma equipe comum para uma van de alerta alto que falta ou, quando a cota de
-## vans está cumprida, o apoio blindado de seis estrelas que falta. Os limites ativos não mudam.
-func _tactical_van_replacement(level: int, active: Array, responding: Array, armor_support := false) -> RefCounted:
-	var vans := RULES.tactical_van_count(responding)
-	if armor_support:
-		if level < 6 or vans < RULES.tactical_van_limit(level): return null
-		if responding.filter(func(u): return u.variant == "tank").size() >= RULES.MAX_TANKS: return null
-	elif vans >= RULES.tactical_van_limit(level): return null
-	var candidate: RefCounted
-	for unit in active:
-		if unit.wrecked or unit.suspended or unit.state in ["recall","departing"] or unit.variant == "tank": continue
-		if unit.vehicle == null or unit.vehicle.archetype == "police_transport": continue
-		if candidate == null or unit.level < candidate.level or (unit.level == candidate.level and unit.serial < candidate.serial): candidate = unit
-	return candidate
-
-## Despacha uma viatura que nasce em faixa, fora da vista, a 32,5–112,5 m de `anchor`.
-func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCounted:
-	var level: int = 1 if investigation else gameplay.stars
-	if level <= 0 or units.size() >= RULES.MAX_UNITS: return null
-	var active := _active_police()
-	# Uma equipe voltando ao carro ou saindo da cena não consegue cumprir a
-	# cota de van/tanque da próxima resposta. Equipes destruídas ou suspensas também não.
-	var responding := active.filter(func(u): return not u.wrecked and not u.suspended and u.state not in ["recall","departing"])
-	var variant := "patrol" if investigation else RULES.response_variant(level, responding)
-	var archetype := RULES.response_archetype(level,variant)
-	var replacement: RefCounted
-	var active_limit: int = RULES.MAX_ACTIVE[clampi(level,0,6)]
-	if active.size() >= active_limit:
-		# Uma escalada direta de quatro para seis pode preencher a última vaga com a
-		# primeira van. A prioridade do tanque não pode deixar a segunda van sem vez para sempre.
-		if variant == "tank" and RULES.tactical_van_count(responding) < RULES.tactical_van_limit(level):
-			variant = "tactical"
-			archetype = RULES.response_archetype(level,variant)
-		var armor_support := level >= 6 and variant == "tank"
-		if investigation or active.size() > active_limit or (archetype != "police_transport" and not armor_support): return null
-		replacement = _tactical_van_replacement(level,active,responding,armor_support)
-		if replacement == null: return null
-	var dispatch_began := TRACE.begin()
-	var size := _archetype_size(archetype)
-	var checked := 0
-	var planned := 0
-	var occupied := 0
-	var step := TRACE.begin()
-	var candidates := _depot_candidates("police", anchor)
-	var ahead := _spawn_ahead_direction(investigation)
-	if ahead.is_empty():
-		candidates.append_array(router.spawn_candidates(anchor, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
-	else:
-		# Alvo fugindo de carro: o reforço nasce à frente, onde ele estará em ~2,5 s, de preferência
-		# virado para ele. Do mais próximo ao mais distante, quase sempre nascia atrás e nunca alcançava.
-		var speed: float = ahead.speed
-		var reach := clampf(RULES.SPAWN_MAX + speed, RULES.SPAWN_MAX, PURSUIT.SPAWN_AHEAD_MAX)
-		var found: Array[Dictionary] = router.spawn_candidates(anchor, RULES.SPAWN_MIN, reach)
-		var direction: Vector3 = ahead.direction
-		for candidate in found: candidate["score"] = PURSUIT.spawn_score(candidate.point, candidate.yaw, anchor, direction, speed)
-		found.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return x.score < y.score)
-		candidates.append_array(found)
-	TRACE.end("police.candidates", step, {"count": candidates.size(), "ahead": not ahead.is_empty()})
-	for candidate in candidates:
-		if checked >= POLICE_CLEARANCE_CANDIDATES or planned >= SPAWN_CANDIDATES_CHECKED: break
-		var point: Vector3 = candidate.point
-		if is_visible_to_player(point): continue
-		checked += 1
-		step = TRACE.begin()
-		var clear := _space_clear(size, point, candidate.yaw, no_exclusions)
-		TRACE.end("police.clearance", step)
-		if not clear:
-			occupied += 1
-			continue
-		var heading := Vector3(-sin(candidate.yaw), 0.0, -cos(candidate.yaw))
-		planned += 1
-		step = TRACE.begin()
-		var plan: Dictionary = router.plan(point, anchor, heading)
-		TRACE.end("police.plan", step)
-		if not plan.ok: continue
-		# Mudanças de composição usam o recolhimento/partida normal, preservando a
-		# equipe e o retorno físico dela. Só libera uma vaga depois que existem um spawn
-		# e uma rota válidos; uma via bloqueada não pode dispensar a resposta atual.
-		if replacement != null:
-			replacement.abort_response()
-			if _active_police().size() >= active_limit: return null
-			var replacement_event := "armored_support_replacement" if variant == "tank" else "tactical_van_replacement"
-			emit_dispatch_event(replacement_event, {"unit":replacement,"level":level})
-		_serial += 1
-		deployed_this_pursuit += 1
-		var car := _create_vehicle("police", point, candidate.yaw, archetype)
-		var unit := _make_unit("police", car, RULES.speed_cap(variant), RULES.STUCK_POLICE)
-		unit.crew_capacity = RULES.crew_size(archetype)
-		unit.crew_remaining = unit.crew_capacity
-		unit.serial = _serial
-		unit.level = level
-		unit.variant = variant
-		unit.role = RULES.pursuit_role(_serial)
-		if PURSUIT.enabled and not investigation:
-			# Papéis por prioridade: a primeira viatura ativa persegue (PIT), depois flanco, bloqueio...
-			var roles: Array = []
-			for other in _active_police():
-				if other != unit: roles.append(other.role)
-			unit.role = PURSUIT.next_role(roles)
-		unit.driver.set_route(plan.curve)
-		unit.set_route_goal(anchor)
-		unit.set_siren_on()
-		if not ahead.is_empty(): count_pursuit("spawn_ahead")
-		emit_dispatch_event("dispatched", {"unit": unit, "distance": candidate.distance, "variant": variant})
-		TRACE.end("police.dispatch_to", dispatch_began, {"outcome": "dispatched", "archetype": archetype})
-		return unit
-	emit_dispatch_event("spawn_failed", {"service": "police", "checked": checked, "occupied": occupied, "planned": planned, "archetype": archetype})
-	TRACE.end("police.dispatch_to", dispatch_began, {"outcome": "spawn_failed", "archetype": archetype})
-	return null
-
-## Direção e velocidade do alvo para o nascimento à frente, ou vazio (alvo a pé, parado, sem
-## contato, averiguação ou perseguição GTA desligada).
-func _spawn_ahead_direction(investigation: bool) -> Dictionary:
-	if not PURSUIT.enabled or investigation or player_position_override != Vector3.INF or gameplay.contact_age > 1.0: return {}
-	var target: Variant = gameplay.pursuit_target()
-	if not is_instance_valid(target) or not "horizontal_velocity" in target: return {}
-	var velocity: Vector3 = target.horizontal_velocity
-	velocity.y = 0.0
-	if velocity.length() < PURSUIT.SPAWN_MOVING_SPEED: return {}
-	return {"direction": velocity.normalized(), "speed": velocity.length()}
-
-## Fala atual do rádio da central para o HUD ("" sem fala recente).
-func radio_line() -> String:
-	return radio.current(_clock) if PURSUIT.enabled else ""
-
-func count_pursuit(key: String) -> void:
-	pursuit_stats[key] = int(pursuit_stats.get(key, 0)) + 1
-
-## Viatura deixada para trás numa perseguição (DispatchUnit._outrun): some fora da vista, devolve a
-## vaga e o orçamento de despacho (ela não falhou, só ficou para trás) e adianta o próximo reforço,
-## que nasce à frente.
-func recycle_outrun(unit: RefCounted) -> void:
-	count_pursuit("outrun")
-	deployed_this_pursuit = maxi(0, deployed_this_pursuit - 1)
-	_police_clock = minf(_police_clock, 1.0)
-	emit_dispatch_event("outrun", {"unit": unit})
-	unit.finish("outrun")
-
-## Ponto de rua para a viatura vasculhar na busca em leque: dentro do raio de busca em volta da
-## última posição conhecida, longe da própria viatura e dos pontos das outras. INF sem candidatos.
-func search_point_for(unit: RefCounted) -> Vector3:
-	var center: Vector3 = gameplay.last_known
-	var stars: int = gameplay.stars
-	if _search_center == Vector3.INF or _search_center.distance_to(center) > 10.0 or _search_stars != stars:
-		var traced := TRACE.begin()
-		var spanned := STALL_WORK.begin()
-		_search_center = center
-		_search_stars = stars
-		_search_points.clear()
-		var radius := PURSUIT.search_radius(stars)
-		for candidate in router.spawn_candidates(center, 0.0, radius, PURSUIT.SEARCH_POINT_SPACING):
-			_search_points.append(candidate.point)
-		_search_rng.seed = hash(Vector3i(roundi(center.x), roundi(center.z), stars))
-		STALL_WORK.finish_slow("dispatch.search_points", spanned, 3000, self)
-		TRACE.end("pursuit.search_points", traced, {"count": _search_points.size()})
-	if _search_points.is_empty(): return Vector3.INF
-	var taken: Array[Vector3] = []
-	for other in units:
-		if other != unit and other.is_police() and other.search_point != Vector3.INF: taken.append(other.search_point)
-	var fallback: Vector3 = _search_points[_search_rng.randi_range(0, _search_points.size() - 1)]
-	for attempt in 8:
-		var candidate: Vector3 = _search_points[_search_rng.randi_range(0, _search_points.size() - 1)]
-		if candidate.distance_to(unit.vehicle.global_position) < 25.0: continue
-		var crowded := false
-		for point in taken:
-			if point.distance_to(candidate) < 20.0: crowded = true
-		if not crowded: return candidate
-	return fallback
-
-## Fala do rádio: linha no HUD e a mesma fala em voz (pedaços gravados, PursuitRadioAudio).
-func announce(event: String, street := "", heading := "", urgent := false) -> bool:
-	var settings := get_node_or_null("/root/V2Settings")
-	radio.english = settings != null and str(settings.get("text_language")).begins_with("en")
-	if not radio.announce(event, _clock, street, heading, urgent): return false
-	_speak(urgent)
-	return true
-
-func _speak(urgent: bool) -> void:
-	if radio.clips.is_empty(): return
-	if radio_voice == null:
-		radio_voice = RADIO_AUDIO.new()
-		add_child(radio_voice)
-	radio_voice.say(radio.clips, urgent)
-
-## Rádio da central e o lado (carro/a pé) do último contato. Só lê o estado; não despacha nada.
-func _tick_pursuit_awareness() -> void:
-	var stars: int = gameplay.stars
-	if stars <= 0:
-		if _radio_stars > 0: announce("evaded", "", "", true)
-		_radio_stars = 0
-		_had_contact = false
-		return
-	var target: Variant = gameplay.pursuit_target()
-	var contact: bool = gameplay.contact_age <= 1.0 and is_instance_valid(target)
-	if contact:
-		pursuit_in_car = "horizontal_velocity" in target
-		pursuit_velocity = target.horizontal_velocity if pursuit_in_car else Vector3.ZERO
-	if stars > _radio_stars:
-		announce("wanted" if _radio_stars == 0 else "escalated", "", "", true)
-	_radio_stars = stars
-	if contact and not _had_contact:
-		var street := RADIO.place(router, target.global_position)
-		if not street.is_empty(): announce("spotted", street)
-	elif not contact and _had_contact:
-		announce("lost", RADIO.place(router, gameplay.last_known))
-	elif contact and pursuit_in_car:
-		if radio.fleeing(router, target.global_position, target.horizontal_velocity, _clock): _speak(false)
-	_had_contact = contact
-
-func retain_investigator(unit: RefCounted) -> bool:
-	if not gameplay.has_method("police_investigation_active") or not gameplay.police_investigation_active(): return false
-	if unit.variant in ["tank","motorcycle"] or unit.wrecked or unit.finished: return false
-	if unit.crew_remaining <= 0 and unit.officers.all(func(o): return not is_instance_valid(o) or o.dead): return false
-	if investigation_unit == null or investigation_unit.finished: investigation_unit = unit
-	return investigation_unit == unit
+## Polícia (despacho, reforço à frente, busca em leque, rádio): corpo em DispatchPoliceAssign.gd (delegação de uma linha; mesmo nome e padrões).
+func _dispatch_police(delta: float) -> void: _police_assign._dispatch_police(delta)
+func _tactical_van_replacement(level: int, active: Array, responding: Array, armor_support := false) -> RefCounted: return _police_assign._tactical_van_replacement(level, active, responding, armor_support)
+func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCounted: return _police_assign.dispatch_police_to(anchor, investigation)
+func _spawn_ahead_direction(investigation: bool) -> Dictionary: return _police_assign._spawn_ahead_direction(investigation)
+func radio_line() -> String: return _police_assign.radio_line()
+func count_pursuit(key: String) -> void: _police_assign.count_pursuit(key)
+func recycle_outrun(unit: RefCounted) -> void: _police_assign.recycle_outrun(unit)
+func search_point_for(unit: RefCounted) -> Vector3: return _police_assign.search_point_for(unit)
+func announce(event: String, street := "", heading := "", urgent := false) -> bool: return _police_assign.announce(event, street, heading, urgent)
+func _speak(urgent: bool) -> void: _police_assign._speak(urgent)
+func _tick_pursuit_awareness() -> void: _police_assign._tick_pursuit_awareness()
+func retain_investigator(unit: RefCounted) -> bool: return _police_assign.retain_investigator(unit)
 
 # --- Emergência ----------------------------------------------------------------
 
-func _dispatch_emergency(delta: float) -> void:
-	_service_clock = maxf(0.0, _service_clock - delta)
-	_scan_clock -= delta
-	if _scan_clock > 0.0: return
-	_scan_clock = 0.5
-	var legacy_crews: int = gameplay.emergency.crews.filter(func(crew): return is_instance_valid(crew) and not crew.dead).size()
-	if _service_clock > 0.0 or _active_services().size()+legacy_crews >= RULES.MAX_CREWS or units.size() >= RULES.MAX_UNITS: return
-	var emergency: Node3D = gameplay.emergency
-	var best_key := -1
-	var best_age := -1.0
-	var fire_trucks: int = units.filter(func(u): return u.service == "fire" and not u.finished).size()
-	for key in emergency.incidents.keys():
-		var record: Dictionary = emergency.incidents[key]
-		var actor: Variant = record.get("actor")
-		if not is_instance_valid(actor) or actor.is_queued_for_deletion():
-			emergency.incidents.erase(key)
-			if is_instance_valid(bridge): bridge.roles.erase(key)
-			emit_dispatch_event("incident_invalid", {"incident": key, "reason": "actor_removed"})
-			continue
-		if record.assigned or record.role not in ["medic", "mortician", "fire"]: continue
-		if record.role == "mortician" and not emergency.mortician_dispatch_allowed(key):
-			# Se as estrelas subirem durante a busca, abandonamos os candidatos.
-			# A ocorrência permanece disponível para quando a situação acalmar.
-			record.erase("search")
-			continue
-		if record.role == "medic" and float(record.age) < RULES.medic_response_delay(int(key)): continue
-		# Um caminhão de bombeiros por vez, só depois de 10-15 s de fogo, e 30-45 s de pausa se o anterior foi destruído.
-		if record.role == "fire":
-			if fire_trucks >= RULES.MAX_FIRE_TRUCKS or _clock < _fire_lockout_until: continue
-			if float(record.age) < RULES.fire_response_delay(int(key)): continue
-		if distance_to_player(actor.global_position) > RULES.RESPONSE_RADIUS: continue
-		# Uma busca já em andamento tem prioridade, para não trocar de ocorrência no meio.
-		var priority: float = record.age + (100000.0 if record.has("search") else 0.0)
-		if priority > best_age:
-			best_age = priority
-			best_key = key
-	if best_key < 0: return
-	if dispatch_service_to(best_key, SERVICE_SEARCH_BUDGET) != null: _service_clock = RULES.DISPATCH_COOLDOWN
-	elif _search_pending: _scan_clock = 0.0
-	else: _service_clock = 3.0
-
-## Garagens registradas com set_depots, projetadas na faixa mais próxima.
-func _depot_candidates(service: String, target: Vector3) -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
-	for depot in depots.get(service, []):
-		var edge: Dictionary = router.nearest_edge(depot)
-		if edge.is_empty(): continue
-		var direction: Vector3 = (routes.vertices[edge.edge.to] - routes.vertices[edge.edge.from]).normalized()
-		result.append({"point": edge.closest, "yaw": atan2(-direction.x, -direction.z), "distance": depot.distance_to(target), "depot": true})
-	return result
-
-## Despacha a viatura da ocorrência `key` do EmergencyManager, sem teleporte:
-## nasce em garagem (`depots`) ou faixa fora da vista e chega dirigindo.
-func dispatch_service_to(key: int, budget: int = -1) -> RefCounted:
-	# `budget` >= 0 reparte a busca de ponto de partida em vários quadros: no máx. `budget`
-	# candidatos planejados por chamada, com o estado guardado em `record.search`.
-	# Tudo num quadro só custava 40-80 ms na 1ª ocorrência (varredura do grafo de ruas +
-	# até 8 planos de rota; tests/measure/probe_first_emergency.gd). Sem orçamento (-1)
-	# roda até o fim na hora, como antes.
-	_search_pending = false
-	var emergency: Node3D = gameplay.emergency
-	if not emergency.incidents.has(key): return null
-	var record: Dictionary = emergency.incidents[key]
-	var actor: Variant = record.get("actor")
-	if record.assigned or not is_instance_valid(actor) or actor.is_queued_for_deletion():
-		record.erase("search")
-		if not is_instance_valid(actor) or actor.is_queued_for_deletion():
-			emergency.incidents.erase(key)
-			if is_instance_valid(bridge): bridge.roles.erase(key)
-			emit_dispatch_event("incident_invalid", {"incident": key, "reason": "actor_removed"})
-		return null
-	var service: String = record.role
-	var point: Vector3 = actor.global_position
-	var size := _archetype_size(RULES.archetype_for(service))
-	var state: Dictionary = record.get("search", {})
-	if state.is_empty():
-		var sweep := TRACE.begin()
-		var found := _depot_candidates(service, point)
-		found.append_array(router.spawn_candidates(point, RULES.SERVICE_SPAWN_MIN, RULES.SERVICE_SPAWN_MAX))
-		TRACE.end("service.candidates", sweep, {"count": found.size()})
-		state = {"candidates": found, "index": 0, "checked": 0, "best": {}, "best_length": INF}
-		if budget >= 0:
-			# A coleta de candidatos já é o trabalho deste quadro.
-			record.search = state
-			_search_pending = true
-			return null
-	var candidates: Array = state.candidates
-	var work := 0
-	# Escolhe a rota mais curta entre os candidatos checados. O primeiro válido às
-	# vezes nascia numa faixa apontada para longe e o caminhão dava a volta no
-	# quarteirão: 50 a 140 s para um incêndio a 33 m (sonda de 2026-09-24).
-	while state.index < candidates.size() and state.checked < SPAWN_CANDIDATES_CHECKED_SERVICE:
-		if budget >= 0 and work >= budget:
-			record.search = state
-			_search_pending = true
-			return null
-		var candidate: Dictionary = candidates[state.index]
-		state.index += 1
-		var start: Vector3 = candidate.point
-		# Sair da garagem é crível mesmo perto; surgir no meio da rua, não.
-		if is_visible_to_player(start) or (not candidate.get("depot", false) and distance_to_player(start) < RULES.SERVICE_SPAWN_PLAYER_CLEARANCE): continue
-		state.checked += 1
-		work += 1
-		var probe := TRACE.begin()
-		var start_clear := _space_clear(size, start, candidate.yaw, no_exclusions)
-		TRACE.end("service.clearance", probe)
-		if not start_clear: continue
-		var heading := Vector3(-sin(candidate.yaw), 0.0, -cos(candidate.yaw))
-		probe = TRACE.begin()
-		var candidate_plan: Dictionary = router.plan(start, point, heading)
-		TRACE.end("service.plan", probe)
-		if not candidate_plan.ok or candidate_plan.end_gap > RULES.FOOT_RANGE: continue
-		var length: float = candidate_plan.curve.get_baked_length()
-		if length < state.best_length:
-			state.best_length = length
-			state.best = {"candidate": candidate, "plan": candidate_plan}
-	record.erase("search")
-	var best: Dictionary = state.best
-	if not best.is_empty() and budget >= 0:
-		# O ponto foi escolhido quadros atrás: confirma que ainda está livre e fora da vista.
-		var chosen: Dictionary = best.candidate
-		if is_visible_to_player(chosen.point) or (not chosen.get("depot", false) and distance_to_player(chosen.point) < RULES.SERVICE_SPAWN_PLAYER_CLEARANCE) or not _space_clear(size, chosen.point, chosen.yaw, no_exclusions): best = {}
-	if not best.is_empty():
-		var candidate: Dictionary = best.candidate
-		var plan: Dictionary = best.plan
-		var start: Vector3 = candidate.point
-		_serial += 1
-		var car := _create_vehicle(service, start, candidate.yaw)
-		var unit := _make_unit(service, car, RULES.SPEED_PATROL, RULES.STUCK_SERVICE)
-		unit.serial = _serial
-		unit.incident_id = key
-		unit.actor = actor
-		unit.driver.set_route(plan.curve)
-		unit.set_route_goal(point)
-		unit.set_siren_on()
-		record.assigned = true
-		record.crew = car
-		if service != "fire" and is_instance_valid(actor): actor.set_meta("emergency_attended", true)
-		if service == "mortician": emergency.mortician_clock = RULES.MORTICIAN_COOLDOWN
-		emit_dispatch_event("dispatched", {"unit": unit, "distance": candidate.distance, "end_gap": plan.end_gap})
-		return unit
-	emit_dispatch_event("spawn_failed", {"service": service, "checked": state.checked, "incident": key})
-	return null
+## Serviços de emergência (escolha da ocorrência e despacho fatiado): corpo em DispatchEmergencyAssign.gd (delegação de uma linha; mesmo nome e padrões).
+func _dispatch_emergency(delta: float) -> void: _emergency_assign._dispatch_emergency(delta)
+func _depot_candidates(service: String, target: Vector3) -> Array[Dictionary]: return _emergency_assign._depot_candidates(service, target)
+func dispatch_service_to(key: int, budget: int = -1) -> RefCounted: return _emergency_assign.dispatch_service_to(key, budget)

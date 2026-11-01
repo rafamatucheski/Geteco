@@ -20,31 +20,10 @@ const DEFAULT_KEYPAD_CODE := "1951"
 # Cofre do setor lacrado: um dígito por indício (crachá, relatório, foto, fita),
 # na ordem em que aparecem no código.
 const VAULT_CODE := "3194"
-const VAULT_DIGITS := [
-	{"id":"lab_access_badge","kind":"lab","digit":0,"local":Vector3(-2.9,.04,-6.3),"label":"Examinar crachá",
-		"text":"No verso do crachá, riscado a caneta: 3."},
-	{"id":"lab_power_report","kind":"lab","digit":1,"local":Vector3(-3.45,.04,-6.3),"label":"Ler relatório de energia",
-		"text":"Relatório de energia do setor lacrado. Na margem, circulado: 1."},
-	{"id":"lab_incident_photo","kind":"lab","digit":2,"local":Vector3(-4.0,.04,-6.3),"label":"Examinar foto do incidente",
-		"text":"Foto do incidente. No canto, à mão: 9."},
-	{"id":"audio_sealed_sector","kind":"audio","digit":3,"local":Vector3(3.4,.04,-4.1),"label":"Ouvir fita rotulada",
-		"text":"A fita chia: \"...a última porta... o quarto número é 4. Depois disso, não volte.\""},
-]
-# Gravações 01–03 do Arquivo de Vicente (docs/roteiros-arquivo-vicente-20261031.md). A 04 é
-# dígito do cofre (acima). Pontos em coordenadas locais do túnel, no chão em frente ao objeto da
-# cenografia que já existia: cama de campanha do QG (SecretHeadquartersProps, HQ_CENTER+(5,0,4.75)),
-# quadro de turnos da galeria (SecretTunnelDecor._shift_board em (12.9,1.15,-14.5)) e quadro de
-# disjuntores com três faróis (SecretTunnelDecor._power_branch em (41.5,1.45,-.48)). Ficam a mais
-# de 2 m dos consoles do QG para não disputar a ação com eles. O stream ainda não existe: coletar
-# só registra o id em audio_logs (save da rede secreta) e libera a entrada no Arquivo.
-const AUDIO_PICKUPS := [
-	{"id":"audio_vicente_field","local":Vector3(61.9,.04,6.75),"label":"Pegar fita junto à cama",
-		"text":"Uma fita com a letra do Vicente: \"Teste. Tá gravando.\""},
-	{"id":"audio_maintenance_shift","local":Vector3(12.9,.04,-13.75),"label":"Pegar fita do quadro de turnos",
-		"text":"Presa no quadro de turnos, uma fita: \"Galeria comprida.\""},
-	{"id":"audio_blackout","local":Vector3(41.5,.04,.35),"label":"Pegar fita do quadro de disjuntores",
-		"text":"Enfiada atrás das chaves do quadro, uma fita: \"Caiu tudo.\""},
-]
+const CLUES := preload("res://data/catalogs/TruckersPassageClues.gd")
+# Tabelas em data/catalogs/TruckersPassageClues.gd; reexportadas aqui com o mesmo nome.
+const VAULT_DIGITS := CLUES.VAULT_DIGITS
+const AUDIO_PICKUPS := CLUES.AUDIO_PICKUPS
 const AUDIO_PICKUP_REACH := 1.3
 const ACTION_PREFIX := "truckers_village_secret_"
 const INTERACTION_REACH := 1.65
@@ -100,6 +79,16 @@ var _surface_camera: Camera3D
 var _transfer_busy := false
 var _materials: Dictionary = {}
 var _batches: Dictionary = {}
+## Auxiliares sem estado (01/11, só para este arquivo caber na leitura): o estado continua aqui, e cada
+## função antiga virou delegação de uma linha, então testes que chamam `_submit_keypad`,
+## `_open_vault_keypad` etc. por nome não mudam. Criados na declaração, e não em configure(), porque
+## testes montam a passagem com PASSAGE.new() e chamam as funções direto.
+const KEYPAD_PART := preload("res://gameplay/urban_v1/TruckersPassageKeypad.gd")
+const TRAVEL_PART := preload("res://gameplay/urban_v1/TruckersPassageTravel.gd")
+const CELLAR_BUILDER := preload("res://gameplay/urban_v1/TruckersCellarBuilder.gd")
+var _keypad_part: KEYPAD_PART = KEYPAD_PART.new(self)
+var _travel_part: TRAVEL_PART = TRAVEL_PART.new(self)
+var _cellar_builder: CELLAR_BUILDER = CELLAR_BUILDER.new(self)
 
 
 func configure(owner_session, village_visuals: Node3D, network_progression, tunnel_stage: Node3D = null) -> bool:
@@ -422,202 +411,26 @@ func _action(suffix: String,label: String) -> Dictionary:
 	return {"id":"urban_v1","target":ACTION_PREFIX+suffix,"label":label}
 
 
-func _open_keypad() -> void:
-	_keypad_vault = false
-	_show_keypad()
-
-
-func _open_vault_keypad() -> void:
-	if not _power_active("power_sealed_sector"):
-		_show_message("O teclado está sem energia.")
-		return
-	var missing := 4-_vault_digits_found()
-	if missing > 0:
-		_show_message(String(TranslationServer.translate("Faltam %d dígitos do código. Procure no quartel: %s"))%[missing,_vault_hint()])
-		return
-	_keypad_vault = true
-	_show_keypad()
-
-
-func _show_keypad() -> void:
-	if session == null or not session.has_method("menu") or session.get("column") == null:
-		return
-	_keypad_buffer = ""
-	session.menu("Teclado")
-	var display := Label.new()
-	display.name = "KeypadEntry"
-	display.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	display.add_theme_font_size_override("font_size",28)
-	display.text = _keypad_mask()
-	session.column.add_child(display)
-	var grid := GridContainer.new()
-	grid.name = "NumericKeypad"
-	grid.columns = 3
-	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	session.column.add_child(grid)
-	var first: Button = null
-	for value in ["1","2","3","4","5","6","7","8","9","⌫","0","OK"]:
-		var button := Button.new()
-		button.text = value
-		button.custom_minimum_size = Vector2(86,42)
-		button.focus_mode = Control.FOCUS_ALL
-		button.pressed.connect(_keypad_press.bind(value,display))
-		grid.add_child(button)
-		if first == null: first = button
-	if first != null: first.grab_focus.call_deferred()
-	if session.has_method("button"):
-		session.button("Cancelar",session.close_menu)
-
-
-func _keypad_press(value: String,display: Label) -> void:
-	if value == "⌫":
-		_keypad_buffer = _keypad_buffer.left(maxi(0,_keypad_buffer.length()-1))
-	elif value == "OK":
-		_submit_keypad()
-		return
-	elif _keypad_buffer.length() < _active_code().length():
-		_keypad_buffer += value
-	if is_instance_valid(display):
-		display.text = _keypad_mask()
-
-
-func _keypad_mask() -> String:
-	var marks := PackedStringArray()
-	for index in _active_code().length():
-		marks.append("●" if index < _keypad_buffer.length() else "•")
-	return " ".join(marks)
-
-
-func _active_code() -> String:
-	return VAULT_CODE if _keypad_vault else _keypad_code
-
-
-func _submit_keypad() -> void:
-	if _keypad_vault:
-		_submit_vault_keypad()
-		return
-	if _keypad_buffer != _keypad_code:
-		_keypad_buffer = ""
-		_show_message("Código incorreto.")
-		var display = session.column.get_node_or_null("KeypadEntry") if session != null else null
-		if display is Label: display.text = _keypad_mask()
-		return
-	if progression == null or not progression.unlock_keypad():
-		_show_message("Teclado bloqueado.")
-		return
-	_shelf_revealed = true
-	if session.has_method("close_menu"): session.close_menu()
-	if is_instance_valid(tunnel): tunnel.set_enabled(true)
-	_emit_state_changed()
-	_show_message("Passagem liberada.")
-
-
-func _submit_vault_keypad() -> void:
-	if _keypad_buffer != VAULT_CODE:
-		_keypad_buffer = ""
-		_show_message("Código incorreto.")
-		var display = session.column.get_node_or_null("KeypadEntry") if session != null else null
-		if display is Label: display.text = _keypad_mask()
-		return
-	if progression == null or not progression.unlock_final_door():
-		_show_message("O cofre continua trancado.")
-		return
-	if session.has_method("close_menu"): session.close_menu()
-	tunnel.set_vault_open(true,true)
-	_emit_state_changed()
-	_show_message("A porta do cofre se abre.")
-
-
-func _transfer_to_cellar() -> void:
-	if _transfer_busy: return
-	_transfer_busy = true
-	_surface_camera = get_viewport().get_camera_3d()
-
-	_lock_player(true)
-	_set_player_position(_cellar_global(CELLAR_SPAWN))
-	_set_cellar_occupied(true)
-	_lock_player(false)
-	_transfer_busy = false
-
-
-func _transfer_to_house() -> void:
-	if _transfer_busy: return
-	_transfer_busy = true
-	_lock_player(true)
-	_set_player_position(home.to_global(SURFACE_RETURN_LOCAL))
-	_set_cellar_occupied(false)
-	_lock_player(false)
-	_transfer_busy = false
-
-
-func _transfer_to_tunnel() -> void:
-	if _transfer_busy or not _keypad_unlocked() or not is_instance_valid(tunnel): return
-	_transfer_busy = true
-	camera_transfer_started.emit(true)
-	_lock_player(true)
-	tunnel.set_enabled(true)
-	_set_player_position(tunnel.entry_global())
-	# SecretTunnel3D reivindica a câmera atual do porão como câmera de volta no
-	# tick de process seguinte. Manter isto adiado evita dois donos de câmera.
-	_finish_tunnel_transfer.call_deferred()
-
-
-func _finish_tunnel_transfer() -> void:
-	_lock_player(false)
-	_transfer_busy = false
-
-
-func _transfer_from_tunnel() -> void:
-	if _transfer_busy or not is_instance_valid(tunnel): return
-	_transfer_busy = true
-	camera_transfer_started.emit(false)
-	_lock_player(true)
-	_set_player_position(_cellar_global(TUNNEL_RETURN))
-	_finish_tunnel_transfer.call_deferred()
-
-
-func _set_player_position(point: Vector3) -> void:
-	var player: Node3D = session.world.player
-	if player.has_method("teleport"): player.teleport(point)
-	else: player.global_position = point
-	if player is CharacterBody3D: player.velocity = Vector3.ZERO
-
-
-func _lock_player(value: bool) -> void:
-	if session != null and is_instance_valid(session.world.player):
-		session.world.player.input_locked = value
-
-
-func _in_cellar(point: Vector3) -> bool:
-	if not is_instance_valid(cellar_root): return false
-	var local := cellar_root.to_local(point)
-	return CELLAR_INSIDE.has_point(Vector2(local.x,local.z)) and local.y > -.8 and local.y < 3.2
-
-
-func _set_cellar_occupied(value: bool,restore_surface_camera := true) -> void:
-	if _cellar_occupied == value: return
-	_cellar_occupied = value
-	if is_instance_valid(cellar_ceiling): cellar_ceiling.visible = not value
-	if homes != null and homes.homes.size() > HOME_INDEX:
-		homes.homes[HOME_INDEX].roof.visible = not value
-		homes.homes[HOME_INDEX].upper.visible = not value
-	if value:
-		_enable_player_underground_layer()
-		if not is_instance_valid(_surface_camera): _surface_camera = get_viewport().get_camera_3d()
-		cellar_camera.make_current()
-		if session.world.player.get("camera") != null: session.world.player.camera = cellar_camera
-	elif restore_surface_camera and is_instance_valid(_surface_camera):
-		_surface_camera.make_current()
-		if session != null and is_instance_valid(session.world.player) and session.world.player.get("camera") != null:
-			session.world.player.camera = _surface_camera
-
-
-func _update_cellar_camera(point: Vector3) -> void:
-	var local := cellar_root.to_local(point)
-	var focus := Vector3(clampf(local.x,-.85,.85),.58,clampf(local.z,-.65,.65))
-	cellar_camera.global_position = cellar_root.to_global(focus+Vector3(0,10.8,8.6))
-	cellar_camera.look_at(cellar_root.to_global(focus),Vector3.UP)
-
+## Teclados do porão e do cofre: corpo em TruckersPassageKeypad.gd (delegação de uma linha; mesmo nome e padrões).
+func _open_keypad() -> void: _keypad_part._open_keypad()
+func _open_vault_keypad() -> void: _keypad_part._open_vault_keypad()
+func _show_keypad() -> void: _keypad_part._show_keypad()
+func _keypad_press(value: String,display: Label) -> void: _keypad_part._keypad_press(value, display)
+func _keypad_mask() -> String: return _keypad_part._keypad_mask()
+func _active_code() -> String: return _keypad_part._active_code()
+func _submit_keypad() -> void: _keypad_part._submit_keypad()
+func _submit_vault_keypad() -> void: _keypad_part._submit_vault_keypad()
+## Passagens casa/porão/túnel/forte/esgoto e câmera do porão: corpo em TruckersPassageTravel.gd (delegação de uma linha).
+func _transfer_to_cellar() -> void: _travel_part._transfer_to_cellar()
+func _transfer_to_house() -> void: _travel_part._transfer_to_house()
+func _transfer_to_tunnel() -> void: _travel_part._transfer_to_tunnel()
+func _finish_tunnel_transfer() -> void: _travel_part._finish_tunnel_transfer()
+func _transfer_from_tunnel() -> void: _travel_part._transfer_from_tunnel()
+func _set_player_position(point: Vector3) -> void: _travel_part._set_player_position(point)
+func _lock_player(value: bool) -> void: _travel_part._lock_player(value)
+func _in_cellar(point: Vector3) -> bool: return _travel_part._in_cellar(point)
+func _set_cellar_occupied(value: bool,restore_surface_camera := true) -> void: _travel_part._set_cellar_occupied(value, restore_surface_camera)
+func _update_cellar_camera(point: Vector3) -> void: _travel_part._update_cellar_camera(point)
 
 func _animate_access(delta: float) -> void:
 	if is_instance_valid(surface_door):
@@ -748,115 +561,14 @@ func _vault_unlocked() -> bool:
 	return progression != null and bool(progression.data.get("final_door_unlocked",false))
 
 
-func _ski_exit_action() -> Dictionary:
-	if session == null or not is_instance_valid(ski_exit) or _transfer_busy or not _vault_unlocked(): return {}
-	if not session.ready_for_play or session.state.region_id != "mountain" or not session.state.place_id.is_empty(): return {}
-	if session.player_in_vehicle() or session.player_health() <= 0: return {}
-	if session.player_position().distance_to(ski_exit.interaction_global()) > 1.9: return {}
-	return _action("ski_enter","Abrir passagem de pedra")
-
-
-## Subida do forte até o esqui: o elevador fecha, a tela escurece, o jogador vai para a
-## serra e a laje de pedra se arrasta atrás dele.
-func _ascend_to_ski() -> void:
-	if _transfer_busy or session == null or session.state.place_id != "mountain_fort": return
-	var fort = session.room
-	if not fort.operation.can_ascend():
-		_show_message("O elevador não parte com a sala sob fogo.")
-		return
-	_transfer_busy = true
-	_lock_player(true)
-	fort.model.set_lift_open(true)
-	await get_tree().create_timer(1.1).timeout
-	await _curtain(1.0,.7,"Subindo...")
-	_lock_player(false)
-	var from_mountain: bool = session.state.region_id == "mountain"
-	await get_tree().create_timer(2.2).timeout
-	var left: bool = await session.leave_place()
-	if left and not from_mountain:
-		if session.controller.travel("mountain",ski_exit.arrival_global()):
-			while session.controller.travel_busy: await get_tree().process_frame
-	if left: await _emerge_from_slab()
-	else: await _curtain(0.0,.5)
-	_transfer_busy = false
-
-
-func _enter_fort_from_ski() -> void:
-	if _transfer_busy or not is_instance_valid(ski_exit): return
-	_transfer_busy = true
-	_lock_player(true)
-	ski_exit.set_open(true)
-	await get_tree().create_timer(3.0).timeout
-	await _curtain(1.0,.6,"")
-	_lock_player(false)
-	FORT_PLACE.next_return = ski_exit.arrival_global()
-	var entered: bool = await session.enter_place("mountain_fort",false,"secret_network")
-	FORT_PLACE.next_return = Vector3.INF
-	if entered:
-		session.return_point = ski_exit.arrival_global()
-		session.access_id = "secret_network"
-		session.save_game()
-	ski_exit.set_open(false,false)
-	await _curtain(0.0,.6)
-	_transfer_busy = false
-
-
-func _emerge_from_slab() -> void:
-	ski_exit.activate_now()
-	ski_exit.set_open(true,false)
-	await _curtain(0.0,.9)
-	await get_tree().create_timer(3.4).timeout
-	ski_exit.set_open(false)
-
-
-## Cortina preta com texto opcional (fade em segundos).
-func _curtain(alpha: float,seconds: float,text := "") -> void:
-	if _curtain_layer == null:
-		_curtain_layer = CanvasLayer.new()
-		_curtain_layer.layer = 90
-		var fill := ColorRect.new()
-		fill.name = "Fill"
-		fill.color = Color.BLACK
-		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		fill.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		fill.modulate.a = 0.0
-		_curtain_layer.add_child(fill)
-		var label := Label.new()
-		label.name = "Text"
-		label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size",30)
-		fill.add_child(label)
-		session.add_child(_curtain_layer)
-	var fill_node: ColorRect = _curtain_layer.get_node("Fill")
-	fill_node.get_node("Text").text = text
-	var tween := create_tween()
-	tween.tween_property(fill_node,"modulate:a",alpha,seconds)
-	await tween.finished
-
-
-func _travel_to_fort() -> void:
-	if session == null or not _vault_unlocked() or not is_instance_valid(tunnel): return
-	var return_point: Vector3 = tunnel.vault_arrival_global()
-	tunnel.set_return_camera(session.world.camera)
-	var entered: bool = await session.enter_place("mountain_fort",false,"secret_network")
-	if not entered: return
-	session.return_point = return_point
-	session.access_id = "secret_network"
-	session.save_game()
-
-
-func _travel_to_sewer() -> void:
-	if session == null or not _route_active("route_harbor_sewer") or not is_instance_valid(tunnel): return
-	var return_point: Vector3 = tunnel.route_arrival_global()
-	tunnel.set_return_camera(session.world.camera)
-	var entered: bool = await session.enter_place("harbor_sewer",false,"secret_network")
-	if not entered: return
-	session.return_point = return_point
-	session.access_id = "secret_network"
-	session.save_game()
-
+## Forte, esqui, cortina e viagens: corpo em TruckersPassageTravel.gd (delegação de uma linha; `await` nas corrotinas).
+func _ski_exit_action() -> Dictionary: return _travel_part._ski_exit_action()
+func _ascend_to_ski() -> void: await _travel_part._ascend_to_ski()
+func _enter_fort_from_ski() -> void: await _travel_part._enter_fort_from_ski()
+func _emerge_from_slab() -> void: await _travel_part._emerge_from_slab()
+func _curtain(alpha: float,seconds: float,text := "") -> void: await _travel_part._curtain(alpha, seconds, text)
+func _travel_to_fort() -> void: await _travel_part._travel_to_fort()
+func _travel_to_sewer() -> void: await _travel_part._travel_to_sewer()
 
 func _dossier_received() -> bool:
 	return progression != null and bool(progression.data.get("dossier_received",false))
@@ -893,378 +605,27 @@ func _cellar_global(point: Vector3) -> Vector3:
 	return cellar_root.to_global(point)
 
 
-func _build_annex() -> void:
-	var annex := Node3D.new()
-	annex.name = "Casa1CellarAnnex"
-	home.add_child(annex)
-	# A extensão parece uma despensa comum vista de fora. Não tem placa, slogan
-	# nem interação externa; o único acesso utilizável é de dentro da Casa 1.
-	# O centro é o vão real da escada; só ficam duas saliências estreitas nas bordas.
-	for side in [-1.0,1.0]:
-		_box(annex,ANNEX_CENTER_LOCAL+Vector3(side*1.46,.03,0),Vector3(.23,.06,ANNEX_SIZE.z),"75694e")
-	for side in [-1.0,1.0]:
-		_solid_box(annex,"AnnexSide",ANNEX_CENTER_LOCAL+Vector3(side*ANNEX_SIZE.x*.5,1.35,0),Vector3(.18,2.7,ANNEX_SIZE.z),"7c735f")
-	_solid_box(annex,"AnnexRear",ANNEX_CENTER_LOCAL+Vector3(0,1.35,-ANNEX_SIZE.z*.5),Vector3(ANNEX_SIZE.x,2.7,.18),"746b59")
-	# O madeiramento simples faz o pequeno acréscimo parecer uma despensa antiga e ao
-	# mesmo tempo visualmente mais discreto que a fachada da casa.
-	for side in [-1.0,1.0]:
-		_batch_box(annex,ANNEX_CENTER_LOCAL+Vector3(side*1.47,1.35,-2.54),Vector3(.14,2.55,.12),"544a3d")
-		_batch_box(annex,ANNEX_CENTER_LOCAL+Vector3(side*1.47,1.35,2.54),Vector3(.14,2.55,.12),"544a3d")
-	for x in [-.95,-.47,0.0,.47,.95]:
-		_batch_box(annex,ANNEX_CENTER_LOCAL+Vector3(x,1.35,-2.70),Vector3(.035,2.42,.035),"625746")
-	_box(homes.homes[HOME_INDEX].roof,ANNEX_CENTER_LOCAL+Vector3(0,2.82,0),Vector3(ANNEX_SIZE.x+.35,.18,ANNEX_SIZE.z+.35),"635c4c",Vector3(.03,0,0))
-	surface_door = Node3D.new()
-	surface_door.name = "CellarDoorPivot"
-	surface_door.position = Vector3(-.08,0,-4.31)
-	home.add_child(surface_door)
-	_box(surface_door,Vector3(.73,1.14,.04),Vector3(1.46,2.28,.13),"665845")
-	for y in [.38,.76,1.14,1.52,1.90]: _batch_box(surface_door,Vector3(.73,y,.12),Vector3(1.35,.055,.055),"897457")
-	for x in [.08,1.38]: _batch_box(surface_door,Vector3(x,1.14,.13),Vector3(.07,2.14,.06),"493d31")
-	_batch_cylinder(surface_door,Vector3(1.18,1.10,.18),.055,.055,"aa8952",Vector3(PI*.5,0,0))
-	surface_door_body = _solid_box(surface_door,"CellarDoor",Vector3(.73,1.14,.04),Vector3(1.46,2.28,.16),"",Vector3.ZERO,false)
-	_build_stair(annex)
-
-
-func _build_stair(parent: Node3D) -> void:
-	var run := STAIR_BOTTOM_LOCAL.z-STAIR_TOP_LOCAL.z
-	var drop := STAIR_TOP_LOCAL.y-STAIR_BOTTOM_LOCAL.y
-	# O corte do terreno termina logo atrás da porta enquanto a rampa inclinada começa
-	# mais para trás. Esta soleira nivelada liga as duas superfícies para que a cápsula do jogador
-	# chegue ao topo da rampa em vez de cair contra a tampa frontal íngreme dela.
-	# O patamar começa onde a rampa termina (z=-4,75). Começando antes (-4,825), a quina
-	# ficava ~5 cm acima da rampa de 41° e prendia a cápsula na subida de volta à casa.
-	_solid_box(parent,"EntryLanding",Vector3(.65,-.08,-4.325),Vector3(1.40,.14,.85),"4a5049")
-	for index in 15:
-		var weight := float(index)/14.0
-		var point := STAIR_TOP_LOCAL.lerp(STAIR_BOTTOM_LOCAL,weight)
-		_batch_box(parent,point,Vector3(2.55,.18,.46),"4a5049" if index%3 else "545b53")
-	var angle := atan2(drop,absf(run))
-	var middle := (STAIR_TOP_LOCAL+STAIR_BOTTOM_LOCAL)*.5+Vector3(0,-.12,0)
-	var buried_toe := .30
-	var ramp_center := middle-Vector3(0,sin(angle),cos(angle))*buried_toe*.5
-	_solid_box(parent,"CellarStairRamp",ramp_center,Vector3(2.42,.16,Vector2(absf(run),drop).length()+buried_toe),"",Vector3(-angle,0,0),false)
-	for side in [-1.0,1.0]:
-		_solid_box(parent,"CellarStairWall",middle+Vector3(side*1.48,1.15,0),Vector3(.18,3.1,5.25),"615d50")
-
-
-func _build_cellar() -> void:
-	cellar_root = Node3D.new()
-	cellar_root.name = "Casa1Cellar"
-	cellar_root.position = CELLAR_ORIGIN_LOCAL
-	home.add_child(cellar_root)
-	_solid_box(cellar_root,"CellarFloor",Vector3(0,-.12,0),Vector3(8.9,.22,8.5),"4b5049")
-	# Manchas finas de umidade trianguladas seguem a laje sem mudar a altura
-	# de caminhada. Contornos irregulares evitam a aparência de tapetes retangulares.
-	_batch_floor_puddle(cellar_root,Vector3(-2.75,.002,-2.55),PackedVector2Array([
-		Vector2(-.74,-.10),Vector2(-.48,-.27),Vector2(.03,-.23),Vector2(.61,-.13),
-		Vector2(.70,.08),Vector2(.28,.24),Vector2(-.22,.20),Vector2(-.66,.10),
-	]),"263a38")
-	_batch_floor_puddle(cellar_root,Vector3(.10,.002,1.55),PackedVector2Array([
-		Vector2(-.92,-.08),Vector2(-.64,-.22),Vector2(-.08,-.18),Vector2(.40,-.25),
-		Vector2(.91,-.05),Vector2(.72,.16),Vector2(.18,.21),Vector2(-.34,.14),
-		Vector2(-.80,.19),
-	]),"263a38")
-	_batch_floor_puddle(cellar_root,Vector3(2.85,.002,-.15),PackedVector2Array([
-		Vector2(-.53,-.06),Vector2(-.25,-.17),Vector2(.18,-.13),Vector2(.56,.02),
-		Vector2(.35,.15),Vector2(-.10,.17),Vector2(-.47,.10),
-	]),"263a38")
-	for wall in [
-		[Vector3(-4.45,1.45,-2.535),Vector3(.30,3.0,3.43)],
-		[Vector3(-4.45,1.45,2.685),Vector3(.30,3.0,3.13)],
-		[Vector3(-4.45,2.68,.15),Vector3(.30,.54,1.94)],
-		[Vector3(4.45,1.45,0),Vector3(.30,3.0,8.5)],
-		[Vector3(0,1.45,-4.25),Vector3(8.9,3.0,.30)],
-	]:
-		_solid_box(cellar_root,"CellarWall",wall[0],wall[1],"",Vector3.ZERO,false)
-		# Rebaixa a argamassa atrás das pedras individuais mantendo o
-		# envelope físico completo. A argamassa rente antes escondia as faces frontais delas.
-		var backing: Vector3 = wall[1]
-		if backing.x < .5: backing.x = .20
-		elif backing.z < .5: backing.z = .20
-		_box(cellar_root,wall[0],backing,"555a51")
-	# Colisão frontal completa, recortada só na camada de apresentação.
-	_solid_box(cellar_root,"CellarFrontWall",Vector3(0,1.45,4.25),Vector3(8.9,3.0,.30),"",Vector3.ZERO,false)
-	_build_cellar_masonry()
-	cellar_ceiling = Node3D.new()
-	cellar_ceiling.name = "CellarCeilingCutaway"
-	cellar_root.add_child(cellar_ceiling)
-	_box(cellar_ceiling,Vector3(0,3.06,0),Vector3(9.0,.24,8.6),"393f3b")
-	for x in [-3.55,-1.78,0.0,1.78,3.55]:
-		_batch_box(cellar_ceiling,Vector3(x,2.88,0),Vector3(.20,.22,8.35),"443e34")
-	# Armazenamento esparso e comum faz a sala valer a leitura antes que a estante
-	# incomum seja notada. Todo objeto de volume cheio recebe colisão correspondente.
-	_solid_box(cellar_root,"StorageRack",Vector3(3.45,.85,-1.7),Vector3(1.35,1.7,3.0),"",Vector3.ZERO,false)
-	_build_storage_rack()
-	_solid_box(cellar_root,"CellarCrates",Vector3(2.7,.48,2.75),Vector3(2.1,.96,1.45),"",Vector3.ZERO,false)
-	_build_crate_stack()
-	_solid_box(cellar_root,"CellarWorkbench",Vector3(-1.2,.55,3.45),Vector3(2.7,1.1,.9),"",Vector3.ZERO,false)
-	_build_radio_workbench()
-	# Uma lâmpada utilitária de curto alcance e sem sombra mantém a escada e a estante legíveis
-	# sem acrescentar fontes de luz sobrepostas ao exterior em streaming.
-	_box(cellar_root,Vector3(.35,2.88,.25),Vector3(.70,.12,.24),"8a7757")
-	var utility_light := OmniLight3D.new()
-	utility_light.name = "CellarUtilityLight"
-	utility_light.position = Vector3(.35,2.70,.25)
-	utility_light.light_color = Color("c7a36d")
-	utility_light.light_energy = 2.15
-	utility_light.omni_range = 6.2
-	utility_light.shadow_enabled = false
-	cellar_root.add_child(utility_light)
-	_build_cellar_shelf()
-
-
-func _build_cellar_masonry() -> void:
-	# Os colisores de apoio continuam planos; blocos rasos ficam inteiramente dentro
-	# do volume deles, então a pedra velha e irregular aparece sem mudar a circulação.
-	var stone_colors := ["5d6259","4b514b","66675d","535a52"]
-	for row in 5:
-		var y := .27+float(row)*.55
-		var offset := .48 if row%2 else 0.0
-		for column in 9:
-			var x := -3.92+float(column)*.98+offset
-			if x > 4.05: continue
-			var width := .88 if (column+row)%3 else .78
-			_batch_box(cellar_root,Vector3(x,y,-4.115),Vector3(width,.46,.025),stone_colors[(column+row*2)%stone_colors.size()])
-	for side in [-1.0,1.0]:
-		for row in 5:
-			var y := .27+float(row)*.55
-			for column in 8:
-				var z := -3.72+float(column)*1.04+(.50 if row%2 else 0.0)
-				if z > 3.85: continue
-				if side < 0.0 and z > -.86 and z < 1.16: continue
-				_batch_box(cellar_root,Vector3(side*4.305,y,z),Vector3(.025,.46,.92),stone_colors[(column+row+int(side>0.0))%stone_colors.size()])
-
-
-func _build_storage_rack() -> void:
-	var center := Vector3(3.45,0,-1.70)
-	for x in [-.54,.54]:
-		for z in [-1.32,1.32]:
-			_batch_box(cellar_root,center+Vector3(x,.85,z),Vector3(.10,1.70,.10),"53564e")
-	for y in [.18,.70,1.22,1.62]:
-		_batch_box(cellar_root,center+Vector3(0,y,0),Vector3(1.18,.09,2.82),"81765e")
-	for point in [
-		Vector3(3.45,.39,-2.55),Vector3(3.45,.91,-1.70),Vector3(3.45,1.43,-.87),
-	]:
-		_batch_box(cellar_root,point,Vector3(.82,.32,.62),"6d624d")
-		_batch_box(cellar_root,point+Vector3(0,.01,.321),Vector3(.70,.06,.025),"9a835c")
-	for z in [-2.55,-2.20,-.98,-.63]:
-		_batch_cylinder(cellar_root,Vector3(3.45,1.37,z),.105,.28,"657269")
-
-
-func _build_crate_stack() -> void:
-	_build_crate(Vector3(2.26,.31,2.62),Vector3(.90,.62,1.12),"756047")
-	_build_crate(Vector3(3.20,.28,2.82),Vector3(.82,.56,.94),"68533f")
-	_build_crate(Vector3(2.72,.73,2.72),Vector3(.92,.40,.84),"80694d")
-
-
-func _build_crate(at: Vector3,size: Vector3,color: String) -> void:
-	_batch_box(cellar_root,at,size,color)
-	for y in [-.38,.38]:
-		_batch_box(cellar_root,at+Vector3(0,y*size.y, size.z*.505),Vector3(size.x*.94,.055,.035),"4c4034")
-	for x in [-.42,.42]:
-		_batch_box(cellar_root,at+Vector3(x*size.x,0,size.z*.505),Vector3(.055,size.y*.86,.035),"4c4034")
-
-
-func _build_radio_workbench() -> void:
-	var center := Vector3(-1.20,0,3.45)
-	_batch_box(cellar_root,center+Vector3(0,.86,0),Vector3(2.70,.16,.90),"806b4e")
-	for x in [-1.12,1.12]:
-		for z in [-.32,.32]:
-			_batch_box(cellar_root,center+Vector3(x,.42,z),Vector3(.13,.84,.13),"564637")
-	_batch_box(cellar_root,center+Vector3(0,.62,-.37),Vector3(2.48,.16,.12),"5d4d3b")
-	# Box, tuning glass, grille, knobs and aerial form one readable field radio.
-	var radio := center+Vector3(-.34,1.13,0)
-	_batch_box(cellar_root,radio,Vector3(1.12,.46,.42),"303735")
-	_batch_box(cellar_root,radio+Vector3(-.24,.06,.222),Vector3(.44,.22,.025),"404b46")
-	for x in [-.40,-.30,-.20,-.10]:
-		_batch_box(cellar_root,radio+Vector3(x,.06,.239),Vector3(.022,.18,.018),"788077")
-	_batch_box(cellar_root,radio+Vector3(.28,.10,.239),Vector3(.34,.10,.018),"b49457")
-	for x in [.18,.38]: _batch_cylinder(cellar_root,radio+Vector3(x,-.10,.244),.055,.035,"aa8952",Vector3(PI*.5,0,0))
-	_batch_cylinder(cellar_root,radio+Vector3(.43,.57,-.10),.018,.78,"777b70",Vector3(0,0,-.15))
-	_batch_box(cellar_root,center+Vector3(.78,.98,.06),Vector3(.56,.025,.42),"b5aa8b",Vector3(0,-.10,0))
-
-
-func _build_cellar_shelf() -> void:
-	# A estante fica na parede oeste do porão, longe do patamar da escada. O
-	# conteúdo dela é só geometria; não há rótulos explicativos.
-	shelf_pivot = Node3D.new()
-	shelf_pivot.name = "SecretShelfPivot"
-	# Dobradiças opostas deixam o caminho livre quando os dois painéis estão abertos.
-	shelf_pivot.position = Vector3(-4.12,0,1.12)
-	cellar_root.add_child(shelf_pivot)
-	_batch_box(shelf_pivot,Vector3(.11,1.18,-.97),Vector3(.28,2.36,1.94),"514536")
-	for z in [.055,1.885]: _batch_box(shelf_pivot,Vector3(.31,1.18,-z),Vector3(.34,2.36,.11),"756047")
-	for y in [.06,2.30]: _batch_box(shelf_pivot,Vector3(.31,y,-.97),Vector3(.38,.14,2.08),"806a4b")
-	for y in [.32,.78,1.24,1.70,2.16]: _batch_box(shelf_pivot,Vector3(.34,y,-.97),Vector3(.38,.08,1.82),"8d7653")
-	var book_colors := ["704b3e","53665c","887252","4a5961","755d68","9a8259"]
-	var book_widths := [.11,.14,.09,.16,.12,.10,.15,.08,.13,.11]
-	for row in 4:
-		var base_y := .36+float(row)*.46
-		var z := .14
-		for index in book_widths.size():
-			var width: float = book_widths[(index+row*2)%book_widths.size()]
-			var height := .27+float((index+row)%4)*.025
-			var tilt := -.045 if index%5==0 else (.035 if index%4==0 else 0.0)
-			_batch_box(shelf_pivot,Vector3(.50,base_y+height*.5,-z-width*.5),Vector3(.24,height,width),book_colors[(index+row)%book_colors.size()],Vector3(-tilt,0,0))
-			z += width+.026
-			if z > 1.78: break
-	shelf_body = _solid_box(shelf_pivot,"SecretBookshelf",Vector3(.18,1.18,-.97),Vector3(.46,2.36,1.94),"",Vector3.ZERO,false)
-	tunnel_door = Node3D.new()
-	tunnel_door.name = "TunnelDoorPivot"
-	tunnel_door.position = Vector3(-4.27,0,-.82)
-	cellar_root.add_child(tunnel_door)
-	_batch_box(tunnel_door,Vector3(.06,1.18,.97),Vector3(.16,2.36,1.94),"343c3a")
-	for y in [.28,.78,1.28,1.78,2.22]: _batch_box(tunnel_door,Vector3(.15,y,.97),Vector3(.08,.07,1.78),"6f746b")
-	for z in [.14,1.80]: _batch_box(tunnel_door,Vector3(.15,1.18,z),Vector3(.08,2.18,.08),"6f746b")
-	for y in [.30,2.05]:
-		for z in [.18,1.76]: _batch_cylinder(tunnel_door,Vector3(.205,y,z),.035,.025,"9b8254",Vector3(0,0,PI*.5))
-	tunnel_door_body = _solid_box(tunnel_door,"TunnelDoor",Vector3(.06,1.18,.97),Vector3(.18,2.36,1.94),"",Vector3.ZERO,false)
-	# Teclado numérico funcional: dez teclas pequenas e dois controles, sem texto decorativo.
-	_box(cellar_root,KEYPAD_CENTER,Vector3(.18,.78,.56),"303937")
-	_batch_box(cellar_root,KEYPAD_CENTER+Vector3(.105,.31,0),Vector3(.025,.11,.40),"607d66")
-	for row in 4:
-		for column in 3:
-			_batch_box(cellar_root,KEYPAD_CENTER+Vector3(.105,.17-float(row)*.125,-.17+float(column)*.17),Vector3(.025,.075,.075),"8b8f7f")
-
-
-func _build_camera() -> void:
-	cellar_camera = Camera3D.new()
-	cellar_camera.name = "Casa1CellarCamera"
-	cellar_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	cellar_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	cellar_camera.size = 10.8
-	cellar_camera.near = .12
-	cellar_camera.far = 45.0
-	cellar_camera.cull_mask = UNDERGROUND_LAYER
-	UNDERGROUND_ENVIRONMENT.apply_to(cellar_camera)
-	cellar_root.add_child(cellar_camera)
-	_update_cellar_camera(_cellar_global(Vector3.ZERO))
-
-
-func _batch_floor_puddle(parent: Node3D,center: Vector3,outline: PackedVector2Array,color: String) -> void:
-	if outline.size() < 3: return
-	var key := "%s/%s"%[parent.get_instance_id(),color]
-	if not _batches.has(key):
-		var created := SurfaceTool.new()
-		created.begin(Mesh.PRIMITIVE_TRIANGLES)
-		_batches[key] = {"surface":created,"parent":parent,"color":color}
-	var surface: SurfaceTool = _batches[key].surface
-	for index in outline.size():
-		var current := outline[index]
-		var next := outline[(index+1)%outline.size()]
-		for vertex in [
-			center,
-			center+Vector3(current.x,0,current.y),
-			center+Vector3(next.x,0,next.y),
-		]:
-			surface.set_normal(Vector3.UP)
-			surface.add_vertex(vertex)
-
-
-func _batch_box(parent: Node3D,at: Vector3,size: Vector3,color: String,angles := Vector3.ZERO) -> void:
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	_batch_mesh(parent,mesh,at,color,angles)
-
-
-func _batch_cylinder(parent: Node3D,at: Vector3,radius: float,height: float,color: String,angles := Vector3.ZERO) -> void:
-	var mesh := CylinderMesh.new()
-	mesh.top_radius = radius
-	mesh.bottom_radius = radius
-	mesh.height = height
-	mesh.radial_segments = 8
-	mesh.rings = 1
-	_batch_mesh(parent,mesh,at,color,angles)
-
-
-func _batch_mesh(parent: Node3D,mesh: Mesh,at: Vector3,color: String,angles: Vector3) -> void:
-	var key := "%s/%s"%[parent.get_instance_id(),color]
-	if not _batches.has(key):
-		var surface := SurfaceTool.new()
-		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-		_batches[key] = {"surface":surface,"parent":parent,"color":color}
-	_batches[key].surface.append_from(mesh,0,Transform3D(Basis.from_euler(angles),at))
-
-
-func _flush_batches() -> void:
-	for batch in _batches.values():
-		var node := MeshInstance3D.new()
-		node.name = "CellarDetailBatch"
-		node.mesh = batch.surface.commit()
-		node.material_override = _material(batch.color)
-		batch.parent.add_child(node)
-	_batches.clear()
-
-
-func _solid_box(parent: Node3D,id: String,at: Vector3,size: Vector3,color: String,angles := Vector3.ZERO,with_visual := true) -> StaticBody3D:
-	if with_visual and not color.is_empty(): _box(parent,at,size,color,angles)
-	var body := StaticBody3D.new()
-	body.name = id
-	body.position = at
-	body.rotation = angles
-	body.collision_layer = 1
-	body.collision_mask = 0
-	body.set_meta("interior_solid_id","truckers_home_1_secret/"+id)
-	var shape := BoxShape3D.new()
-	shape.size = size
-	var collision := CollisionShape3D.new()
-	collision.shape = shape
-	body.add_child(collision)
-	parent.add_child(body)
-	solids.append(body)
-	return body
-
-
-func _box(parent: Node3D,at: Vector3,size: Vector3,color: String,angles := Vector3.ZERO) -> MeshInstance3D:
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	var node := MeshInstance3D.new()
-	node.mesh = mesh
-	node.position = at
-	node.rotation = angles
-	node.material_override = _material(color)
-	parent.add_child(node)
-	return node
-
-
-func _material(color: String) -> StandardMaterial3D:
-	if not _materials.has(color):
-		var material := StandardMaterial3D.new()
-		material.albedo_color = Color(color)
-		material.roughness = .91
-		material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
-		if color in ["303735","303937","343c3a","53564e","6f746b","777b70","788077","8b8f7f"]:
-			material.metallic = .62
-			material.roughness = .54
-		elif color in ["aa8952","9b8254","b49457"]:
-			material.metallic = .78
-			material.roughness = .38
-		elif color in ["5d6259","4b514b","66675d","535a52","555a51","4b5049"]:
-			material.roughness = .98
-		elif color == "263a38":
-			material.roughness = .24
-			material.metallic = .05
-		elif color == "607d66":
-			material.emission_enabled = true
-			material.emission = Color("395a44")
-			material.emission_energy_multiplier = .55
-		_materials[color] = material
-	return _materials[color]
-
-
-func _apply_underground_layer(root: Node) -> void:
-	for node in root.find_children("*","GeometryInstance3D",true,false):
-		node.layers = UNDERGROUND_LAYER
-	for light in root.find_children("*","Light3D",true,false):
-		light.layers = UNDERGROUND_LAYER
-		light.light_cull_mask = UNDERGROUND_LAYER
-
-
-func _enable_player_underground_layer() -> void:
-	if session == null or not is_instance_valid(session.world.player): return
-	for node in session.world.player.find_children("*","GeometryInstance3D",true,false):
-		node.layers |= UNDERGROUND_LAYER
-
+## Montagem do anexo, da escada e do porão: corpo em TruckersCellarBuilder.gd (delegação de uma linha; mesmo nome e padrões).
+func _build_annex() -> void: _cellar_builder._build_annex()
+func _build_stair(parent: Node3D) -> void: _cellar_builder._build_stair(parent)
+func _build_cellar() -> void: _cellar_builder._build_cellar()
+func _build_cellar_masonry() -> void: _cellar_builder._build_cellar_masonry()
+func _build_storage_rack() -> void: _cellar_builder._build_storage_rack()
+func _build_crate_stack() -> void: _cellar_builder._build_crate_stack()
+func _build_crate(at: Vector3,size: Vector3,color: String) -> void: _cellar_builder._build_crate(at, size, color)
+func _build_radio_workbench() -> void: _cellar_builder._build_radio_workbench()
+func _build_cellar_shelf() -> void: _cellar_builder._build_cellar_shelf()
+func _build_camera() -> void: _cellar_builder._build_camera()
+func _batch_floor_puddle(parent: Node3D,center: Vector3,outline: PackedVector2Array,color: String) -> void: _cellar_builder._batch_floor_puddle(parent, center, outline, color)
+func _batch_box(parent: Node3D,at: Vector3,size: Vector3,color: String,angles := Vector3.ZERO) -> void: _cellar_builder._batch_box(parent, at, size, color, angles)
+func _batch_cylinder(parent: Node3D,at: Vector3,radius: float,height: float,color: String,angles := Vector3.ZERO) -> void: _cellar_builder._batch_cylinder(parent, at, radius, height, color, angles)
+func _batch_mesh(parent: Node3D,mesh: Mesh,at: Vector3,color: String,angles: Vector3) -> void: _cellar_builder._batch_mesh(parent, mesh, at, color, angles)
+func _flush_batches() -> void: _cellar_builder._flush_batches()
+func _solid_box(parent: Node3D,id: String,at: Vector3,size: Vector3,color: String,angles := Vector3.ZERO,with_visual := true) -> StaticBody3D: return _cellar_builder._solid_box(parent, id, at, size, color, angles, with_visual)
+func _box(parent: Node3D,at: Vector3,size: Vector3,color: String,angles := Vector3.ZERO) -> MeshInstance3D: return _cellar_builder._box(parent, at, size, color, angles)
+func _material(color: String) -> StandardMaterial3D: return _cellar_builder._material(color)
+func _apply_underground_layer(root: Node) -> void: _cellar_builder._apply_underground_layer(root)
+func _enable_player_underground_layer() -> void: _cellar_builder._enable_player_underground_layer()
 
 func _exit_tree() -> void:
 	if _cellar_occupied: _set_cellar_occupied(false)
