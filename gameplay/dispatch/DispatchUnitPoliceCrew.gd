@@ -38,10 +38,10 @@ static func _police_parked(g: RefCounted, delta: float) -> void:
 	if g.driver.pending_recovery():
 		g._set_state("enroute")
 		return
-	if g.state_age < (g.CREW_EXIT_DELAY if g.quick_exit else 0.6) or not g.driver.settled(): return
+	if g.state_age < (g.CREW_EXIT_DELAY if g.get_script().quick_exit else 0.6) or not g.driver.settled(): return
 	# Porta ainda em preparo fatiado: descer agora terminaria o recorte (dezenas de ms) num quadro só.
 	# O controlador prioriza esta viatura; passado DOOR_WARM_WAIT desce mesmo assim (reserva antiga).
-	if g.quick_exit and not g._doors_ready() and g.state_age < g.DOOR_WARM_WAIT: return
+	if g.get_script().quick_exit and not g._doors_ready() and g.state_age < g.DOOR_WARM_WAIT: return
 	if g.crew_remaining <= 0 and g.officers.is_empty():
 		g._police_crew_depleted()
 		return
