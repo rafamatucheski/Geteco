@@ -21,6 +21,8 @@ const MOTORCYCLE_RIDER := preload("res://scripts/VehicleMotorcycleRider.gd")
 var _rider: MOTORCYCLE_RIDER = MOTORCYCLE_RIDER.new(self)
 const DOOR_LAYOUT := preload("res://scripts/VehicleDoorLayout.gd")
 var _doors: DOOR_LAYOUT = DOOR_LAYOUT.new(self)
+const LOD_WRECK := preload("res://scripts/VehicleLodWreck.gd")
+var _lod_wreck: LOD_WRECK = LOD_WRECK.new(self)
 var traffic_rails: RefCounted
 var _traffic_rail_drive := false
 const MAX_SPEED := 15.0 * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
@@ -354,65 +356,21 @@ func _is_resting() -> bool:
 ## distância (a velocidade horizontal é multiplicada só durante a chamada), então o movimento é o
 ## mesmo, só mais grosso, onde ninguém enxerga. Perto da câmera, controlado, batido, destruído ou
 ## suspenso pelo streaming: passo normal.
-const LOD_NEAR := 60.0
-const LOD_FAR := 110.0
-const LOD_OFFSCREEN_NEAR := 45.0
-const LOD_VIEW_MARGIN := 12.0
-static var _lod_camera: Camera3D
-static var _lod_camera_frame := -1
-static var _lod_player: Node3D
-static var _lod_frustum: Array[Plane] = []
-static var _lod_frustum_frame := -1
+const LOD_NEAR := LOD_WRECK.LOD_NEAR
+const LOD_FAR := LOD_WRECK.LOD_FAR
+const LOD_OFFSCREEN_NEAR := LOD_WRECK.LOD_OFFSCREEN_NEAR
+const LOD_VIEW_MARGIN := LOD_WRECK.LOD_VIEW_MARGIN
 var _lod_skipped := -1
 var _lod_pending := 0.0
 
-func _lod_stride() -> int:
-	var frame := Engine.get_physics_frames()
-	if _lod_camera_frame != frame:
-		_lod_camera_frame = frame
-		_lod_camera = get_viewport().get_camera_3d()
-		_lod_player = get_parent().get("player") as Node3D
-	if not is_instance_valid(_lod_camera): return 1
-	var distance_squared := _lod_camera.global_position.distance_squared_to(global_position)
-	if distance_squared > LOD_FAR*LOD_FAR: return 4
-	# Só carros ambientes fora da tela entram mais cedo na simulação de 4 passos existente.
-	# Mantém uma borda generosa para o carro, as luzes e a câmera se aproximando; o trânsito
-	# visível mantém a cadência original. Varreduras/apoio de física continuam ativos.
-	if distance_squared > LOD_OFFSCREEN_NEAR*LOD_OFFSCREEN_NEAR and is_instance_valid(_lod_player) and _lod_player.global_position.distance_squared_to(global_position) > LOD_OFFSCREEN_NEAR*LOD_OFFSCREEN_NEAR:
-		if _lod_frustum_frame != frame:
-			_lod_frustum_frame = frame
-			_lod_frustum = _lod_camera.get_frustum()
-		var radius := half_length + LOD_VIEW_MARGIN
-		for plane in _lod_frustum:
-			if plane.distance_to(global_position) > radius: return 4
-	return 2 if distance_squared > LOD_NEAR*LOD_NEAR else 1
+func _lod_stride() -> int: return _lod_wreck._lod_stride()
 
 ## 0 = pular este passo; senão, quantos passos do motor o passo executado representa.
-func _lod_gate(delta: float) -> float:
-	if not traffic or controlled or health <= 0 or not is_on_floor() or has_meta("crash_stun") or has_meta("awaiting_ground"):
-		_lod_skipped = -1
-		_lod_pending = 0.0
-		return 1.0
-	var stride := _lod_stride()
-	if stride == 1:
-		# Recupera o tempo de trânsito decorrido ao voltar para a simulação próxima.
-		# Controle, impactos e estado no ar acima o descartam de propósito.
-		var steps := (_lod_pending + delta)/maxf(delta,0.0001)
-		_lod_skipped = -1
-		_lod_pending = 0.0
-		return steps
-	if _lod_skipped < 0: _lod_skipped = get_instance_id() % stride
-	_lod_pending += delta
-	_lod_skipped += 1
-	if _lod_skipped < stride: return 0.0
-	var steps := _lod_pending/maxf(delta,0.0001)
-	_lod_skipped = 0
-	_lod_pending = 0.0
-	return steps
+func _lod_gate(delta: float) -> float: return _lod_wreck._lod_gate(delta)
 
 ## Carcaças desaparecem dez segundos após a destruição.
-const WRECK_LIFETIME := 10.0
-const WRECK_FADE := 2.0
+const WRECK_LIFETIME := LOD_WRECK.WRECK_LIFETIME
+const WRECK_FADE := LOD_WRECK.WRECK_FADE
 var _wreck_age := 0.0
 var _wreck_fade := -1.0
 var _wreck_meshes: Array[MeshInstance3D] = []
@@ -425,55 +383,16 @@ var _wreck_lights: Array[Dictionary] = []
 ## DESLIGADO por padrão (GETECO_WRECK_SINK=1 liga): no A/B da 8ª rodada o quadro de ~0,9 s continuou igual
 ## com a carcaça afundando (896/896 ms × 884/867 ms), então a causa não é o sumiço (doc §13).
 static var WRECK_SINK_ENABLED := OS.get_environment("GETECO_WRECK_SINK") == "1"
-const WRECK_SINK_DEPTH := 2.2
+const WRECK_SINK_DEPTH := LOD_WRECK.WRECK_SINK_DEPTH
 var _wreck_sunk := 0.0
 
 func _wreck_expires() -> bool:
 	return not controlled
 
 ## true quando a carcaça foi removida neste passo.
-func _tick_wreck(delta: float) -> bool:
-	if _wreck_fade < 0.0:
-		if not _wreck_expires(): return false
-		_wreck_age += delta
-		if _wreck_age < WRECK_LIFETIME: return false
-		var world := get_parent()
-		var driving: Variant = world.get("driving") if is_instance_valid(world) else null
-		if driving != null and driving.get("car") == self and driving.get("occupied") == true: return false
-		_begin_wreck_fade()
-		return false
-	_wreck_fade += delta
-	var amount := clampf(_wreck_fade / WRECK_FADE, 0.0, 1.0)
-	if WRECK_SINK_ENABLED:
-		# Desce sem colisão (desligada em _begin_wreck_fade); o fogo e a fumaça filhos descem junto.
-		var sunk := WRECK_SINK_DEPTH * amount * amount
-		global_position.y += _wreck_sunk - sunk
-		_wreck_sunk = sunk
-	else:
-		for mesh in _wreck_meshes:
-			if is_instance_valid(mesh): mesh.transparency = amount
-	if amount >= 1.0:
-		queue_free()
-		return true
-	return false
+func _tick_wreck(delta: float) -> bool: return _lod_wreck._tick_wreck(delta)
 
-func _begin_wreck_fade() -> void:
-	invalidate_shadow_proxy()
-	_wreck_fade = 0.0
-	preload("res://runtime/PipelineProbe.gd").note("wreck_sink" if WRECK_SINK_ENABLED else "wreck_fade", self)
-	# Já não bloqueia ninguém enquanto some.
-	var pending: Array[Node] = [self]
-	while not pending.is_empty():
-		var node: Node = pending.pop_back()
-		if node is CollisionObject3D:
-			_wreck_collision_state.append({"node": node, "layer": node.collision_layer, "mask": node.collision_mask})
-			(node as CollisionObject3D).collision_layer = 0
-			(node as CollisionObject3D).collision_mask = 0
-		if node is MeshInstance3D: _wreck_meshes.append(node)
-		if node is Light3D:
-			_wreck_lights.append({"node": node, "visible": node.visible})
-			(node as Light3D).visible = false
-		for child in node.get_children(): pending.append(child)
+func _begin_wreck_fade() -> void: _lod_wreck._begin_wreck_fade()
 
 func _physics_process(delta: float) -> void:
 	var began := STALL_WORK.begin()
@@ -1157,27 +1076,10 @@ func obstacle_ahead() -> bool:
 ## como na transparência. Junto com a carcaça (GETECO_WRECK_SINK) e o destroço (GETECO_DEBRIS_SHRINK) são as
 ## três fontes de `transparency` > 0 que a sonda de assinatura viu nos quadros de ~0,9 s (13ª rodada, doc §16).
 static var RETIRE_SINK_ENABLED := OS.get_environment("GETECO_RETIRE_SINK") == "1"
-const RETIRE_SINK_DEPTH := 2.4
+const RETIRE_SINK_DEPTH := LOD_WRECK.RETIRE_SINK_DEPTH
 var _retire_sunk := 0.0
 
-func fade_traffic_retirement(alpha: float) -> void:
-	if alpha > 0.0: invalidate_shadow_proxy()
-	if RETIRE_SINK_ENABLED:
-		if not is_instance_valid(visual): return
-		var sunk := RETIRE_SINK_DEPTH * clampf(alpha, 0.0, 1.0)
-		visual.position.y += _retire_sunk - sunk
-		_retire_sunk = sunk
-		return
-	if alpha<=0:
-		for record in _traffic_retirement_meshes:
-			if is_instance_valid(record.node): record.node.transparency=record.original
-		_traffic_retirement_meshes.clear()
-		return
-	if _traffic_retirement_meshes.is_empty() and is_instance_valid(visual):
-		for mesh in visual.find_children("*","MeshInstance3D",true,false):
-			_traffic_retirement_meshes.append({"node":mesh,"original":mesh.transparency})
-	for record in _traffic_retirement_meshes:
-		if is_instance_valid(record.node): record.node.transparency=maxf(record.original,alpha)
+func fade_traffic_retirement(alpha: float) -> void: _lod_wreck.fade_traffic_retirement(alpha)
 
 func place(point: Vector3, yaw: float) -> void:
 	reset_motorcycle_wheelie()
