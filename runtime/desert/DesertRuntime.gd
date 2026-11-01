@@ -38,6 +38,12 @@ var _resident: Node3D
 var _workshop_site := "town"
 var owned_cars: Dictionary = {}
 var _tick := 0.0
+# Lista dos kits de neon guardada entre quadros: get_nodes_in_group aloca um Array novo a cada
+# chamada. Renova quando a contagem do grupo muda (barato, sem alocar) ou a cada NEON_REFRESH_S
+# para pegar troca de um kit por outro sem mudança de contagem.
+const NEON_REFRESH_S := .5
+var _neon_kits: Array[Node] = []
+var _neon_refresh_left := 0.0
 func configure(owner_session) -> void:
 	session = owner_session
 	name = "DesertRuntime"
@@ -124,8 +130,14 @@ func cancel_attempt() -> void:
 func _process(delta: float) -> void:
 	if session != null and session.ready_for_play:
 		var active_camera := get_viewport().get_camera_3d()
-		for kit in get_tree().get_nodes_in_group("desert_car_neon"):
-			kit.update(session.weather.time_of_day,active_camera,session.state.place_id.is_empty(),delta)
+		_neon_refresh_left -= delta
+		var tree := get_tree()
+		if _neon_refresh_left <= 0.0 or tree.get_node_count_in_group("desert_car_neon") != _neon_kits.size():
+			_neon_kits = tree.get_nodes_in_group("desert_car_neon")
+			_neon_refresh_left = NEON_REFRESH_S
+		for kit in _neon_kits:
+			if is_instance_valid(kit) and kit.is_inside_tree():
+				kit.update(session.weather.time_of_day,active_camera,session.state.place_id.is_empty(),delta)
 	_tick += delta
 	if _tick < .3 or session == null or not session.ready_for_play: return
 	_tick = 0.0

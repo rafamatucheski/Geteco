@@ -32,6 +32,16 @@ var dock_amounts: Array[float] = [0.0,0.0,0.0]
 var scan := 0.0
 var occupied := false
 var _previous_shelter := false
+# Caminhões do porto: uma varredura do grupo serve às duas perguntas (pátio e portão). Sem caminhão
+# no raio de 60 m ela roda a cada TRUCK_SCAN_S; quem entra no raio ainda está a 17 m ou mais da
+# faixa de 15 m do portão, então o portão não perde a reação. Com caminhão perto, todo quadro.
+const TRUCK_SCAN_S := .25
+var _truck_scan_left := 0.0
+var _truck_near := false
+var _truck_at_gate := false
+# Estado já aplicado às luzes/processos, para não reescrevê-los todo quadro de física.
+var _building_lights_on := -1
+var _far_parked := false
 var interior_camera: Camera3D
 var movers: Array[Node3D] = []
 var spreaders: Array[Node3D] = []
@@ -438,23 +448,31 @@ func _physics_process(delta: float) -> void:
 	if not is_instance_valid(player): return
 	var harbor: bool = session.state.region_id == "harbor" and session.urban_operations.world_is_continuous()
 	var near: bool = harbor and player.global_position.distance_to(ORIGIN+Vector3(0,0,24)) < 150
-	var truck_near := false
 	if harbor:
-		for truck in get_tree().get_nodes_in_group("port_logistics_truck"):
-			if is_instance_valid(truck) and truck.health>0 and truck.global_position.distance_to(ORIGIN+Vector3(0,0,50))<60: truck_near = true
+		_truck_scan_left -= delta
+		if _truck_near or _truck_scan_left <= 0.0:
+			_truck_scan_left = TRUCK_SCAN_S
+			_scan_trucks()
+	else:
+		_truck_near = false
+		_truck_at_gate = false
+		_truck_scan_left = 0.0
 	visible = harbor
-	if not near and not truck_near:
-		building.set_lights_active(false)
-		for entry in staff:
-			entry.actor.set_physics_process(false)
-			entry.model.set_process(false)
-		for seated in desk_staff: seated.set_process(false)
+	if not near and not _truck_near:
+		if not _far_parked:
+			_far_parked = true
+			_set_building_lights(false)
+			for entry in staff:
+				entry.actor.set_physics_process(false)
+				entry.model.set_process(false)
+			for seated in desk_staff: seated.set_process(false)
+			for light in lamps: light.visible = false
 		forklifts.tick(false)
 		_set_inside(false)
-		for light in lamps: light.visible = false
 		return
+	_far_parked = false
 	var p: Vector3 = player.global_position-ORIGIN
-	building.set_lights_active(near)
+	_set_building_lights(near)
 	var open := business_open()
 	# A saída e um limiar ocupado continuam livres mesmo depois que a empresa fecha.
 	var exiting := p.x > -50 and p.x < 50 and p.z < 78 and p.z > -30
@@ -462,8 +480,7 @@ func _physics_process(delta: float) -> void:
 	# Durante a invasão o portão só abre para quem sai por ele, para o alarme ou para a van.
 	if night_hold: exiting = exiting and p.z > 66
 	var target := 1.0 if open or exiting or gate_clearance or night_gate_open else 0.0
-	for truck in get_tree().get_nodes_in_group("port_logistics_truck"):
-		if is_instance_valid(truck) and truck.health>0 and truck.global_position.distance_to(ORIGIN+Vector3(0,0,78))<15: target = 1.0
+	if _truck_at_gate: target = 1.0
 	gate_amount = move_toward(gate_amount,target,delta*.7)
 	gate.position.x = -14.5*gate_amount
 	var interior: bool = session.state.place_id.is_empty() and inside(player.global_position) and not player.get_meta("harbor_service_rooftop",false)
@@ -519,6 +536,20 @@ func _physics_process(delta: float) -> void:
 				secret.visual.hide()
 				session.save_game()
 				session.show_message("Encontrou dinheiro escondido.")
+
+func _scan_trucks() -> void:
+	_truck_near = false
+	_truck_at_gate = false
+	for truck in get_tree().get_nodes_in_group("port_logistics_truck"):
+		if not is_instance_valid(truck) or truck.health<=0: continue
+		var at: Vector3 = truck.global_position
+		if at.distance_to(ORIGIN+Vector3(0,0,50))<60: _truck_near = true
+		if at.distance_to(ORIGIN+Vector3(0,0,78))<15: _truck_at_gate = true
+
+func _set_building_lights(active: bool) -> void:
+	if _building_lights_on == int(active): return
+	_building_lights_on = int(active)
+	building.set_lights_active(active)
 
 func dock_occupied(index: int) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()

@@ -7,6 +7,8 @@ var _workers: Node3D
 var _clock:=0.0
 var _check:=0.0
 var _pose:=0.0
+# Modelos guardados ao montar a turma: o laço de pose a 20 Hz não procura "Model" por nome.
+var _models: Array[Node3D]=[]
 
 func configure(owner_session) -> void:
 	session=owner_session
@@ -21,9 +23,8 @@ func _process(delta: float) -> void:
 		_check=0.0
 		refresh()
 	if is_instance_valid(_workers) and _pose>=1.0/20.0:
-		for worker in _workers.get_children():
-			var model=worker.get_node("Model")
-			model.sample_work(_clock,_pose)
+		for model in _models:
+			if is_instance_valid(model): model.sample_work(_clock,_pose)
 		_pose=0.0
 
 func refresh() -> void:
@@ -39,6 +40,7 @@ func refresh() -> void:
 		return
 	if is_instance_valid(_workers): return
 	_pose=0.0
+	_models.clear()
 	_workers=Node3D.new()
 	_workers.name="NorthPassWorkers"
 	add_child(_workers)
@@ -61,9 +63,11 @@ func refresh() -> void:
 		model.name="Model"
 		model.job=specification.job
 		worker.add_child(model)
+		_models.append(model)
 
 func _clear_workers() -> void:
 	if not is_instance_valid(_workers): return
+	_models.clear()
 	remove_child(_workers)
 	_workers.queue_free()
 	_workers=null
