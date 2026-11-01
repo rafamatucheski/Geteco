@@ -88,14 +88,28 @@ func _ready() -> void:
 func _weather():
 	return controller.session.weather if controller != null and controller.session != null else null
 
+# O clima de verdade (runtime/Weather.gd) tem rain_strength_at e get_coastal_wetness; os climas falsos
+# dos testes não. A resposta fica guardada por instância em vez de has_method por nome todo quadro.
+var _caps_weather_id := 0
+var _weather_has_strength := false
+var _weather_has_wetness := false
+
+func _sync_weather_caps(weather) -> void:
+	var id: int = weather.get_instance_id()
+	if id == _caps_weather_id: return
+	_caps_weather_id = id
+	_weather_has_strength = weather.has_method("rain_strength_at")
+	_weather_has_wetness = weather.has_method("get_coastal_wetness")
+
 func _weather_raining() -> bool:
 	var weather = _weather()
 	if weather == null or controller.world.player == null: return false
+	_sync_weather_caps(weather)
 	# rain_strength_at já segue a chuva gradual (engrossa/afina com o ciclo).
-	if not weather.has_method("rain_strength_at") and int(weather.weather_state) not in [1, 2]: return false
+	if not _weather_has_strength and int(weather.weather_state) not in [1, 2]: return false
 	# A neve de Mountain não enche poça; a costura segue o mesmo peso regional da chuva.
 	var focus: Vector3 = weather.atmosphere.focus_position(controller)
-	if weather.has_method("rain_strength_at"): return weather.rain_strength_at(focus)>.001
+	if _weather_has_strength: return weather.rain_strength_at(focus)>.001
 	return float(weather.atmosphere.weights_at(focus).mountain) < 0.999
 
 const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
@@ -114,7 +128,8 @@ func _process_traced(delta: float) -> void:
 		_rejected.clear()
 	raining = now_raining
 	var weather = _weather()
-	wetness = weather.get_coastal_wetness() if weather != null and weather.has_method("get_coastal_wetness") else clampf(wetness + (FILL_RATE if raining else -DRY_RATE) * delta, 0.0, 1.0)
+	if weather != null: _sync_weather_caps(weather)
+	wetness = weather.get_coastal_wetness() if weather != null and _weather_has_wetness else clampf(wetness + (FILL_RATE if raining else -DRY_RATE) * delta, 0.0, 1.0)
 	_material.set_shader_parameter("fill", wetness)
 	_material.set_shader_parameter("rain", 1.0 if raining else 0.0)
 	visible = wetness > 0.0

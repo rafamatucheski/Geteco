@@ -577,7 +577,7 @@ func _vehicle_size() -> float:
 
 func _desired_lead(base: Vector3,scoped: bool) -> Vector3:
 	if not _is_vehicle_target() and (scoped or _manual_aim_active()):
-		var controls := get_node_or_null("/root/GameInput")
+		var controls := GameInput
 		if controls != null and not controls.using_gamepad and not controls.get_meta("touch_controls_active", false) and controls.touch_aim.is_zero_approx():
 			return mouse_aim_lead(base, scoped, aim_screen_position())
 	if scoped:
@@ -712,8 +712,8 @@ func release_exterior_reveal() -> void:
 
 func _camera_input_blocked() -> bool:
 	if locked or _store_focus_active or get_tree().paused: return true
-	var controls := get_node_or_null("/root/GameInput")
-	if controls != null and controls.get("remapping") == true: return true
+	var controls := GameInput
+	if controls != null and controls.remapping: return true
 	var world := get_parent()
 	var session: Variant = world.get("session") if world != null and &"session" in world else null
 	if session != null:
@@ -725,8 +725,8 @@ func _camera_input_blocked() -> bool:
 	return focused is LineEdit or focused is TextEdit
 
 func _update_gamepad_rotation(delta: float) -> void:
-	var controls := get_node_or_null("/root/GameInput")
-	if controls == null or not controls.has_method("camera_rotation"): return
+	var controls := GameInput
+	if controls == null: return
 	# Lê só ligações analógicas. Botões, teclado e ações de toque mantêm o
 	# passo escrito de 45 graus em _unhandled_input, sem uma segunda atualização de quadro.
 	var turn: float = controls.camera_rotation()

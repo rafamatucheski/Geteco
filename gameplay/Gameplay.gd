@@ -996,7 +996,8 @@ func _update_sheath(delta: float) -> void:
 		# O IK da arma seguinte não pode sobrescrever os braços do clipe de sacar/guardar.
 		# Mantém também as pernas de locomoção quando o jogador troca de arma andando.
 		_pose_frame = {"visible": false, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_HELD}
-		if player.has_method("set_combat_weapon_pose"): player.set_combat_weapon_pose("katana", _pose_frame)
+		# "combat_clip" só existe em Actor.gd, que também define set_combat_weapon_pose: chamada direta.
+		player.set_combat_weapon_pose("katana", _pose_frame)
 		# A pegada gira junto com o clipe: guarda (lâmina à frente) no início, posição das costas no fim.
 		if hand_katana != null and _sheath_clip.ends_with("sheathe_greatsword"):
 			# As medidas autoradas têm quatro casas decimais: normalize antes do slerp.
@@ -1461,7 +1462,7 @@ func _update_contact() -> void:
 		return
 	_pending_contact = {}
 	if not state.consume_ammo(id, 1): return
-	if player.has_method("combat_palm_position"): origin = player.combat_palm_position("Right")
+	if _weapon_visuals._player_rig(): origin = player.combat_palm_position("Right")
 	var flat_target: Vector3 = contact.target - origin
 	flat_target.y = 0.0
 	direction = flat_target.normalized() if flat_target.length_squared() > 0.001 else direction

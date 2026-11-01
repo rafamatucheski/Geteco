@@ -31,6 +31,20 @@ var g: Node3D
 func _init(host: Node3D) -> void:
 	g = host
 
+## Os métodos do rig de combate (set_combat_weapon_mount/pose, combat_weapon_transform,
+## combat_left_palm_transform, combat_palm_position, combat_rig_info) só existem em Actor.gd;
+## testes passam jogadores falsos (CharacterBody3D puro) sem eles. Em vez de has_method por nome a cada quadro, a resposta
+## é guardada por instância do jogador e refeita quando g.player troca.
+var _rig_owner_id := 0
+var _rig_capable := false
+
+func _player_rig() -> bool:
+	var id: int = g.player.get_instance_id()
+	if id != _rig_owner_id:
+		_rig_owner_id = id
+		_rig_capable = g.player.has_method("combat_rig_info")
+	return _rig_capable
+
 func _update_visual() -> void:
 	if g.gun == null: return
 	var id: String = g.equipped()
@@ -60,13 +74,13 @@ func _update_visual() -> void:
 			g._build_muzzle_flash(id, muzzle)
 			g._mount_flashlight()
 			STALL_WORK.finish_slow("gameplay.weapon_visual", visual_began, 2000, g)
-		if g.player.has_method("set_combat_weapon_mount"):
+		if _player_rig():
 			g.player.set_combat_weapon_mount(g.gun, POSE.GRIPS.get(id, Vector3.ZERO))
 	g.gun.visible = g.attack_allowed() and id != "" and id != "fists" and bool(g._pose_frame.get("visible", true)) and g._sheath_clip == ""
 	# A arma e as palmas usam o mesmo alvo em espaço do Actor. Isso preserva a
 	# orientação do cabo dentro da mão; não há mais um prop plano girado só em Y.
 	if g.gun.visible and not g._pose_frame.is_empty() and is_instance_valid(g.player.visual) and not g._pose_frame.has("hand_grip"):
-		if g.player.has_method("combat_weapon_transform"):
+		if _player_rig():
 			g.gun.global_transform = g.player.combat_weapon_transform(POSE.GRIPS.get(id, Vector3.ZERO))
 		else:
 			var local_basis: Basis = g._pose_frame.basis
@@ -102,7 +116,7 @@ func _mount_flashlight() -> void:
 
 func _update_left_knuckles(id: String) -> void:
 	# Com a mala na mão esquerda não há soqueira esquerda.
-	var wanted: bool = id == "knuckles" and g.gun.visible and g.player.has_method("combat_left_palm_transform") and not bool(g._pose_frame.get("bag_carry", false))
+	var wanted: bool = id == "knuckles" and g.gun.visible and _player_rig() and not bool(g._pose_frame.get("bag_carry", false))
 	if not wanted:
 		if is_instance_valid(g._left_knuckles): g._left_knuckles.visible = false
 		return
@@ -125,7 +139,7 @@ func _update_weapon_pose(delta: float) -> void:
 	var sprinting := speed_now > 4.2
 	var progress := 0.0
 	if g.reload_timer > 0.0 and g._reload_total > 0.0: progress = clampf(1.0 - g.reload_timer / g._reload_total, 0.0, 1.0)
-	var rig: Dictionary = g.player.combat_rig_info() if g.player.has_method("combat_rig_info") else {}
+	var rig: Dictionary = g.player.combat_rig_info() if _player_rig() else {}
 	rig["bag_carry"] = g.state.get("economy") != null and g.state.economy.grid_handbag()
 	rig["clip_punch"] = g._clip_name.begins_with("ual/Punch")
 	if id == "grenade":
@@ -156,7 +170,7 @@ func _update_weapon_pose(delta: float) -> void:
 			# Sem a biblioteca do Mixamo: carregar procedural (lâmina para cima) e cortes de reserva.
 			var ready: bool = g.aiming or g._combat_clock - g._katana_attack_clock < g._katana_moves.READY_SECONDS or (is_instance_valid(g.rage) and g.rage.active)
 			g._pose_frame = g._katana_moves.update(delta, speed_now, float(g.player.phase), float(rig.get("body_bob", 0.0)), g.player.visual.rotation.y, ready, g._katana_combo, g._rig_pose.action_age)
-	if g.player.has_method("set_combat_weapon_pose"):
+	if _player_rig():
 		g.player.set_combat_weapon_pose(id, g._pose_frame)
 
 func _update_weapon_parts(id: String) -> void:
@@ -195,7 +209,7 @@ func _update_magazine(magazine: Node3D) -> void:
 		magazine.visible = progress < 0.19
 	elif progress < 0.30 and progress >= 0.20:
 		magazine.visible = false
-	elif progress < 0.45 and progress >= 0.30 and g.player.has_method("combat_left_palm_transform"):
+	elif progress < 0.45 and progress >= 0.30 and _player_rig():
 		# Centro do carregador (espaço da arma) na palma esquerda, alinhado à arma.
 		var center: Vector3 = g.gun.global_transform * Vector3(0, -0.10, -0.07)
 		var palm: Vector3 = g.player.combat_left_palm_transform().origin
@@ -213,7 +227,7 @@ func _update_rocket(rocket: Node3D, id: String) -> void:
 		return
 	var progress: float = clampf(1.0 - g.reload_timer / maxf(g._reload_total, 0.001), 0.0, 1.0)
 	rocket.visible = progress >= RIG_POSE.RPG_ROCKET_GRAB
-	if rocket.visible and g.player.has_method("combat_left_palm_transform"):
+	if rocket.visible and _player_rig():
 		var palm: Vector3 = g.player.combat_left_palm_transform().origin
 		var seat := smoothstep(RIG_POSE.RPG_ROCKET_SEAT.x, RIG_POSE.RPG_ROCKET_SEAT.y, progress)
 		rocket.global_position += (palm - rocket.global_position) * (1.0 - seat)

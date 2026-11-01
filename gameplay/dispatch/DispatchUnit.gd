@@ -904,8 +904,9 @@ func _vehicle_combat(delta: float, target: Node3D) -> void:
 		return
 	_shot_cooldown = maxf(0.0, _shot_cooldown - delta)
 	var driven: bool = controller.world.get("driving") != null and controller.world.driving.occupied
-	var authorized: bool = gameplay.police_force_authorized() if gameplay.has_method("police_force_authorized") else gameplay.stars >= 2
-	var surrendering: bool = gameplay.has_method("police_surrendering") and gameplay.police_surrendering()
+	_sync_gameplay_caps(gameplay)
+	var authorized: bool = gameplay.police_force_authorized() if _gameplay_has_force else gameplay.stars >= 2
+	var surrendering: bool = _gameplay_has_surrender and gameplay.police_surrendering()
 	if not authorized or surrendering or not driven or target == null or crew_remaining < RULES.OFFICERS_PER_CAR or not officers.is_empty() or not gameplay.state.weapons_allowed():
 		_aim = 0.0
 		return
@@ -1001,7 +1002,8 @@ func _police_parked(delta: float) -> void:
 		return
 	if variant == "tank" and controller.gameplay.stars > 0:
 		var target := _target()
-		var surrendering: bool = controller.gameplay.has_method("police_surrendering") and controller.gameplay.police_surrendering()
+		_sync_gameplay_caps(controller.gameplay)
+		var surrendering: bool = _gameplay_has_surrender and controller.gameplay.police_surrendering()
 		if not surrendering:
 			_vehicle_combat(delta,target)
 			if target != null and vehicle.global_position.distance_to(target.global_position) > 25.0: _set_state("enroute")
@@ -1482,3 +1484,16 @@ func on_gave_up(_reason: String) -> void:
 		return
 	controller.emit_dispatch_event("route_blocked", {"unit": self})
 	_begin_departure()
+
+# O Gameplay de verdade tem police_force_authorized/police_surrendering; gameplays falsos dos testes
+# podem não ter. A resposta fica guardada por instância em vez de has_method por nome a cada quadro.
+var _caps_gameplay_id := 0
+var _gameplay_has_force := false
+var _gameplay_has_surrender := false
+
+func _sync_gameplay_caps(gameplay: Object) -> void:
+	var id: int = gameplay.get_instance_id()
+	if id == _caps_gameplay_id: return
+	_caps_gameplay_id = id
+	_gameplay_has_force = gameplay.has_method("police_force_authorized")
+	_gameplay_has_surrender = gameplay.has_method("police_surrendering")

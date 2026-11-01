@@ -248,14 +248,32 @@ func _stall_physics_tick(delta: float) -> void:
 	_track_progress(destination, move, delta)
 	_move(move, delta)
 
+# O Gameplay de verdade tem police_surrendering/police_force_authorized/police_can_arrest; controladores
+# falsos dos testes têm só parte deles. Em vez de has_method por nome a cada quadro de cada policial,
+# a resposta fica guardada por instância do controlador e é refeita quando ele troca.
+var _caps_controller_id := 0
+var _controller_has_surrender := false
+var _controller_has_force := false
+var _controller_has_arrest := false
+
+func _sync_controller_caps() -> void:
+	var id: int = controller.get_instance_id()
+	if id == _caps_controller_id: return
+	_caps_controller_id = id
+	_controller_has_surrender = controller.has_method("police_surrendering")
+	_controller_has_force = controller.has_method("police_force_authorized")
+	_controller_has_arrest = controller.has_method("police_can_arrest")
+
 func _force_authorized() -> bool:
-	if controller.has_method("police_surrendering") and controller.police_surrendering(): return false
-	if controller.has_method("police_force_authorized"): return controller.police_force_authorized()
+	_sync_controller_caps()
+	if _controller_has_surrender and controller.police_surrendering(): return false
+	if _controller_has_force: return controller.police_force_authorized()
 	# Fixtures legadas e cenas visuais avulsas são anteriores ao objeto de política.
 	return controller.stars >= 2 or response_aggression > 0.0
 
 func _can_arrest() -> bool:
-	if controller.has_method("police_can_arrest"): return controller.police_can_arrest()
+	_sync_controller_caps()
+	if _controller_has_arrest: return controller.police_can_arrest()
 	return controller.stars == 1
 
 func _shares_player_context() -> bool:
@@ -450,7 +468,8 @@ func _facing_target() -> bool:
 
 func _try_fire() -> bool:
 	if dead or reload_timer > 0.0 or burst_pause > 0.0 or not is_instance_valid(controller): return false
-	if controller.has_method("police_force_authorized") and not _force_authorized(): return false
+	_sync_controller_caps()
+	if _controller_has_force and not _force_authorized(): return false
 	if not _facing_target(): return false
 	if magazine <= 0:
 		_start_reload()
