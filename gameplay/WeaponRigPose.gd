@@ -214,10 +214,6 @@ func impact(id: String) -> void:
 func heavy_attack() -> bool:
 	return bool(_move.get("heavy", false)) and action_age < float(_move.get("end", 0.0)) * MOVES.scale(_attacked_id)
 
-## Janela para o próximo aperto continuar a sequência (ferramentas de captura).
-func chain_window(id: String) -> float:
-	return float(MOVES.CHAIN.get(id, 0.30))
-
 func reset() -> void:
 	weapon_id = ""
 	action_age = 10.0
@@ -833,61 +829,6 @@ func _shoulder_carry(id: String, gait_phase: float, movement: float, running: fl
 		hand = MELEE_SHOULDER + sway * (hand - MELEE_SHOULDER)
 		basis = sway * basis
 	return {"hand": hand + body_offset, "basis": basis, "support_weight": 0.0, "torso": 0.0}
-
-## V1 `MeshyMeleePose.shoulder_swing`: carrega atrás do ombro, junta a mão
-## livre e varre o contato; o contato fica dentro de uma interpolação contínua,
-## nunca num quadro-chave parado.
-func _shoulder_swing(id: String, age: float, gait_phase: float, movement: float, running: float, body_offset: Vector3) -> Dictionary:
-	var axe := id == "axe"
-	var load_end := 0.24 if axe else 0.22
-	var follow_end := 0.44 if axe else 0.40
-	var return_start := 0.55 if axe else 0.49
-	var end := 0.78 if axe else 0.66
-	var carry := Vector3(0.08, 1.05, -0.24)
-	var loaded := Vector3(0.05, 1.15, -0.25)
-	var follow := Vector3(-0.08, 0.87 if axe else 0.98, -0.37)
-	var clear := Vector3(0.27, 1.13, -0.32)
-	var roll := -PI / 2.0 if axe else 0.0
-	var carry_basis := _basis(Vector3(2.82, -0.10, roll))
-	var load_basis := _basis(Vector3(1.75, -0.35, roll)) if axe else _basis(Vector3(0.40, -1.65, 0))
-	var follow_basis := _basis(Vector3(-0.65, 0.38, roll)) if axe else _basis(Vector3(0.10, 1.15, 0))
-	var clear_basis := _basis(Vector3(1.40, -0.65, roll))
-	var hand := carry
-	var basis := carry_basis
-	var torso := 0.0
-	if age < load_end:
-		var t := smoothstep(0.0, load_end, age)
-		hand = carry.lerp(loaded, t)
-		basis = carry_basis.slerp(load_basis, t)
-		torso = lerpf(0.0, -0.30, t)
-	elif age < follow_end:
-		var t := smoothstep(load_end, follow_end, age)
-		hand = loaded.lerp(follow, t)
-		basis = load_basis.slerp(follow_basis, t)
-		torso = lerpf(-0.30, 0.38, t)
-	elif age < return_start:
-		var t := smoothstep(follow_end, return_start, age)
-		hand = follow.lerp(clear, t)
-		basis = follow_basis.slerp(clear_basis, t)
-		torso = lerpf(0.38, 0.12, t)
-	elif age < end:
-		var t := smoothstep(return_start, end, age)
-		hand = clear.lerp(carry, t)
-		basis = clear_basis.slerp(carry_basis, t)
-		torso = lerpf(0.12, 0.0, t)
-	var support_weight := smoothstep(0.0, load_end * 0.75, age) * (1.0 - smoothstep(follow_end, return_start, age))
-	# Balança em torno do contato no ombro, não da mão: o cabo mantém o apoio e
-	# a cabeça da arma responde com peso a cada passo.
-	var carry_weight := (1.0 - smoothstep(0.0, load_end, age)) + smoothstep(return_start, end, age)
-	var motion := movement * carry_weight
-	if motion > 0.0:
-		var sway_pitch := sin(gait_phase * 2.0 - 0.35) * lerpf(0.035, 0.065, running)
-		var roll_sway := sin(gait_phase) * lerpf(0.015, 0.030, running)
-		var yaw := cos(gait_phase) * lerpf(0.018, 0.035, running)
-		var sway := _basis(Vector3(sway_pitch, yaw, roll_sway) * motion)
-		hand = MELEE_SHOULDER + sway * (hand - MELEE_SHOULDER) + body_offset * carry_weight
-		basis = sway * basis
-	return {"hand": hand, "basis": basis, "support_weight": support_weight, "torso": torso}
 
 ## V1 `MeshyKnucklePose.sample`: um punho golpeia enquanto o outro guarda.
 ## Quatro variações: direto de esquerda, direto de direita, gancho e subida.
