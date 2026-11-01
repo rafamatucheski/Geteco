@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://qj3k11o6vcvj"
-path="res://.godot/imported/block_roughness.png-246b746f224c5563fdf7673cc5e813ef.ctex"
+path.s3tc="res://.godot/imported/block_roughness.png-246b746f224c5563fdf7673cc5e813ef.s3tc.ctex"
+path.etc2="res://.godot/imported/block_roughness.png-246b746f224c5563fdf7673cc5e813ef.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/materials/digo_workshop/block_roughness.png"
-dest_files=["res://.godot/imported/block_roughness.png-246b746f224c5563fdf7673cc5e813ef.ctex"]
+dest_files=["res://.godot/imported/block_roughness.png-246b746f224c5563fdf7673cc5e813ef.s3tc.ctex", "res://.godot/imported/block_roughness.png-246b746f224c5563fdf7673cc5e813ef.etc2.ctex"]
 
 [params]
 

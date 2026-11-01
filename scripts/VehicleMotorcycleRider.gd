@@ -17,7 +17,7 @@ func _init(host: CharacterBody3D) -> void:
 	g = host
 
 func _tick_motorcycle_wheelie(delta: float) -> void:
-	var eligible := g.controlled and not g.traffic and not g.external_input and not g.input_locked and not g.engine_disabled and g.health > 0 and not g.has_meta("crash_stun")
+	var eligible: bool = g.controlled and not g.traffic and not g.external_input and not g.input_locked and not g.engine_disabled and g.health > 0 and not g.has_meta("crash_stun")
 	var previous_pitch: float = g.manual_wheelie.pitch
 	if not eligible and previous_pitch == 0: return
 	var controls := g.get_node_or_null("/root/GameInput")

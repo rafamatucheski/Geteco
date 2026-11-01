@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dtaqkp1m1tyu"
-path="res://.godot/imported/epoxy_roughness.png-adbb814bd2833db436485dbd0f56127b.ctex"
+path.s3tc="res://.godot/imported/epoxy_roughness.png-adbb814bd2833db436485dbd0f56127b.s3tc.ctex"
+path.etc2="res://.godot/imported/epoxy_roughness.png-adbb814bd2833db436485dbd0f56127b.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/materials/digo_workshop/epoxy_roughness.png"
-dest_files=["res://.godot/imported/epoxy_roughness.png-adbb814bd2833db436485dbd0f56127b.ctex"]
+dest_files=["res://.godot/imported/epoxy_roughness.png-adbb814bd2833db436485dbd0f56127b.s3tc.ctex", "res://.godot/imported/epoxy_roughness.png-adbb814bd2833db436485dbd0f56127b.etc2.ctex"]
 
 [params]
 

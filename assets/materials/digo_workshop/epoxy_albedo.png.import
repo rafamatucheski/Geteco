@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://blgeg2ldk883p"
-path="res://.godot/imported/epoxy_albedo.png-0c88fbb8eeba46129b423be1afa77ca5.ctex"
+path.s3tc="res://.godot/imported/epoxy_albedo.png-0c88fbb8eeba46129b423be1afa77ca5.s3tc.ctex"
+path.etc2="res://.godot/imported/epoxy_albedo.png-0c88fbb8eeba46129b423be1afa77ca5.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/materials/digo_workshop/epoxy_albedo.png"
-dest_files=["res://.godot/imported/epoxy_albedo.png-0c88fbb8eeba46129b423be1afa77ca5.ctex"]
+dest_files=["res://.godot/imported/epoxy_albedo.png-0c88fbb8eeba46129b423be1afa77ca5.s3tc.ctex", "res://.godot/imported/epoxy_albedo.png-0c88fbb8eeba46129b423be1afa77ca5.etc2.ctex"]
 
 [params]
 

@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c54bv6ism628t"
-path="res://.godot/imported/maciota-ad.svg-1826e3d8e39fa2586ee1eb79e0cbaef8.ctex"
+path.s3tc="res://.godot/imported/maciota-ad.svg-1826e3d8e39fa2586ee1eb79e0cbaef8.s3tc.ctex"
+path.etc2="res://.godot/imported/maciota-ad.svg-1826e3d8e39fa2586ee1eb79e0cbaef8.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/transit/maciota-ad.svg"
-dest_files=["res://.godot/imported/maciota-ad.svg-1826e3d8e39fa2586ee1eb79e0cbaef8.ctex"]
+dest_files=["res://.godot/imported/maciota-ad.svg-1826e3d8e39fa2586ee1eb79e0cbaef8.s3tc.ctex", "res://.godot/imported/maciota-ad.svg-1826e3d8e39fa2586ee1eb79e0cbaef8.etc2.ctex"]
 
 [params]
 
