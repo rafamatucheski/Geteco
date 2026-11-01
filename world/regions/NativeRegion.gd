@@ -111,6 +111,11 @@ const LAND_PART := preload("res://world/regions/NativeLand.gd")
 const ROAD_SURFACES_PART := preload("res://world/regions/NativeRoadSurfaces.gd")
 var _land_part: LAND_PART = LAND_PART.new(self)
 var _road_surfaces_part: ROAD_SURFACES_PART = ROAD_SURFACES_PART.new(self)
+## Pré-aquecimento e tarefas do terreno da serra no trabalhador (01/11, Onda 1): mesmo padrão, estado aqui.
+const PREWARM_PART := preload("res://world/regions/NativePrewarm.gd")
+const TERRAIN_TASKS_PART := preload("res://world/regions/NativeTerrainTasks.gd")
+var _prewarm_part: PREWARM_PART = PREWARM_PART.new(self)
+var _terrain_tasks_part: TERRAIN_TASKS_PART = TERRAIN_TASKS_PART.new(self)
 var spawn_position: Vector3:
 	get: return CATALOG._at(Vector2(715,1800) if region_id == "harbor" else Vector2(3260,400),region_id)
 static func build_region(id: String, first_focus: Vector3 = Vector3.INF) -> Node3D:
@@ -139,110 +144,19 @@ func prepare_data() -> void:
 	STALL_WORK.finish("region.prepare_data." + region_id, preparation_started, {})
 	data_prepared = true
 
-## Constrói e descarta uma vez cada célula com conteúdo, sob a cortina de
-## carregamento: texturas/malhas procedurais geradas na primeira aparição
-## (acabamento urbano até 226 ms, porto sul 399 ms) ficam em cache e não
-## travam a direção. Células já carregadas são preservadas.
-func prewarm() -> void:
-	for key in records.keys():
-		if chunks.has(key): continue
-		_build_chunk(key)
-		var chunk: Node3D = chunks[key]
-		_hold_file_resources(chunk)
-		_suspend_chunk_mechanisms(chunk)
-		_detach_cached_records(chunk)
-		chunks.erase(key)
-		chunk.free()
-	chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift))
-
-## Aquece recursos compartilhados usando o orçamento de streaming existente e as células residentes.
-## O menu precisa manter desenho/entrada vivos enquanto estas células fora da tela aquecem.
-func prewarm_incremental() -> void:
-	# Termina primeiro os trabalhos residentes. Senão uma célula de aquecimento fora da tela poderia
-	# consumir uma chave residente pendente e depois descartar geometria de que a câmera precisa.
-	while not is_streaming_idle():
-		await get_tree().process_frame
-	for key in records.keys():
-		if chunks.has(key): continue
-		_build_chunk(key, false, true)
-		var chunk: Node3D = chunks[key]
-		while build_jobs.any(func(job): return job.key == key):
-			await get_tree().process_frame
-		if region_id == "harbor": TUNNEL_CUTAWAY.prime(chunk, self, Rect2(key.x*CELL,key.y*CELL,CELL,CELL))
-		_hold_file_resources(chunk)
-		_suspend_chunk_mechanisms(chunk)
-		_detach_cached_records(chunk)
-		chunks.erase(key)
-		chunk.queue_free()
-		await get_tree().process_frame
-	chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift))
+## Pré-aquecimento: corpo em NativePrewarm.gd (delegação de uma linha; mesmos nomes).
+func prewarm() -> void: _prewarm_part.prewarm()
+func prewarm_incremental() -> void: await _prewarm_part.prewarm_incremental()
 
 ## Os poucos trechos construídos para aquecer o túnel sobrevivem escondidos e sem física.
 ## A primeira visita usa os mesmos nós; não paga outra construção completa.
 const MAX_WARM_TUNNEL_CHUNKS := 8
 var _warm_tunnel_chunks: Dictionary = {}
 var _tunnel_corridor_primed := false
-func prime_tunnel_corridor() -> void:
-	if _tunnel_corridor_primed: return
-	var began := STALL_WORK.begin()
-	while not is_streaming_idle():
-		await get_tree().process_frame
-	var reach: Rect2 = TUNNEL_CUTAWAY.corridor_rect()
-	var primed_chunks := 0
-	var keys: Array[Vector2i] = []
-	for x in range(floori(reach.position.x/CELL), ceili(reach.end.x/CELL)):
-		for z in range(floori(reach.position.y/CELL), ceili(reach.end.y/CELL)):
-			keys.append(Vector2i(x,z))
-	for key in keys:
-		var rect := Rect2(key.x*CELL,key.y*CELL,CELL,CELL)
-		if chunks.has(key): continue
-		_build_chunk(key, false, true)
-		var chunk: Node3D = chunks[key]
-		while build_jobs.any(func(job): return job.key == key):
-			await get_tree().process_frame
-			if not is_inside_tree() or is_queued_for_deletion(): return
-		TUNNEL_CUTAWAY.prime(chunk, self, rect)
-		_hold_file_resources(chunk)
-		_suspend_chunk_mechanisms(chunk)
-		chunks.erase(key)
-		if _warm_tunnel_chunks.size() < MAX_WARM_TUNNEL_CHUNKS:
-			chunk.set_meta("warm_tunnel_key", key)
-			_keep_warm_tunnel_chunk(chunk)
-		else:
-			_detach_cached_records(chunk)
-			chunk.queue_free()
-		primed_chunks += 1
-		await get_tree().process_frame
-	_tunnel_corridor_primed = true
-	STALL_WORK.finish("tunnel.cutaway.prime_corridor", began, {"chunks": primed_chunks})
-
-func _keep_warm_tunnel_chunk(chunk: Node3D) -> void:
-	chunk.set_meta("warm_tunnel_process_mode", chunk.process_mode)
-	chunk.process_mode = Node.PROCESS_MODE_DISABLED
-	chunk.hide()
-	_warm_tunnel_chunks[chunk.get_meta("warm_tunnel_key")] = chunk
-
-## Recursos vindos de arquivo (scripts, malhas, materiais, fontes) usados pelo chunk
-## pré-aquecido. Sem referência viva eles saíam do cache ao descartar o chunk e a
-## primeira visita real relia do disco. Recursos procedurais (sem caminho) não entram.
-func _hold_file_resources(root: Node) -> void:
-	var stack: Array[Node] = [root]
-	while not stack.is_empty():
-		var node: Node = stack.pop_back()
-		_hold_resource(node.get_script())
-		# Modelo instanciado de .tscn: as malhas embutidas vivem enquanto a cena vive.
-		if not node.scene_file_path.is_empty() and not _held_resources.has(node.scene_file_path):
-			_held_resources[node.scene_file_path] = load(node.scene_file_path)
-		if node is MeshInstance3D:
-			_hold_resource(node.mesh)
-			_hold_resource(node.material_override)
-		elif node is Label3D:
-			_hold_resource(node.font)
-		for child in node.get_children(): stack.append(child)
-
-func _hold_resource(resource: Variant) -> void:
-	if resource is Resource and not (resource as Resource).resource_path.is_empty() and not (resource as Resource).resource_path.contains("::"):
-		_held_resources[(resource as Resource).resource_path] = resource
+func prime_tunnel_corridor() -> void: await _prewarm_part.prime_tunnel_corridor()
+func _keep_warm_tunnel_chunk(chunk: Node3D) -> void: _prewarm_part._keep_warm_tunnel_chunk(chunk)
+func _hold_file_resources(root: Node) -> void: _prewarm_part._hold_file_resources(root)
+func _hold_resource(resource: Variant) -> void: _prewarm_part._hold_resource(resource)
 
 ## Descarrega tudo mantendo os dados preparados (região reaproveitada).
 func release_chunks() -> void:
@@ -1177,52 +1091,12 @@ func _ensure_chunk(key: Vector2i) -> void:
 			_run_build_job(build_jobs[index],INF)
 			build_jobs.remove_at(index)
 
-## Estágio 0 da serra: alturas, malha e máscara das trilhas saem prontas de um WorkerThreadPool
-## (MountainTerrain3D.chunk_data) e aqui fica só a montagem (malha, colisão, nós). Devolve true enquanto o
-## trabalhador calcula: o trecho cede a vez sem gastar o orçamento esperando. Sem orçamento (0 ou INF: chão
-## agora para um veículo, ou trecho imediato) espera a tarefa já começada ou deixa build_chunk calcular aqui.
-func _terrain_chunk_pending(job: Dictionary, budget_usec: float) -> bool:
-	if job.has("terrain_data") or not _terrain_task_wanted(job): return false
-	var now := budget_usec <= 0.0 or is_inf(budget_usec)
-	if not job.has("terrain_task"):
-		if now: return false
-		_start_terrain_task(job)
-	var task: int = job.terrain_task
-	if _terrain_tasks.has(task):
-		if not now and not WorkerThreadPool.is_task_completed(task):
-			job.waiting_worker = true
-			return true
-		WorkerThreadPool.wait_for_task_completion(task)
-		_terrain_tasks.erase(task)
-	job.terrain_data = job.terrain_result
-	job.erase("terrain_task")
-	job.erase("terrain_result")
-	job.erase("waiting_worker")
-	return false
-
-func _terrain_task_wanted(job: Dictionary) -> bool:
-	return region_id == "mountain" and terrain != null and int(job.stage) == 0 and _mountain_owns_terrain(job.key)
-
-func _start_terrain_task(job: Dictionary) -> void:
-	if job.has("terrain_task") or job.has("terrain_data") or not _terrain_task_wanted(job): return
-	var result := {}
-	var task := WorkerThreadPool.add_task(Callable(TERRAIN,"prepare_task").bind(terrain,job.rect,result),false,"mountain terrain chunk")
-	_terrain_tasks[task] = true
-	job.terrain_task = task
-	job.terrain_result = result
-
-## Os próximos trechos da fila já calculam no trabalhador enquanto o da frente monta.
-func _prefetch_terrain_tasks() -> void:
-	if region_id != "mountain" or terrain == null: return
-	for index in mini(build_jobs.size(),TERRAIN_PREFETCH_JOBS): _start_terrain_task(build_jobs[index])
-
-## Libera as tarefas terminadas (inclusive as de trechos já descartados); o resultado fica no job.
-func _collect_terrain_tasks() -> void:
-	if _terrain_tasks.is_empty(): return
-	for task in _terrain_tasks.keys():
-		if WorkerThreadPool.is_task_completed(task):
-			WorkerThreadPool.wait_for_task_completion(task)
-			_terrain_tasks.erase(task)
+## Terreno da serra no trabalhador: corpo em NativeTerrainTasks.gd (delegação de uma linha).
+func _terrain_chunk_pending(job: Dictionary, budget_usec: float) -> bool: return _terrain_tasks_part._terrain_chunk_pending(job, budget_usec)
+func _terrain_task_wanted(job: Dictionary) -> bool: return _terrain_tasks_part._terrain_task_wanted(job)
+func _start_terrain_task(job: Dictionary) -> void: _terrain_tasks_part._start_terrain_task(job)
+func _prefetch_terrain_tasks() -> void: _terrain_tasks_part._prefetch_terrain_tasks()
+func _collect_terrain_tasks() -> void: _terrain_tasks_part._collect_terrain_tasks()
 
 ## Estágio 0 fatiado do Harbor (30/10): `stream.harbor.surfaces` saía inteiro num quadro, 12–34 ms
 ## dirigindo a 110–120 km/h no export release. Agora cada passo (ruas, lotes, um pedaço de Land, mar,
