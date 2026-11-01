@@ -10,6 +10,14 @@ const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 const BREAK_IN := preload("res://gameplay/VehicleBreakIn.gd")
 const MOCAP := preload("res://gameplay/VehicleBoardingMocap.gd")
 const CARJACKING := preload("res://gameplay/VehicleCarjacking.gd")
+## Mocap, caminho e movimento pela porta em auxiliares (01/11, Onda 2 do plano de divisão): estado e
+## sinais ficam aqui, e cada função antiga continua como delegação de uma linha.
+const PATH_PLANNER := preload("res://gameplay/BoardingPathPlanner.gd")
+const DOOR_MOTION := preload("res://gameplay/BoardingDoorMotion.gd")
+const MOCAP_DRIVER := preload("res://gameplay/BoardingMocapDriver.gd")
+var _path_planner: PATH_PLANNER = PATH_PLANNER.new(self)
+var _door_motion: DOOR_MOTION = DOOR_MOTION.new(self)
+var _mocap_driver: MOCAP_DRIVER = MOCAP_DRIVER.new(self)
 ## Entrada/saída pela porta do motorista com o mocap (`VehicleBoardingMocap`); null = embarque antigo.
 var _mocap: RefCounted
 var _mocap_blending := false
@@ -319,24 +327,7 @@ func _finish_break_retreat() -> void:
 		if break_in.method == "window": BREAK_IN._break_window(vehicle, side)
 	_open_door()
 
-func _prepare_locked_path() -> void:
-	_break_layout = BREAK_IN.closed_layout(vehicle, side)
-	var from: Vector3 = vehicle.to_local(_start)
-	var destination: Vector3 = _break_layout.stand
-	_planning_closed = true
-	var route := _plan(Vector2(from.x, from.z), Vector2(destination.x, destination.z))
-	_planning_closed = false
-	_path = [_start]
-	for index in range(1, route.size()):
-		_path.append(vehicle.to_global(Vector3(route[index].x, .04, route[index].y)))
-	_path_length = 0.0
-	for index in range(1, _path.size()): _path_length += _path[index - 1].distance_to(_path[index])
-	_walk_seconds = clampf(_path_length / 2.3, .3, 3.2)
-	_approach_seconds = _walk_seconds
-	var body: float = BODY_SECONDS.get(_kind, 1.5)
-	duration = _approach_seconds + body + CLOSE_SECONDS
-	_approach = _approach_seconds / (_approach_seconds + body)
-	_retreat_seconds = maxf(vehicle.to_global(destination).distance_to(_stand_world) / 2.0, .25)
+func _prepare_locked_path() -> void: _path_planner._prepare_locked_path()
 
 ## Saída de veículo com motorista sentado: guarda a pose, o quadril e a escala do banco e tira o
 ## corpo da base do carro (ele voltará a ser o Actor comum, animado por esta apresentação).
@@ -411,35 +402,8 @@ func _car_yaws() -> Array:
 	var inward := -vehicle.global_basis.x * float(side)
 	return [atan2(-inward.x, -inward.z), vehicle.global_rotation.y]
 
-## Ponto de fora da lataria alinhado à porta. Quem está na frente ou atrás do veículo
-## vai primeiro até a lateral e depois acompanha a lataria, em vez de atravessá-la.
-func _outside_corner(from: Vector3) -> Vector3:
-	var local: Vector3 = vehicle.to_local(from)
-	var door_local: Vector3 = vehicle.to_local(_door)
-	var lateral := absf(door_local.x)
-	if signf(local.x) == float(side) and absf(local.x) >= float(vehicle.half_width) + .10: return _door.lerp(from, .5)
-	var margin := float(vehicle.half_length) + .45
-	var z := clampf(local.z, -margin, margin)
-	if absf(local.z) < margin:
-		# Do lado errado e ao lado da lataria: contorna pela ponta mais próxima da porta.
-		z = -margin if door_local.z < 0 else margin
-	var corner: Vector3 = vehicle.to_global(Vector3(float(side) * lateral, door_local.y, z))
-	corner.y = _door.y
-	return corner
-
-## Caminho em dois trechos (início → canto → porta), com velocidade constante.
-func _walk_along(k: float) -> Vector3:
-	var first := _start.distance_to(_corner)
-	var total := first + _corner.distance_to(_door)
-	if total < .001:
-		actor.global_position = _door
-		return Vector3.ZERO
-	var travelled := k * total
-	if travelled <= first:
-		actor.global_position = _start.lerp(_corner, travelled / maxf(first, .001))
-		return _corner - _start
-	actor.global_position = _corner.lerp(_door, (travelled - first) / maxf(total - first, .001))
-	return _door - _corner
+func _outside_corner(from: Vector3) -> Vector3: return _path_planner._outside_corner(from)
+func _walk_along(k: float) -> Vector3: return _path_planner._walk_along(k)
 
 ## Carro baixo: para na porta, vira de costas para o banco, abaixa e desliza sentado.
 func _apply_car(t: float) -> float:
@@ -554,223 +518,21 @@ func _hold_mounted() -> void:
 # Anda até o ponto em que o clipe começa (fora do arco da folha, que ainda está fechada) e toca o
 # "Entering Car": a porta abre e fecha nos instantes em que a mão do clipe puxa a maçaneta e a porta.
 
-func _begin_mocap_entry() -> void:
-	_visual_yaw = actor.visual.rotation.y
-	_visual_position = actor.visual.position
-	_visual_scale = actor.visual.scale
-	_mocap = MOCAP.new()
-	_mocap.prepare(actor, vehicle, side, true, MOCAP.seat_pelvis(vehicle))
-	# A folha (dobradiça e ponta) entra no desvio do caminho; vazia, o caminho só contorna o casco.
-	_layout = vehicle.door_layout(side) if vehicle.has_method("door_layout") else {}
-	var target: Vector3 = _mocap.entry_start()
-	var from_local: Vector3 = vehicle.to_local(_start)
-	var to_local: Vector3 = vehicle.to_local(target)
-	_planning_closed = true
-	var route := _plan(Vector2(from_local.x, from_local.z), Vector2(to_local.x, to_local.z))
-	_path = [_start]
-	for index in range(1, route.size()):
-		var point: Vector3 = vehicle.to_global(Vector3(route[index].x, 0.0, route[index].y))
-		point.y = target.y if index == route.size() - 1 else lerpf(_start.y, target.y, float(index) / float(route.size() - 1))
-		_path.append(point)
-	_path_length = 0.0
-	for index in range(1, _path.size()): _path_length += _path[index - 1].distance_to(_path[index])
-	_walk_seconds = clampf(_path_length / 2.3, .15, 3.2)
-	# Chegou ao ponto: um instante parado, virado para a porta, antes de esticar a mão.
-	_approach_seconds = _walk_seconds + .12
-	var body: float = _mocap.seconds()
-	duration = _approach_seconds + body
-	_approach = _approach_seconds / duration
-	active = true
-	phase = "approach"
-	_motion = create_tween()
-	_motion.tween_property(self, "progress", 1.0, duration)
-	_motion.tween_callback(_finish_entry)
-	_apply()
-
-## Saída com o mocap, se o chão onde o clipe termina (~0,9 m fora da porta) estiver livre.
-func _begin_mocap_exit() -> bool:
-	var mocap := MOCAP.new()
-	var seat: Vector3 = _seat_from_pelvis if _seat_from_pelvis.is_finite() else MOCAP.seat_pelvis(vehicle)
-	mocap.prepare(actor, vehicle, side, false, seat)
-	var landing: Vector3 = mocap.exit_landing()
-	if not _landing_clear(landing): return false
-	_mocap = mocap
-	_landing = landing
-	_visual_yaw = mocap.exit_yaw()
-	# A mistura do banco para o clipe (pose, pelve e escala do motorista) é a de sempre:
-	# `_apply_seat_blend` depois de cada pose do clipe, a partir do que `_leave_seat` guardou.
-	progress = 0.0
-	phase = "open"
-	actor.show()
-	_motion = create_tween()
-	_motion.tween_property(self, "progress", 1.0, mocap.seconds())
-	_motion.tween_callback(_finish_exit)
-	_apply()
-	return true
-
-func _landing_clear(point: Vector3) -> bool:
-	if not is_instance_valid(vehicle) or not vehicle.is_inside_tree(): return false
-	var capsule := CapsuleShape3D.new()
-	capsule.radius = .3
-	capsule.height = 1.7
-	var query := PhysicsShapeQueryParameters3D.new()
-	query.shape = capsule
-	query.transform = Transform3D(Basis.IDENTITY, point + Vector3.UP * .92)
-	query.collision_mask = 7
-	query.exclude = [vehicle.get_rid(), actor.get_rid()]
-	return vehicle.get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
-
-func _begin_mocap_carjack() -> void:
-	_begin_mocap_entry()
-	_mocap_carjack = true
-	_pull = MOCAP.new()
-	_pull.setup(actor, vehicle, side, PULL, PULL_MARKS, -vehicle.global_basis.x * float(side), MOCAP.seat_pelvis(vehicle), float(PULL_MARKS.sit_to))
-	_pull.obstacles = carjacking.door_obstacles()
-	# Segmentos em s de jogo: caminhada, abrir a porta, puxar e sentar, fechar a porta e pegar o volante.
-	_segments = [_approach_seconds, ENTER_DOOR_END / MOCAP.SPEED,
-		(float(PULL_MARKS.end) - float(PULL_MARKS.start)) / float(PULL_MARKS.speed),
-		(float(MOCAP.ENTER_MARKS.end) - ENTER_TAIL) / MOCAP.SPEED]
-	duration = 0.0
-	for seconds in _segments: duration += seconds
-	_approach = _approach_seconds / duration
-	if is_instance_valid(_motion): _motion.kill()
-	_motion = create_tween()
-	_motion.tween_property(self, "progress", 1.0, duration)
-	_motion.tween_callback(_finish_entry)
-	_apply()
-
-func _apply_mocap_carjack(t: float) -> void:
-	actor.visible = true
-	var elapsed := t * duration
-	var segment := 0
-	while segment < _segments.size() - 1 and elapsed >= _segments[segment]:
-		elapsed -= _segments[segment]
-		segment += 1
-	match segment:
-		0:
-			_mocap_walk(t)
-			if not carjacking.released: carjacking.follow_seat()
-		1:
-			if _segment != 1: _mocap.begin_blend()
-			phase = "reach"
-			_mocap.pose(elapsed * MOCAP.SPEED, elapsed)
-			if not carjacking.released: carjacking.follow_seat()
-		2:
-			var pull_time := float(PULL_MARKS.start) + elapsed * float(PULL_MARKS.speed)
-			var victim_time := pull_time - PULL_OFFSET
-			if _segment != 2:
-				_pull.begin_blend()
-				if not carjacking.released:
-					if carjacking.mocap_begin(victim_time): _extracting = true
-					# Sem o clipe da vítima (corpo sem juntas): ela vai direto ao pouso verificado.
-					else: carjacking.release()
-				phase = "pull_driver"
-			_pull.pose(pull_time, elapsed)
-			if carjacking.mocap_active:
-				carjacking.mocap_pose(actor, victim_time, _frame_delta)
-				_extraction_progress = clampf((victim_time - .9) / (CARJACKING.MOCAP_THROW_AT - .9), 0.0, 1.0)
-			elif carjacking.released:
-				_extracting = false
-				_extraction_progress = 1.0
-		_:
-			if _segment != 3:
-				_mocap.begin_blend()
-				_extracting = false
-				phase = "step"
-			_mocap.pose(ENTER_TAIL + elapsed * MOCAP.SPEED, elapsed)
-	_segment = segment
-
-## Caminhada até o ponto em que o clipe de entrada começa, virando para a porta no fim.
-func _mocap_walk(t: float) -> void:
-	phase = "approach"
-	_mocap_blending = false
-	var k := clampf(t / maxf(_approach, .001) * _approach_seconds / maxf(_walk_seconds, .001), 0.0, 1.0)
-	actor.global_position = _path_at(k)
-	actor.visual.position = _visual_position
-	actor.visual.scale = _visual_scale
-	var cycles := maxf(_path_length / 1.35, .5)
-	if k >= 1.0: _pose_idle()
-	else: _pose_cycle("Walking", (1.0 - k if exiting else k) * cycles)
-	var heading := _path_heading(k)
-	var yaw: float = _yaw_toward(heading) if heading.length_squared() > .0004 else _mocap.yaw
-	if exiting: yaw = lerp_angle(yaw, _mocap.yaw, 1.0 - smoothstep(0.0, .25, k))
-	else: yaw = lerp_angle(yaw, _mocap.yaw, smoothstep(.7, 1.0, k))
-	actor.visual.rotation.y = yaw
-
-func _apply_mocap(t: float) -> void:
-	actor.visible = true
-	if _mocap.clip == MOCAP.EXIT:
-		var exit_time: float = t * float(_mocap.marks.end)
-		# "close_outside" é da saída antiga (`_apply_body` prende o corpo no pouso): aqui o clipe segue.
-		phase = "open" if exit_time < float(_mocap.marks.door_opened) else ("closing" if exit_time > float(_mocap.marks.door_close) else "step")
-		_mocap.pose(exit_time, exit_time / MOCAP.SPEED)
-		return
-	if t < _approach:
-		_mocap_walk(t)
-		return
-	var clip_time := clampf((t - _approach) / maxf(1.0 - _approach, .001), 0.0, 1.0) * float(_mocap.marks.end)
-	phase = "reach" if clip_time < float(_mocap.marks.door_opened) else "step"
-	if exiting:
-		_mocap.pose_reverse(clip_time)
-		return
-	if not _mocap_blending:
-		_mocap_blending = true
-		_mocap.begin_blend()
-	_mocap.pose(clip_time, clip_time / MOCAP.SPEED)
-
-## Desistir no meio da entrada: o clipe volta de trás para frente (a porta fecha quando a mão volta
-## para antes de abri-la) e o corpo refaz o caminho. Depois de sentar não há volta: a entrada termina.
-func _reverse_mocap_entry() -> bool:
-	if _mocap.clip != MOCAP.ENTER: return false
-	var clip_time := clampf((progress - _approach) / maxf(1.0 - _approach, .001), 0.0, 1.0) * float(_mocap.marks.end)
-	if progress > _approach and clip_time >= float(_mocap.marks.sit_from): return false
-	exiting = true
-	if is_instance_valid(_motion): _motion.kill()
-	_motion = create_tween()
-	_motion.tween_property(self, "progress", 0.0, maxf(.35, progress * duration))
-	_motion.tween_callback(_begin_close_exit)
-	_motion.tween_interval(.3)
-	_motion.tween_callback(_finish_exit)
-	return true
+func _begin_mocap_entry() -> void: _mocap_driver._begin_mocap_entry()
+func _begin_mocap_exit() -> bool: return _mocap_driver._begin_mocap_exit()
+func _landing_clear(point: Vector3) -> bool: return _mocap_driver._landing_clear(point)
+func _begin_mocap_carjack() -> void: _mocap_driver._begin_mocap_carjack()
+func _apply_mocap_carjack(t: float) -> void: _mocap_driver._apply_mocap_carjack(t)
+func _mocap_walk(t: float) -> void: _mocap_driver._mocap_walk(t)
+func _apply_mocap(t: float) -> void: _mocap_driver._apply_mocap(t)
+func _reverse_mocap_entry() -> bool: return _mocap_driver._reverse_mocap_entry()
 
 # --- Embarque por porta -------------------------------------------------------------
 # A folha aberta ocupa um arco em volta da dobradiça. O corpo espera fora dele (atrás do
 # vão), entra pelo vão com a mão no batente e sai pelo mesmo caminho: nunca atravessa a
 # folha nem a lataria, e ao fechar a porta ninguém está dentro do arco.
 
-func _prepare_door_path(outside: Vector3, entering: bool) -> void:
-	_layout = {}
-	_path = []
-	if not vehicle.has_method("door_layout") or not (_kind in ["car", "tall", "truck"]): return
-	var found: Dictionary = vehicle.door_layout(side)
-	if found.is_empty(): return
-	_layout = found
-	_stand_world = vehicle.to_global(_flat(_layout.stand, .04))
-	_reach_world = vehicle.to_global(_flat(_layout.reach, .04))
-	_gate_world = vehicle.to_global(_flat(_layout.gate, .04))
-	_grip_side = "Right" if side < 0 else "Left"
-	var ground := vehicle.global_position.y + .04
-	var outside_local: Vector3 = vehicle.to_local(outside)
-	# Aproxima-se de uma porta fechada antes de abri-la. Planejar contra a folha aberta
-	# mandava pedestres próximos contornarem o casco inteiro para chegar ao ponto de espera.
-	_planning_closed = entering
-	var route: Array[Vector2] = _plan(Vector2(outside_local.x, outside_local.z), Vector2(_layout.stand.x, _layout.stand.z))
-	_planning_closed = false
-	_path.append(outside)
-	for index in range(1, route.size()):
-		var point: Vector3 = vehicle.to_global(Vector3(route[index].x, 0.0, route[index].y))
-		point.y = ground if index == route.size() - 1 else lerpf(outside.y, ground, float(index) / float(route.size() - 1))
-		_path.append(point)
-	_path_length = 0.0
-	for index in range(1, _path.size()): _path_length += _path[index - 1].distance_to(_path[index])
-	_walk_seconds = clampf(_path_length / 2.3, .3, 3.2)
-	# Quem aperta o F colado na porta dá um passo para trás e só então a porta abre; o corpo
-	# espera a folha terminar de abrir antes de se aproximar do vão.
-	var wait := .32 if entering else 0.0
-	_approach_seconds = _walk_seconds + wait
-	var body: float = BODY_SECONDS.get(_kind, 1.5)
-	duration = _approach_seconds + body + CLOSE_SECONDS
-	_approach = _approach_seconds / (_approach_seconds + body)
+func _prepare_door_path(outside: Vector3, entering: bool) -> void: _path_planner._prepare_door_path(outside, entering)
 
 ## Quanto o corpo precisa se abaixar (e, se não bastar, encolher até 80 %) para a cabeça
 ## passar sob o teto do vão com o pé no piso da cabine.
@@ -796,202 +558,18 @@ func _open_door() -> void:
 	_door_start_progress = progress
 	vehicle.animate_driver_door(side, true, .28)
 
-## O ponto (mundo) está dentro do círculo que a ponta da folha varre, com uma folga?
-func _inside_swing(point: Vector3, margin := .30) -> bool:
-	if _layout.is_empty(): return false
-	var local: Vector3 = vehicle.to_local(point)
-	var hinge: Vector3 = _layout.hinge
-	return Vector2(local.x - hinge.x, local.z - hinge.z).length() < float(_layout.length) + margin
-
-func _flat(local: Vector3, height: float) -> Vector3:
-	return Vector3(local.x, height, local.z)
-
-## Menor caminho (grafo de visibilidade) entre dois pontos do plano do veículo, desviando do
-## casco e da folha aberta. Nós: origem, destino, quatro cantos folgados do casco e dois
-## pontos além da ponta da folha. Poucos nós: custo desprezível, roda só ao iniciar.
-func _plan(from2: Vector2, to2: Vector2) -> Array[Vector2]:
-	var nodes: Array[Vector2] = [from2, to2]
-	var ring_x: float = vehicle.half_width + .55
-	var ring_z: float = vehicle.half_length + .55
-	for sx in [-1.0, 1.0]:
-		for sz in [-1.0, 1.0]: nodes.append(Vector2(sx * ring_x, sz * ring_z))
-	if not _layout.is_empty():
-		var tip: Vector3 = _layout.tip
-		var hinge: Vector3 = _layout.hinge
-		nodes.append(Vector2(tip.x + float(side) * .55, tip.z + .1))
-		nodes.append(Vector2(tip.x + float(side) * .55, hinge.z - .55))
-	var count := nodes.size()
-	var cost: Array[float] = []
-	var previous: Array[int] = []
-	var done: Array[bool] = []
-	for i in count:
-		cost.append(INF)
-		previous.append(-1)
-		done.append(false)
-	cost[0] = 0.0
-	for round_index in count:
-		var current := -1
-		for i in count:
-			if not done[i] and (current < 0 or cost[i] < cost[current]): current = i
-		if current < 0 or cost[current] == INF: break
-		done[current] = true
-		if current == 1: break
-		for other in count:
-			if done[other] or not _clear(nodes[current], nodes[other]): continue
-			var through := cost[current] + nodes[current].distance_to(nodes[other])
-			if through < cost[other]:
-				cost[other] = through
-				previous[other] = current
-	var route: Array[Vector2] = []
-	if cost[1] == INF:
-		route.append(from2)
-		route.append(to2)
-		return route
-	var cursor := 1
-	while cursor >= 0:
-		route.push_front(nodes[cursor])
-		cursor = previous[cursor]
-	return route
-
-## O segmento passa livre do casco (com folga) e da folha aberta? Amostragem a cada 10 cm,
-## ignorando os primeiros e últimos 25 cm (quem começa colado no carro não fica preso).
-func _clear(a: Vector2, b: Vector2) -> bool:
-	var length := a.distance_to(b)
-	if length < .001: return true
-	var hull_x: float = vehicle.half_width + .12
-	var hull_z: float = vehicle.half_length + .12
-	var leaf := not _planning_closed and not _layout.is_empty()
-	var hinge2 := Vector2(_layout.hinge.x, _layout.hinge.z) if leaf else Vector2.ZERO
-	var tip2 := Vector2(_layout.tip.x, _layout.tip.z) if leaf else Vector2.ZERO
-	var steps := int(ceil(length / .1))
-	for i in range(steps + 1):
-		var travelled := length * float(i) / float(steps)
-		if travelled < .25 or length - travelled < .25: continue
-		var point := a.lerp(b, float(i) / float(steps))
-		if absf(point.x) < hull_x and absf(point.y) < hull_z: return false
-		if leaf and _distance_to_segment(point, hinge2, tip2) < .44: return false
-	return true
-
-static func _distance_to_segment(point: Vector2, a: Vector2, b: Vector2) -> float:
-	var ab := b - a
-	var t := clampf((point - a).dot(ab) / maxf(ab.length_squared(), .0001), 0.0, 1.0)
-	return point.distance_to(a + ab * t)
-
-func _path_at(k: float) -> Vector3:
-	if _path.size() < 2 or _path_length < .001: return _stand_world
-	var target := clampf(k, 0.0, 1.0) * _path_length
-	for index in range(1, _path.size()):
-		var segment := _path[index - 1].distance_to(_path[index])
-		if target <= segment or index == _path.size() - 1:
-			return _path[index - 1].lerp(_path[index], clampf(target / maxf(segment, .001), 0.0, 1.0))
-		target -= segment
-	return _path[_path.size() - 1]
-
-func _path_heading(k: float) -> Vector3:
-	var direction := _path_at(minf(k + .04, 1.0)) - _path_at(maxf(k - .04, 0.0))
-	direction.y = 0.0
-	# Saindo, o corpo percorre o caminho de volta: ele anda de frente para onde vai.
-	return -direction if exiting else direction
-
-func _yaw_toward(direction: Vector3) -> float:
-	return atan2(-direction.x, -direction.z)
-
-## Mão no batente traseiro do vão. O alvo sobe junto com o corpo no degrau (a mão desliza
-## no montante) e nunca fica acima do alcance do braço.
-func _grip_pose(weight: float, feet_y: float) -> void:
-	if weight <= .02: return
-	var grip: Vector3 = vehicle.to_global(_layout.grip)
-	grip.y = clampf(feet_y + 1.12, feet_y + .9, maxf(grip.y, feet_y + 1.0))
-	var sign_side := -1.0 if _grip_side == "Left" else 1.0
-	var default_hand := Vector3(.23 * sign_side, .90, -.28)
-	var target: Vector3 = default_hand.lerp(actor.visual.to_local(grip), clampf(weight, 0.0, 1.0))
-	actor._solve_combat_arm(_grip_side, target, Basis.IDENTITY, true, sign_side)
-	actor._set_combat_grips(_grip_side == "Right" and weight > .5, _grip_side == "Left" and weight > .5)
-
-func _apply_door(t: float) -> void:
-	var yaws := _car_yaws()
-	var hidden_after := .96
-	var drop := 0.0
-	var yaw := 0.0
-	_scale_now = 1.0
-	if t < _approach:
-		phase = "approach"
-		var k := clampf(t / maxf(_approach, .001) * _approach_seconds / maxf(_walk_seconds, .001), 0.0, 1.0)
-		actor.global_position = _path_at(k)
-		if not exiting and k >= 1.0: _open_door()
-		var cycles := maxf(_path_length / 1.35, .5)
-		if k >= 1.0 and not exiting: _pose_idle()
-		else: _pose_cycle("Walking", (1.0 - k if exiting else k) * cycles)
-		var heading := _path_heading(k)
-		var face := _yaw_toward(_gate_world - actor.global_position)
-		yaw = _yaw_toward(heading) if heading.length_squared() > .0004 else face
-		if not exiting: yaw = lerp_angle(yaw, face, smoothstep(.8, 1.0, k))
-		else: yaw = lerp_angle(yaw, face, 1.0 - smoothstep(.0, .2, k))
-	else:
-		var u := clampf((t - _approach) / maxf(1.0 - _approach, .001), 0.0, 1.0)
-		_open_door()
-		if _kind == "car": _door_car(u, yaws)
-		else: _door_climb(u, yaws)
-		yaw = _yaw
-		drop = _drop
-	actor.visual.position = _visual_position + Vector3.UP * drop
-	actor.visual.rotation.y = yaw
-	actor.visual.scale = _visual_scale * _scale_now
-	actor.visible = _seated_driver or t < _approach + (1.0 - _approach) * hidden_after
-
-## Carro baixo. Espera fora do arco, dá um passo até o vão olhando para o banco, segura o
-## batente e desliza para dentro abaixado, virando para o volante já sentado.
-func _door_car(u: float, yaws: Array) -> void:
-	var face_gate := _yaw_toward(_gate_world - _stand_world)
-	var reach_k := smoothstep(0.0, .2, u)
-	var gate_k := smoothstep(.2, .55, u)
-	var seat_k := smoothstep(.55, .88, u)
-	var point := _stand_world.lerp(_reach_world, reach_k).lerp(_gate_world, gate_k).lerp(_seat, seat_k)
-	actor.global_position = point
-	phase = "reach" if u < .2 else "step"
-	_pose_idle()
-	actor.pose_vehicle(smoothstep(.35, .95, u), 0.0, side, 1.0)
-	_grip_pose(smoothstep(.02, .18, u) * (1.0 - smoothstep(.62, .82, u)), point.y)
-	_yaw = lerp_angle(face_gate, yaws[1], smoothstep(.6, .95, u))
-	# O quadril desce até o banco antes de cruzar a lataria: a cabeça passa sob o teto do vão.
-	_drop = -_crouch * smoothstep(.12, .5, u)
-	_scale_now = lerpf(1.0, _body_scale, smoothstep(.12, .5, u))
-
-## Picape, SUV, van e caminhão: espera fora do arco, sobe no estribo (ciclo de escada) com a
-## mão no montante e só então cruza o vão até o banco.
-func _door_climb(u: float, yaws: Array) -> void:
-	var truck := _kind == "truck"
-	var climb_end := .62 if truck else .50
-	var floor_y := _seat.y
-	var face_gate := _yaw_toward(_gate_world - _stand_world)
-	var step_point := _reach_world.lerp(_gate_world, .35)
-	var point: Vector3
-	if u < climb_end:
-		phase = "reach"
-		var k := smoothstep(.06, climb_end, u)
-		point = _stand_world.lerp(_reach_world, smoothstep(0.0, .12, u)).lerp(step_point, k)
-		point.y = lerpf(_stand_world.y, floor_y, k)
-		actor.global_position = point
-		_pose_transition(.05 + k * (.55 if truck else .30))
-		_grip_pose(smoothstep(.0, .1, u), point.y)
-		_yaw = face_gate
-		_drop = 0.0
-	else:
-		phase = "step"
-		var k := smoothstep(climb_end, .9, (u))
-		var inside := _gate_world
-		point = step_point.lerp(inside, smoothstep(0.0, .5, k)).lerp(_seat, smoothstep(.4, 1.0, k))
-		point.y = floor_y
-		actor.global_position = point
-		_pose_idle()
-		actor.pose_vehicle(k, 0.0, side, 1.0)
-		var seated: Array = actor._capture_pose()
-		_pose_transition(.60 if truck else .35)
-		actor._apply_blend(actor._capture_pose(), seated, smoothstep(0.0, .35, k))
-		_grip_pose(1.0 - smoothstep(.1, .5, k), point.y)
-		_yaw = lerp_angle(face_gate, yaws[1], smoothstep(.3, 1.0, k))
-		_drop = -_crouch * smoothstep(0.0, .35, k)
-		_scale_now = lerpf(1.0, _body_scale, smoothstep(0.0, .35, k))
+func _inside_swing(point: Vector3, margin := .30) -> bool: return _path_planner._inside_swing(point, margin)
+func _flat(local: Vector3, height: float) -> Vector3: return _path_planner._flat(local, height)
+func _plan(from2: Vector2, to2: Vector2) -> Array[Vector2]: return _path_planner._plan(from2, to2)
+func _clear(a: Vector2, b: Vector2) -> bool: return _path_planner._clear(a, b)
+static func _distance_to_segment(point: Vector2, a: Vector2, b: Vector2) -> float: return PATH_PLANNER._distance_to_segment(point, a, b)
+func _path_at(k: float) -> Vector3: return _path_planner._path_at(k)
+func _path_heading(k: float) -> Vector3: return _path_planner._path_heading(k)
+func _yaw_toward(direction: Vector3) -> float: return _path_planner._yaw_toward(direction)
+func _grip_pose(weight: float, feet_y: float) -> void: _door_motion._grip_pose(weight, feet_y)
+func _apply_door(t: float) -> void: _door_motion._apply_door(t)
+func _door_car(u: float, yaws: Array) -> void: _door_motion._door_car(u, yaws)
+func _door_climb(u: float, yaws: Array) -> void: _door_motion._door_climb(u, yaws)
 
 func _pose_idle() -> void:
 	var pose: Array = actor.get("_idle_pose") if actor.get("_idle_pose") != null else []
