@@ -31,6 +31,8 @@ const SESSION_RECOVERY := preload("res://runtime/SessionRecovery.gd")
 var _recovery: SESSION_RECOVERY = SESSION_RECOVERY.new(self)
 const SESSION_REWARDS := preload("res://runtime/SessionRewards.gd")
 var _rewards: SESSION_REWARDS = SESSION_REWARDS.new(self)
+const SESSION_TRANSITION_RULES := preload("res://runtime/SessionTransitionRules.gd")
+var _transition_rules: SESSION_TRANSITION_RULES = SESSION_TRANSITION_RULES.new(self)
 var world
 var controller
 var weather
@@ -160,153 +162,17 @@ func player_in_vehicle() -> bool: return world.driving.occupied
 ## is_instance_valid; retorno tipado acusaria "instância liberada" antes disso.
 func player_vehicle(): return world.driving.car
 
-## Umbra (parque), Fagulha e Curitiba Cellar: entra-se empurrando a porta
-## (WeaponShopEntrance), mas a ação Entrar/Sair de antes continua valendo; a Umbra
-## é em primeira pessoa e o indicador da saída é o que o jogador procura lá dentro.
-func _keeps_interaction_access(id: String) -> bool:
-	return id in ["harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar"]
+func _keeps_interaction_access(id: String) -> bool: return _transition_rules._keeps_interaction_access(id)
+func _uses_walkup_access(id: String) -> bool: return _transition_rules._uses_walkup_access(id)
+func _arrival_sequence_blocked() -> bool: return _transition_rules._arrival_sequence_blocked()
+func is_transition_blocked() -> bool: return _transition_rules.is_transition_blocked()
+func has_position_transition() -> bool: return _transition_rules.has_position_transition()
+func blocks_driving_change() -> bool: return _transition_rules.blocks_driving_change()
+func allows_saved_driver_animation() -> bool: return _transition_rules.allows_saved_driver_animation()
 
-func _uses_walkup_access(id: String) -> bool:
-	return (weapon_shop_entrance != null and weapon_shop_entrance.handles_place(id)) or (special_place_entrance != null and special_place_entrance.handles_place(id)) or (building_entrance != null and building_entrance.handles_place(id))
-
-func _arrival_sequence_blocked() -> bool:
-	return arrival != null and (arrival.controls_locked or arrival.phase == "opening")
-
-func is_transition_blocked() -> bool:
-	if regional_coach != null and regional_coach.busy(): return true
-	if railway != null and railway.busy(): return true
-	return not transition_kind.is_empty() or vehicle_transition_busy or rescue_pending or arrest_pending or respawn_busy or (jessica != null and jessica.riding) or (controller != null and controller.travel_busy) or _arrival_sequence_blocked()
-
-func has_position_transition() -> bool:
-	if regional_coach != null and (regional_coach.landing or regional_coach._boarding): return true
-	if railway != null and railway.landing: return true
-	# Uma carona guiada de passageiro trava a entrada mas ainda precisa de chão, trânsito
-	# e streaming reais. Só a admissão/recuperação tem um ponto de foco independente.
-	return not transition_kind.is_empty() or vehicle_transition_busy or rescue_pending or arrest_pending or respawn_busy or (controller != null and controller.travel_busy) or (arrival != null and arrival.controls_locked and not arrival.riding) or (arrival != null and arrival.phase == "opening")
-
-func blocks_driving_change() -> bool:
-	if amusement_park != null and amusement_park.active: return true
-	if fishing != null and fishing.controls_locked(): return true
-	if coastal_lookout != null and coastal_lookout.active: return true
-	if building_entrance != null and building_entrance.falling: return true
-	if service_roofs != null and service_roofs.is_active(): return true
-	if desert != null and desert.busy(): return true
-	return is_transition_blocked() or not ready_for_play or (jessica != null and jessica.riding) or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
-
-func allows_saved_driver_animation() -> bool:
-	return _restoring_saved_driver and not ready_for_play and not modal and not is_transition_blocked()
-
-## Quem para em cada evento da sessão, em que ordem e com que argumento. Antes cada evento
-## (morte, prisão, resgate, carregar, menu, transição, viagem) tinha a própria lista escrita à
-## mão, um pouco diferente das outras, e sistema esquecido numa delas seguia rodando através
-## daquele evento. As listas viraram este registro na ordem exata de antes; inventário e
-## diferenças entre eventos em docs/session-cleanup-registry.md, contrato em
-## tests/test_session_cleanup_registry.gd.
-## Etapa numerada = o evento é cortado onde a função intercala estado ou um guarda (ex.: a
-## ilusão é cancelada antes do guarda do resgate; health = 0 antes de desmontar embarques).
-## Passo: [sistema, método, argumentos, regra]. Sistema é a propriedade da sessão ("world.x"
-## desce um nível, "" é a própria sessão); nulo ou liberado é pulado. Regras: if_method (só se
-## o método existir), if_riding (só com alguém embarcado), if_jessica_bank (Jessica montada e
-## o assalto dela ativo), abort_if_active (o sistema seguiu ativo: a etapa para e devolve false).
-const CANCEL_STEPS := {
-	&"death_1": [["upside_world", "cancel", ["death", false]]],
-	&"death_2": [
-		["fishing", "cancel_attempt", ["Pesca interrompida."]],
-		["coastal_lookout", "leave"],
-		["amusement_park", "leave"],
-		["regional_coach", "cancel_for_transition"],
-		["railway", "cancel_for_transition"],
-	],
-	&"death_3": [
-		["desert", "cancel_attempt"],
-		["mining", "cancel_attempt"],
-		["jessica", "cancel_for_transition"],
-		["services", "cancel_auto_service", ["player_death"], "if_method"],
-		["world.driving", "cancel_transition", ["player_death"], "if_method"],
-	],
-	&"death_4": [
-		["passenger_transport", "_brake", [], "if_riding"],
-		["", "interrupt_dialogue"],
-		["garage_rewards", "cancel_press_delivery"],
-		["activities", "cancel_attempt"],
-		["mountain_progression", "cancel_attempt"],
-		["mountain_activities", "cancel_attempt"],
-		["mission_world", "cancel_attempt", ["player_death"]],
-	],
-	&"arrest_1": [["upside_world", "cancel", ["arrest"]]],
-	&"arrest_2": [
-		["amusement_park", "leave"],
-		["regional_coach", "cancel_for_transition"],
-		["railway", "cancel_for_transition"],
-		["", "interrupt_dialogue"],
-		["desert", "cancel_attempt"],
-		["mining", "cancel_attempt"],
-	],
-	&"arrest_3": [
-		["services", "cancel_auto_service", ["player_arrest"], "if_method"],
-		["world.driving", "cancel_transition", ["player_arrest"], "if_method"],
-		["passenger_transport", "_brake", [], "if_riding"],
-		["jessica", "cancel_for_transition"],
-		["garage_rewards", "cancel_press_delivery"],
-		["activities", "cancel_attempt"],
-		["mountain_progression", "cancel_attempt"],
-		["mountain_activities", "cancel_attempt"],
-		["mission_world", "cancel_attempt", ["player_arrest"]],
-	],
-	# O resgate também passa por "transition" (begin_transition) entre rescue_1 e rescue_2.
-	&"rescue_1": [["upside_world", "cancel", ["rescue", false]]],
-	&"rescue_2": [
-		["passenger_transport", "cancel_for_transition"],
-		["building_entrance", "reset"],
-		["service_roofs", "clear", [true]],
-	],
-	&"rescue_3": [
-		["world.traffic_yield", "release_all", ["rescue"]],
-		["world.dispatch", "dismiss_all", ["rescue"]],
-	],
-	&"load_1": [
-		["upside_world", "cancel", ["load"]],
-		["fishing", "cancel_attempt", ["Pesca encerrada."]],
-		["coastal_lookout", "leave"],
-		["amusement_park", "leave"],
-	],
-	&"load_2": [
-		["garage_rewards", "cancel_press_delivery"],
-		["world.traffic_yield", "release_all", ["load"]],
-		["world.dispatch", "dismiss_all", ["load"]],
-	],
-	&"menu_1": [
-		["upside_world", "cancel", ["main_menu"]],
-		["amusement_park", "leave"],
-		["desert", "cancel_attempt"],
-		["mining", "cancel_attempt"],
-	],
-	&"menu_2": [
-		["garage_rewards", "cancel_press_delivery"],
-		["world.traffic_yield", "release_all", ["main_menu"]],
-		["world.dispatch", "dismiss_all", ["main_menu"]],
-	],
-	&"transition": [
-		["arcade", "close"],
-		["fishing", "cancel_attempt", ["Pesca encerrada."]],
-		["coastal_lookout", "leave"],
-		["amusement_park", "leave", [], "abort_if_active"],
-		["mountain_activities", "cancel_attempt"],
-	],
-	# Chamada por ProductionWorld._travel_checked, depois de conferir o solo do destino.
-	&"travel": [
-		["armored_transport", "suspend_for_travel"],
-		["passenger_transport", "cancel_for_transition"],
-		["activities", "cancel_attempt"],
-		["mountain_progression", "cancel_attempt"],
-		["mountain_activities", "cancel_attempt"],
-		["garage_rewards", "cancel_press_delivery"],
-		["mission_world", "cancel_attempt", ["world_transition"], "if_jessica_bank"],
-		["jessica", "cancel_for_transition"],
-		["world.traffic_yield", "release_all", ["travel"]],
-		["world.dispatch", "dismiss_all", ["travel"]],
-	],
-}
+## Quem para em cada evento da sessão: a tabela (com a explicação) mora em runtime/SessionTransitionRules.gd.
+## Fica reexportada aqui com o mesmo nome: test_session_cleanup_registry lê o mapa de constantes deste script.
+const CANCEL_STEPS := SESSION_TRANSITION_RULES.CANCEL_STEPS
 
 ## Roda uma etapa de CANCEL_STEPS. Devolve false só quando um passo abort_if_active recusou.
 func cancel_for(stage: StringName) -> bool:
