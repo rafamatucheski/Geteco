@@ -7,6 +7,10 @@ const REGION := preload("res://world/editing/EditableRegion.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
+## População de rua (densidade, revisão e criação de pedestres) separada em 01/11 só para este arquivo
+## caber na leitura; estado e campos continuam aqui e cada função antiga delega em uma linha.
+const POPULATION := preload("res://runtime/ProductionPopulation.gd")
+var _population: POPULATION = POPULATION.new(self)
 const DESERT_POPULATION := preload("res://runtime/desert/DesertPopulation.gd")
 const DESERT_SOCIAL_ACTOR := preload("res://runtime/desert/DesertSocialActor.gd")
 var _desert_social_slots: Array[Dictionary] = DESERT_POPULATION.slots()
@@ -65,10 +69,12 @@ var _release_benchmark_started := false
 # civil cai para sobrar orçamento de física à polícia (45 carros ≈ 4–5 ms e 41 pessoas ≈ 2 ms
 # por passo no caos, medido 2026-09-29). Cai rápido, volta devagar; quem passa do teto some
 # fora do quadro, um por vez, e ninguém novo nasce acima dele.
-const DENSITY_PER_UNIT := 0.07
-const DENSITY_MIN := 0.4
-const DENSITY_STARS := 4
-const DENSITY_STARS_SCALE := 0.6
+# Os quatro valores moram em ProductionPopulation (as funções estáticas de alvo precisam deles sem
+# preload do dono); a reexportação mantém ProductionWorld.DENSITY_* para testes e chamadores.
+const DENSITY_PER_UNIT := POPULATION.DENSITY_PER_UNIT
+const DENSITY_MIN := POPULATION.DENSITY_MIN
+const DENSITY_STARS := POPULATION.DENSITY_STARS
+const DENSITY_STARS_SCALE := POPULATION.DENSITY_STARS_SCALE
 const DENSITY_TRIM_MIN_DISTANCE := 30.0
 var density_scale := 1.0
 # Demanda de rua escrita e independente; os tetos de emergência e de área não se somam.
@@ -1786,120 +1792,15 @@ func _process_traced(delta: float) -> void:
 	_rescue_fallen_vehicles()
 	world.population = world.people.size()
 
-## Mantém quatro revisões por segundo distribuídas, com no máximo um oitavo por quadro.
-## O cursor permanece no sucessor quando uma remoção desloca os índices.
-func _review_pedestrians(delta: float) -> void:
-	_pedestrian_review_credit = minf(_pedestrian_review_credit + delta * world.people.size() * 4.0,world.people.size())
-	var budget := mini(int(_pedestrian_review_credit),maxi(1,ceili(float(world.people.size()) / 8.0)))
-	_pedestrian_review_credit -= budget
-	for step in budget:
-		if world.people.is_empty():
-			_pedestrian_review_cursor = 0
-			break
-		_pedestrian_review_cursor %= world.people.size()
-		var actor = world.people[_pedestrian_review_cursor]
-		var retire := not is_instance_valid(actor)
-		if not retire:
-			var distance: float = actor.global_position.distance_to(world.player.global_position)
-			retire = PORT_POLICY.contains_private_area(actor.global_position)
-			# Rotinas autoradas e travessias preservam a permanência e a recuperação antigas.
-			if actor.has_meta("desert_routine") or actor.has_meta("desert_social_slot") or actor.get_meta("footbridge_crosser",false):
-				retire = retire or (distance > POPULATION_DESPAWN and not _on_screen(actor.global_position,1.0))
-			elif not retire and distance > VC_PEDESTRIAN_HIDDEN_DISTANCE:
-				retire = distance > VC_PEDESTRIAN_VISIBLE_DISTANCE or not _on_screen(actor.global_position,1.0)
-		if retire:
-			world.people.remove_at(_pedestrian_review_cursor)
-			if is_instance_valid(actor): actor.queue_free()
-		else:
-			_pedestrian_review_cursor += 1
+func _review_pedestrians(delta: float) -> void: _population._review_pedestrians(delta)
 
-## Diagnóstico explícito da P1: conta a cena real após 30 s, sem amostrar FPS/tempo de quadro.
-## Fica no arquivo dono da tarefa para não criar um runner em arquivos de outra sessão.
-func _count_p1_population() -> void:
-	if not no_save:
-		push_error("P1: contagem exige --no-save para preservar o save do usuário.")
-		get_tree().quit(1)
-		return
-	# Headless nasce com viewport 64x64; a câmera precisa do enquadramento de gameplay.
-	get_tree().root.size = Vector2i(1280,720)
-	await get_tree().create_timer(30.0).timeout
-	var people := 0
-	var authored_people := 0
-	var farthest_visible := 0.0
-	var farthest_hidden := 0.0
-	var farthest_common_visible := 0.0
-	var farthest_common_hidden := 0.0
-	var farthest_traffic := 0.0
-	var parked := 0
-	var persistent := 0
-	for actor in world.people:
-		if not is_instance_valid(actor) or actor.is_queued_for_deletion(): continue
-		people += 1
-		var distance: float = actor.global_position.distance_to(world.player.global_position)
-		var authored: bool = actor.has_meta("desert_routine") or actor.has_meta("desert_social_slot") or actor.get_meta("footbridge_crosser",false)
-		if authored: authored_people += 1
-		if _on_screen(actor.global_position,1.0):
-			farthest_visible = maxf(farthest_visible,distance)
-			if not authored: farthest_common_visible = maxf(farthest_common_visible,distance)
-		else:
-			farthest_hidden = maxf(farthest_hidden,distance)
-			if not authored: farthest_common_hidden = maxf(farthest_common_hidden,distance)
-	for car in vehicles:
-		if not is_instance_valid(car) or car.is_queued_for_deletion(): continue
-		if _is_persistent_vehicle(car): persistent += 1
-		elif not car.traffic: parked += 1
-		elif _is_ambient_traffic(car) and car.health > 0.0:
-			farthest_traffic = maxf(farthest_traffic,car.global_position.distance_to(world.player.global_position))
-	var report := {"population_vc":population_vc_enabled,"sun_shadow_near":sun_shadow_near_enabled,
-		"region":state.region_id,"focus":str(world.player.global_position),"pedestrians":people,
-		"pedestrian_cap":population_cap(),"ambient_traffic":_ambient_traffic_count(),"traffic_cap":traffic_cap(),
-		"farthest_visible_m":farthest_visible,"farthest_hidden_m":farthest_hidden,"farthest_traffic_m":farthest_traffic,
-		"authored_pedestrians":authored_people,"common_farthest_visible_m":farthest_common_visible,
-		"common_farthest_hidden_m":farthest_common_hidden,"viewport":str(get_viewport().get_visible_rect().size),
-		"parked":parked,"persistent":persistent,"sun_shadow_distance_m":sun.directional_shadow_max_distance,
-		"native_dispatch_router":is_instance_valid(world.dispatch) and world.dispatch.router._native != null}
-	print("P1_CONTAGEM ",JSON.stringify(report))
-	get_tree().quit(0 if not population_vc_enabled or (people <= VC_MAX_POPULATION and _ambient_traffic_count() <= VC_TRAFFIC_TARGET) else 1)
+func _count_p1_population() -> void: await _population._count_p1_population()
 
-## Alvo da densidade: cada unidade de despacho em cena tira `DENSITY_PER_UNIT`, e de
-## `DENSITY_STARS` estrelas para cima o teto não passa de `DENSITY_STARS_SCALE`.
-static func density_target(dispatch_units: int, stars: int) -> float:
-	var target := clampf(1.0-float(dispatch_units)*DENSITY_PER_UNIT,DENSITY_MIN,1.0)
-	if stars >= DENSITY_STARS: target = minf(target,DENSITY_STARS_SCALE)
-	return target
+static func density_target(dispatch_units: int, stars: int) -> float: return POPULATION.density_target(dispatch_units, stars)
 
-## Public market/terminal streets favour foot traffic; industrial and rural areas
-## carry fewer pedestrians. Coordinates follow the authored harbor street layout
-## (market/terminal x60..165,z0..100; industrial waterfront south of z156).
-## Twenty-metre shoulders avoid a hard population boundary between streets.
-static func area_density_target(region_id: String, point: Vector3) -> Vector2:
-	if region_id == "mountain": return Vector2(.6,.7)
-	if region_id == "desert": return Vector2(.7,.8)
-	if region_id != "harbor": return Vector2.ONE
-	var target := Vector2(1.0,.9)
-	var market_edge := maxf(maxf(60.0-point.x,point.x-165.0),maxf(-point.z,point.z-100.0))
-	var market_weight := 1.0-smoothstep(0.0,20.0,market_edge)
-	target = target.lerp(Vector2(.9,.7),market_weight)
-	return target.lerp(Vector2(.7,.8),smoothstep(156.0,176.0,point.z))
+static func area_density_target(region_id: String, point: Vector3) -> Vector2: return POPULATION.area_density_target(region_id, point)
 
-func _update_density() -> void:
-	var units := 0
-	if is_instance_valid(world.dispatch): units = world.dispatch.units.size()
-	var stars := 0
-	if is_instance_valid(world.gameplay): stars = int(world.gameplay.stars)
-	var target := density_target(units,stars)
-	var area_target := area_density_target(state.region_id,world.player.global_position)
-	# Interruptor para comparar com/sem a densidade dinâmica em medições.
-	if "--no-density" in OS.get_cmdline_user_args():
-		target = 1.0
-		area_target = Vector2.ONE
-	# Chamado a cada 0,25 s: 1,0 -> 0,4 em ~1,5 s; volta em ~7,5 s (sem pisca-pisca com
-	# viaturas entrando e saindo).
-	density_scale = move_toward(density_scale,target,.1 if target < density_scale else .02)
-	# Mudanças de área também assentam aos poucos; a remoção ainda exige distância e estar
-	# fora da câmera, então o trânsito visível existente nunca some numa fronteira.
-	area_density_scale.x = move_toward(area_density_scale.x,area_target.x,.02)
-	area_density_scale.y = move_toward(area_density_scale.y,area_target.y,.02)
+func _update_density() -> void: _population._update_density()
 
 func population_cap() -> int:
 	var target := mini(requested_population,VC_MAX_POPULATION) if population_vc_enabled else requested_population
@@ -1912,55 +1813,9 @@ func traffic_cap() -> int:
 	return ceili(float(VC_TRAFFIC_TARGET if population_vc_enabled else TRAFFIC_TARGET)*minf(density_scale,area_density_scale.y)-.00001)
 func _traffic_cap() -> int: return traffic_cap()
 
-## Tira no máximo um pedestre e um carro civil por chamada, o mais longe do jogador e fora
-## do quadro, enquanto houver mais que o teto atual.
-func _trim_density() -> void:
-	var origin: Vector3 = world.player.position
-	if world.people.size() > population_cap():
-		var worst := -1
-		var farthest := DENSITY_TRIM_MIN_DISTANCE
-		for index in world.people.size():
-			var actor = world.people[index]
-			if not is_instance_valid(actor): continue
-			var distance: float = actor.position.distance_to(origin)
-			if distance > farthest and not _on_screen(actor.global_position,1.0):
-				farthest = distance
-				worst = index
-		if worst >= 0:
-			var removed = world.people[worst]
-			world.people.remove_at(worst)
-			removed.queue_free()
-	if _ambient_traffic_count() > traffic_cap():
-		var worst_car := -1
-		var farthest_car := DENSITY_TRIM_MIN_DISTANCE
-		for index in vehicles.size():
-			var car = vehicles[index]
-			if not _is_ambient_traffic(car) or not car.traffic or car.health <= 0.0 or car == world.driving.car: continue
-			var distance: float = car.global_position.distance_to(origin)
-			if distance > farthest_car and not _on_screen(car.global_position,3.0):
-				farthest_car = distance
-				worst_car = index
-		if worst_car >= 0:
-			var removed_car = vehicles[worst_car]
-			vehicles.remove_at(worst_car)
-			removed_car.queue_free()
+func _trim_density() -> void: _population._trim_density()
 
-func _service_population_job() -> void:
-	if _population_jobs.is_empty(): return
-	var job: String = _population_jobs.pop_front()
-	var began := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
-	match job:
-		"citizen":
-			if world.people.size() < population_cap(): _spawn_citizen()
-		"traffic":
-			if _ambient_traffic_count() < traffic_cap() and not "--no-traffic" in OS.get_cmdline_user_args(): _spawn_vehicle()
-		"equipment":
-			for car in vehicles:
-				if not is_instance_valid(car) or car.is_queued_for_deletion() or is_instance_valid(car.equipment): continue
-				if car.traffic or (car.controlled and car.external_input):
-					car.ensure_equipment(world)
-					break
-	_trace_cost("population_job:"+job,began)
+func _service_population_job() -> void: _population._service_population_job()
 
 func vehicle_position_clear(car: CharacterBody3D, point: Vector3, yaw: float) -> bool:
 	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
@@ -2186,10 +2041,7 @@ func road_yaw(point: Vector3) -> float:
 				yaw = atan2(-direction.x,-direction.z)
 	return yaw
 
-func _spawn_citizen() -> void:
-	var began := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
-	_create_citizen()
-	_trace_cost("population_spawn",began)
+func _spawn_citizen() -> void: _population._spawn_citizen()
 
 ## O primeiro uso do espelho C# (RoadGraphSearch.cs) paga ~22 ms de JIT de Build/NearestEdge/
 ## Plan/BuildPath (medido em 05/10, docs/reviews/dispatch-plan-stall-20261005.md). Perto do
@@ -2292,115 +2144,15 @@ func _trace_cost(label: String, began: int) -> void:
 	if costs.size()<512: costs.append({"label":label,"start_usec":began,"duration_usec":elapsed})
 	world.set_meta("perf_costs",costs)
 
-func _create_citizen() -> void:
-	if state.region_id == "desert":
-		_create_desert_citizen()
-		return
-	var segment := population_layout.select(self)
-	if segment.is_empty(): return
-	var along: Vector3 = segment.a.direction_to(segment.b)
-	var point: Vector3 = segment.point
-	var margin := minf(20.0,segment.a.distance_to(segment.b)*.4)
-	var center: Vector3 = Geometry3D.get_closest_point_to_segment(point,segment.a,segment.b)
-	var offset: Vector3 = point-center
-	var start: Vector3 = center-along*minf(margin,center.distance_to(segment.a)*.8)+offset
-	var finish: Vector3 = center+along*minf(margin,center.distance_to(segment.b)*.8)+offset
-	# As calçadas ficam acima da linha central da rua; admite no piso real delas,
-	# em vez de recusar uma calçada livre como cápsula dentro do calçamento.
-	var grounded: Array[Vector3] = []
-	for candidate in [point,start,finish]:
-		var ground: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(candidate+Vector3.UP*1.0,candidate-Vector3.UP*1.0,1))
-		if ground.is_empty() or absf(ground.position.y-candidate.y)>.4: return
-		grounded.append(Vector3(candidate.x,ground.position.y+.08,candidate.z))
-	point = grounded[0]
-	start = grounded[1]
-	finish = grounded[2]
-	var pedestrian_route := _clip_citizen_route(point,start,finish)
-	if pedestrian_route.is_empty(): return
-	var actor = ACTOR.new()
-	actor.identity = randi_range(0,10000)
-	actor.position = point+Vector3.UP*.08
-	actor.speed = randf_range(1.15,1.75)
-	actor.route = pedestrian_route
-	actor.set_meta("ambient_road_id",str(segment.road.id))
-	actor.set_meta("region_id",state.region_id)
-	world.add_child(actor)
-	world.people.append(actor)
+func _create_citizen() -> void: _population._create_citizen()
 
-## Mantém a caminhada original onde está livre. Num cruzamento ou obstrução,
-## usa a parte apoiada em volta do spawn em vez de recusar a calçada
-## inteira. As mesmas amostras de admissão de <=2 m e a cápsula inteira da faixa continuam valendo.
-func _clip_citizen_route(point: Vector3, start: Vector3, finish: Vector3) -> PackedVector3Array:
-	if _on_carriageway(point) or CANAL_TUNNEL.reserves(Vector2(point.x,point.z),.5) or PORT_POLICY.contains_private_area(point): return PackedVector3Array()
-	if not session.position_clear(point+Vector3.UP*.06): return PackedVector3Array()
-	var route := PackedVector3Array()
-	for target in [start,finish]:
-		var last := point
-		var steps := maxi(1,ceili(point.distance_to(target)/2.0))
-		for i in range(1,steps+1):
-			var candidate := point.lerp(target,float(i)/steps)
-			if _on_carriageway(candidate) or CANAL_TUNNEL.reserves(Vector2(candidate.x,candidate.z),.5) or PORT_POLICY.contains_private_area(candidate): break
-			if not session.position_clear(candidate+Vector3.UP*.08): break
-			last = candidate
-		route.append(last)
-	if route[0].distance_to(route[1]) < 4.0: return PackedVector3Array()
-	if PORT_POLICY.segment_enters_private_area(route[0],route[1]): return PackedVector3Array()
-	return route if _pedestrian_route_sweep_clear(route) else PackedVector3Array()
+func _clip_citizen_route(point: Vector3, start: Vector3, finish: Vector3) -> PackedVector3Array: return _population._clip_citizen_route(point, start, finish)
 
-func _create_desert_citizen() -> void:
-	var occupied := {}
-	for actor in world.people:
-		if is_instance_valid(actor) and actor.has_meta("desert_social_slot"):
-			occupied[int(actor.get_meta("desert_social_slot"))] = true
-	var start := randi_range(0,_desert_social_slots.size()-1)
-	for index in _desert_social_slots.size():
-		var slot_id := (start+index)%_desert_social_slots.size()
-		if occupied.has(slot_id): continue
-		var slot: Dictionary = _desert_social_slots[slot_id]
-		var point: Vector3 = slot.point
-		var distance := point.distance_to(world.player.global_position)
-		# Espaços sociais pequenos cabem dentro do anel de exclusão de 45 m da cidade. Admite
-		# os moradores deles mais perto, ainda fora da câmera e nunca em cima de nós.
-		if distance < 12.0 or distance > POPULATION_SPAWN_MAX or _on_screen(point,1.0): continue
-		if not desert_social_route_clear(slot.route): continue
-		var actor = DESERT_SOCIAL_ACTOR.new()
-		actor.identity = 6100+slot_id
-		actor.position = point+Vector3.UP*.08
-		actor.speed = 1.2
-		actor.route = slot.route
-		actor.social_activity = slot.activity
-		actor.social_facing = slot.facing
-		actor.set_meta("region_id","desert")
-		actor.set_meta("desert_social_slot",slot_id)
-		world.add_child(actor)
-		world.people.append(actor)
-		return
+func _create_desert_citizen() -> void: _population._create_desert_citizen()
 
-func desert_social_route_clear(route: PackedVector3Array) -> bool:
-	# A autoria pode mover prédios: recusa a rota inteira, nunca só o spawn.
-	var a := route[0]
-	var b := route[-1]
-	var steps := maxi(1,ceili(a.distance_to(b)/2.0))
-	for i in range(steps+1):
-		var point := a.lerp(b,float(i)/steps)
-		if _on_carriageway(point) or not session.position_clear(point+Vector3.UP*.08): return false
-	return _pedestrian_route_sweep_clear(route)
+func desert_social_route_clear(route: PackedVector3Array) -> bool: return _population.desert_social_route_clear(route)
 
-func _pedestrian_route_sweep_clear(route: PackedVector3Array) -> bool:
-	var a := route[0]
-	var b := route[-1]
-	var query := PhysicsShapeQueryParameters3D.new()
-	var capsule := CapsuleShape3D.new()
-	# Inclui o pequeno desvio de faixa de caminhada do Actor na folga varrida.
-	capsule.radius = .72 if a.distance_squared_to(b) > .01 else .32
-	capsule.height = 1.7
-	query.shape = capsule
-	query.collision_mask = 1
-	query.transform = Transform3D(Basis.IDENTITY,a+Vector3.UP*.98)
-	query.motion = b-a
-	if not world.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty(): return false
-	var result: PackedFloat32Array = world.get_world_3d().direct_space_state.cast_motion(query)
-	return result[0] >= 1.0
+func _pedestrian_route_sweep_clear(route: PackedVector3Array) -> bool: return _population._pedestrian_route_sweep_clear(route)
 
 func _spawn_vehicle() -> void:
 	var began := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
