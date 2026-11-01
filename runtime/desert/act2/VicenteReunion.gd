@@ -142,9 +142,6 @@ static func scene_def(world: Dictionary) -> Dictionary:
 func scene() -> String:
 	return str(scene_def(_world()).get("scene", ""))
 
-static func scene_for(world: Dictionary) -> String:
-	return str(scene_def(world).get("scene", ""))
-
 ## DesertCampaign tira o Vicente do encontro enquanto ele espera em outro lugar (ou na defesa do encontro,
 ## quando ele luta com a turma, sem ator: a cena fica com os Cobras).
 func away_from_meet() -> bool:
