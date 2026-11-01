@@ -32,3 +32,27 @@ no ramo `viagem-lages-testar` (checkpoint `checkpoint-20261101-antes-arquitetura
 3. Trocar `call("nome")`/`has_method` quentes por métodos tipados ou sinais.
 4. Revisar `_process` que rodam sempre e varreduras de grupo por quadro (precisa medição).
 5. Continuar a divisão de `ProductionWorld` e `NativeRegion`.
+
+## Conferência dos itens 3, 4 e 5 (leitura estática, sem medição)
+
+**3. Chamadas por nome em caminho quente** (trocáveis por chamada direta, método existe numa classe só):
+GameplayWeaponVisuals.gd (7×, por quadro no jogador), Gameplay.gd:993/1457, CameraRig.gd:723-738,
+RainPuddles3D.gd:117, DispatchUnit.gd:907/908/1004 e PoliceAgent.gd (por quadro por policial).
+Precisam de interface ou cache antes: CivilianModel.gd:433 (bool ao ligar o modelo),
+TrafficJunctions.gd:265-350 (Callable guardado no carro), Driving.gd:551-564 (StealableMeetCar também dirige),
+DesertLocals.gd:61, TrafficDriverPool.gd:71 (grupo misto). Os de VehicleCarjacking/StreetPhysics são por evento.
+
+**4. `_process` caro ou sempre ligado**
+- Varredura por quadro sem espaçamento: DesertRuntime.gd:127 (`desert_car_neon`), VerticeCompany.gd:443/465
+  (`port_logistics_truck` + reescrita de luzes longe do jogador), DesertNorthPass.gd:25 (`get_node("Model")` a 20 Hz).
+- `get_node_or_null("/root/GameInput")` por quadro: TankDriverControls.gd:50, AimReticle.gd:48,
+  BarGameScreen.gd:133, CoastalBinoculars.gd:143; SkyMenu.gd:150 (`LoadingCurtain`, só no menu).
+- Sempre ligados com guarda na 1ª linha: MountainRoadLamp3D.gd:80 (um por poste), ContainerLockpick.gd:68,
+  BankLockpick.gd:59, VehicleBoardingPresentation.gd:240, BagVisual.gd:39, ColdSurvival.gd:24,
+  VerticeUndercroftPlace.gd:50, HouseCat.gd, ArmoredGuard.gd:172, CanyonGuard.gd:31, SewerHostility.gd:73.
+
+**5. Divisão proposta**
+- ProductionWorld: Prewarm (485-1005, risco médio), Population (1791-1962 + 2187-2402, baixo/médio),
+  Traffic (1963-2186 + 2403-2448, médio), Residency (1169-1577, alto: 66 testes), `build()` em etapas (alto).
+- NativeRegion: RoadSurfaces (1152-1293 + 1532-1669, baixo), Land (1006-1151, baixo), Retirement (888-993, médio),
+  TerrainTasks (1414-1531, médio), RecordBuilders (1670-2260, médio/alto), `_prepare` (297-490, médio).
