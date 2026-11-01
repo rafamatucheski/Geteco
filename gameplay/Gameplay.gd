@@ -140,13 +140,6 @@ const GUN_CLIP_MAX_SPEED := 0.4
 ## coincidir com o dano, que é aplicado no contato.
 const PUNCH_CLIPS := {"left": ["ual/Punch_Jab", 0.17], "right": ["ual/Punch_Cross", 0.20]}
 const PUNCH_CLIP_SECONDS := 0.55
-const MELEE_CLIPS := {
-	"unarmed": ["Punch_Forward_with_Both_Fists", 0.75, 1.3],
-	"knuckles": ["Punch_Forward_with_Both_Fists", 0.75, 1.3],
-	"knife": ["Attack", 1.0, 1.5],
-	"bat": ["Attack", 1.0, 1.5],
-	"axe": ["Attack", 1.0, 1.5],
-}
 ## Teclas 1–0 (`weapon_slot_N`): a mesma ordem do V1 (`Player._input`).
 const SLOT_ORDER := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "rpg", "flamethrower", "grenade"]
 ## V1 `Player._trigger_muzzle_flash_3d`: duração do clarão por arma (s).
@@ -785,7 +778,6 @@ func update_aim(delta: float) -> void:
 		_clear_melee_action()
 		_aim_hold = 0.0
 		_cancel_combat_clip()
-func _update_aim(delta: float) -> void: update_aim(delta)
 
 ## Contrato de luneta (V1 `Player.weapon_scope_active`). VERDADEIRO enquanto TODAS valem, no quadro de física atual:
 ##   1. luneta instalada na arma equipada (`scope_part() != "none"`);
@@ -802,19 +794,6 @@ func scope_active() -> bool:
 ## Peça de luneta instalada na arma equipada ("none" se não há); a câmera usa o nome para escolher o zoom.
 func scope_part() -> String:
 	return CUSTOM.selected(customization, equipped(), "scope")
-
-func _start_combat_clip(id: String, data: Dictionary) -> bool:
-	var spec: Array = MELEE_CLIPS.get(String(data.get("stance", "")), [])
-	if spec.is_empty() or not is_instance_valid(player) or not "animation" in player: return false
-	var animation: AnimationPlayer = player.animation
-	if animation == null or not animation.has_animation(spec[0]): return false
-	_clip_name = spec[0]
-	_clip_start = float(spec[1])
-	_clip_end = float(spec[2])
-	_clip_age = 0.0
-	_clip_rate = 1.0
-	_clip_weapon = id
-	return true
 
 ## Soco da UAL (punhos e soqueira). Como o clipe de arma de fogo, só com o jogador parado.
 func _play_punch_clip(id: String) -> void:
@@ -902,9 +881,6 @@ func _update_back_katana(id: String) -> void:
 	# Durante o clipe a espada está na mão; fora dele, nas costas ou na pose de combate.
 	back_katana.visible = carried and ((id != "katana" and not moving) or (moving and not in_hand))
 	if hand_katana != null: hand_katana.visible = carried and in_hand
-
-func _sheath_drawing() -> bool:
-	return _sheath_kind == "draw" and _sheath_clip != ""
 
 ## A katana usa o clipe da greatsword do Mixamo ("Sheath A Great Sword 1"): ele parte da guarda de duas
 ## mãos e termina com a espada nas costas. Guardar toca para frente; sacar toca ao contrário e termina
@@ -1206,7 +1182,6 @@ func update_melee_buffer() -> void:
 	if cooldown > 0.0 or not _pending_contact.is_empty(): return
 	_melee_buffer.clear()
 	_stall_fire_at(aim_point)
-func _update_melee_buffer() -> void: update_melee_buffer()
 
 ## Mesma boca do cano, trajetória horizontal, máscara e alcance do tiro, sem dispersão.
 func aim_feedback() -> Dictionary:
@@ -1762,7 +1737,6 @@ func damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vect
 		# Policial: cabeça × colete (PoliceAgent). Jogador, civis e demais NPCs não têm o método e não mudam.
 		amount = actor.scale_bullet_damage(amount, hit_point, weapon)
 	_damage(actor, amount, source)
-func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF, hit_point := Vector3.INF, weapon: Dictionary = {}) -> void: damage_bullet(actor, amount, source, shot_from, shot_to, hit_point, weapon)
 
 ## `continuous`: dano de jato ou de fogo em tique periódico (ver `_crime_due`).
 func _damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void:
@@ -1966,7 +1940,6 @@ func sync_god_mode() -> void:
 		if _god_marked.has(node) or node.get_meta(PROTECTION.META, false) == true: continue
 		node.set_meta(PROTECTION.META, true)
 		_god_marked.append(node)
-func _sync_god_mode() -> void: sync_god_mode()
 
 ## Ativa o arsenal temporário do Economy, sem gravar armas/munição no save.
 ## Bloqueado onde atacar é bloqueado (garagem).
@@ -2123,7 +2096,6 @@ func update_stars() -> void:
 	stars = 0
 	for level in range(1, STAR_THRESHOLDS.size()):
 		if crime_points >= STAR_THRESHOLDS[level]: stars = level
-func _update_stars() -> void: update_stars()
 
 func report_contact(point: Vector3) -> void:
 	set_meta("police_contact_place_id", String(state.place_id) if "place_id" in state else "")
@@ -2163,7 +2135,6 @@ func evasion_rate() -> float:
 	if not is_instance_valid(target): return 1.0
 	var flat := Vector2(target.global_position.x - last_known.x, target.global_position.z - last_known.z).length()
 	return 1.0 if flat > police_search_radius() else PURSUIT.EVASION_INSIDE_RATE
-func _evasion_rate() -> float: return evasion_rate()
 
 func police_investigation_active() -> bool:
 	return police_case != null and police_case.investigation_active()
