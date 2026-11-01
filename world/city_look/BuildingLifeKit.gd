@@ -90,16 +90,7 @@ static func _fe_stair(t: SurfaceTool, p_sign: float) -> void:
 
 
 static func _slanted(t: SurfaceTool, center: Vector3, size: Vector3, angle: float, color: Color) -> void:
-	var basis := Basis(Vector3.BACK, angle)
-	var h := size * 0.5
-	var corners := []
-	for i in 8:
-		corners.append(center + basis * Vector3(h.x if i & 1 else -h.x, h.y if i & 2 else -h.y, h.z if i & 4 else -h.z))
-	var faces := [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1], [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
-	t.set_color(color)
-	for face in faces:
-		t.add_vertex(corners[face[0]]); t.add_vertex(corners[face[1]]); t.add_vertex(corners[face[2]])
-		t.add_vertex(corners[face[0]]); t.add_vertex(corners[face[2]]); t.add_vertex(corners[face[3]])
+	KIT._rotated_box(t, center, size, color, Basis(Vector3.BACK, angle))
 
 
 ## Escada de mão recolhida sob o primeiro patamar (não chega ao chão, como na rua real).
