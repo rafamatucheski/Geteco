@@ -49,5 +49,25 @@ func run() -> void:
 	var invalid: Dictionary = FARES.buy(wallet, "harbor_central", "harbor_central", 3, ticket)
 	check(not invalid.ok and wallet.balance == 10, "invalid trip never charges")
 	check(not FARES.buy(null, "harbor_central", "harbor_north", 4, {}).ok, "missing wallet refuses")
+
+	# Reembolso: viagem interrompida (morte/prisão) devolve o bilhete uma vez, sem "RECEBIDO".
+	var gains := [0]
+	wallet.money_gained.connect(func(amount: int) -> void: gains[0] += amount)
+	var trip := {}
+	check(wallet.collect_loose_cash(20), "wallet topped up for refund")
+	gains[0] = 0
+	check(FARES.buy(wallet, "harbor_north", "harbor_central", 5, trip).charged == 15 and wallet.balance == 15, "death trip paid")
+	var before_refund: int = wallet.balance
+	check(FARES.refund(wallet, trip) == 15 and wallet.balance == before_refund + 15, "interrupted trip refunds the ticket once")
+	check(FARES.refund(wallet, trip) == 0 and wallet.balance == before_refund + 15, "second interruption event never refunds twice")
+	check(gains[0] == 0, "refund does not fire money_gained (no RECEBIDO notice)")
+	var arrived := {}
+	check(wallet.collect_loose_cash(20), "wallet reseeded")
+	gains[0] = 0
+	check(FARES.buy(wallet, "harbor_central", "harbor_north", 6, arrived).charged == 15, "arrival trip paid")
+	var after_pay: int = wallet.balance
+	FARES.settle(arrived)
+	check(FARES.refund(wallet, arrived) == 0 and wallet.balance == after_pay, "completed trip never refunds")
+	check(FARES.refund(wallet, {}) == 0, "no ticket, no refund")
 	print("RAILWAY_FARES %s %d checks" % ["PASS" if failures.is_empty() else "FAIL", checks])
 	quit(0 if failures.is_empty() else 1)
