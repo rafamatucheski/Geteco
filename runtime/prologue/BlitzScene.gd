@@ -86,7 +86,6 @@ const LIMA_CARGO := Vector3(1.8, 0, 3.4)
 const LIMA_COVER := Vector3(6.15, 0, -16.7)
 const VICENTE_FLEE := [Vector3(-.4, 0, -5.4), Vector3(-3.1, 0, 2.0), Vector3(-3.4, 0, 13.0)]
 const WARM_DRAWS := 4
-const CIVILIAN_MESH_KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 signal finished(pov: String, skipped: bool)
 
 static var _retained: Array = []
@@ -1045,22 +1044,6 @@ func _stage_warm() -> void:
 	if _rain_audio.stream != null: _rain_audio.play()
 	if not RenderingServer.frame_post_draw.is_connected(_count_draw): RenderingServer.frame_post_draw.connect(_count_draw)
 
-## Ombro redondo só nos dois irmãos (corpo do kit): a manga começa abaixo do ombro e termina em domo,
-## sem a tampa reta que saltava como ombreira quadrada. O kit dos outros NPCs não muda.
-func _round_shoulders(body) -> void:
-	if not is_instance_valid(body) or body.get("_meshy") != null or body.upper_arms.is_empty(): return
-	var kit = CIVILIAN_MESH_KIT
-	var profile: Dictionary = kit.build_profile(bool(body.wardrobe.female), int(body.wardrobe.build))
-	profile.merge(body.wardrobe.get("body_profile", {}), true)
-	var k: float = profile.limb
-	var builder = kit._builder()
-	var sleeve: int = kit.SLOT_TOP
-	builder.loft([[-.02, .046 * k, .048 * k, sleeve], [-.07, .056 * k, .058 * k, sleeve], [-.2, .049 * k, .052 * k, sleeve], [-.3, .045 * k, .048 * k, sleeve]], sleeve, Transform3D.IDENTITY, 12)
-	builder.ellipsoid(Vector3(0, -.03, 0), Vector3(.052, .042, .054) * k, sleeve, Basis.IDENTITY, 10, 6)
-	builder.ellipsoid(Vector3(0, -kit.UPPER_ARM, 0), Vector3(.042, .045, .044) * k, sleeve, Basis.IDENTITY, 8, 5)
-	var mesh: ArrayMesh = builder.commit()
-	for arm in body.upper_arms: arm.mesh = mesh
-
 func _count_draw() -> void:
 	_warm_draws += 1
 
@@ -1236,9 +1219,6 @@ func _vicente_hands() -> void:
 
 func _door_point() -> Vector3:
 	return truck.to_global(Vector3(-1.85, 0, -3.4))
-
-func _cab_head() -> Vector3:
-	return _head(vicente)
 
 ## Olhos de Vicente debruçado no vão da porta: do banco, a linha até o rosto de Dante (mais baixo,
 ## no asfalto) cortaria a lataria da cabine.
