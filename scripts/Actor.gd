@@ -41,6 +41,8 @@ static var _dummy_camera: Camera3D
 static var _dummy_planes: Array[Plane] = []
 var _steering: RefCounted
 var _lod_delta := 0.0
+## Velocidade pedida neste passo físico, passada de _tick_intent ao condutor do _stall_physics_tick.
+var _intent_speed := 0.0
 ## Consulta de chuva do guarda-chuva, uma vez por segundo (escalonada pela identidade).
 var _umbrella_clock := 0.0
 var outfit_id := "dante_classic"
@@ -49,9 +51,18 @@ var is_player := false
 var air_movement: RefCounted
 var identity := 0
 var camera: Camera3D
-var visual: Node3D
-var animation: AnimationPlayer
-var skeleton: Skeleton3D
+var visual: Node3D:
+	set(value):
+		visual = value
+		_sync_pose_refs()
+var animation: AnimationPlayer:
+	set(value):
+		animation = value
+		_sync_pose_refs()
+var skeleton: Skeleton3D:
+	set(value):
+		skeleton = value
+		_sync_pose_refs()
 var hips := -1
 var hip_rest := Vector3.ZERO
 var route := PackedVector3Array()
@@ -100,9 +111,27 @@ var _last_clip_time := 0.0
 var _locomotion_weight := 0.0
 var _run_weight := 0.0
 var _idle_pose: Array = []
-var _combat_bones: Dictionary = {}
-var _combat_rests: Array[Transform3D] = []
-var _combat_skin: MeshInstance3D
+var _combat_bones: Dictionary = {}:
+	set(value):
+		_combat_bones = value
+		_sync_pose_refs()
+var _combat_rests: Array[Transform3D] = []:
+	set(value):
+		_combat_rests = value
+		_sync_pose_refs()
+var _combat_skin: MeshInstance3D:
+	set(value):
+		_combat_skin = value
+		_sync_pose_refs()
+## Auxiliares de pose separados em 01/11 (Onda 3) só para este arquivo caber na leitura; o estado lido
+## de fora continua aqui e cada função antiga delega em uma linha. Declarados depois das referências
+## acima: o `_init` deles copia visual/skeleton/ossos/pele já inicializados (ver `_sync_pose_refs`).
+const SEAT_POSE := preload("res://scripts/ActorSeatPose.gd")
+var _seat_pose: SEAT_POSE = SEAT_POSE.new(self)
+const LOCOMOTION_POSE := preload("res://scripts/ActorLocomotionPose.gd")
+var _locomotion_pose: LOCOMOTION_POSE = LOCOMOTION_POSE.new(self)
+const COMBAT_POSE := preload("res://scripts/ActorCombatPose.gd")
+var _combat_pose: COMBAT_POSE = COMBAT_POSE.new(self)
 var _idle_clock := 0.0
 var _directional_weight := 0.0
 var _gait_direction := Vector2(0, 1)
@@ -122,41 +151,12 @@ var _hit_lean := Vector2.ZERO
 var _hit_lean_velocity := Vector2.ZERO
 var _hit_lean_target := Vector2.ZERO
 var _traversal_roots: Dictionary = {}
-var _arm_blends: Dictionary = {}
-var _presented_arm_rotations: Dictionary = {}
 var _pose_delta := 1.0 / 60.0
 var _elbow_previous: Dictionary = {}
-var _elbow_solved: Dictionary = {}
 ## Torção do antebraço do quadro anterior por lado (pegada de taco/machado).
 var _twist_previous: Dictionary = {}
-## Direção dos dedos da pegada no quadro anterior por lado (solver de pegada).
-var _grip_fingers: Dictionary = {}
-## Limite da torção do antebraço na pegada de duas mãos (rad, ~126°).
-const FOREARM_TWIST_MAX := 2.2
-## Solver de pegada: quanto o cotovelo pode sair do polo autorado (rad) e quão rápido
-## ele gira em torno do eixo ombro–pulso (rad/s; o polo comum gira a 8).
-const GRIP_ELBOW_SWING := 0.6
-const GRIP_ELBOW_RATE := 14.0
-## Componente vertical máxima da direção do cotovelo no solver de pegada (0 = horizontal,
-## negativo = pendendo): cotovelo sempre um pouco para baixo, como num braço relaxado.
-const GRIP_ELBOW_UP_MAX := -0.1
-## Rotação máxima da mão em torno do cabo (rad/s) no taco/machado.
-const GRIP_FINGER_RATE := 6.0
 ## Duração da mistura de poses ao entrar e sair do clipe de golpe (não calibrada).
 const COMBAT_BLEND := 0.08
-## Katana: troca entre o clipe nativo (golpe, sacar/guardar) e a pose de carregar. Os braços e a lâmina
-## passam de uma para a outra nesse tempo; antes a espada girava de uma vez e os braços pulavam para a
-## pose de antes do golpe (`_presented_arm_rotations` não andava durante o clipe). Entrar no golpe é
-## curto para não atrasar a preparação; sair é mais longo: o fim do clipe deixa a lâmina ~90° longe do
-## carregar, e em 0,14 s ela girava ~13°/quadro.
-const SWORD_SWITCH_INTO_CLIP := 0.10
-const SWORD_SWITCH_OUT_OF_CLIP := 0.24
-var _sword_native_last := false
-var _sword_switch_age := 1.0
-var _sword_native_grip := Transform3D.IDENTITY
-var _sword_carry_basis := Basis.IDENTITY
-## Lâmina apresentada (no espaço do `visual`) no último quadro antes da troca.
-var _sword_from_basis := Basis.IDENTITY
 const LOCOMOTION_BLEND_RATE := 7.0
 ## Katana na mão: parado, andando e correndo com os clipes da greatsword do Mixamo (Gameplay liga
 ## `sword_locomotion`). Os braços seguram a espada pelo próprio clipe (pegada nativa, como nos golpes).
@@ -181,6 +181,15 @@ var sprint_scale := 1.0
 const RUN_BLEND_RATE := 4.5
 const MOVING_SPEED_EPSILON := 0.12
 const WALK_START := 0.067
+## Os auxiliares de pose guardam cópias tipadas de visual, skeleton, _combat_bones, _combat_rests e
+## _combat_skin para não ler `g.` dinâmico a cada osso. Os setters acima chamam isto a cada atribuição
+## (o _ready, testes que montam o esqueleto à mão, quem troca o visual de fora); custo só na troca.
+## `animation` (AnimationPlayer) também tem setter: ActorLocomotionPose o guarda tipado.
+func _sync_pose_refs() -> void:
+	if _seat_pose != null: _seat_pose.sync_refs()
+	if _locomotion_pose != null: _locomotion_pose.sync_refs()
+	if _combat_pose != null: _combat_pose.sync_refs()
+
 func _ready() -> void:
 	set_meta("gameplay_role","player" if is_player else "civilian")
 	if not is_player: add_to_group("police_witness")
@@ -330,6 +339,17 @@ func _stall_physics_tick(delta: float) -> void:
 	if dummy_enabled and _can_walk_as_dummy():
 		_walk_as_dummy(delta)
 		return
+	var direction := _tick_intent(delta)
+	var target_speed := _intent_speed
+	_tick_move(delta, direction, target_speed, lod_scale, rage_speed)
+	# _tick_move sai antes do fim só quando a queda do salto matou o jogador (after_move): aí não há pose.
+	if dead and air_movement != null: return
+	_tick_pose(delta, direction, target_speed)
+
+## Etapa da intenção: direção pedida (automática, controle com a câmera ou rota da calçada com desvio),
+## esqui, embriaguez, contenção da polícia e passo de mira. Devolve a direção; a velocidade fica em
+## `_intent_speed` (o mesmo passo físico, sem alocar).
+func _tick_intent(delta: float) -> Vector3:
 	var direction := Vector3.ZERO
 	var target_speed := speed
 	if controlled_automatically:
@@ -392,6 +412,11 @@ func _stall_physics_tick(delta: float) -> void:
 			var combat_speed := lerpf(2.3, 2.4 if alignment < 0.0 else 3.2, absf(alignment))
 			target_speed = minf(target_speed, combat_speed)
 	if is_player: target_speed *= float(get_meta("developer_speed_multiplier", 1.0))
+	_intent_speed = target_speed
+	return direction
+
+## Etapa do deslocamento: velocidade varrida, salto/queda, degrau e move_and_slide.
+func _tick_move(delta: float, direction: Vector3, target_speed: float, lod_scale: float, rage_speed: float) -> void:
 	move_intent = direction
 	velocity.x = direction.x * target_speed * lod_scale
 	velocity.z = direction.z * target_speed * lod_scale
@@ -417,6 +442,9 @@ func _stall_physics_tick(delta: float) -> void:
 	if lod_scale != 1.0:
 		velocity.x /= lod_scale
 		velocity.z /= lod_scale
+
+## Etapa da apresentação: distância andada, rumo do visual e a pose (locomoção, golpe, arma).
+func _tick_pose(delta: float, direction: Vector3, target_speed: float) -> void:
 	var displacement := global_position - last_position
 	displacement.y = 0
 	travelled += displacement.length()
@@ -471,382 +499,48 @@ func _stall_physics_tick(delta: float) -> void:
 		if visual.get_child(0).get("walking") != null: visual.get_child(0).walking = actual_speed > 0.1
 	if pose_began != 0: STALL_WORK.finish_slow("actor.pose",pose_began,10000,self)
 
-## Caminhada/corrida comuns (fase travada na distância) ou, se couber, a
-## locomoção armada. A entrada/saída usa o deslocamento REAL: soltar o comando,
-## bater num sólido ou encerrar um deslocamento automático converge para a
-## mesma postura parada em vez de congelar o último passo.
-func _pose_locomotion(direction: Vector3, _target_speed: float, displacement: Vector3, actual_speed: float, delta: float = 1.0 / 60.0) -> void:
-	_pose_delta = delta
-	_idle_clock += delta
-	var moving := actual_speed > MOVING_SPEED_EPSILON
-	var directional := is_player and not is_nan(combat_facing)
-	var melee_directional := directional and combat_stance == "melee"
-	_locomotion_weight = move_toward(_locomotion_weight, 1.0 if moving else 0.0, delta * LOCOMOTION_BLEND_RATE)
-	_run_weight = move_toward(_run_weight, smoothstep(3.8, 6.0, actual_speed) if moving and (not directional or melee_directional) else 0.0, delta * RUN_BLEND_RATE)
-	_directional_weight = move_toward(_directional_weight, 1.0 if directional else 0.0, delta * 8.0)
-	var sword := sword_locomotion and has_sword_locomotion()
-	if _locomotion_weight <= 0.0 and sword:
-		_pose_sword_idle()
-		# A guarda gira inteira: o passo de virar planta os pés da postura comum, não os da guarda larga.
-		_pose_turn(delta, true)
-		return
-	if _locomotion_weight <= 0.0 and not _idle_pose.is_empty():
-		# Mantém um nome produtivo no AnimationPlayer para consumidores existentes,
-		# mas aplica a postura simétrica cacheada; `restpose` é uma T-pose.
-		animation.play("Walking")
-		_apply_pose(_idle_pose)
-		_apply_idle_breath()
-		_pose_turn(delta, false)
-		return
-	var local_move := visual.global_basis.inverse() * (displacement.normalized() if moving else direction)
-	_gait_direction = _gait_direction.move_toward(Vector2(local_move.x, -local_move.z), delta * 7.0)
-	var lateral := absf(_gait_direction.x)
-	var backward := maxf(0, -_gait_direction.y)
-	var walk_stride := SWORD_WALK_STRIDE if sword else 1.8
-	var directional_stride := lerpf(walk_stride, 1.06 if combat_stance == "grenade" else 0.91, clampf(backward, 0, 1))
-	directional_stride = lerpf(directional_stride, 0.89, clampf(lateral, 0, 1))
-	if melee_directional:
-		# O movimento de corpo a corpo para frente agora pode correr de verdade. Mantém a passada
-		# escrita de lado/para trás onde esses clipes assumem em vez de acelerar uma caminhada para frente.
-		var forward_share := (1.0 - clampf(backward, 0.0, 1.0)) * (1.0 - clampf(lateral, 0.0, 1.0))
-		directional_stride = lerpf(directional_stride, SWORD_RUN_STRIDE if sword else 3.4, _run_weight * forward_share)
-	var stride := lerpf(lerpf(walk_stride, SWORD_RUN_STRIDE if sword else 3.4, _run_weight), directional_stride, _directional_weight)
-	phase = fposmod(phase + displacement.length() / stride, 1.0)
-	_pose_cycle(SWORD_WALK % sword_clip_set if sword else "Walking", phase, 0.0 if sword else WALK_START)
-	if _run_weight > 0.0:
-		var walk_pose := _capture_pose()
-		_pose_cycle(SWORD_RUN % sword_clip_set if sword else "Running", phase, 0.0)
-		if _run_weight < 1.0: _apply_blend(walk_pose, _capture_pose(), _run_weight)
-	if _directional_weight > 0.0:
-		# Os clipes "with_Gun" seguram um fuzil imaginário com os dois braços erguidos.
-		# O braço que a arma não resolve (granada, taco, machado, faca, a esquerda da
-		# pistola baixa) herdava isso e ficava erguido junto do rosto andando de lado ou
-		# para trás: os braços ficam com a passada comum.
-		var free_arms := {}
-		for bone_name in FREE_ARM_BONES:
-			var bone: int = _combat_bones.get(bone_name, -1)
-			if bone >= 0: free_arms[bone] = skeleton.get_bone_pose_rotation(bone)
-		# Só guardar a pose anterior quando ela realmente entra na mistura.
-		# Recuo/lateral puros evitam quatro cópias do esqueleto por quadro.
-		var ordinary: Array = _capture_pose() if _directional_weight < 1.0 else []
-		if backward > 0.001:
-			var longitudinal: Array = _capture_pose() if backward < 1.0 else []
-			_pose_cycle("Walk_Backward_with_Gun" if combat_stance != "grenade" else "Walk_Backward_with_Grenade", phase, 0.0)
-			if backward < 1.0: _apply_blend(longitudinal, _capture_pose(), clampf(backward, 0, 1))
-		if lateral > 0.001:
-			var longitudinal: Array = _capture_pose() if lateral < 1.0 else []
-			_pose_cycle("Walk_Left_with_Gun", phase, 0.0)
-			if _gait_direction.x < 0.0: _mirror_current_pose()
-			if lateral < 1.0: _apply_blend(longitudinal, _capture_pose(), clampf(lateral, 0, 1))
-		if _directional_weight < 1.0: _apply_blend(ordinary, _capture_pose(), _directional_weight)
-		for bone in free_arms: skeleton.set_bone_pose_rotation(bone, free_arms[bone])
-	if _locomotion_weight < 1.0 and sword:
-		var moving_pose := _capture_pose()
-		_pose_sword_idle()
-		_apply_blend(_capture_pose(), moving_pose, _locomotion_weight)
-	elif _locomotion_weight < 1.0 and not _idle_pose.is_empty():
-		var moving_pose := _capture_pose()
-		_apply_blend(_idle_pose, moving_pose, _locomotion_weight)
-	var hip := skeleton.get_bone_pose_position(hips)
-	hip.x = hip_rest.x
-	hip.z = hip_rest.z
-	skeleton.set_bone_pose_position(hips, hip)
-	_pose_turn(delta, moving)
+func _pose_locomotion(direction: Vector3, _target_speed: float, displacement: Vector3, actual_speed: float, delta: float = 1.0 / 60.0) -> void: _locomotion_pose._pose_locomotion(direction, _target_speed, displacement, actual_speed, delta)
 
-func has_sword_locomotion() -> bool:
-	return animation != null and animation.has_animation(SWORD_IDLE % sword_clip_set) and animation.has_animation(SWORD_WALK % sword_clip_set) and animation.has_animation(SWORD_RUN % sword_clip_set)
+func has_sword_locomotion() -> bool: return _locomotion_pose.has_sword_locomotion()
 
-## Guarda parada da katana em laço, no relógio do parado (sem a respiração procedural: o clipe tem a sua).
-func _pose_sword_idle() -> void:
-	var clip: String = SHIELD_BLOCK_IDLE if sword_block and animation.has_animation(SHIELD_BLOCK_IDLE) else SWORD_IDLE % sword_clip_set
-	_pose_cycle(clip, fposmod(_idle_clock / animation.get_animation(clip).length, 1.0), 0.0)
+func _pose_sword_idle() -> void: _locomotion_pose._pose_sword_idle()
 
-## A animação importada não possui Idle: `restpose` é a T-pose vista no
-## modelo. A média de duas fases opostas de Walking cancela a passada e produz
-## uma base ereta/simétrica. É calculada uma vez; não adiciona avaliação de
-## animação ao custo do repouso.
-func _build_idle_pose() -> void:
-	if not is_instance_valid(skeleton) or not animation.has_animation("Walking"): return
-	_pose_cycle("Walking", 0.0, WALK_START)
-	var first := _capture_pose()
-	_pose_cycle("Walking", 0.5, WALK_START)
-	_apply_blend(first, _capture_pose(), 0.5)
-	if hips >= 0:
-		var hip_position := skeleton.get_bone_pose_position(hips)
-		hip_position.x = hip_rest.x
-		hip_position.y = hip_rest.y
-		hip_position.z = hip_rest.z
-		skeleton.set_bone_pose_position(hips, hip_position)
-	for side in ["Left", "Right"]:
-		var foot: int = _combat_bones[side + "Foot"]
-		var foot_rest := skeleton.get_bone_global_rest(foot)
-		# Os pés mesclados da caminhada ainda apontam para baixo: a ponta pode tocar o chão
-		# enquanto o calcanhar flutua ~10 cm. Monta um pé plano apoiado uma vez, antes
-		# de guardar os alvos de parado e de giro, sem mudar os clipes em movimento.
-		# O calcanhar também segue os pesos de pele da canela. Este pequeno pitch mantém
-		# a sola nivelada depois que a postura parada mais aberta dobra os joelhos.
-		_set_combat_bone_rotation(foot, Basis(Vector3.RIGHT, deg_to_rad(-1.0)) * foot_rest.basis)
-		var toe: int = _combat_bones[side + "ToeBase"]
-		skeleton.set_bone_pose(toe, skeleton.get_bone_rest(toe))
-		var point := visual.to_local(skeleton.to_global(foot_rest.origin))
-		# A base da cápsula fica .01 acima da origem do Actor; compensa os últimos
-		# 3 mm de elevação da sola vindos dos pesos da canela, com ponta e calcanhar livres.
-		point.y += 0.007
-		point.x = -0.12 if side == "Left" else 0.12
-		point.z = -0.025 if side == "Left" else 0.025
-		_solve_leg(side, visual.to_global(point))
-	_idle_pose = _capture_pose()
-	for side in ["Left", "Right"]:
-		var foot: int = _combat_bones[side + "Foot"]
-		_idle_feet[side] = visual.to_local(skeleton.to_global(skeleton.get_bone_global_pose(foot).origin))
+func _build_idle_pose() -> void: _locomotion_pose._build_idle_pose()
 
-func _pose_cycle(clip: String, normalized_phase: float, start: float) -> void:
-	var anim := animation.get_animation(clip)
-	animation.play(clip)
-	if not _cycle_starts.has(clip):
-		animation.seek(start, true)
-		_cycle_starts[clip] = _capture_pose()
-	var p := fposmod(normalized_phase, 1.0)
-	animation.seek(start + p * maxf(0.01, anim.length - start), true)
-	if p > 0.90: _apply_blend(_capture_pose(), _cycle_starts[clip], smoothstep(0.90, 1.0, p))
+func _pose_cycle(clip: String, normalized_phase: float, start: float) -> void: _locomotion_pose._pose_cycle(clip, normalized_phase, start)
 
-func _mirror_current_pose() -> void:
-	var original := _capture_pose()
-	for bone in original.size():
-		var entry_name := skeleton.get_bone_name(bone)
-		var other := entry_name.replace("Left", "Right") if entry_name.begins_with("Left") else entry_name.replace("Right", "Left")
-		var source: int = _combat_bones.get(other, bone)
-		var q: Quaternion = original[source][1]
-		var rest := _combat_rests[source].basis.get_rotation_quaternion()
-		var mirrored := Quaternion(q.x, -q.y, -q.z, q.w)
-		var reflected_rest := Quaternion(rest.x, -rest.y, -rest.z, rest.w)
-		skeleton.set_bone_pose_rotation(bone, (_combat_rests[bone].basis.get_rotation_quaternion() * reflected_rest.inverse() * mirrored).normalized())
+func _mirror_current_pose() -> void: _locomotion_pose._mirror_current_pose()
 
-func _apply_idle_breath() -> void:
-	var chest: int = _combat_bones.get("Spine02", -1)
-	if chest >= 0:
-		var breath := sin(_idle_clock * 1.65) * 0.009
-		skeleton.set_bone_pose_rotation(chest, skeleton.get_bone_pose_rotation(chest) * Quaternion(Vector3.RIGHT, breath))
+func _apply_idle_breath() -> void: _locomotion_pose._apply_idle_breath()
 
-func _pose_turn(delta: float, moving: bool) -> void:
-	if _idle_feet.is_empty(): return
-	if not _feet_initialized or moving:
-		_feet_yaw = visual.rotation.y
-		_feet_initialized = true
-		_turn_time = 1.0
-		_turn_feet.clear()
-		return
-	var difference := wrapf(visual.rotation.y - _feet_yaw, -PI, PI)
-	if _turn_time >= 1.0 and absf(difference) > 0.20:
-		_turn_from = _feet_yaw
-		_turn_to = _feet_yaw + clampf(difference, -PI * 0.5, PI * 0.5)
-		_turn_time = 0.0
-		for side in ["Left", "Right"]:
-			_turn_feet[side] = global_transform * (Basis(Vector3.UP, _turn_from) * (_idle_feet[side] as Vector3))
-	if _turn_time < 1.0:
-		_turn_time = minf(1.0, _turn_time + delta / 0.36)
-		_feet_yaw = lerp_angle(_turn_from, _turn_to, smoothstep(0.0, 1.0, _turn_time))
-	var offset := clampf(wrapf(_feet_yaw - visual.rotation.y, -PI, PI), -0.65, 0.65)
-	var chest: int = _combat_bones.get("Spine02", -1)
-	var chest_basis := skeleton.get_bone_global_pose(chest).basis
-	_set_combat_bone_rotation(hips, Basis(Vector3.UP, offset) * skeleton.get_bone_global_pose(hips).basis)
-	_set_combat_bone_rotation(chest, chest_basis)
-	if not _turn_feet.is_empty():
-		for side in ["Left", "Right"]:
-			var first: bool = (side == "Left") == (_turn_to > _turn_from)
-			var t := clampf(_turn_time * 2.0 - (0.0 if first else 1.0), 0.0, 1.0)
-			var target := global_transform * (Basis(Vector3.UP, _turn_to) * (_idle_feet[side] as Vector3))
-			var foot: Vector3 = (_turn_feet[side] as Vector3).lerp(target, smoothstep(0, 1, t))
-			foot.y += sin(t * PI) * 0.075
-			_solve_leg(side, foot)
+func _pose_turn(delta: float, moving: bool) -> void: _locomotion_pose._pose_turn(delta, moving)
 
-func _solve_leg(side: String, world_foot: Vector3) -> void:
-	var upper: int = _combat_bones[side + "UpLeg"]
-	var lower: int = _combat_bones[side + "Leg"]
-	var foot: int = _combat_bones[side + "Foot"]
-	var foot_basis := skeleton.get_bone_global_pose(foot).basis
-	var origin := skeleton.get_bone_global_pose(upper).origin
-	var target := skeleton.to_local(world_foot)
-	var a := _combat_rests[lower].origin.length()
-	var b := _combat_rests[foot].origin.length()
-	var axis := (target - origin).normalized()
-	var distance := clampf(origin.distance_to(target), 0.05, a + b - 0.001)
-	var pole := Vector3(0, 0, 1)
-	var bend := (pole - axis * pole.dot(axis)).normalized()
-	var along := (a*a - b*b + distance*distance) / (2.0 * distance)
-	var knee := origin + axis * along + bend * sqrt(maxf(0, a*a - along*along))
-	_point_combat_bone(upper, lower, knee)
-	_point_combat_bone(lower, foot, target)
-	_set_combat_bone_rotation(foot, foot_basis)
+func _solve_leg(side: String, world_foot: Vector3) -> void: _locomotion_pose._solve_leg(side, world_foot)
 
-func _apply_pose(pose: Array) -> void:
-	if not is_instance_valid(skeleton): return
-	for bone in mini(pose.size(), skeleton.get_bone_count()):
-		skeleton.set_bone_pose_position(bone, pose[bone][0] as Vector3)
-		skeleton.set_bone_pose_rotation(bone, pose[bone][1] as Quaternion)
-		skeleton.set_bone_pose_scale(bone, pose[bone][2] as Vector3)
+func _apply_pose(pose: Array) -> void: _locomotion_pose._apply_pose(pose)
 
-func _pose_clip(clip: String, time: float) -> void:
-	if not animation.has_animation(clip): return
-	animation.play(clip)
-	if clip in LADDER_CLIPS and not _traversal_roots.has(clip):
-		animation.seek(0.0, true)
-		var first := skeleton.get_bone_pose_position(hips)
-		animation.seek(animation.get_animation(clip).length, true)
-		_traversal_roots[clip] = [first, skeleton.get_bone_pose_position(hips)]
-	animation.seek(clampf(time, 0.0, animation.get_animation(clip).length), true)
-	if clip in LADDER_CLIPS:
-		var endpoints: Array = _traversal_roots[clip]
-		var progress := clampf(time / animation.get_animation(clip).length, 0, 1)
-		var hip := skeleton.get_bone_pose_position(hips)
-		hip -= (endpoints[0] as Vector3).lerp(endpoints[1], progress) - hip_rest
-		hip.x = hip_rest.x
-		hip.z = hip_rest.z
-		skeleton.set_bone_pose_position(hips, hip)
+func _pose_clip(clip: String, time: float) -> void: _locomotion_pose._pose_clip(clip, time)
 
-func pose_vehicle(sitting: float, stepping: float = 0.0, side: int = -1, reach: float = 1.0, handlebars: Dictionary = {}) -> void:
-	_apply_pose(_idle_pose)
-	if handlebars.has("Left") and handlebars.has("Right"):
-		var center: Vector3 = visual.to_local((handlebars.Left.origin + handlebars.Right.origin) * .5)
-		if hips >= 0:
-			# Inclina a partir da cintura em vez de esticar os ossos do braço até uma barra distante.
-			var toward := Vector3(center.x, 0, center.z).normalized()
-			var lean_mult = handlebars.get("lean_multiplier", 1.8)
-			var lean_min = handlebars.get("lean_min", 0.5)
-			var lean := clampf(Vector2(center.x, center.z).length() * lean_mult, lean_min, 1.3)
-			var bar_axis: Vector3 = visual.global_basis.orthonormalized().inverse() * (handlebars.Right.basis.y as Vector3)
-			var turn := atan2(-bar_axis.z, bar_axis.x)
-			var forward_lean := visual.global_basis.orthonormalized() * Basis(Vector3.UP.cross(toward), lean) * Basis(Vector3.UP, turn) * visual.global_basis.orthonormalized().inverse()
-			var local_lean := skeleton.global_basis.orthonormalized().inverse() * forward_lean * skeleton.global_basis.orthonormalized()
-			_set_combat_bone_rotation(hips, local_lean * skeleton.get_bone_global_pose(hips).basis)
-			_fit_motorcycle_reach(handlebars)
-	for limb in ["Left", "Right"]:
-		var sign_side := -1.0 if limb == "Left" else 1.0
-		var target: Vector3 = (_idle_feet[limb] as Vector3).lerp(Vector3(sign_side * 0.15, 0.50, -0.38), sitting)
-		if (limb == "Left") == (side < 0): target += Vector3(sign_side * 0.22, 0.48, -0.04) * stepping
-		_solve_leg(limb, visual.to_global(target))
-		var hand := Vector3(sign_side * 0.23, lerpf(0.86, 1.05, sitting), -0.28)
-		var palm_basis := Basis.IDENTITY
-		if handlebars.has(limb):
-			var hold: Transform3D = handlebars[limb]
-			hand = visual.to_local(hold.origin)
-			palm_basis = visual.global_basis.orthonormalized().inverse() * hold.basis
-		_solve_combat_arm(limb, hand, palm_basis, not handlebars.is_empty(), sign_side)
-	_set_combat_grips(not handlebars.is_empty(), not handlebars.is_empty())
-	if reach < 1.0: _apply_blend(_idle_pose, _capture_pose(), clampf(reach, 0.0, 1.0))
+func pose_vehicle(sitting: float, stepping: float = 0.0, side: int = -1, reach: float = 1.0, handlebars: Dictionary = {}) -> void: _seat_pose.pose_vehicle(sitting, stepping, side, reach, handlebars)
 
-func _fit_motorcycle_reach(handlebars: Dictionary) -> void:
-	var shift := Vector3.ZERO
-	for limb in ["Left", "Right"]:
-		var hold: Transform3D = handlebars[limb]
-		var roll := .358 if limb == "Right" else -.392
-		var hand_basis := hold.basis * Basis(Vector3.RIGHT, -PI * .5) * Basis(Vector3.UP, -roll)
-		var wrist := hold.origin - hand_basis * Vector3(0, .065, 0) * skeleton.global_basis.get_scale().x
-		var shoulder := skeleton.to_global(skeleton.get_bone_global_pose(_combat_bones[limb + "Arm"]).origin)
-		var length: float = (_combat_rests[_combat_bones[limb + "ForeArm"]].origin.length() + _combat_rests[_combat_bones[limb + "Hand"]].origin.length() - .045) * skeleton.global_basis.get_scale().x
-		var offset := wrist - shoulder
-		var correction := offset.normalized() * maxf(0.0, offset.length() - length)
-		if correction.length_squared() > shift.length_squared(): shift = correction
-	# A mão de fora percorre mais ao esterçar. Desliza no selim
-	# até 28 cm em vez de esticar o braço; o IK das pernas mantém os dois alvos dos pés.
-	shift = shift.limit_length(.28)
-	var parent := skeleton.get_bone_parent(hips)
-	var parent_basis := skeleton.get_bone_global_pose(parent).basis if parent >= 0 else Basis.IDENTITY
-	var local_shift := parent_basis.inverse() * skeleton.global_basis.inverse() * shift
-	skeleton.set_bone_pose_position(hips, skeleton.get_bone_pose_position(hips) + local_shift)
+func _fit_motorcycle_reach(handlebars: Dictionary) -> void: _seat_pose._fit_motorcycle_reach(handlebars)
 
 ## Motorista sentado (carro, picape, caminhão, ônibus, buggy, empilhadeira). Aditivo: a
 ## moto continua em `pose_vehicle` com guidão. `VehicleInterior` decide onde o Actor fica e
 ## quais são os alvos; aqui só se reclina o tronco e se resolve a perna/braço a cada alvo.
 var seated := false
 
-## Repouso reclinado. `recline` em rad, positivo = encosto para trás. Devolve o centro do
-## quadril no espaço do próprio Actor, para o chamador posicionar o corpo no banco.
-func pose_seated_base(recline: float) -> Vector3:
-	seated = true
-	if not is_instance_valid(skeleton) or _idle_pose.is_empty(): return Vector3(0, 0.77, 0)
-	_apply_pose(_idle_pose)
-	if hips >= 0 and absf(recline) > 0.001:
-		# Gira só o tronco a partir do quadril: o eixo vem do visual (o modelo é girado 180°).
-		var visual_basis := visual.global_basis.orthonormalized()
-		var skeleton_basis := skeleton.global_basis.orthonormalized()
-		var turn := skeleton_basis.inverse() * (visual_basis * Basis(Vector3.RIGHT, recline) * visual_basis.inverse()) * skeleton_basis
-		_set_combat_bone_rotation(hips, turn * skeleton.get_bone_global_pose(hips).basis)
-	var left := skeleton.to_global(skeleton.get_bone_global_pose(_combat_bones["LeftUpLeg"]).origin)
-	var right := skeleton.to_global(skeleton.get_bone_global_pose(_combat_bones["RightUpLeg"]).origin)
-	return to_local((left + right) * 0.5)
+func pose_seated_base(recline: float) -> Vector3: return _seat_pose.pose_seated_base(recline)
 
-## `feet`: pé (tornozelo) por lado, no espaço do Actor (metros, sem a escala do visual).
-## `hands`: Transform3D da palma por lado, também no espaço do Actor (mesma convenção da
-## empunhadura do guidão da moto: Y ao longo do que se agarra, Z para trás). Lado sem mão
-## fica solto.
-func pose_seated_limbs(feet: Dictionary, hands: Dictionary) -> void:
-	if not is_instance_valid(skeleton) or _combat_bones.is_empty(): return
-	# O polo do cotovelo vem do quadro anterior; sem isto a primeira solução ficava presa
-	# ao último gesto de combate e o braço não chegava à mão.
-	_elbow_previous.clear()
-	_twist_previous.clear()
-	_grip_fingers.clear()
-	_pose_delta = 1.0
-	for limb in ["Left", "Right"]:
-		var sign_side := -1.0 if limb == "Left" else 1.0
-		if feet.has(limb): _solve_leg(limb, to_global(feet[limb]))
-		if hands.has(limb):
-			var hold: Transform3D = hands[limb]
-			# `_solve_combat_arm` espera o alvo no espaço do visual (que pode estar escalado).
-			_solve_combat_arm(limb, visual.to_local(to_global(hold.origin)), hold.basis, true, sign_side)
-	# Mão fechada no que segura: o blend shape vai direto, sem o move_toward do quadro.
-	if is_instance_valid(_combat_skin) and _combat_skin.get_blend_shape_count() >= 2:
-		_combat_skin.set_blend_shape_value(0, 1.0 if hands.has("Right") else 0.18)
-		_combat_skin.set_blend_shape_value(1, 1.0 if hands.has("Left") else 0.18)
-	_pose_delta = 1.0 / 60.0
+func pose_seated_limbs(feet: Dictionary, hands: Dictionary) -> void: _seat_pose.pose_seated_limbs(feet, hands)
 
-## Moto parada: o pé esquerdo sai da pedaleira e apoia no chão ao lado (`weight` 0–1), como o piloto faz
-## ao parar no sinal; `ground_y` é a altura do chão no mundo. Depois de `pose_vehicle` com o guidão.
-func pose_motorcycle_foot(weight: float, ground_y: float) -> void:
-	if weight <= .01 or not is_instance_valid(skeleton) or not _combat_bones.has("LeftFoot"): return
-	var foot: int = _combat_bones["LeftFoot"]
-	var current := skeleton.to_global(skeleton.get_bone_global_pose(foot).origin)
-	var planted := visual.to_global(Vector3(-.36, 0.0, -.10))
-	planted.y = ground_y + .09
-	_solve_leg("Left", current.lerp(planted, smoothstep(0.0, 1.0, weight)))
+func pose_motorcycle_foot(weight: float, ground_y: float) -> void: _seat_pose.pose_motorcycle_foot(weight, ground_y)
 
-## Motorista: tronco inclinado de lado (rad; positivo = para a direita do corpo), aplicado entre a base
-## reclinada e o IK dos braços, para as mãos continuarem no volante.
-func pose_driver_lean(lean: float) -> void:
-	if not is_instance_valid(skeleton) or absf(lean) < .0005: return
-	var to_skeleton := skeleton.global_basis.orthonormalized().inverse() * visual.global_basis.orthonormalized()
-	var axis := (to_skeleton * Vector3.BACK).normalized()
-	for entry in [["Spine01", .6], ["Spine02", .4]]:
-		var bone: int = _combat_bones.get(entry[0], -1)
-		if bone >= 0: _set_combat_bone_rotation(bone, Basis(axis, -lean * float(entry[1])) * skeleton.get_bone_global_pose(bone).basis)
+func pose_driver_lean(lean: float) -> void: _seat_pose.pose_driver_lean(lean)
 
-## Motorista: cabeça girada (rad; positivo = para a esquerda), depois do IK dos braços.
-func pose_driver_look(look: float) -> void:
-	if not is_instance_valid(skeleton) or absf(look) < .001: return
-	var to_skeleton := skeleton.global_basis.orthonormalized().inverse() * visual.global_basis.orthonormalized()
-	var axis := (to_skeleton * Vector3.UP).normalized()
-	for entry in [["neck", .4], ["Head", .6]]:
-		var bone: int = _combat_bones.get(entry[0], -1)
-		if bone >= 0: _set_combat_bone_rotation(bone, Basis(axis, look * float(entry[1])) * skeleton.get_bone_global_pose(bone).basis)
+func pose_driver_look(look: float) -> void: _seat_pose.pose_driver_look(look)
 
-## Volta o corpo ao mundo de pé. Chamado por `teleport`: todo caminho de saída do veículo
-## (porta, salto, resgate, morte) passa por lá.
-func release_seated(keep_yaw := false) -> void:
-	if not seated: return
-	seated = false
-	# `keep_yaw`: a animação de saída gira o visual por conta própria; a guinada do veículo
-	# passa do corpo (que estava preso à base do carro) para o visual, sem o corpo girar duas vezes.
-	var yaw := global_rotation.y
-	global_basis = Basis.IDENTITY
-	visual.rotation = Vector3(0, yaw, 0) if keep_yaw else Vector3.ZERO
-	visual.scale = Vector3.ONE
-	visual.position = Vector3.ZERO
-	remove_meta("seated_state")
-	if is_instance_valid(_combat_skin) and _combat_skin.get_blend_shape_count() >= 2:
-		_combat_skin.set_blend_shape_value(0, 0.0)
-		_combat_skin.set_blend_shape_value(1, 0.0)
-	if is_inside_tree(): reset_physics_interpolation()
+func release_seated(keep_yaw := false) -> void: _seat_pose.release_seated(keep_yaw)
 
 func _capture_pose() -> Array:
 	var pose: Array = []
@@ -859,17 +553,7 @@ func _apply_blend(from_pose: Array, to_pose: Array, weight: float) -> void:
 		skeleton.set_bone_pose_rotation(bone, (from_pose[bone][1] as Quaternion).slerp(to_pose[bone][1], weight))
 		skeleton.set_bone_pose_scale(bone, (from_pose[bone][2] as Vector3).lerp(to_pose[bone][2], weight))
 
-## Gameplay escreve um pacote pronto em espaço local do Actor. O pacote é
-## aplicado depois da locomoção, para que pernas/corpo continuem animados e os
-## braços mantenham contato real com as empunhaduras.
-func set_combat_weapon_pose(id: String, pose: Dictionary) -> void:
-	if id != combat_weapon_id:
-		# Torção e dedos da pegada são da arma anterior: herdados, o antebraço saltava
-		# 154° no primeiro golpe com o machado depois do taco.
-		_twist_previous.clear()
-		_grip_fingers.clear()
-	combat_weapon_id = id
-	combat_weapon_pose = pose
+func set_combat_weapon_pose(id: String, pose: Dictionary) -> void: _combat_pose.set_combat_weapon_pose(id, pose)
 
 func set_combat_weapon_mount(node: Node3D, grip: Vector3) -> void:
 	combat_weapon_mount = node
@@ -879,650 +563,53 @@ func clear_combat_weapon_pose() -> void:
 	combat_weapon_id = ""
 	combat_weapon_pose = {}
 
-## Espada de duas mãos dos clipes do Mixamo: presa à mão direita pela pegada `grip` (medida na guarda) e,
-## quando as duas mãos estão no cabo, alinhada à linha entre elas (os clipes giram a espada entre as mãos).
-func _two_hand_sword_transform(grip: Transform3D) -> Transform3D:
-	var right_bone: int = _combat_bones.get("RightHand", -1)
-	var left_bone: int = _combat_bones.get("LeftHand", -1)
-	if right_bone < 0: return combat_weapon_transform(combat_weapon_grip)
-	var right := (skeleton.global_transform * skeleton.get_bone_global_pose(right_bone)).orthonormalized()
-	# As pegadas escritas são arredondadas; normaliza depois da composição para o slerp receber
-	# uma rotação válida mesmo quando a própria mão já estava ortonormalizada.
-	var result := (right * grip).orthonormalized()
-	# Espada e escudo: a esquerda segura o escudo e nunca entra no cabo, mesmo passando perto dele.
-	if left_bone >= 0 and combat_weapon_id != "sword_shield":
-		var left := skeleton.global_transform * skeleton.get_bone_global_pose(left_bone)
-		var axis := right.origin - left.origin
-		var weight := clampf((0.30 - axis.length()) / 0.10, 0.0, 1.0)
-		if weight > 0.0 and axis.length_squared() > 0.0001:
-			var aligned := Basis.looking_at(axis.normalized(), result.basis.y)
-			result.basis = result.basis.slerp(aligned, weight)
-	return result
+func _two_hand_sword_transform(grip: Transform3D) -> Transform3D: return _combat_pose._two_hand_sword_transform(grip)
 
-## Mistura da troca clipe ↔ carregar. A orientação parte da lâmina apresentada no quadro da troca (fixa
-## no corpo) e chega à do modo novo; derivá-la da mão a cada quadro fazia a lâmina herdar o giro do
-## pulso, que o IK limita a 18 rad/s (picos de 34°/quadro na saída do golpe). A posição fica presa à mão
-## atual: cabo na palma com a orientação mostrada, indo para a pegada do clipe ao entrar nele.
-func _sword_switch_transform() -> Transform3D:
-	var held := _two_hand_sword_transform(_sword_native_grip)
-	var weight := smoothstep(0.0, _sword_switch_length(), _sword_switch_age)
-	var body := visual.global_basis.orthonormalized()
-	var target := held.basis if _sword_native_last else (body * _sword_carry_basis).orthonormalized()
-	var blade_basis := (body * _sword_from_basis).orthonormalized().slerp(target, weight).orthonormalized()
-	var at_palm := combat_palm_position("Right") - blade_basis * combat_weapon_grip
-	return Transform3D(blade_basis, at_palm.lerp(held.origin, weight) if _sword_native_last else held.origin.lerp(at_palm, weight))
+func _sword_switch_transform() -> Transform3D: return _combat_pose._sword_switch_transform()
 
-func _sword_switch_length() -> float:
-	return SWORD_SWITCH_INTO_CLIP if _sword_native_last else SWORD_SWITCH_OUT_OF_CLIP
+func _sword_switch_length() -> float: return _combat_pose._sword_switch_length()
 
-func _sword_switching() -> bool:
-	return combat_weapon_id in NATIVE_SWORDS and _sword_switch_age < _sword_switch_length()
+func _sword_switching() -> bool: return _combat_pose._sword_switching()
 
-func _track_sword_switch(native: bool) -> void:
-	if native == _sword_native_last:
-		_sword_switch_age += _pose_delta
-	else:
-		_sword_native_last = native
-		_sword_switch_age = 0.0
-		if is_instance_valid(combat_weapon_mount):
-			_sword_from_basis = (visual.global_basis.orthonormalized().inverse() * combat_weapon_mount.global_basis).orthonormalized()
-		if not native:
-			# O solver de pegada recomeça da pose apresentada no fim do clipe, não da de antes do golpe.
-			_grip_fingers.clear()
-			_elbow_solved.clear()
-			_twist_previous.clear()
-	if native and not combat_weapon_pose.has("hand_grip"):
-		# Clipe sem pegada medida (`native_sword_basis`): não há o que misturar.
-		_sword_switch_age = SWORD_SWITCH_OUT_OF_CLIP
-	elif native: _sword_native_grip = combat_weapon_pose.hand_grip
-	elif combat_weapon_pose.has("basis"): _sword_carry_basis = combat_weapon_pose.basis
+func _track_sword_switch(native: bool) -> void: _combat_pose._track_sword_switch(native)
 
-## Entrando no clipe, os braços saem da pose de carregar (não da locomoção crua) e chegam ao clipe em
-## SWORD_SWITCH_INTO_CLIP; o que foi apresentado fica guardado para a saída partir do fim do clipe.
-func _present_native_sword_arms() -> void:
-	var weight := smoothstep(0.0, SWORD_SWITCH_INTO_CLIP, _sword_switch_age)
-	for side in ["Right", "Left"]:
-		for part in ["Shoulder", "Arm", "ForeArm", "Hand"]:
-			var bone: int = _combat_bones.get(side + part, -1)
-			if bone < 0: continue
-			var rotation := skeleton.get_bone_pose_rotation(bone)
-			if weight < 1.0 and _presented_arm_rotations.has(bone):
-				rotation = (_presented_arm_rotations[bone] as Quaternion).slerp(rotation, weight).normalized()
-				skeleton.set_bone_pose_rotation(bone, rotation)
-			_presented_arm_rotations[bone] = rotation
+func _present_native_sword_arms() -> void: _combat_pose._present_native_sword_arms()
 
-func _apply_combat_weapon_pose() -> void:
-	var native_sword: bool = combat_weapon_pose.get("native_sword", false) and skeleton != null
-	if combat_weapon_id in NATIVE_SWORDS: _track_sword_switch(native_sword)
-	if native_sword:
-		# Preserva o golpe de espada importado, incluindo os arcos de cotovelo e pulso.
-		# A esquerda fecha no cabo quando o clipe a põe junto da direita (guarda, andar e golpes de duas mãos).
-		var two_hands := _clip_palm("Left").distance_to(_clip_palm("Right")) < 0.25
-		_set_combat_grips(true, two_hands, true, two_hands, false, not two_hands)
-		if combat_weapon_id in NATIVE_SWORDS: _present_native_sword_arms()
-		if is_instance_valid(combat_weapon_mount):
-			if _sword_switching(): combat_weapon_mount.global_transform = _sword_switch_transform()
-			else: combat_weapon_mount.global_transform = _two_hand_sword_transform(combat_weapon_pose.hand_grip) if combat_weapon_pose.has("hand_grip") else combat_weapon_transform(combat_weapon_grip)
-		return
-	_elbow_previous = _elbow_solved.duplicate()
-	var support_hand_before: Quaternion = _presented_arm_rotations.get(_combat_bones.get("LeftHand", -1), Quaternion.IDENTITY)
-	var had_support_hand := _presented_arm_rotations.has(_combat_bones.get("LeftHand", -1))
-	var support_fore_before: Quaternion = _presented_arm_rotations.get(_combat_bones.get("LeftForeArm", -1), Quaternion.IDENTITY)
-	var support_upper_before := {}
-	for part in ["LeftShoulder", "LeftArm"]:
-		var upper_bone: int = _combat_bones.get(part, -1)
-		if _presented_arm_rotations.has(upper_bone): support_upper_before[upper_bone] = _presented_arm_rotations[upper_bone]
-	if skeleton == null or combat_weapon_pose.is_empty():
-		_set_combat_grips(false, false)
-		_stabilize_combat_pose()
-		return
-	for required in ["RightArm", "RightForeArm", "RightHand", "LeftArm", "LeftForeArm", "LeftHand"]:
-		if not _combat_bones.has(required): return
-	var pose := combat_weapon_pose
-	# Soqueira correndo / soco por clipe: alvo = palma do clipe DESTE quadro, lida antes de a
-	# camada de arma mexer em quadril, coluna e clavícula. O jogo a guarda em `_clip_palms`
-	# logo depois da locomoção; quem chama `_pose_locomotion` direto (testes, tiras de
-	# quadros) não, e o padrão antigo (`combat_palm_position` lido no meio desta função, com a
-	# coluna já endireitada) não era a palma do clipe: correndo, a mão esquerda subia à frente
-	# do rosto (test_weapon_locomotion, 18 quadros; com a palma do clipe, nenhum).
-	var follow_clip := clampf(float(pose.get("follow_clip", 0.0)), 0.0, 1.0)
-	var clip_palms := _clip_palms
-	if follow_clip > 0.0 and clip_palms.is_empty(): clip_palms = {"Left": _clip_palm("Left"), "Right": _clip_palm("Right")}
-	var armed := bool(pose.get("armed", combat_weapon_id != "fists"))
-	var right_grip := bool(pose.get("right_grip", false))
-	var left_grip := bool(pose.get("left_grip", false))
-	# Braço que a pose não pede fica com o clipe de locomoção (como o braço livre
-	# da V1, que seguia Walking/Running em vez de um alvo procedural).
-	var right_solve := bool(pose.get("right_solve", right_grip or combat_weapon_id != "fists"))
-	var left_solve := bool(pose.get("left_solve", left_grip))
-	var right_basis: Basis = pose.get("right_basis", pose.basis)
-	var left_basis: Basis = pose.get("left_basis", pose.basis)
-	# V1 `MeshyDanteRig.prepare_pose`/`sync_shoulders`: armado, a coluna baixa volta
-	# ao repouso e a de cima recebe só o giro de postura. Senão o clipe de
-	# caminhada torce a camisa contra braços já resolvidos no espaço da mira.
-	var clip_punch := bool(pose.get("clip_punch", false))
-	var torso_yaw := 0.0 if clip_punch else float(pose.get("torso_yaw", 0.0))
-	# A passada já posiciona quadril e pés. O giro de ataque fica no tronco
-	# enquanto anda; aplicar o mesmo giro na raiz arrastava as duas pernas.
-	# Golpe parado: o quadril gira antes do tronco (cadeia cinética), o peso vai à
-	# frente ("step") e os joelhos cedem ("dip") com os pés plantados pelo IK de
-	# perna. Andando, a passada é dona do quadril e só o tronco participa.
-	var hip_yaw := 0.0 if clip_punch else float(pose.get("hip_yaw", torso_yaw * 0.35))
-	var dip := 0.0 if clip_punch else float(pose.get("dip", 0.0))
-	var step := 0.0 if clip_punch else float(pose.get("step", 0.0))
-	var weight_shift := absf(dip) > 0.0005 or absf(step) > 0.0005
-	if combat_weapon_id in ["fists", "knuckles", "knife", "axe", "bat", "katana", "sword_shield"] and (absf(hip_yaw) > 0.001 or weight_shift) and _locomotion_weight <= 0.0 and hips >= 0:
-		var chest_before: Basis = skeleton.get_bone_global_pose(_combat_bones.Spine02).basis
-		var planted := _turn_time >= 1.0
-		if planted and weight_shift:
-			# Deslocamento em metros do Actor (−Z é a frente) levado ao espaço do pai do quadril.
-			var shift := skeleton.global_basis.inverse() * (visual.global_basis.orthonormalized() * Vector3(0.0, -dip, -step))
-			var parent := skeleton.get_bone_parent(hips)
-			if parent >= 0: shift = skeleton.get_bone_global_pose(parent).basis.inverse() * shift
-			skeleton.set_bone_pose_position(hips, skeleton.get_bone_pose_position(hips) + shift)
-		_set_combat_bone_rotation(hips, Basis(Vector3.UP, hip_yaw) * skeleton.get_bone_global_pose(hips).basis)
-		_set_combat_bone_rotation(_combat_bones.Spine02, chest_before)
-		if planted:
-			for side in ["Left", "Right"]:
-				_solve_leg(side, global_transform * (Basis(Vector3.UP, _feet_yaw) * (_idle_feet[side] as Vector3)))
-	if armed and _combat_bones.has("Spine02"):
-		var lower: int = _combat_bones.Spine02
-		_set_combat_bone_rotation(lower, skeleton.get_bone_global_rest(lower).basis)
-	var lean := float(pose.get("lean", 0.0))
-	if _combat_bones.has("Spine") and (armed or absf(torso_yaw) > 0.001 or absf(lean) > 0.001):
-		var spine: int = _combat_bones.Spine
-		var head: int = _combat_bones.get("Head", -1)
-		var gaze: Basis = skeleton.get_bone_global_pose(head).basis if head >= 0 else Basis.IDENTITY
-		var chest := skeleton.get_bone_global_rest(spine).basis if armed else skeleton.get_bone_global_pose(spine).basis
-		# Inclinação no espaço do esqueleto (o modelo é girado 180°: +Z é a frente do Dante).
-		_set_combat_bone_rotation(spine, Basis(Vector3.UP, torso_yaw) * Basis(Vector3.RIGHT, lean) * chest)
-		if head >= 0 and bool(pose.get("melee_action", false)):
-			# Os olhos ficam no alvo: a cabeça devolve boa parte do giro do tronco no
-			# golpe. Some com a passada, sem salto ao começar a andar no meio do golpe.
-			_set_combat_bone_rotation(head, skeleton.get_bone_global_pose(head).basis.slerp(gaze, 0.6 * (1.0 - _locomotion_weight)))
-		elif head >= 0 and float(pose.get("head_counter", 0.0)) > 0.0:
-			# Fuzil no ombro: o tronco fica de lado, mas a cabeça olha pela linha do cano
-			# (sem isso o rosto apontava 40° para fora da mira).
-			_set_combat_bone_rotation(head, skeleton.get_bone_global_pose(head).basis.slerp(gaze, float(pose.head_counter)))
-	var right_weight := clampf(float(pose.get("right_weight", 1.0)), 0.0, 1.0)
-	var right_clip: Array = []
-	if right_solve and right_weight < 1.0:
-		for bone_name in ["RightShoulder", "RightArm", "RightForeArm", "RightHand"]:
-			if _combat_bones.has(bone_name): right_clip.append([_combat_bones[bone_name], skeleton.get_bone_pose_rotation(_combat_bones[bone_name])])
-	var left_weight := clampf(float(pose.get("left_weight", 1.0)), 0.0, 1.0)
-	var left_clip: Array = []
-	if left_solve and left_weight < 1.0:
-		for bone_name in ["LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand"]:
-			if _combat_bones.has(bone_name): left_clip.append([_combat_bones[bone_name], skeleton.get_bone_pose_rotation(_combat_bones[bone_name])])
-	if right_solve: _protract_clavicle("Right")
-	if left_solve: _protract_clavicle("Left")
-	var right_free := float(pose.get("right_free", 0.0))
-	var left_free := float(pose.get("left_free", 0.0))
-	var right_target: Vector3 = pose.right
-	# Soqueira correndo: alvo = palma do clipe de corrida (antes de qualquer solução de braço neste quadro).
-	if follow_clip > 0.0: right_target = right_target.lerp(visual.to_local(clip_palms.Right), follow_clip)
-	var support_weight := float(pose.get("support_weight", 1.0 if pose.get("support_locked", false) else 0.0))
-	var lock_support := right_solve and left_solve and left_grip and support_weight > 0.0
-	if lock_support:
-		# Mesma restrição bilateral do V1: projeta o conjunto até cabo e apoio
-		# caberem simultaneamente no alcance dos dois braços. Sem isso a arma
-		# fica na mão direita, mas o guarda-mão flutua 8–11 cm da esquerda.
-		var relative_world: Vector3 = visual.global_basis * (pose.left - pose.right)
-		for iteration in 8:
-			_solve_combat_arm("Right", right_target, right_basis, right_grip, 1.0, right_free)
-			var desired_left_world: Vector3 = combat_palm_position("Right") + relative_world
-			_solve_combat_arm("Left", visual.to_local(desired_left_world), left_basis, true, -1.0, left_free)
-			var support_error: Vector3 = combat_palm_position("Left") - desired_left_world
-			if support_error.length() < 0.004: break
-			right_target = visual.to_local(visual.to_global(right_target) + support_error * 0.72 * support_weight)
-	if right_solve:
-		_solve_combat_arm("Right", right_target, right_basis, right_grip, 1.0, right_free)
-		for entry in right_clip:
-			_blend_arm_bone(entry[0], entry[1], right_weight)
-	if left_solve:
-		var left_target: Vector3 = pose.left
-		if follow_clip > 0.0: left_target = left_target.lerp(visual.to_local(clip_palms.Left), follow_clip)
-		if lock_support:
-			var realised_delta: Vector3 = visual.global_basis * (pose.left - pose.right)
-			left_target = visual.to_local(combat_palm_position("Right") + realised_delta)
-		_solve_combat_arm("Left", left_target, left_basis, left_grip, -1.0, left_free)
-		for entry in left_clip:
-			_blend_arm_bone(entry[0], entry[1], left_weight)
-	# Punho fechado no soco: pulso reto na linha do antebraço, só girando em torno
-	# dele (vertical na guarda, palma para baixo no impacto). Com a palma presa a uma
-	# base fixa o pulso dobrava e o punho apontava para baixo, lendo como garra.
-	for side in ["Right", "Left"]:
-		var roll: Variant = pose.get(side.to_lower() + "_wrist_roll", null)
-		if roll is float and (right_solve if side == "Right" else left_solve):
-			var hand_bone: int = _combat_bones[side + "Hand"]
-			var axis := (_combat_rests[hand_bone].origin as Vector3).normalized()
-			var straight_rotation := Quaternion(axis, float(roll) * (1.0 if side == "Right" else -1.0)) * _combat_rests[hand_bone].basis.get_rotation_quaternion()
-			var weight := right_weight if side == "Right" else left_weight
-			skeleton.set_bone_pose_rotation(hand_bone, skeleton.get_bone_pose_rotation(hand_bone).slerp(straight_rotation, weight).normalized())
-	# Taco/machado: a forma "agarrar" do modelo só dobra os dedos pela metade e a mão
-	# lia espalmada no cabo; o punho fechado (polegar corrigido) envolve o cabo.
-	var fist_grip := bool(pose.get("grip_as_fist", false))
-	_set_combat_grips(right_grip, left_grip, bool(pose.get("right_fist", false)) or (fist_grip and right_grip), bool(pose.get("left_fist", false)) or (fist_grip and left_grip), not right_solve, not left_solve or left_weight < 0.5)
-	_stabilize_combat_pose()
-	if lock_support and bool(pose.get("support_locked", false)):
-		# Resolve o apoio contra a arma realizada (com restrição angular),
-		# nunca a mão antes da interpolação. Isso mantém as duas palmas no objeto.
-		var delta_world: Vector3 = visual.global_basis * (pose.left - pose.right)
-		var support_target := visual.to_local(combat_palm_position("Right") + delta_world)
-		_solve_combat_arm("Left", support_target, left_basis, true, -1.0, left_free)
-		if bool(pose.get("grip_solver", false)):
-			# Taco/machado: a mão esquerda chega ao cabo vinda do passo (ou de outra
-			# arma). Sem limite aqui o braço saltava 85° num quadro quando a pegada
-			# de duas mãos travava, alcançando o cabo de uma vez.
-			var upper_rate := float(pose.get("arm_rate", 18.0))
-			for upper_bone in support_upper_before:
-				var previous_upper: Quaternion = support_upper_before[upper_bone]
-				var wanted_upper := skeleton.get_bone_pose_rotation(upper_bone)
-				var upper_angle := previous_upper.angle_to(wanted_upper)
-				skeleton.set_bone_pose_rotation(upper_bone, previous_upper.slerp(wanted_upper, minf(1.0, upper_rate * _pose_delta / maxf(upper_angle, 0.0001))).normalized())
-		if had_support_hand:
-			var hand: int = _combat_bones.LeftHand
-			var fore: int = _combat_bones.LeftForeArm
-			var hand_basis := skeleton.get_bone_global_pose(hand).basis
-			var fore_target := skeleton.get_bone_pose_rotation(fore)
-			var change := (support_fore_before.inverse() * fore_target).normalized()
-			if change.w < 0: change = -change
-			var axis := _combat_rests[hand].origin.normalized()
-			var projected := axis * Vector3(change.x, change.y, change.z).dot(axis)
-			var twist := Quaternion(projected.x, projected.y, projected.z, change.w).normalized()
-			var turn := 2.0 * atan2(Vector3(twist.x, twist.y, twist.z).dot(axis), twist.w)
-			var swing := change * twist.inverse()
-			# Limita a rolagem axial sem tirar o pulso do cabo.
-			# Limites da prontidão (14 e 18 rad/s) escalados pela taxa do golpe: o cabo do
-			# taco gira mais rápido que isso e a palma de apoio escorregava do cabo.
-			# Teto de 1,4×: o antebraço também recebe o balanço do IK (sem limite), e
-			# torção + balanço juntos não podem passar de 35°/quadro.
-			var rate_scale := clampf(float(pose.get("arm_rate", 18.0)) / 18.0, 1.0, 1.4)
-			var twist_rate := 14.0 * rate_scale
-			# Taco/machado: no contato a mão de apoio pede 45–65°/quadro em relação ao
-			# antebraço; com a torção presa a 19°/quadro o resto caía no pulso, que
-			# satura, e a palma saía até 4 cm do cabo. A torção leva sua parte.
-			if bool(pose.get("grip_solver", false)): twist_rate = float(pose.get("arm_rate", 18.0))
-			var fore_rotation := (support_fore_before * swing * Quaternion(axis, clampf(turn, -twist_rate * _pose_delta, twist_rate * _pose_delta))).normalized()
-			if bool(pose.get("grip_solver", false)):
-				# A dobra (swing) não tinha limite: com a torção já no teto, o antebraço de
-				# apoio do machado chegava a 36–38°/quadro golpeando em movimento.
-				var fore_limit := float(pose.get("arm_rate", 18.0)) * 1.1 * _pose_delta
-				var fore_angle := support_fore_before.angle_to(fore_rotation)
-				if fore_angle > fore_limit: fore_rotation = support_fore_before.slerp(fore_rotation, fore_limit / fore_angle).normalized()
-			skeleton.set_bone_pose_rotation(fore, fore_rotation)
-			_set_combat_bone_rotation(hand, hand_basis)
-			var desired := skeleton.get_bone_pose_rotation(hand)
-			var angle := support_hand_before.angle_to(desired)
-			# Taco/machado: a mão de apoio gira com o cabo, que no contato passa de
-			# 40°/quadro; a 25 rad/s a palma ficava até 5 cm atrás dele.
-			var hand_rate := 18.0 * rate_scale
-			if bool(pose.get("grip_solver", false)): hand_rate = maxf(hand_rate, float(pose.get("arm_rate", 18.0)) * 1.2)
-			skeleton.set_bone_pose_rotation(hand, support_hand_before.slerp(desired, minf(1.0, hand_rate * _pose_delta / maxf(angle, 0.0001))))
-		for part in ["Shoulder", "Arm", "ForeArm", "Hand"]:
-			var bone: int = _combat_bones["Left" + part]
-			_presented_arm_rotations[bone] = skeleton.get_bone_pose_rotation(bone)
-	# Actor é processado antes de Gameplay na árvore produtiva. Atualizar o
-	# mount aqui elimina o atraso visual de um quadro entre esqueleto e arma.
-	if is_instance_valid(combat_weapon_mount) and right_solve and armed:
-		combat_weapon_mount.global_transform = combat_weapon_transform(combat_weapon_grip)
+func _apply_combat_weapon_pose() -> void: _combat_pose._apply_combat_weapon_pose()
 
-func _stabilize_combat_pose() -> void:
-	# 18 rad/s na prontidão; o golpe pede mais (`WeaponRigPose.STRIKE_ARM_RATE`).
-	var arm_rate := float(combat_weapon_pose.get("arm_rate", 18.0))
-	# A velocidade angular da junta faz parte da restrição de apresentação, incluindo
-	# entrada/saída e mudanças nas restrições de alcance. Os suportes seguem a mão
-	# realizada depois desta passada, então a interpolação não solta a arma empunhada.
-	for side in ["Right", "Left"]:
-		for part in ["Shoulder", "Arm", "ForeArm", "Hand"]:
-			var bone: int = _combat_bones.get(side + part, -1)
-			if bone < 0: continue
-			var target := skeleton.get_bone_pose_rotation(bone).normalized()
-			if _presented_arm_rotations.has(bone):
-				var previous: Quaternion = _presented_arm_rotations[bone]
-				var angle := previous.angle_to(target)
-				target = previous.slerp(target, minf(1.0, arm_rate * _pose_delta / maxf(angle, 0.0001))).normalized()
-			skeleton.set_bone_pose_rotation(bone, target)
-			_presented_arm_rotations[bone] = target
+func _stabilize_combat_pose() -> void: _combat_pose._stabilize_combat_pose()
 
-## V1 `sync_shoulders`: leve protração da clavícula ao estender o braço. Com a
-## clavícula da T-pose presa atrás do peito, as mangas eram puxadas para dentro.
-func _protract_clavicle(side: String) -> void:
-	if not _combat_bones.has(side + "Shoulder"): return
-	var clavicle: int = _combat_bones[side + "Shoulder"]
-	skeleton.set_bone_pose_rotation(clavicle, _combat_rests[clavicle].basis.get_rotation_quaternion())
-	var clavicle_basis := skeleton.get_bone_global_pose(clavicle).basis
-	_set_combat_bone_rotation(clavicle, Basis(Vector3.UP, 0.20 if side == "Right" else -0.20) * clavicle_basis)
+func _protract_clavicle(side: String) -> void: _combat_pose._protract_clavicle(side)
 
-func _blend_arm_bone(bone: int, clip: Quaternion, weight: float) -> void:
-	var solved := skeleton.get_bone_pose_rotation(bone)
-	if _arm_blends.has(bone):
-		var previous: Array = _arm_blends[bone]
-		if clip.dot(previous[0]) < 0: clip = -clip
-		if solved.dot(previous[1]) < 0: solved = -solved
-	elif clip.dot(solved) < 0:
-		solved = -solved
-	_arm_blends[bone] = [clip, solved]
-	# Ao baixar a guarda, use o arco curto até o repouso. A continuidade de
-	# sinal entre quadros pode escolher o arco longo entre estas duas poses.
-	var blended := clip.slerp(solved, weight) if combat_weapon_id == "fists" else clip.slerpni(solved, weight)
-	skeleton.set_bone_pose_rotation(bone, blended.normalized())
+func _blend_arm_bone(bone: int, clip: Quaternion, weight: float) -> void: _combat_pose._blend_arm_bone(bone, clip, weight)
 
-## Blend shapes do `dante.glb`: 0/1 = mão fechada no cabo (GripRight/GripLeft),
-## 2/3 = punho cerrado (FistRight/FistLeft, soco e soqueira). Mão que segue o
-## clipe de locomoção fica levemente curvada (0,18), como na V1.
-func _set_combat_grips(right: bool, left: bool, right_fist := false, left_fist := false, right_relaxed := false, left_relaxed := false) -> void:
-	if not is_instance_valid(_combat_skin): return
-	var count := _combat_skin.get_blend_shape_count()
-	if count >= 2:
-		_combat_skin.set_blend_shape_value(0, move_toward(_combat_skin.get_blend_shape_value(0), 1.0 if right and not right_fist else (0.18 if right_relaxed else 0.0), _pose_delta * 14.0))
-		_combat_skin.set_blend_shape_value(1, move_toward(_combat_skin.get_blend_shape_value(1), 1.0 if left and not left_fist else (0.18 if left_relaxed else 0.0), _pose_delta * 14.0))
-	if count >= 4:
-		_combat_skin.set_blend_shape_value(2, move_toward(_combat_skin.get_blend_shape_value(2), 1.0 if right_fist else 0.0, _pose_delta * 14.0))
-		_combat_skin.set_blend_shape_value(3, move_toward(_combat_skin.get_blend_shape_value(3), 1.0 if left_fist else 0.0, _pose_delta * 14.0))
-	if skeleton != null:
-		for side in ["Right", "Left"]:
-			if _combat_bones.has(side + "Hand"):
-				skeleton.set_bone_pose_scale(_combat_bones[side + "Hand"], Vector3.ONE * 0.95)
+func _set_combat_grips(right: bool, left: bool, right_fist := false, left_fist := false, right_relaxed := false, left_relaxed := false) -> void: _combat_pose._set_combat_grips(right, left, right_fist, left_fist, right_relaxed, left_relaxed)
 
-## Rolagem fixa entre a palma pedida e o osso da mão (V1), usada pelo IK e pela
-## inversa em `combat_realized_palm_basis`.
-const PALM_ROLL := {"Right": 0.358, "Left": -0.392}
 const FREE_ARM_BONES := ["LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand", "RightShoulder", "RightArm", "RightForeArm", "RightHand"]
 
-## IK de dois ossos adaptado do rig Meshy da V1. `target_local` e
-## `palm_basis_local` usam o espaço de frente do Actor, com o cano em -Z.
-## Mão aberta e fechada usam a mesma cadeia e o mesmo polo contínuo.
-func _solve_combat_arm(side: String, target_local: Vector3, palm_basis_local: Basis, _gripping: bool, sign_side: float, _free_weight: float = 0.0) -> void:
-	var upper: int = _combat_bones[side + "Arm"]
-	var fore: int = _combat_bones[side + "ForeArm"]
-	var hand: int = _combat_bones[side + "Hand"]
-	var shoulder := skeleton.get_bone_global_pose(upper).origin
-	var target := skeleton.to_local(visual.to_global(target_local))
-	var palm_world_basis := visual.global_basis.orthonormalized() * palm_basis_local.orthonormalized()
-	var model_basis := skeleton.global_basis.orthonormalized().inverse() * palm_world_basis
-	var roll: float = PALM_ROLL[side]
-	# Abrir os dedos não pode mudar o solver do pulso nem o comprimento do osso.
-	# Punhos, recargas e pegadas respeitam todos a orientação de palma escrita.
-	var wrist_alignment := Basis(Vector3.RIGHT, -PI * 0.5)
-	var hand_basis := model_basis * wrist_alignment * Basis(Vector3.UP, -roll)
-	var palm_offset := Vector3(0, 0.065, 0)
-	var wrist := target - hand_basis * palm_offset
-	var a: float = _combat_rests[fore].origin.length()
-	var b: float = _combat_rests[hand].origin.length()
-	var axis := (wrist - shoulder).normalized()
-	if axis.is_zero_approx(): return
-	var distance := maxf(shoulder.distance_to(wrist), absf(a - b) + 0.001)
-	var soft_start := a + b - 0.055
-	if distance > soft_start:
-		distance = soft_start + 0.050 * (1.0 - exp(-(distance - soft_start) / 0.050))
-	wrist = shoulder + axis * distance
-	# Cotovelo por fora e à frente da jaqueta (valores da V1), em vez de dobrar
-	# pelas costelas quando as mãos se encontram à frente do peito.
-	var long_weapon := bool(combat_weapon_pose.get("long_weapon", combat_weapon_id in ["smg", "shotgun", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower", "axe", "bat"]))
-	var pole_world: Vector3 = visual.global_basis * Vector3(sign_side * (1.10 if long_weapon else 0.65), -1.5, -1.35 if long_weapon else -0.5)
-	# Golpes pedem o próprio polo: cotovelo aberto e alto no gancho, por baixo no uppercut.
-	var authored_pole: Variant = combat_weapon_pose.get("right_pole" if side == "Right" else "left_pole", null)
-	if authored_pole is Vector3: pole_world = visual.global_basis * (authored_pole as Vector3)
-	# Granada: dobra posterior do cotovelo (+Z local), não o polo anterior
-	# das armas apoiadas. Mover só a mão não corrige o lado da articulação.
-	if combat_weapon_id == "grenade" and side == "Right":
-		pole_world = visual.global_basis * Vector3(0.35, -0.6, 1.5)
-	var pole := skeleton.global_basis.inverse() * pole_world
-	var bend := (pole - axis * pole.dot(axis)).normalized()
-	var grip_solver := bool(combat_weapon_pose.get("grip_solver", false))
-	# Taco/machado: a continuidade fica só no fim do solver de pegada. Aplicada aqui
-	# também, ela virava a referência do solver e prendia o cotovelo virado para
-	# dentro/para cima (no carregar, no meio do peito).
-	if _elbow_previous.has(side) and not grip_solver:
-		var previous: Vector3 = _elbow_previous[side]
-		previous = (previous - axis * previous.dot(axis)).normalized()
-		if not previous.is_zero_approx() and not bend.is_zero_approx():
-			var angle := atan2(axis.dot(previous.cross(bend)), previous.dot(bend))
-			bend = Basis(axis, clampf(angle, -8.0 * _pose_delta, 8.0 * _pose_delta)) * previous
-	_elbow_solved[side] = bend
-	if bend.is_zero_approx(): bend = Vector3(sign_side, -0.4, -0.2).normalized()
-	var along := (a * a - b * b + distance * distance) / (2.0 * distance)
-	var elbow := shoulder + axis * along + bend * sqrt(maxf(0.0, a * a - along * along))
-	if grip_solver:
-		# Pegada de taco/machado: a mão não copia a base da arma. O cabo passa pela
-		# linha dos nós dos dedos (polegar para a cabeça da arma) e os dedos seguem o
-		# antebraço; copiando a base da arma o pulso dobrava 65–176° e a mão lia como
-		# virada ao contrário. O cotovelo gira em torno do eixo ombro–pulso até o
-		# antebraço ficar perpendicular ao cabo, como numa pegada real: paralelo, o
-		# cabo entrava no antebraço e a mão virava de repente (palma saltava 10 cm).
-		var head_local: Vector3 = (combat_weapon_pose.basis as Basis).orthonormalized() * Vector3(0, 0, -1)
-		var handle := (skeleton.global_basis.orthonormalized().inverse() * (visual.global_basis.orthonormalized() * head_local)).normalized()
-		var pole_bend := bend
-		for iteration in 2:
-			var center := shoulder + axis * along
-			var radius := sqrt(maxf(0.0, a * a - along * along))
-			var across := handle - axis * handle.dot(axis)
-			if across.length() > 0.05 and radius > 0.01:
-				var ratio := clampf((wrist - center).dot(handle) / radius / across.length(), -1.0, 1.0)
-				var toward := across.normalized()
-				var side_dir := axis.cross(toward)
-				var angle := acos(ratio)
-				var first := toward * cos(angle) + side_dir * sin(angle)
-				var second := toward * cos(angle) - side_dir * sin(angle)
-				var perpendicular := first if first.dot(pole_bend) >= second.dot(pole_bend) else second
-				# No máximo GRIP_ELBOW_SWING do polo autorado: cotovelo para cima ou
-				# para dentro do peito seria pior que um pulso um pouco dobrado.
-				var swing_angle := pole_bend.signed_angle_to(perpendicular, axis)
-				# Só desvia do polo natural quanto precisa: com o antebraço do polo a mais
-				# de ~60° do cabo a pegada já é possível; puxar o cotovelo para o
-				# perpendicular cruzava o braço no peito no carregar.
-				var natural_forearm := (wrist - (center + pole_bend * radius)).normalized()
-				var need := smoothstep(0.5, 0.85, absf(natural_forearm.dot(handle)))
-				bend = pole_bend.rotated(axis, clampf(swing_angle, -GRIP_ELBOW_SWING, GRIP_ELBOW_SWING) * need)
-				# Cotovelo nunca virado para cima: o braço "de baixo para cima" lia como
-				# articulação invertida. Volta em direção ao polo autorado (para baixo).
-				for attempt in 6:
-					if bend.y <= GRIP_ELBOW_UP_MAX: break
-					bend = bend.slerp(pole_bend, 0.5).normalized()
-			if _elbow_previous.has(side):
-				var previous: Vector3 = _elbow_previous[side]
-				previous = (previous - axis * previous.dot(axis)).normalized()
-				if not previous.is_zero_approx() and not bend.is_zero_approx():
-					var step_angle := atan2(axis.dot(previous.cross(bend)), previous.dot(bend))
-					bend = Basis(axis, clampf(step_angle, -GRIP_ELBOW_RATE * _pose_delta, GRIP_ELBOW_RATE * _pose_delta)) * previous
-			_elbow_solved[side] = bend
-			elbow = center + bend * radius
-			var forearm := (wrist - elbow).normalized()
-			var fingers := forearm - handle * forearm.dot(handle)
-			# Antebraço quase paralelo ao cabo (sem cotovelo possível que o deixe
-			# perpendicular): a direção dos dedos degenera e a mão viraria de repente.
-			# Mantém a do quadro anterior, só reprojetada no cabo novo.
-			var held: Vector3 = _grip_fingers.get(side, Vector3.ZERO)
-			held = held - handle * held.dot(handle)
-			if held.length_squared() > 0.0001:
-				var trust := smoothstep(0.25, 0.5, fingers.length())
-				fingers = fingers.normalized() * trust + held.normalized() * (1.0 - trust) if fingers.length_squared() > 0.000001 else held
-			if fingers.length_squared() < 0.0001: break
-			fingers = fingers.normalized()
-			# Quando o antebraço cruza a linha do cabo, a direção dos dedos troca de
-			# lado e a mão giraria até 156° num quadro; o limitador de articulação
-			# segurava a mão e a palma de apoio saía 12 cm do cabo. Girando os dedos em
-			# torno do próprio cabo, a palma continua nele enquanto o pulso alcança.
-			if held.length_squared() > 0.0001:
-				var held_dir := held.normalized()
-				var finger_turn := atan2(handle.dot(held_dir.cross(fingers)), held_dir.dot(fingers))
-				fingers = Basis(handle, clampf(finger_turn, -GRIP_FINGER_RATE * _pose_delta, GRIP_FINGER_RATE * _pose_delta)) * held_dir
-			if iteration == 1: _grip_fingers[side] = fingers
-			hand_basis = _grip_hand_basis(hand, handle, fingers)
-			wrist = target - hand_basis * palm_offset
-			axis = (wrist - shoulder).normalized()
-			distance = maxf(shoulder.distance_to(wrist), absf(a - b) + 0.001)
-			if distance > soft_start:
-				distance = soft_start + 0.050 * (1.0 - exp(-(distance - soft_start) / 0.050))
-			wrist = shoulder + axis * distance
-			bend = (bend - axis * bend.dot(axis)).normalized()
-			pole_bend = (pole - axis * pole.dot(axis)).normalized()
-			if bend.is_zero_approx(): bend = Vector3(sign_side, -0.4, -0.2).normalized()
-			if pole_bend.is_zero_approx(): pole_bend = bend
-			along = (a * a - b * b + distance * distance) / (2.0 * distance)
-			elbow = shoulder + axis * along + bend * sqrt(maxf(0.0, a * a - along * along))
-	# Monta os dois referenciais de segmento a partir do plano do cotovelo, não da rolagem
-	# axial arbitrária do clipe anterior. Isso evita a singularidade do arco mais curto
-	# quando um soco ou uma recarga cruza a direção de referência desse clipe.
-	var rest_upper := skeleton.get_bone_global_rest(upper)
-	var rest_fore := skeleton.get_bone_global_rest(fore)
-	var rest_hand := skeleton.get_bone_global_rest(hand)
-	var rest_plane := (rest_fore.origin - rest_upper.origin).cross(rest_hand.origin - rest_fore.origin).normalized()
-	if rest_plane.length_squared() < 0.1: rest_plane = Vector3.BACK
-	var plane := bend.cross(axis).normalized()
-	_orient_arm_segment(upper, fore, elbow - shoulder, plane, rest_plane)
-	_orient_arm_segment(fore, hand, wrist - elbow, plane, rest_plane)
-	var fore_pose := skeleton.get_bone_global_pose(fore)
-	var axis_fore := (skeleton.get_bone_global_pose(hand).origin - fore_pose.origin).normalized()
-	var current_normal := skeleton.get_bone_global_pose(hand).basis.x
-	var desired_normal := hand_basis.x
-	current_normal = (current_normal - axis_fore * current_normal.dot(axis_fore)).normalized()
-	desired_normal = (desired_normal - axis_fore * desired_normal.dot(axis_fore)).normalized()
-	if not current_normal.is_zero_approx() and not desired_normal.is_zero_approx():
-		# A maior parte da rotação de pegada fica no pulso: rolar muito o
-		# antebraço colapsa a manga na dobra interna do cotovelo.
-		var twist := atan2(axis_fore.dot(current_normal.cross(desired_normal)), current_normal.dot(desired_normal))
-		# clamp(atan2(...), -1.2, 1.2) pulava 2.4 rad no corte de ramo
-		# em +/-PI. Uma fração periódica limitada não tem descontinuidade ali;
-		# o pulso ainda realiza exatamente a orientação de palma pedida.
-		var share := float(combat_weapon_pose.get("forearm_twist_share", 0.0))
-		if share > 0.0:
-			# Pegada de taco/machado: o antebraço gira (pronação/supinação) e o pulso
-			# fica quase reto. Sem isso o pulso ficava 140–176° torcido e a mão lia
-			# como "virada ao contrário". A torção é desembrulhada contra o quadro
-			# anterior, então não salta no corte de ±π.
-			if _twist_previous.has(side):
-				var previous_twist: float = _twist_previous[side]
-				twist = previous_twist + wrapf(twist - previous_twist, -PI, PI)
-			twist = clampf(twist, -1.5 * PI, 1.5 * PI)
-			_twist_previous[side] = twist
-			fore_pose.basis = Basis(axis_fore, clampf(twist * share, -FOREARM_TWIST_MAX, FOREARM_TWIST_MAX)) * fore_pose.basis
-		else:
-			_twist_previous.erase(side)
-			fore_pose.basis = Basis(axis_fore, 1.2 * sin(twist)) * fore_pose.basis
-		_set_combat_bone_rotation(fore, fore_pose.basis)
-	var hand_pose := skeleton.get_bone_global_pose(hand)
-	hand_pose.basis = hand_basis
-	_set_combat_bone_rotation(hand, hand_pose.basis)
+func _solve_combat_arm(side: String, target_local: Vector3, palm_basis_local: Basis, _gripping: bool, sign_side: float, _free_weight: float = 0.0) -> void: _combat_pose._solve_combat_arm(side, target_local, palm_basis_local, _gripping, sign_side, _free_weight)
 
-## Base global do osso da mão (espaço do esqueleto) com o eixo lateral da mão
-## (mindinho → indicador; +Z da malha na T-pose, nas duas mãos) ao longo de
-## `handle` e o eixo dos dedos (Hand → Hand_End) ao longo de `fingers`.
-func _grip_hand_basis(hand: int, handle: Vector3, fingers: Vector3) -> Basis:
-	var rest := skeleton.get_bone_global_rest(hand).basis.orthonormalized()
-	var lateral_local := (rest.inverse() * Vector3(0, 0, 1)).normalized()
-	var fingers_local := _combat_hand_tip(hand)
-	lateral_local = (lateral_local - fingers_local * lateral_local.dot(fingers_local)).normalized()
-	var source := Basis(lateral_local, fingers_local, lateral_local.cross(fingers_local))
-	var lateral := (handle - fingers * handle.dot(fingers)).normalized()
-	var target := Basis(lateral, fingers, lateral.cross(fingers))
-	return (target * source.inverse()).orthonormalized()
+func _grip_hand_basis(hand: int, handle: Vector3, fingers: Vector3) -> Basis: return _combat_pose._grip_hand_basis(hand, handle, fingers)
 
-## Direção dos dedos no espaço local do osso da mão (filho Hand_End na pose de repouso).
-func _combat_hand_tip(hand: int) -> Vector3:
-	for child in skeleton.get_bone_children(hand):
-		return skeleton.get_bone_rest(child).origin.normalized()
-	return Vector3.UP
+func _combat_hand_tip(hand: int) -> Vector3: return _combat_pose._combat_hand_tip(hand)
 
-func _orient_arm_segment(bone: int, child: int, direction: Vector3, plane: Vector3, rest_plane: Vector3) -> void:
-	var y := direction.normalized()
-	var x := (plane - y * plane.dot(y)).normalized()
-	if x.is_zero_approx() or y.is_zero_approx(): return
-	var source_y := _combat_rests[child].origin.normalized()
-	var source_x := skeleton.get_bone_global_rest(bone).basis.orthonormalized().transposed() * rest_plane
-	source_x = (source_x - source_y * source_x.dot(source_y)).normalized()
-	var source := Basis(source_x, source_y, source_x.cross(source_y)).orthonormalized()
-	var target := Basis(x, y, x.cross(y)).orthonormalized()
-	_set_combat_bone_rotation(bone, target * source.transposed())
+func _orient_arm_segment(bone: int, child: int, direction: Vector3, plane: Vector3, rest_plane: Vector3) -> void: _combat_pose._orient_arm_segment(bone, child, direction, plane, rest_plane)
 
-func _point_combat_bone(bone: int, child: int, target: Vector3) -> void:
-	var pose := skeleton.get_bone_global_pose(bone)
-	var current := (skeleton.get_bone_global_pose(child).origin - pose.origin).normalized()
-	var desired := (target - pose.origin).normalized()
-	if current.is_zero_approx() or desired.is_zero_approx(): return
-	pose.basis = Basis(Quaternion(current, desired)) * pose.basis
-	_set_combat_bone_rotation(bone, pose.basis)
+func _point_combat_bone(bone: int, child: int, target: Vector3) -> void: _combat_pose._point_combat_bone(bone, child, target)
 
-## O IK muda só a orientação. Decompor um Transform3D global de volta em
-## pose local a cada iteração bilateral realimenta escala/cisalhamento de ponto flutuante
-## na próxima solução. As trilhas de rotação da animação não zeram essa escala;
-## em centenas de quadros ela cresce até as mangas ocuparem a tela.
-## Mantém translações/escalas escritas e converte só rotações ortonormais.
-func _set_combat_bone_rotation(bone: int, p_global_rotation: Basis) -> void:
-	var parent := skeleton.get_bone_parent(bone)
-	var parent_rotation := Basis.IDENTITY
-	if parent >= 0:
-		parent_rotation = skeleton.get_bone_global_pose(parent).basis.orthonormalized()
-	var local_rotation := parent_rotation.transposed() * p_global_rotation.orthonormalized()
-	skeleton.set_bone_pose_rotation(bone, local_rotation.get_rotation_quaternion().normalized())
+func _set_combat_bone_rotation(bone: int, p_global_rotation: Basis) -> void: _combat_pose._set_combat_bone_rotation(bone, p_global_rotation)
 
-## Palma da pose do clipe neste quadro, pela cadeia de ossos pais: `get_bone_global_pose` pode devolver
-## o cache do quadro anterior logo depois de `set_bone_pose_*`.
-func _clip_palm(side: String) -> Vector3:
-	if skeleton == null or not _combat_bones.has(side + "Hand"): return global_position
-	var bone: int = _combat_bones[side + "Hand"]
-	var chain := skeleton.get_bone_pose(bone)
-	var parent := skeleton.get_bone_parent(bone)
-	while parent >= 0:
-		chain = skeleton.get_bone_pose(parent) * chain
-		parent = skeleton.get_bone_parent(parent)
-	return skeleton.to_global(chain * Vector3(0, 0.065, 0))
+func _clip_palm(side: String) -> Vector3: return _combat_pose._clip_palm(side)
 
-func combat_palm_position(side: String) -> Vector3:
-	if skeleton == null or not _combat_bones.has(side + "Hand"): return global_position
-	var pose := skeleton.get_bone_global_pose(_combat_bones[side + "Hand"])
-	return skeleton.to_global(pose * Vector3(0, 0.065, 0))
+func combat_palm_position(side: String) -> Vector3: return _combat_pose.combat_palm_position(side)
 
-## Orientação da palma realmente apresentada, no espaço do Actor: inverte o
-## alinhamento que `_solve_combat_arm` aplica entre palma pedida e osso da mão.
-func combat_realized_palm_basis(side: String) -> Basis:
-	var hand: int = _combat_bones[side + "Hand"]
-	var roll: float = PALM_ROLL[side]
-	var bone := skeleton.get_bone_global_pose(hand).basis.orthonormalized()
-	var palm := bone * (Basis(Vector3.RIGHT, -PI * 0.5) * Basis(Vector3.UP, -roll)).inverse()
-	return (visual.global_basis.orthonormalized().inverse() * skeleton.global_basis.orthonormalized() * palm).orthonormalized()
+func combat_realized_palm_basis(side: String) -> Basis: return _combat_pose.combat_realized_palm_basis(side)
 
-## Transformação final do prop baseada na palma efetivamente resolvida pelo IK.
-## `grip` é o centro da empunhadura no espaço local do modelo da arma.
-func combat_weapon_transform(grip: Vector3) -> Transform3D:
-	if combat_weapon_pose.is_empty() or not is_instance_valid(visual):
-		return Transform3D(global_basis, global_position)
-	if _sword_switching() and skeleton != null and _combat_bones.has("RightHand"):
-		return _sword_switch_transform()
-	if combat_weapon_pose.get("native_sword", false) and skeleton != null and _combat_bones.has("RightHand"):
-		var index: int = _combat_bones.RightHand
-		var chain := skeleton.get_bone_pose(index)
-		var parent := skeleton.get_bone_parent(index)
-		while parent >= 0:
-			chain = skeleton.get_bone_pose(parent) * chain
-			parent = skeleton.get_bone_parent(parent)
-		var hand_basis := (skeleton.global_basis * chain.basis).orthonormalized()
-		var blade_basis: Basis = hand_basis * combat_weapon_pose.get("native_sword_basis", Basis(Vector3.UP, PI))
-		return Transform3D(blade_basis, _clip_palm("Right") - blade_basis * grip)
-	var local_basis: Basis = combat_weapon_pose.basis
-	if combat_weapon_pose.get("right_wrist_roll") is float:
-		# Pulso reto (soqueira no soco): o prop segue a mão real, não a base pedida.
-		var requested: Basis = combat_weapon_pose.get("right_basis", local_basis)
-		local_basis = combat_realized_palm_basis("Right") * requested.orthonormalized().inverse() * local_basis.orthonormalized()
-	var weapon_basis := (visual.global_basis * local_basis).orthonormalized()
-	# Na V1 a arma não escalava junto com o Dante; `weapon_scale` repõe essa proporção.
-	var weapon_scale := float(combat_weapon_pose.get("weapon_scale", 1.0))
-	return Transform3D(weapon_basis.scaled_local(Vector3.ONE * weapon_scale), combat_palm_position("Right") - weapon_basis * grip * weapon_scale)
+func combat_weapon_transform(grip: Vector3) -> Transform3D: return _combat_pose.combat_weapon_transform(grip)
 
-## Palma esquerda resolvida, com a orientação pedida pela pose (segunda soqueira).
-func combat_left_palm_transform() -> Transform3D:
-	var local_basis: Basis = combat_weapon_pose.get("left_basis", Basis.IDENTITY)
-	if combat_weapon_pose.get("left_wrist_roll") is float: local_basis = combat_realized_palm_basis("Left")
-	var weapon_scale := float(combat_weapon_pose.get("weapon_scale", 1.0))
-	var palm_basis := (visual.global_basis * local_basis).orthonormalized()
-	return Transform3D(palm_basis.scaled_local(Vector3.ONE * weapon_scale), combat_palm_position("Left"))
+func combat_left_palm_transform() -> Transform3D: return _combat_pose.combat_left_palm_transform()
 
-## Subida do quadril no passo, em metros do Actor — o que a V1 lia de
-## `torso_node.position` para acompanhar o carregar da arma com o corpo.
-func combat_rig_info() -> Dictionary:
-	if skeleton == null or hips < 0: return {}
-	return {"body_bob": (skeleton.get_bone_pose_position(hips).y - hip_rest.y) * skeleton.global_basis.get_scale().y / maxf(visual.global_basis.get_scale().y, 0.001)}
+func combat_rig_info() -> Dictionary: return _combat_pose.combat_rig_info()
 
 func teleport(point: Vector3) -> void:
 	release_seated()
@@ -1700,8 +787,7 @@ func respawn_player() -> void:
 	_hit_lean = Vector2.ZERO
 	_hit_lean_velocity = Vector2.ZERO
 	_hit_lean_target = Vector2.ZERO
-	_presented_arm_rotations.clear()
-	_arm_blends.clear()
+	_combat_pose.clear_presented_arms()
 	_feet_initialized = false
 	_turn_feet.clear()
 	_locomotion_weight = 0.0
