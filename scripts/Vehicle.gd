@@ -1390,9 +1390,6 @@ func warm_doors(budget_usec := 2500) -> bool:
 		door_presentation.configure(self, true)
 	return door_presentation.advance(budget_usec)
 
-func camera_lookahead() -> Vector3:
-	return -global_basis.z*clampf(speed*0.4,-2.0,6.0)
-
 func ensure_equipment(world: Node) -> Node:
 	if is_instance_valid(equipment): return equipment
 	equipment = preload("res://gameplay/VehicleEquipment.gd").new()
