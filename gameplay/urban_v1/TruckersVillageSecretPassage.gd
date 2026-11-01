@@ -144,13 +144,6 @@ func configure(owner_session, village_visuals: Node3D, network_progression, tunn
 	return true
 
 
-func set_keypad_code(value: String) -> bool:
-	if value.length() < 3 or value.length() > 8 or not value.is_valid_int():
-		return false
-	_keypad_code = value
-	return true
-
-
 func set_physical_cut_ready(value: bool) -> void:
 	_physical_cut_ready = value
 
