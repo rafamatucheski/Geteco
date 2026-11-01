@@ -10,7 +10,8 @@ legenda até o " · " (o "Joana · rádio" é a voz "joana"). Gere o WAV com ess
 registre no manifesto de vozes como as falas de Harbor (audio/mission_voices/harbor_story/).
 
 Fontes lidas:
-- runtime/desert/act2/*.gd: linhas `["Quem", "texto"]` nas funções de falas (ato 2);
+- runtime/desert/act2/Act2Lines.gd: linhas `["Quem", "texto"]` nas funções de falas (ato 2 inteiro; as de
+  A2-01 a A2-04 saíram da VicenteReunion.gd em 01/11, que ficou só com delegações);
 - data/campaign/*.json: entradas com `speaker` e `pt` (ato 1, missões novas, prólogo).
 
 Fala com %d/%s no texto muda conforme o jogo (contagem de cartas, tempo da corrida): vai marcada
@@ -26,7 +27,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "data", "campaign", "voice-registry.json")
-GD_SOURCES = [os.path.join(ROOT, "runtime", "desert", "act2", name) for name in ("VicenteReunion.gd", "Act2Lines.gd")]
+GD_SOURCES = [os.path.join(ROOT, "runtime", "desert", "act2", "Act2Lines.gd")]
 JSON_DIR = os.path.join(ROOT, "data", "campaign")
 SKIP_JSON = {"voice-registry.json", "campaign_v1.json", "harbor-story.json", "narrative-source.json", "source-flags.json"}
 MANIFESTS = [
@@ -76,9 +77,6 @@ def gd_lines(path: str):
         for pos, name in starts:
             if pos <= m.start():
                 section = name
-        # No VicenteReunion.gd só as funções de falas (*_lines); o resto do arquivo tem listas de nomes.
-        if path.endswith("VicenteReunion.gd") and not section.endswith("_lines"):
-            continue
         speaker = bytes(m.group(1), "utf-8").decode("unicode_escape").encode("latin-1").decode("utf-8")
         text = m.group(3).replace('\\"', '"')
         yield speaker, text, os.path.relpath(path, ROOT).replace("\\", "/") + ":" + section
