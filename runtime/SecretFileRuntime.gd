@@ -26,7 +26,7 @@ func is_open() -> bool:
 	return is_instance_valid(ui) and ui.visible
 
 func open() -> bool:
-	if not available() or session.modal or session.is_transition_blocked() or session.world.gameplay.health<=0: return false
+	if not available() or session.modal or session.is_transition_blocked() or session.player_health()<=0: return false
 	session.menu("Arquivo de Vicente")
 	session.panel.hide()
 	session.menu_closed = dismiss

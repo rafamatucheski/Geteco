@@ -12,19 +12,19 @@ static func weapon(car) -> String:
 
 static func accessible(session, car) -> bool:
 	if session == null or not session.ready_for_play or session.controller.save_invalid or session.is_transition_blocked(): return false
-	if session.world.driving.occupied or session.world.gameplay.health <= 0: return false
+	if session.player_in_vehicle() or session.player_health() <= 0: return false
 	if not is_instance_valid(car) or not car.is_inside_tree() or car.is_queued_for_deletion() or not car.is_visible_in_tree(): return false
 	if not car.vehicle_id.begins_with(PREFIX) or car.archetype not in ["police_cruiser","police_suv"]: return false
 	if car.get_meta("police_locked",false) or car.get_meta("garage_suspended",false) or car.has_meta("awaiting_ground"): return false
 	if car.health <= 0 or car.controlled or car.external_input or absf(car.speed) >= .2: return false
 	var rear: Vector3 = car.global_position+car.global_basis.z*(car.half_length+.3)
-	if session.world.player.global_position.distance_to(rear) > 2.2: return false
-	var ray := PhysicsRayQueryParameters3D.create(session.world.player.global_position+Vector3.UP*.8,rear+Vector3.UP*.8,7)
+	if session.player_position().distance_to(rear) > 2.2: return false
+	var ray := PhysicsRayQueryParameters3D.create(session.player_position()+Vector3.UP*.8,rear+Vector3.UP*.8,7)
 	ray.exclude = [session.world.player.get_rid(),car.get_rid()]
 	return session.world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
 
 static func nearest(session):
-	if session == null or not session.ready_for_play or session.modal or session.world.driving.occupied: return null
+	if session == null or not session.ready_for_play or session.modal or session.player_in_vehicle(): return null
 	for car in session.get_tree().get_nodes_in_group("drivable"):
 		if accessible(session,car): return car
 	return null

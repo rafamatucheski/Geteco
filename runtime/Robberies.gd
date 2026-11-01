@@ -55,7 +55,7 @@ func configure(owner_session) -> void:
 		session.world.gameplay.weapon_fired.connect(_weapon_fired)
 
 func inside(place: String) -> bool:
-	return session!=null and session.state.place_id==place and is_instance_valid(session.room) and session.world.gameplay.health>0 and not session.world.driving.occupied
+	return session!=null and session.state.place_id==place and is_instance_valid(session.room) and session.player_health()>0 and not session.player_in_vehicle()
 
 func can_enter_bank() -> bool:
 	return data.aftermath!="closed"
@@ -83,7 +83,7 @@ func player_died() -> int:
 	return loss
 
 func bank_departed() -> void:
-	if session.state.place_id!="harbor_bank" or session.world.gameplay.health<=0 or data.bank_pending<=0: return
+	if session.state.place_id!="harbor_bank" or session.player_health()<=0 or data.bank_pending<=0: return
 	var mask := int(data.bank_cash0)+int(data.bank_cash1)*2+int(data.bank_cash2)*4
 	var amount: int = data.bank_pending
 	if session.state.economy.grant_reward("bank_haul:%d:%d"%[int(data.bank_cycle),mask],amount,"Assalto ao banco"):
@@ -123,7 +123,7 @@ func helena_position() -> Vector3:
 func _physics_process(delta: float) -> void:
 	if session==null or not session.ready_for_play or not is_finite(delta) or delta<=0: return
 	var place: String = session.state.place_id
-	if session.world.gameplay.health>0: _death_latched=false
+	if session.player_health()>0: _death_latched=false
 	_refresh_haul()
 	if aftermath_controller == null:
 		aftermath_controller = preload("res://runtime/BankAftermath.gd").new()
@@ -153,7 +153,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if place=="harbor_bank":
 		if _room.has_method("update_bank_visibility"):
-			_room.update_bank_visibility(_room.to_local(session.world.player.global_position),delta)
+			_room.update_bank_visibility(_room.to_local(session.player_position()),delta)
 		if data.opening_remaining>0:
 			data.opening_remaining=maxf(0,float(data.opening_remaining)-delta)
 			if _room.has_method("set_vault_open"): _room.set_vault_open(1.0-float(data.opening_remaining)/3.0)
@@ -260,7 +260,7 @@ func _dispatch(bank: bool) -> void:
 
 func nearest_action() -> Dictionary:
 	if not inside("harbor_bank") or not data.bank_alarm or lockpick==null or lockpick.active or data.opening_remaining>0: return {}
-	var local: Vector3 = _room.to_local(session.world.player.global_position)
+	var local: Vector3 = _room.to_local(session.player_position())
 	var id := ""
 	var target := Vector3.ZERO
 	var label := ""
@@ -272,7 +272,7 @@ func nearest_action() -> Dictionary:
 
 func _collect_nearby() -> void:
 	if not inside("harbor_bank"): return
-	var local: Vector3 = _room.to_local(session.world.player.global_position)
+	var local: Vector3 = _room.to_local(session.player_position())
 	if data.keycard_available and not data.keycard_taken:
 		var point := Vector3(data.keycard_position[0],0,data.keycard_position[2])
 		if local.distance_to(point)<.9 and _pickup_reachable(point):
@@ -294,7 +294,7 @@ func _collect_nearby() -> void:
 		_session_save()
 
 func _pickup_reachable(point: Vector3) -> bool:
-	var from: Vector3 = session.world.player.global_position+Vector3.UP*.5
+	var from: Vector3 = session.player_position()+Vector3.UP*.5
 	var to := _room.to_global(point)+Vector3.UP*.5
 	return _room.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(from,to,1)).is_empty()
 

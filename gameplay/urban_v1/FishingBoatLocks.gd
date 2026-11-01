@@ -16,7 +16,7 @@ func _process(delta: float) -> void:
 		scan_left=.15
 		nearby.clear()
 		if is_instance_valid(terminal) and terminal.active:
-			var player: Vector3=terminal.session.world.player.global_position
+			var player: Vector3=terminal.session.player_position()
 			if terminal.session.state.place_id.is_empty():
 				for anchor in anchors:
 					if player.distance_squared_to(anchor-Vector3.UP*1.6)<20.25: nearby.append(anchor)

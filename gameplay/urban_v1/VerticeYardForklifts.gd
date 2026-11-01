@@ -46,7 +46,7 @@ func tick(near: bool) -> void:
 
 func _driven(vehicle) -> bool:
 	var session = company.session
-	return vehicle.controlled or (session.world.driving.occupied and session.world.driving.car == vehicle)
+	return vehicle.controlled or (session.player_in_vehicle() and session.player_vehicle() == vehicle)
 
 func _confine(vehicle) -> void:
 	var local: Vector3 = vehicle.global_position-company.global_position

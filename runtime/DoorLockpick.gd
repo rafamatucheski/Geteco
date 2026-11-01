@@ -119,8 +119,8 @@ func _door_points() -> Array[Dictionary]:
 
 func nearest_action() -> Dictionary:
 	if not enabled() or session == null or session.modal or session.is_transition_blocked(): return {}
-	if not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.gameplay.health <= 0: return {}
-	var player: Vector3 = session.world.player.global_position
+	if not session.state.place_id.is_empty() or session.player_in_vehicle() or session.player_health() <= 0: return {}
+	var player: Vector3 = session.player_position()
 	var best := ""
 	var best_distance := REACH
 	for door in _door_points():
@@ -147,13 +147,13 @@ func perform(action: Dictionary = {}) -> bool:
 
 func _process(_delta: float) -> void:
 	if not _owns_modal: return
-	if session == null or session.world.gameplay.health <= 0 or session.is_transition_blocked() or not session.state.place_id.is_empty():
+	if session == null or session.player_health() <= 0 or session.is_transition_blocked() or not session.state.place_id.is_empty():
 		if lockpick.active: lockpick.finish(false)
 		_cancelled()
 
 func _unlocked() -> void:
 	if not _owns_modal or session == null or _target.is_empty(): return
-	if session.world.gameplay.health <= 0 or session.is_transition_blocked(): _cancelled(); return
+	if session.player_health() <= 0 or session.is_transition_blocked(): _cancelled(); return
 	if not session.state.economy.consume_item("lockpick", 1): _cancelled(); return
 	var state: Dictionary = session.state.world_state.get(STATE_KEY, {}).duplicate()
 	state[_target] = true

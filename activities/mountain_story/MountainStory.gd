@@ -111,11 +111,11 @@ func _complete_reading(event: String, generation: int, host_id: int) -> void:
 	var host := _host(event)
 	if not is_instance_valid(host) or host.get_instance_id() != host_id or not _can_inspect(event): return
 	var point: Vector3 = host.to_global(PROPS.POINTS[event])
-	var player_point: Vector3 = session.world.player.global_position
+	var player_point: Vector3 = session.player_position()
 	var distance := Vector2(point.x,point.z).distance_to(Vector2(player_point.x,player_point.z))
 	var proof := {"region":session.state.region_id, "place":session.state.place_id,
 		"anchor":"cargo_plane" if PROGRESS.place_for(event).is_empty() else PROGRESS.CAVE,
-		"alive":session.world.gameplay.health > 0, "on_foot":not session.world.driving.occupied,
+		"alive":session.player_health() > 0, "on_foot":not session.player_in_vehicle(),
 		"reachable":true, "distance":distance, "dialogue_complete":true}
 	if not PROGRESS.record(session.state.world_state,event,proof): return
 	var message := objective()
@@ -127,8 +127,8 @@ func _complete_reading(event: String, generation: int, host_id: int) -> void:
 func _eligible(ignore_dialogue := false) -> bool:
 	if session == null or not _valid or not session.ready_for_play or session.controller.save_invalid: return false
 	if get_tree().paused: return false
-	if session.state.region_id != "mountain" or session.world.gameplay.health <= 0: return false
-	if session.rescue_pending or session.arrest_pending or session.world.driving.occupied or session.is_transition_blocked(): return false
+	if session.state.region_id != "mountain" or session.player_health() <= 0: return false
+	if session.rescue_pending or session.arrest_pending or session.player_in_vehicle() or session.is_transition_blocked(): return false
 	if session.modal and not ignore_dialogue: return false
 	if session.world.player.input_locked and not ignore_dialogue: return false
 	var ski = session.world.player.ski_controller
@@ -178,7 +178,7 @@ func _refresh_props() -> void:
 		if is_instance_valid(_cave_props): _cave_props.queue_free()
 		_cave_props = null
 	var plane_point := DEFINITIONS.at(Vector2(5450,-1150),"mountain")
-	if not session.state.place_id.is_empty() or session.world.player.global_position.distance_to(plane_point) > 100:
+	if not session.state.place_id.is_empty() or session.player_position().distance_to(plane_point) > 100:
 		if is_instance_valid(_plane_props): _plane_props.queue_free()
 		_plane_props = null
 		_plane = null

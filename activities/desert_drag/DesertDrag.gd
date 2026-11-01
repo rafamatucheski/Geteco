@@ -152,8 +152,8 @@ func nearest_action() -> Dictionary:
 	if is_instance_valid(takeshi_meet):
 		var special: Dictionary = takeshi_meet.nearest_action()
 		if not special.is_empty(): return special
-	var point: Vector3 = session.world.player.global_position
-	if session.world.driving.occupied and is_instance_valid(session.world.driving.car): point = session.world.driving.car.global_position
+	var point: Vector3 = session.player_position()
+	if session.player_in_vehicle() and is_instance_valid(session.player_vehicle()): point = session.player_vehicle().global_position
 	if point.distance_to(staging_point)>15 and point.distance_to(start_point)>12: return {}
 	return {"id":"desert_drag","target":"board","label":"Ver quadro das arrancadas"}
 
@@ -163,7 +163,7 @@ func start_block_reason() -> String:
 	if not session.ready_for_play or session.modal or session.get_tree().paused or session.is_transition_blocked(): return "Aguarde o fim da atividade atual."
 	if session.state.intro.stage != "complete": return "Conclua a chegada antes de correr."
 	if session.state.region_id != "desert" or not session.state.place_id.is_empty() or nearest_action().is_empty(): return "Vá à largada do deserto."
-	if session.world.gameplay.health <= 0 or session.rescue_pending or session.arrest_pending: return "Aguarde a recuperação."
+	if session.player_health() <= 0 or session.rescue_pending or session.arrest_pending: return "Aguarde a recuperação."
 	if session.world.gameplay.stars > 0: return "Despiste a polícia antes da largada."
 	if not session.state.campaign.active_id.is_empty(): return "Conclua a missão atual antes da arrancada."
 	if session.activities != null and not session.activities.can_rest(): return "Encerre a atividade atual antes da arrancada."
@@ -274,7 +274,7 @@ func _start(identity: String = "") -> bool:
 	if active: return false
 	if identity.is_empty(): identity = PROGRESS.current_rival(session.state.world_state)
 	if not can_race(identity): return false
-	player_car = session.world.driving.car
+	player_car = session.player_vehicle()
 	var dispatch_reason := ""
 	if _challenge_pending: dispatch_reason=challenge_controller.validate_dispatch(player_car)
 	elif _night_pending: dispatch_reason=night_controller.validate_dispatch(player_car)
@@ -736,12 +736,12 @@ func _brake() -> float:
 	return 1.0 if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN) else 0.0
 
 func _interruption() -> String:
-	if session.world.gameplay.health<=0 or session.rescue_pending: return "player_death"
+	if session.player_health()<=0 or session.rescue_pending: return "player_death"
 	if session.arrest_pending: return "player_arrest"
 	if not session.ready_for_play or session.is_transition_blocked(): return "world_transition"
 	if session.state.region_id!="desert" or not session.state.place_id.is_empty(): return "region_changed"
 	if not is_instance_valid(player_car) or player_car.health<=0 or player_car.engine_disabled: return "vehicle_broken"
-	if not session.world.driving.occupied or session.world.driving.car!=player_car: return "vehicle_left"
+	if not session.player_in_vehicle() or session.player_vehicle()!=player_car: return "vehicle_left"
 	if racers.size()!=2 or not is_instance_valid(racers[1].car) or racers[1].car.health<=0: return "rival_interrupted"
 	return ""
 
@@ -835,14 +835,14 @@ func _cleanup() -> void:
 		if car == player_car:
 			car.set_physics_process(bool(_saved.get("physics",true)))
 			car.input_locked = bool(_saved.get("locked",false)) or (is_instance_valid(session) and session.modal)
-			if car.health>0 and is_instance_valid(session) and session.world.gameplay.health>0 and not session.rescue_pending and not session.arrest_pending:
-				car.controlled = bool(_saved.get("controlled",true)) and session.world.driving.occupied and session.world.driving.car==car
+			if car.health>0 and is_instance_valid(session) and session.player_health()>0 and not session.rescue_pending and not session.arrest_pending:
+				car.controlled = bool(_saved.get("controlled",true)) and session.player_in_vehicle() and session.player_vehicle()==car
 				car.external_input = bool(_saved.get("external",false))
 		else:
 			# Uma tomada simultânea não pode apagar o carro debaixo do ocupante.
 			if is_instance_valid(open_meet) and car.get_meta("open_drag_owned",false) and open_meet.reclaim_opponent(car):
 				pass
-			elif is_instance_valid(session) and session.world.driving.occupied and session.world.driving.car==car:
+			elif is_instance_valid(session) and session.player_in_vehicle() and session.player_vehicle()==car:
 				car.remove_meta("race_owned")
 				car.remove_meta("desert_drag_rival")
 				car.set_physics_process(true)
@@ -854,7 +854,7 @@ func _cleanup() -> void:
 			else: car.queue_free()
 	racers.clear()
 	if is_instance_valid(session):
-		if session.world.gameplay.health>0 and not session.rescue_pending and not session.arrest_pending:
+		if session.player_health()>0 and not session.rescue_pending and not session.arrest_pending:
 			session.world.player.input_locked = bool(_saved.get("player_locked",false)) or session.modal
 		if is_instance_valid(race_camera) and race_camera.is_current():
 			if is_instance_valid(previous_camera): previous_camera.make_current()
@@ -869,8 +869,8 @@ func _cleanup() -> void:
 
 func return_to_entry() -> bool:
 	# Mantém o modal de resultado/trava de entrada até o apoio e o destino estarem seguros.
-	if active or not is_instance_valid(player_car) or not session.world.driving.occupied or session.world.driving.car!=player_car: return false
-	if player_car.health<=0 or session.world.gameplay.health<=0 or session.rescue_pending or session.arrest_pending: return false
+	if active or not is_instance_valid(player_car) or not session.player_in_vehicle() or session.player_vehicle()!=player_car: return false
+	if player_car.health<=0 or session.player_health()<=0 or session.rescue_pending or session.arrest_pending: return false
 	if session.state.region_id!="desert" or not session.state.place_id.is_empty(): return false
 	var region: Node3D = session.world.production.regions.get("desert")
 	if not is_instance_valid(region): return false
@@ -886,7 +886,7 @@ func return_to_entry() -> bool:
 	for pose in destinations:
 		if not region.prepare_collision_at(pose.origin): continue
 		await get_tree().physics_frame
-		if not is_instance_valid(player_car) or not session.modal or session.world.driving.car!=player_car: return false
+		if not is_instance_valid(player_car) or not session.modal or session.player_vehicle()!=player_car: return false
 		if not session.world.production.vehicle_position_clear(player_car,pose.origin,pose.basis.get_euler().y): continue
 		player_car.place(pose.origin,pose.basis.get_euler().y)
 		session.world.player.global_position = pose.origin

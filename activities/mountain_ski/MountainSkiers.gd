@@ -38,7 +38,7 @@ func configure(owner_progression) -> void:
 
 func _active() -> bool:
 	if not enabled or progression == null or not progression._outside() or not progression._open(): return false
-	var player: Vector3 = progression.session.world.player.global_position
+	var player: Vector3 = progression.session.player_position()
 	return Vector2(player.x, player.z).distance_to(AREA_CENTER) < ACTIVE_RADIUS
 
 func _process(delta: float) -> void:

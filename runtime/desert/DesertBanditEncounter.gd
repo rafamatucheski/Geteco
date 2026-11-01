@@ -37,7 +37,7 @@ func configure(owner_session) -> void:
 	if valid_state(session.state.world_state[STATE_KEY]): _known_mask=int(session.state.world_state[STATE_KEY].defeated_mask)
 
 func operational() -> bool:
-	return is_instance_valid(session) and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.world.gameplay.health>0 and not session.modal and not session.world.player.input_locked and not session.has_position_transition() and not session.desert.busy()
+	return is_instance_valid(session) and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.player_health()>0 and not session.modal and not session.world.player.input_locked and not session.has_position_transition() and not session.desert.busy()
 
 func save_block_reason() -> String:
 	return "Afaste-se do acampamento e encerre o combate antes de salvar." if _engaged and live_count()>0 else ""

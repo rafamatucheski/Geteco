@@ -189,7 +189,7 @@ func _tick_truck(index: int, delta: float) -> void:
 	var state: Dictionary = work_trucks[index]
 	var truck = state.truck
 	if not is_instance_valid(truck) or state.phase in ["freight","freight_pending","destroyed"]: return
-	if truck.controlled or (session.world.driving.occupied and session.world.driving.car == truck):
+	if truck.controlled or (session.player_in_vehicle() and session.player_vehicle() == truck):
 		state.phase = "interrupted"
 		return
 	if state.phase in ["departed","returning"]: _yield_crossing_vehicle(state,truck,delta)
@@ -290,7 +290,7 @@ func _tick_replacements() -> void:
 		if state.respawn_at < 0 or game_seconds() < state.respawn_at: continue
 		var wreck = state.truck
 		if is_instance_valid(wreck):
-			if wreck.controlled or (session.world.driving.occupied and session.world.driving.car == wreck): continue
+			if wreck.controlled or (session.player_in_vehicle() and session.player_vehicle() == wreck): continue
 			var callback := _work_truck_destroyed.bind(i)
 			if wreck.destroyed.is_connected(callback): wreck.destroyed.disconnect(callback)
 			wreck.vehicle_id += "_wreck_"+str(wreck.get_instance_id())

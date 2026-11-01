@@ -15,6 +15,12 @@ class World extends Node3D:
 class Session extends RefCounted:
 	var state = preload("res://runtime/GameState.gd").new()
 	var world: World
+	const _PLAYER_QUERY := preload("res://tests/fixtures/SessionPlayerQueryDouble.gd")
+	func player_position() -> Vector3: return _PLAYER_QUERY.position(world)
+	func player_local_position() -> Vector3: return _PLAYER_QUERY.local_position(world)
+	func player_health() -> float: return _PLAYER_QUERY.health(world)
+	func player_in_vehicle() -> bool: return _PLAYER_QUERY.in_vehicle(world)
+	func player_vehicle(): return _PLAYER_QUERY.vehicle(world)
 	var mission_world
 	var arrival = {"active":false}
 	var urban_operations = null

@@ -56,8 +56,8 @@ func start_game(kind: String, owner_session) -> bool:
 	game_ui = preload("res://world/places/bars/BarGameScreen.gd").new()
 	game_ui.adapter = self
 	add_child(game_ui)
-	game_origin = session.world.player.global_position
-	opened_health = float(session.world.gameplay.health)
+	game_origin = session.player_position()
+	opened_health = float(session.player_health())
 	game_active = true
 	game_ui.open_game(kind)
 	return true
@@ -80,7 +80,7 @@ func dismiss_game() -> void:
 
 func _process(_delta: float) -> void:
 	if not game_active: return
-	if not is_instance_valid(session) or session.room != self or not session.modal or not active or session.world.gameplay.health < opened_health or session.world.player.global_position.distance_to(game_origin) > 1.2:
+	if not is_instance_valid(session) or session.room != self or not session.modal or not active or session.player_health() < opened_health or session.player_position().distance_to(game_origin) > 1.2:
 		close_game()
 
 func set_active(value: bool) -> void:

@@ -134,7 +134,7 @@ func _process(delta: float) -> void:
 		preload("res://world/desert/DigoWorkshopMaterials.gd").update_lighting(session.room.model,session.weather.get_city_lighting_factor())
 	var desert_region: Node3D = session.controller.regions.get("desert")
 	if is_instance_valid(desert_region):
-		desert_region.set_environment_activity(session.state.region_id=="desert" and session.state.place_id.is_empty(),session.world.player.global_position)
+		desert_region.set_environment_activity(session.state.region_id=="desert" and session.state.place_id.is_empty(),session.player_position())
 	_reconcile_owned_cars()
 	if not busy():
 		var garage: Dictionary = GARAGE.data(session.state.world_state)
@@ -146,7 +146,7 @@ func _process(delta: float) -> void:
 				ADAPTER.attach(car,saved.parts)
 				car.restore_health(minf(saved_health,car.max_health))
 	_reconcile_resident()
-	if is_instance_valid(tuning_car) and (session.world.gameplay.health<=0 or not _at_workshop()):
+	if is_instance_valid(tuning_car) and (session.player_health()<=0 or not _at_workshop()):
 		tuning_panel.discard_and_close()
 func _reconcile_owned_cars() -> void:
 	var records: Dictionary = session.state.world_state.get("desert_fleet",{})
@@ -162,7 +162,7 @@ func _reconcile_owned_cars() -> void:
 		var record: Dictionary = records[id]
 		if record.region!=session.state.region_id or not session.state.place_id.is_empty(): continue
 		var point := Vector3(record.position[0],record.position[1],record.position[2])
-		if point.distance_to(session.world.player.global_position)>85: continue
+		if point.distance_to(session.player_position())>85: continue
 		session.controller.region.prepare_collision_at(point)
 		var car: CharacterBody3D = session.controller.spawn_vehicle(record.archetype,point,float(record.yaw),float(record.get("heavy_crush_ratio",1.0)))
 		if not is_instance_valid(car): continue
@@ -236,12 +236,12 @@ func nearest_action() -> Dictionary:
 	if not secret_action.is_empty(): return secret_action
 	var discovery_action: Dictionary=discoveries.nearest_action()
 	if not discovery_action.is_empty(): return discovery_action
-	if session.state.place_id=="desert_digo" and not session.world.driving.occupied and is_instance_valid(session.room):
-		if session.world.player.global_position.distance_to(session.room.to_global(Vector3(8.4,0,1.65)))<1.8:
+	if session.state.place_id=="desert_digo" and not session.player_in_vehicle() and is_instance_valid(session.room):
+		if session.player_position().distance_to(session.room.to_global(Vector3(8.4,0,1.65)))<1.8:
 			return {"id":"desert","target":"workshop","label":"Preparar carro com Digo"}
 	var action: Dictionary = story.nearest_action()
 	if not action.is_empty(): return action
-	if session.state.place_id.is_empty() and not session.world.driving.occupied and session.world.player.global_position.distance_to(Vector3(-315,0,-573))<1.8:
+	if session.state.place_id.is_empty() and not session.player_in_vehicle() and session.player_position().distance_to(Vector3(-315,0,-573))<1.8:
 		return {"id":"desert","target":"rest","label":"Descansar até as 20h"}
 	return drag.nearest_action()
 func perform(action: Dictionary) -> bool:
@@ -266,7 +266,7 @@ func perform(action: Dictionary) -> bool:
 		_workshop_site = "meet"
 		if not DIGO.workshop_unlocked(session.state.world_state): return _workshop()
 		session.show_dialogue([{"speaker":"Digo","message":"Fala, Dante. Tô acertando esse motor. Trouxe algum carro pra gente preparar?"}],func():
-			if _at_workshop() and session.world.gameplay.health>0: _workshop())
+			if _at_workshop() and session.player_health()>0: _workshop())
 		return true
 	if action.target=="rest":
 		if REST.blocked(session): session.show_message("Encerre a atividade e despiste a polícia antes de descansar."); return false
@@ -279,7 +279,7 @@ func _race_completed(result: Dictionary) -> void:
 	session.save_game()
 func _nearby_car() -> CharacterBody3D:
 	if not _at_workshop(): return null
-	var car: CharacterBody3D = session.world.driving.car
+	var car: CharacterBody3D = session.player_vehicle()
 	if not is_instance_valid(car) or car.health<=0 or car.engine_disabled: return null
 	if _workshop_site=="town" and session.state.place_id=="desert_digo" and str(car.get_meta("garage_place",""))=="desert_digo": return car
 	var yard := DIGO_ROUTINE.workshop_point() if _workshop_site=="meet" else Vector3(-140,0,-603)
@@ -288,7 +288,7 @@ func _nearby_car() -> CharacterBody3D:
 func _at_workshop() -> bool:
 	if session.state.region_id!="desert": return false
 	if _workshop_site=="meet":
-		return session.state.place_id.is_empty() and session.world.player.global_position.distance_to(DIGO_ROUTINE.workshop_point())<24
+		return session.state.place_id.is_empty() and session.player_position().distance_to(DIGO_ROUTINE.workshop_point())<24
 	return session.state.place_id=="desert_digo"
 func _workshop() -> bool:
 	if not DIGO.workshop_unlocked(session.state.world_state):
@@ -320,7 +320,7 @@ func _open_tuning() -> void:
 	session.panel.hide()
 	session.menu_closed = _dismiss_tuning
 	var record := GARAGE.vehicle(session.state.world_state,tuning_car.vehicle_id,tuning_car.archetype)
-	var live: bool = session.state.place_id=="desert_digo" and session.world.driving.occupied and str(tuning_car.get_meta("garage_place",""))=="desert_digo"
+	var live: bool = session.state.place_id=="desert_digo" and session.player_in_vehicle() and str(tuning_car.get_meta("garage_place",""))=="desert_digo"
 	tuning_panel.set_live_vehicle(tuning_car if live else null)
 	if live and not workshop_drive.open_service_view(tuning_car):
 		session.close_menu()
@@ -340,7 +340,7 @@ func _dismiss_tuning() -> void:
 	tuning_car = null
 
 func _preview_tuning(parts: Dictionary) -> void:
-	if not is_instance_valid(tuning_car) or not is_instance_valid(workshop_drive) or not session.world.driving.occupied: return
+	if not is_instance_valid(tuning_car) or not is_instance_valid(workshop_drive) or not session.player_in_vehicle(): return
 	preload("res://gameplay/desert_cars/TuningAppearance.gd").preview_vehicle(tuning_car,parts)
 
 func _restore_tuning_preview() -> void:

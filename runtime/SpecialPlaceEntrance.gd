@@ -25,7 +25,7 @@ func _ready() -> void:
 	for id in UNDER.ids(): definitions[id] = PLACES.get_definition(id)
 
 func _blocked() -> bool:
-	return busy or session.modal or session.is_transition_blocked() or session.world.player.input_locked or session.world.gameplay.health <= 0 or session.world.driving.occupied or session.world.driving.is_body_transition_active()
+	return busy or session.modal or session.is_transition_blocked() or session.world.player.input_locked or session.player_health() <= 0 or session.player_in_vehicle() or session.world.driving.is_body_transition_active()
 
 func _door(id: String) -> Vector3:
 	var definition: Dictionary = definitions[id]
@@ -42,10 +42,10 @@ func update(delta: float) -> void:
 	if handles_place(place):
 		if not is_instance_valid(session.room) or _blocked(): return
 		if place == CULVERT:
-			var local: Vector3 = session.room.to_local(session.world.player.global_position)
+			var local: Vector3 = session.room.to_local(session.player_position())
 			var focus: Vector3 = session.room.to_global(Vector3(clampf(local.x, -12.0, 12.0), .7, 0))
 			session.anchor.position = session.anchor.position.lerp(focus, 1.0-exp(-delta*7.0))
-		var branch_offset: Vector3 = session.room.exit_position-session.world.player.global_position
+		var branch_offset: Vector3 = session.room.exit_position-session.player_position()
 		branch_offset.y = 0
 		# Também arma 1 s depois de chegar: no Cano Entupido e no Dreno do Porto a
 		# chegada fica a 0,5 m da escada e entulho impede afastar 1,3 m; a saída nunca
@@ -65,7 +65,7 @@ func update(delta: float) -> void:
 	if session.state.region_id == "desert":
 		_update_culvert(delta)
 		return
-	var point: Vector3 = session.world.player.global_position
+	var point: Vector3 = session.player_position()
 	var id := ""
 	var distance := INF
 	for candidate in IDS:
@@ -135,7 +135,7 @@ func _enter(id: String) -> void:
 	player.input_locked = true
 	camera.focus_on_store(_door(id)+Vector3.UP*.5,8.0,ZOOM_SECONDS)
 	await get_tree().create_timer(ZOOM_SECONDS).timeout
-	var admitted: bool = session.transition_generation == generation and not session.modal and not session.is_transition_blocked() and session.world.gameplay.health > 0
+	var admitted: bool = session.transition_generation == generation and not session.modal and not session.is_transition_blocked() and session.player_health() > 0
 	if admitted:
 		player.input_locked = false
 		await session.enter_place(id,true,id)

@@ -43,7 +43,7 @@ func _process(delta: float) -> void:
 
 func reconcile() -> void:
 	var active: bool=session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and not session.is_transition_blocked()
-	var nearby: bool=active and session.world.player.global_position.distance_squared_to(workshop_point())<75.0*75.0
+	var nearby: bool=active and session.player_position().distance_squared_to(workshop_point())<75.0*75.0
 	# Um arrancadão ativo é dono do rival; evita um segundo Digo na oficina.
 	if nearby and session.get("desert")!=null and session.desert.busy(): nearby=false
 	if not nearby:
@@ -54,7 +54,7 @@ func reconcile() -> void:
 		_conversation=false
 		return
 	if is_instance_valid(actor):
-		actor.audio_enabled=session.world.player.global_position.distance_squared_to(actor.global_position)<28.0*28.0
+		actor.audio_enabled=session.player_position().distance_squared_to(actor.global_position)<28.0*28.0
 		return
 	var at := workshop_point()+WORKER.REPAIR_POINT
 	if not session.position_clear(at+Vector3.UP*.08): return
@@ -105,8 +105,8 @@ func _notification(what: int) -> void:
 func nearest_action() -> Dictionary:
 	if session==null or not session.ready_for_play or not is_instance_valid(actor): return {}
 	if session.modal or session.state.region_id!="desert" or not session.state.place_id.is_empty(): return {}
-	if session.world.driving.occupied or session.world.gameplay.health<=0 or session.is_transition_blocked(): return {}
-	if session.world.player.global_position.distance_to(actor.global_position)>1.8: return {}
+	if session.player_in_vehicle() or session.player_health()<=0 or session.is_transition_blocked(): return {}
+	if session.player_position().distance_to(actor.global_position)>1.8: return {}
 	return {"id":"desert","target":"digo_workshop","label":"Conversar com Digo"}
 
 func begin_conversation() -> bool:
@@ -114,7 +114,7 @@ func begin_conversation() -> bool:
 	_conversation=true
 	_saw_modal=false
 	_conversation_grace=.25
-	actor.set_talking(true,session.world.player.global_position)
+	actor.set_talking(true,session.player_position())
 	return true
 
 func end_conversation() -> void:

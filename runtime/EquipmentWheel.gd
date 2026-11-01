@@ -50,7 +50,7 @@ func _context_valid() -> bool:
 	if not is_instance_valid(session) or not session.ready_for_play: return false
 	if not is_instance_valid(session.world) or not is_instance_valid(session.world.gameplay) or not is_instance_valid(session.world.player): return false
 	if get_tree().paused or session.modal or session.is_transition_blocked(): return false
-	if session.world.gameplay.health <= 0 or session.world.driving.occupied: return false
+	if session.player_health() <= 0 or session.player_in_vehicle(): return false
 	if not session.world.gameplay.free_play_ok() or session.world.gameplay.police_surrendering(): return false
 	if session.world.player.get_meta("developer_free_flight", false): return false
 	if session.world.player.get_meta("player_air_busy", false): return false
@@ -78,7 +78,7 @@ func open() -> bool:
 	_previous_player_lock = session.world.player.input_locked
 	_previous_mouse_mode = Input.mouse_mode
 	_previous_mouse_position = get_viewport().get_mouse_position()
-	_opened_health = session.world.gameplay.health
+	_opened_health = session.player_health()
 	active = true
 	page = 0
 	selected = 0
@@ -99,7 +99,7 @@ func open() -> bool:
 
 func close(confirm := false) -> void:
 	if not active: return
-	var valid: bool = confirm and _context_valid() and session.world.gameplay.health >= _opened_health
+	var valid: bool = confirm and _context_valid() and session.player_health() >= _opened_health
 	var choice: Dictionary = entries[selected].duplicate() if selected >= 0 and selected < entries.size() else {}
 	active = false
 	set_process(false)
@@ -109,7 +109,7 @@ func close(confirm := false) -> void:
 	var ui_owns_cursor := get_tree() != null and get_tree().paused
 	if is_instance_valid(session) and is_instance_valid(session.world) and is_instance_valid(session.world.player):
 		ui_owns_cursor = ui_owns_cursor or session.modal or session.is_transition_blocked()
-		if not session.modal and not session.is_transition_blocked() and session.world.gameplay.health > 0:
+		if not session.modal and not session.is_transition_blocked() and session.player_health() > 0:
 			session.world.player.input_locked = _previous_player_lock
 	if not ui_owns_cursor:
 		Input.mouse_mode = _previous_mouse_mode
@@ -127,7 +127,7 @@ func _notification(what: int) -> void:
 
 func _process(delta: float) -> void:
 	if not active: return
-	if not _context_valid() or session.world.gameplay.health < _opened_health:
+	if not _context_valid() or session.player_health() < _opened_health:
 		cancel()
 		return
 	# O inventário pode mudar por uma missão enquanto o mundo ainda roda.
@@ -252,7 +252,7 @@ func _rebuild() -> void:
 					if stack.id == id: amount += int(stack.amount)
 			count_label = "×%d" % amount
 			detail = _text("+%d de vida", "+%d health") % int(spec.get("heal", 0))
-			if session.world.gameplay.health >= 100:
+			if session.player_health() >= 100:
 				enabled = false
 				detail = _text("Vida cheia", "Health full")
 		if available.is_empty(): detail = _text("Não está com você", "Not carried")

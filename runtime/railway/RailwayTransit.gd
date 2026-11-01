@@ -66,8 +66,8 @@ func is_riding() -> bool:
 func _eligible(allow_menu := false) -> bool:
 	if session == null or not session.ready_for_play or riding or landing: return false
 	if session.rescue_pending or session.arrest_pending or session.respawn_busy: return false
-	if not session.state.place_id.is_empty() or session.world.driving.occupied: return false
-	if session.world.gameplay.health <= 0 or session.world.gameplay.stars > 0: return false
+	if not session.state.place_id.is_empty() or session.player_in_vehicle(): return false
+	if session.player_health() <= 0 or session.world.gameplay.stars > 0: return false
 	if not session.transition_kind.is_empty() or session.vehicle_transition_busy or session.controller.travel_busy: return false
 	if not session.state.campaign.active_id.is_empty(): return false
 	if _local_activity_pending(): return false
@@ -108,7 +108,7 @@ func station_available(station: Dictionary) -> bool:
 	return not station.get("requires_act1", false) or GATE.campaign_completed(session.state.campaign.snapshot())
 
 func _nearby_station() -> Dictionary:
-	var position: Vector3 = session.world.player.global_position
+	var position: Vector3 = session.player_position()
 	var result: Dictionary = {}
 	var best := BOARD_RADIUS
 	for station in NETWORK.stations():
@@ -162,7 +162,7 @@ func close_station_menu() -> void:
 	menu_open = false
 	session.menu_closed = Callable()
 	session.modal = false
-	if not riding and not landing and session.world.gameplay.health > 0 and not session.rescue_pending and not session.arrest_pending:
+	if not riding and not landing and session.player_health() > 0 and not session.rescue_pending and not session.arrest_pending:
 		session.world.player.input_locked = _menu_locked
 	Input.mouse_mode = _menu_mouse
 	station_menu_closed.emit()
@@ -315,7 +315,7 @@ func _physics_process(delta: float) -> void:
 	if _arrival_retry > 0.0:
 		_arrival_retry = maxf(0.0, _arrival_retry - delta)
 		return
-	if session.world.gameplay.health <= 0 or session.rescue_pending or session.arrest_pending:
+	if session.player_health() <= 0 or session.rescue_pending or session.arrest_pending:
 		cancel_for_transition()
 		return
 	if not is_instance_valid(train):
@@ -371,7 +371,7 @@ func _tick_ambient(delta: float) -> void:
 	train.advance_wheels(step * _direction_sign)
 	_place_train()
 	if is_instance_valid(_audio):
-		var audible := train.global_position.distance_squared_to(session.world.player.global_position) < 10000.0
+		var audible := train.global_position.distance_squared_to(session.player_position()) < 10000.0
 		if audible and not _audio.playing: _audio.play()
 		elif not audible and _audio.playing: _audio.stop()
 		_audio.pitch_scale = .74 + .45 * speed / CRUISE_SPEED
@@ -569,7 +569,7 @@ func _restore_passenger() -> void:
 	camera.set_process(bool(_saved.camera_process))
 	_set_passenger_depth(false)
 	Input.mouse_mode = int(_saved.mouse) as Input.MouseMode
-	if session.world.gameplay.health > 0: session.state.equip_weapon(str(_saved.weapon))
+	if session.player_health() > 0: session.state.equip_weapon(str(_saved.weapon))
 	_saved.clear()
 
 func cancel_for_transition(refund_ticket := true) -> void:

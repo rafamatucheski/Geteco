@@ -400,7 +400,7 @@ func _process(delta: float) -> void:
 func _walking() -> bool:
 	return session != null and session.ready_for_play \
 		and session.state.region_id == "harbor" and session.state.place_id.is_empty() \
-		and session.world.gameplay.health > 0 and not session.world.driving.occupied \
+		and session.player_health() > 0 and not session.player_in_vehicle() \
 		and is_instance_valid(session.world.player)
 
 
@@ -411,14 +411,14 @@ func _maciota_story_action() -> Dictionary:
 		return {}
 	if not session.state.campaign.snapshot().get("completed",[]).has("cobra_finale"):
 		return {}
-	if session.world.gameplay.health <= 0 or session.world.driving.occupied:
+	if session.player_health() <= 0 or session.player_in_vehicle():
 		return {}
 	if not session.state.campaign.active_id.is_empty():
 		return {}
 	var room = session.room
 	if not is_instance_valid(room) or room.get("interaction_points") == null or not room.interaction_points.has("maciota"):
 		return {}
-	if session.world.player.global_position.distance_to(room.interaction_points.maciota) > 2.0:
+	if session.player_position().distance_to(room.interaction_points.maciota) > 2.0:
 		return {}
 	return _action("receive_dossier","Conversar")
 
@@ -643,7 +643,7 @@ func _apply_saved_state(immediate: bool) -> void:
 		shelf_pivot.rotation.y = -PI*.5 if _shelf_revealed else 0.0
 		tunnel_door.rotation.y = -PI*.5 if _keypad_unlocked() else 0.0
 	if is_instance_valid(tunnel):
-		tunnel.set_enabled(_keypad_unlocked() and tunnel.contains(session.world.player.global_position))
+		tunnel.set_enabled(_keypad_unlocked() and tunnel.contains(session.player_position()))
 		tunnel.set_sealed_access(_power_active("power_sealed_sector"))
 		tunnel.set_vault_open(_vault_unlocked())
 	_sync_house_authorization()
@@ -758,8 +758,8 @@ func _vault_unlocked() -> bool:
 func _ski_exit_action() -> Dictionary:
 	if session == null or not is_instance_valid(ski_exit) or _transfer_busy or not _vault_unlocked(): return {}
 	if not session.ready_for_play or session.state.region_id != "mountain" or not session.state.place_id.is_empty(): return {}
-	if session.world.driving.occupied or session.world.gameplay.health <= 0: return {}
-	if session.world.player.global_position.distance_to(ski_exit.interaction_global()) > 1.9: return {}
+	if session.player_in_vehicle() or session.player_health() <= 0: return {}
+	if session.player_position().distance_to(ski_exit.interaction_global()) > 1.9: return {}
 	return _action("ski_enter","Abrir passagem de pedra")
 
 

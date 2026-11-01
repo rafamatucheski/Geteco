@@ -11,7 +11,7 @@ func configure(owner_session) -> void:
 	name="DesertContracts"
 
 func _available() -> bool:
-	return session!=null and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and not session.modal and not get_tree().paused and not session.is_transition_blocked() and not session.desert.busy() and not session.world.driving.occupied and not session.world.driving.is_body_transition_active() and session.world.gameplay.health>0 and not session.world.player.dead and not session.world.player.input_locked and session.world.player.is_on_floor()
+	return session!=null and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and not session.modal and not get_tree().paused and not session.is_transition_blocked() and not session.desert.busy() and not session.player_in_vehicle() and not session.world.driving.is_body_transition_active() and session.player_health()>0 and not session.world.player.dead and not session.world.player.input_locked and session.world.player.is_on_floor()
 
 func step_definition(id: String, step: int) -> Dictionary:
 	if id=="parts":
@@ -28,7 +28,7 @@ func step_definition(id: String, step: int) -> Dictionary:
 	return {}
 
 func _near(definition: Dictionary) -> bool:
-	var point: Vector3=session.world.player.global_position
+	var point: Vector3=session.player_position()
 	if definition.has("contact"):
 		return session.desert.story.nearest_action().get("target","")==definition.contact
 	if not definition.has("site"): return false

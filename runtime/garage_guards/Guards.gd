@@ -11,7 +11,7 @@ func alerted() -> bool:
 	return garage.data.police_called or garage.data.alarm_remaining>=0
 func gameplay(): return garage.session.world.gameplay
 func target() -> Node3D:
-	return garage.session.world.driving.car if garage.session.world.driving.occupied else garage.session.world.player
+	return garage.session.player_vehicle() if garage.session.player_in_vehicle() else garage.session.world.player
 func sync() -> void:
 	if not active():
 		capture()
@@ -36,7 +36,7 @@ func sync() -> void:
 		add_child(actor)
 		actors.append(actor)
 func injured(source: Node) -> void:
-	if is_instance_valid(source) and (source==garage.session.world.player or source==garage.session.world.driving.car): garage.raise_alarm()
+	if is_instance_valid(source) and (source==garage.session.world.player or source==garage.session.player_vehicle()): garage.raise_alarm()
 	capture()
 	garage.session.save_game()
 func capture() -> void:

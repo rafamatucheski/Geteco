@@ -107,10 +107,10 @@ func _update_failure() -> bool:
 		return true
 	if campaign.active_id.is_empty(): return false
 	var reason := ""
-	if session.world.gameplay.health <= 0: reason = "player_death"
+	if session.player_health() <= 0: reason = "player_death"
 	var contact: String = "ferrugem" if campaign.active_id == "cobra_contact" else ("ashbend_resident" if campaign.active_id == "cobra_collection" else "")
 	if actors.has(contact) and is_instance_valid(actors[contact]) and actors[contact].dead: reason = "contact_dead"
-	if not encounter_id.is_empty() and not _encounter_cleared() and (session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.player.position.distance_to(targets[encounter_id]) > 1500.0*UNIT): reason = "encounter_retreat"
+	if not encounter_id.is_empty() and not _encounter_cleared() and (session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.player_local_position().distance_to(targets[encounter_id]) > 1500.0*UNIT): reason = "encounter_retreat"
 	if reason.is_empty(): return false
 	cancel_attempt(reason)
 	session.save_game()
@@ -119,8 +119,8 @@ func _update_failure() -> bool:
 
 func _update_aftermath() -> void:
 	if aftermath_open and not session.dialogue_open: aftermath_open = false
-	if aftermath_open or session.modal or session.vehicle_transition_busy or session.world.gameplay.health <= 0: return
-	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.gameplay.stars > 0: return
+	if aftermath_open or session.modal or session.vehicle_transition_busy or session.player_health() <= 0: return
+	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.player_in_vehicle() or session.world.gameplay.stars > 0: return
 	if not session.state.campaign.aftermath_pending() or not enemies.is_empty() or not session.state.campaign.active_id.is_empty(): return
 	aftermath_open = true
 	# Reaproveita o caminho de posse/fechamento de diálogo da sessão. Nenhuma câmera, teleporte,
@@ -150,7 +150,7 @@ func target_position() -> Vector3:
 	return targets.get(id,session.world.maciota_place.entry_position)
 
 func _needs_tow_truck() -> bool:
-	return not session.world.driving.occupied or session.world.driving.car != truck
+	return not session.player_in_vehicle() or session.player_vehicle() != truck
 
 func objective() -> String:
 	if session.state.campaign.active_id == "cobra_contact" and session.state.campaign.target_id() == "story_tow_vehicle":
@@ -159,7 +159,7 @@ func objective() -> String:
 	return session.state.campaign.objective()
 
 func nearest_action() -> Dictionary:
-	var local_position: Vector3 = session.world.player.position
+	var local_position: Vector3 = session.player_local_position()
 	if session.state.campaign.active_id == "cobra_finale":
 		if session.state.campaign.step == 6 and not session._uses_walkup_access("cobra_leader_house") and session.state.place_id.is_empty() and local_position.distance_to(targets.cobra_leader_house)<2.2:
 			return {"id":"enter","place":"cobra_leader_house","access":"cobra_leader_house","target":"leader_house","label":"Entrar"}
@@ -183,7 +183,7 @@ func nearest_action() -> Dictionary:
 	return {}
 func nearest_vehicle_action() -> Dictionary:
 	if _can_start_race(): return {"id":"mission","target":"race_start","label":"Atender telefone"}
-	if is_instance_valid(truck) and session.world.driving.car == truck and absf(truck.speed)<.3:
+	if is_instance_valid(truck) and session.player_vehicle() == truck and absf(truck.speed)<.3:
 		return {"id":"mission","target":"tow_toggle","label":"Descarregar" if loaded else "Carregar guincho"}
 	return {}
 
@@ -195,7 +195,7 @@ func perform(id: String) -> bool:
 	if id == "tow_recover": return _recover_tow_truck()
 	if id == "tow_recover_cargo": return _recover_tow_cargo()
 	if id=="race_start":
-		var subject: Node3D = session.world.driving.car if session.world.driving.occupied else session.world.player
+		var subject: Node3D = session.player_vehicle() if session.player_in_vehicle() else session.world.player
 		if not race_phone_available() or subject.position.distance_to(race_phone_position()) > preload("res://activities/RacePhone.gd").RANGE: return false
 		session.menu("Corrida dos Cobras")
 		session.button("Entrar na corrida",func():
@@ -203,7 +203,7 @@ func perform(id: String) -> bool:
 			if not _can_start_race():
 				session.show_message("Pare com um carro ou caminhonete junto ao telefone.")
 				return
-			var car=session.world.driving.car
+			var car=session.player_vehicle()
 			if not is_instance_valid(street_race):
 				street_race=preload("res://gameplay/urban_v1/CobraStreetRace.gd").new()
 				add_child(street_race)
@@ -224,12 +224,12 @@ func perform(id: String) -> bool:
 	var bank_copy := false
 	if id == "helena" and session.state.place_id != "harbor_bank":
 		var bank: Dictionary = preload("res://world/places/PlaceCatalog.gd").get_definition("harbor_bank")
-		bank_copy = session.state.place_id.is_empty() and session.robberies.bank_unavailable() and session.world.gameplay.stars == 0 and session.world.player.position.distance_to(bank.entry_position)<105.0*UNIT
+		bank_copy = session.state.place_id.is_empty() and session.robberies.bank_unavailable() and session.world.gameplay.stars == 0 and session.player_local_position().distance_to(bank.entry_position)<105.0*UNIT
 		if not bank_copy: return false
 	if id == "maciota" and session.state.place_id != "maciota": return false
 	if id == "transfer_document":
-		if session.state.place_id != "cobra_leader_house" or session.world.player.position.distance_to(target_position()) > 1.6: return false
-	elif targets.has(id) and session.world.player.position.distance_to(targets[id]) > 2.3: return false
+		if session.state.place_id != "cobra_leader_house" or session.player_local_position().distance_to(target_position()) > 1.6: return false
+	elif targets.has(id) and session.player_local_position().distance_to(targets[id]) > 2.3: return false
 	var dialogue = preload("res://systems/campaign/OriginalDialogue.gd").new()
 	var dialogue_key := "bank_receipt" if id == "helena" else ("primeiro_giro_finish" if id == "maciota" else str(step.event))
 	if bank_copy: dialogue_key = "bank_unavailable"
@@ -259,9 +259,9 @@ func _text(pt: String, en: String) -> String:
 	return en if TranslationServer.get_locale().begins_with("en") else pt
 
 func _event(event: String, target: String, extras := {}) -> bool:
-	if session.world.gameplay.health <= 0: return false
+	if session.player_health() <= 0: return false
 	if target in ["ferrugem","ashbend_resident"] and (not actors.has(target) or not is_instance_valid(actors[target]) or actors[target].dead): return false
-	var payload := {"target_id":target,"on_foot":not session.world.driving.occupied,"in_vehicle":session.world.driving.occupied,"unarmed":session.state.equipped_weapon in ["","fists"],"wanted_level":session.world.gameplay.stars,"encounter_cleared":not enemies.is_empty() and _encounter_cleared(),"story_vehicle_alive":is_instance_valid(cargo) and cargo.health>0,"correct_vehicle":is_instance_valid(cargo) and cargo.vehicle_id == "story_tow_vehicle","elapsed":session.state.campaign.race_elapsed()}
+	var payload := {"target_id":target,"on_foot":not session.player_in_vehicle(),"in_vehicle":session.player_in_vehicle(),"unarmed":session.state.equipped_weapon in ["","fists"],"wanted_level":session.world.gameplay.stars,"encounter_cleared":not enemies.is_empty() and _encounter_cleared(),"story_vehicle_alive":is_instance_valid(cargo) and cargo.health>0,"correct_vehicle":is_instance_valid(cargo) and cargo.vehicle_id == "story_tow_vehicle","elapsed":session.state.campaign.race_elapsed()}
 	payload.merge(extras,true)
 	payload.place_id = session.state.place_id
 	if event == "neco_repair_received":
@@ -307,7 +307,7 @@ func _process(delta: float) -> void:
 	if _update_failure(): return
 	_update_aftermath()
 	if pending_clue.is_empty(): pending_clue = str(session.state.world_state.get("harbor_pending_clue",""))
-	if not pending_clue.is_empty() and not session.modal and session.world.gameplay.health>0 and session.world.gameplay.stars==0:
+	if not pending_clue.is_empty() and not session.modal and session.player_health()>0 and session.world.gameplay.stars==0:
 		var clue: Array = preload("res://systems/campaign/OriginalDialogue.gd").new().lines(pending_clue+"_clue",TranslationServer.get_locale())
 		if not clue.is_empty():
 			var presented := pending_clue
@@ -329,9 +329,9 @@ func _process(delta: float) -> void:
 	_spawn_near_actors()
 	var step: Dictionary = session.state.campaign.current_step()
 	if step.is_empty(): return
-	var subject: Node3D = session.world.driving.car if session.world.driving.occupied else session.world.player
+	var subject: Node3D = session.player_vehicle() if session.player_in_vehicle() else session.world.player
 	var destination := target_position()
-	if not session.state.campaign.race_stage_active() and step.get("in_vehicle",false) and session.world.driving.occupied and subject.position.distance_to(destination)<3:
+	if not session.state.campaign.race_stage_active() and step.get("in_vehicle",false) and session.player_in_vehicle() and subject.position.distance_to(destination)<3:
 		_event(step.event,step.target,{"checkpoint":step.get("checkpoint",-1)})
 	elif step.get("encounter",false):
 		if encounter_id != step.target and subject.position.distance_to(destination)<20: _start_encounter(step.target,destination)
@@ -382,7 +382,7 @@ func race_phone_position() -> Vector3:
 	return targets.ashbend_start+Vector3(-4.2,0,4.0)
 
 func race_phone_available() -> bool:
-	return session.world.gameplay.health > 0 and not session.state.campaign.is_suspended() and session.state.campaign.race_stage_active() and session.state.campaign.step == 0 and session.state.region_id == "harbor" and session.state.place_id.is_empty()
+	return session.player_health() > 0 and not session.state.campaign.is_suspended() and session.state.campaign.race_stage_active() and session.state.campaign.step == 0 and session.state.region_id == "harbor" and session.state.place_id.is_empty()
 
 func _can_start_race() -> bool:
 	if not race_phone_available(): return false
@@ -395,7 +395,7 @@ func _can_start_race() -> bool:
 func _spawn_near_actors() -> void:
 	for id in ["ferrugem","ashbend_resident","neco"]:
 		if actors.has(id) and not is_instance_valid(actors[id]): actors.erase(id)
-		var near: bool = session.world.player.position.distance_to(targets[id])<60
+		var near: bool = session.player_local_position().distance_to(targets[id])<60
 		if near and not actors.has(id):
 			if not session.position_clear(targets[id]+Vector3.UP*.04): continue
 			var actor = preload("res://scripts/Actor.gd").new()
@@ -417,7 +417,7 @@ func _spawn_near_actors() -> void:
 			if is_instance_valid(actors[id]): actors[id].queue_free()
 			actors.erase(id)
 	for id in ["harbor_parcel","cobra_supply"]:
-		if props.has(id) or session.world.player.position.distance_to(targets[id])>60: continue
+		if props.has(id) or session.player_local_position().distance_to(targets[id])>60: continue
 		var box := MeshInstance3D.new()
 		var mesh := BoxMesh.new()
 		mesh.size = Vector3(.8,.6,.7)
@@ -502,7 +502,7 @@ func begin_tow_job(job: Dictionary) -> bool:
 func _reusable_tow_cargo(model: String, point: Vector3) -> CharacterBody3D:
 	for car in session.controller.vehicles:
 		if not is_instance_valid(car) or car.is_queued_for_deletion(): continue
-		if car == session.world.driving.car and session.world.driving.occupied: continue
+		if car == session.player_vehicle() and session.player_in_vehicle(): continue
 		if car.controlled or car.archetype != model or car.get_meta("region_id","") != "harbor": continue
 		if car.has_meta("awaiting_ground") or car.position.distance_to(point) > 12 or car.horizontal_velocity.length() > .3: continue
 		var previous: String = str(car.vehicle_id).trim_prefix("cancelled_")
@@ -518,7 +518,7 @@ func _spawn_tow_vehicle(model: String, point: Vector3, yaw: float) -> CharacterB
 		var car = session.controller.spawn_vehicle(model,candidate,yaw)
 		if car == null: continue
 		if not car.has_meta("awaiting_ground"): return car
-		if point.distance_to(session.world.player.position) > 75:
+		if point.distance_to(session.player_local_position()) > 75:
 			_reserve_tow_vehicle(car,true)
 			return car
 		# Só este candidato novo e sem dono é descartado, nunca o corpo que bloqueia.
@@ -543,7 +543,7 @@ func _activate_tow_reservations() -> void:
 	if session.state.region_id != "harbor" or not session.state.place_id.is_empty(): return
 	for car in [truck,cargo]:
 		if not is_instance_valid(car) or not car.has_meta("tow_pending"): continue
-		if car.position.distance_to(session.world.player.position) > 65: continue
+		if car.position.distance_to(session.player_local_position()) > 65: continue
 		var offsets: Array = [Vector3.ZERO]
 		if car.get_meta("tow_pending_alternatives",false):
 			offsets.append_array([Vector3(6,0,0),Vector3(-6,0,0),Vector3(0,0,8),Vector3(0,0,-8)])
@@ -573,10 +573,10 @@ func _tow_repair_safe(car: CharacterBody3D) -> bool:
 
 func _recover_tow_truck() -> bool:
 	if session.state.region_id != "harbor" or not session.state.place_id.is_empty(): return false
-	if session.world.driving.occupied or session.world.gameplay.stars > 0: return false
+	if session.player_in_vehicle() or session.world.gameplay.stars > 0: return false
 	if not is_instance_valid(truck) or truck.health > 0 or truck.controlled: return false
 	if truck.has_meta("tow_pending"): return false
-	if session.world.player.position.distance_to(truck.position) >= 5 or truck.horizontal_velocity.length() > .3: return false
+	if session.player_local_position().distance_to(truck.position) >= 5 or truck.horizontal_velocity.length() > .3: return false
 	if not _tow_repair_safe(truck): return false
 	# Reaproveita a transformação existente do corpo e da carga; nunca o move através de obstáculos.
 	truck.repair()
@@ -587,10 +587,10 @@ func _recover_tow_truck() -> bool:
 
 func _recover_tow_cargo() -> bool:
 	if session.state.region_id != "harbor" or not session.state.place_id.is_empty(): return false
-	if tow_job.is_empty() or session.world.driving.occupied or session.world.gameplay.stars > 0: return false
+	if tow_job.is_empty() or session.player_in_vehicle() or session.world.gameplay.stars > 0: return false
 	if not is_instance_valid(cargo) or cargo.health > 0 or cargo.controlled: return false
 	if cargo.has_meta("tow_pending"): return false
-	if session.world.player.position.distance_to(cargo.position) >= 5: return false
+	if session.player_local_position().distance_to(cargo.position) >= 5: return false
 	if loaded:
 		if not is_instance_valid(truck) or truck.horizontal_velocity.length() > .3: return false
 	elif cargo.horizontal_velocity.length() > .3: return false

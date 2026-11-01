@@ -119,7 +119,7 @@ func refresh_context() -> void:
 func _focus() -> Vector3:
 	var driving = session.world.get("driving")
 	if driving != null and driving.get("occupied") and is_instance_valid(driving.get("car")): return driving.car.global_position
-	return session.world.player.global_position
+	return session.player_position()
 
 # ---------------------------------------------------------------- população
 

@@ -47,7 +47,7 @@ func _resident_attacked(_actor, source) -> void:
 		trigger_conflict(session.world.player)
 
 func trigger_conflict(source: Node3D) -> void:
-	if not _local() or session.world.gameplay.health <= 0: return
+	if not _local() or session.player_health() <= 0: return
 	commerce.data.hostility = COMMERCE.HOSTILITY_SECONDS
 	if session.has_method("close_menu"): session.close_menu()
 	_sync_hostility(true,source)
@@ -69,7 +69,7 @@ func _sync_hostility(force := false, source: Node3D = null) -> void:
 	_hostile_applied = hostile
 
 func counter_available() -> bool:
-	return _walking() and _tonico_available() and commerce.data.hostility <= 0 and session.world.player.global_position.distance_to(COOLER_POINT) <= REACH
+	return _walking() and _tonico_available() and commerce.data.hostility <= 0 and session.player_position().distance_to(COOLER_POINT) <= REACH
 
 func save_when_allowed() -> void:
 	if session.has_method("save_block_reason") and not session.save_block_reason().is_empty(): return
@@ -79,11 +79,11 @@ func _local() -> bool:
 	return session != null and session.ready_for_play and session.state.region_id == "harbor" and session.state.place_id.is_empty()
 
 func _walking() -> bool:
-	return _local() and session.world.gameplay.health > 0 and not session.world.driving.occupied and is_instance_valid(session.world.player)
+	return _local() and session.player_health() > 0 and not session.player_in_vehicle() and is_instance_valid(session.world.player)
 
 func nearest_action() -> Dictionary:
 	if not _walking(): return {}
-	var point: Vector3 = session.world.player.global_position
+	var point: Vector3 = session.player_position()
 	if point.distance_to(COOLER_POINT) <= REACH and _tonico_available() and commerce.data.hostility <= 0:
 		return _action("counter", "Comprar bebida / assaltar")
 	if point.distance_to(TONICO_POINT) <= REACH and _tonico_available() and commerce.data.hostility <= 0:
@@ -221,7 +221,7 @@ func _restore_counter_menu() -> void:
 func _service_vehicle():
 	# O último carro dirigido é o capturado por ProductionWorld.save_game.
 	# Nunca atende um veículo de trânsito/missão só passando pelo pátio.
-	var car = session.world.driving.car
+	var car = session.player_vehicle()
 	if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.has_method("repair"): return null
 	if not session.controller.vehicles.has(car): return null
 	if car.get_meta("region_id", "harbor") != "harbor" or car.get_meta("garage_suspended",false) or car.has_meta("awaiting_ground"): return null

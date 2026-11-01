@@ -25,8 +25,8 @@ func configure(owner_race: Node3D) -> void:
 func open_board() -> bool:
 	if race.active or session.modal or not session.ready_for_play or session.controller.save_invalid or session.is_transition_blocked(): return false
 	if session.state.region_id!="desert" or not session.state.place_id.is_empty(): return false
-	if session.world.gameplay.health<=0 or session.rescue_pending or session.arrest_pending: return false
-	if session.world.driving.occupied and absf(session.world.driving.car.speed)>1.0:
+	if session.player_health()<=0 or session.rescue_pending or session.arrest_pending: return false
+	if session.player_in_vehicle() and absf(session.player_vehicle().speed)>1.0:
 		session.show_message("Pare o carro para ver o quadro.")
 		return false
 	if not is_instance_valid(layer): _build()
@@ -143,7 +143,7 @@ func _close_instruments() -> void:
 func _request_style(identity: String) -> void:
 	if not is_instance_valid(instrument_shop) or not instrument_shop.is_visible_in_tree() or not layer.visible: return
 	if not session.modal or race.active or session.controller.save_invalid or session.is_transition_blocked(): return
-	if session.world.gameplay.health<=0 or session.rescue_pending or session.arrest_pending: return
+	if session.player_health()<=0 or session.rescue_pending or session.arrest_pending: return
 	var result := STYLES.select(session.state.world_state,session.state.economy,identity)
 	if not result.ok:
 		var messages := {"unknown_style":"Painel indisponível.","invalid_state":"Não foi possível acessar os painéis.","not_owned":"Compre este painel para equipar.","locked":"Vença mais adversários para liberar este painel.","insufficient_funds":"Saldo insuficiente.","transaction_refused":"Não foi possível concluir a compra."}
@@ -206,7 +206,7 @@ func _completed(result: Dictionary) -> void:
 
 func _show_result(result: Dictionary) -> void:
 	if race.active or session.modal or not result.get("finished",false): return
-	if session.world.gameplay.health<=0 or session.rescue_pending or session.arrest_pending: return
+	if session.player_health()<=0 or session.rescue_pending or session.arrest_pending: return
 	if not is_instance_valid(results_layer):
 		results_layer=CanvasLayer.new()
 		results_layer.layer=70

@@ -58,7 +58,7 @@ func enter_room(next_room: Node3D) -> void:
 func operational() -> bool:
 	if not is_instance_valid(session) or not session.ready_for_play: return false
 	var location: bool = session.state.region_id == "desert" and session.state.place_id.is_empty() if ambush else session.state.place_id == PLACE_ID and is_instance_valid(room) and session.room == room
-	return location and session.world.gameplay.health > 0 and not session.modal and not session.is_transition_blocked() and not session.world.player.input_locked
+	return location and session.player_health() > 0 and not session.modal and not session.is_transition_blocked() and not session.world.player.input_locked
 
 func live_count() -> int:
 	var count:=0
@@ -83,7 +83,7 @@ func _process(delta: float) -> void:
 		return
 	if session.room.get_instance_id()==_cancelled_room_id: return
 	if room!=session.room: enter_room(session.room)
-	if session.world.gameplay.health<=0: cancel(); return
+	if session.player_health()<=0: cancel(); return
 	var active:=operational()
 	for actor in actors.values():
 		if is_instance_valid(actor): actor.set_physics_process(active and not actor.dead)
@@ -93,7 +93,7 @@ func _process(delta: float) -> void:
 		if actors.has(index) or _retry>0: continue
 		if _admit(index,positions[index]): _retry=.25
 		break
-	if room.raid_contains(session.world.player.global_position): engaged=true
+	if room.raid_contains(session.player_position()): engaged=true
 	for actor in actors.values():
 		if is_instance_valid(actor) and not actor.dead: actor.engaged=engaged
 	if is_instance_valid(_label):
@@ -126,14 +126,14 @@ func _admit(index: int,point: Vector3) -> bool:
 
 func _update_repopulation() -> void:
 	if not completed() or _repeat_visit or ambush or _repopulation_ready: return
-	if session.modal or session.is_transition_blocked() or session.world.gameplay.health <= 0: return
+	if session.modal or session.is_transition_blocked() or session.player_health() <= 0: return
 	if Time.get_ticks_msec() / 1000.0 < _repopulate_at: return
 	if not session.state.place_id.is_empty(): return
-	if session.state.region_id == "desert" and session.world.player.global_position.distance_to(LAYOUT.SECRET_RETURN) <= REPOPULATE_DISTANCE: return
+	if session.state.region_id == "desert" and session.player_position().distance_to(LAYOUT.SECRET_RETURN) <= REPOPULATE_DISTANCE: return
 	_repopulation_ready = true
 
 func provoke(source: Node) -> void:
-	if operational() and (source==session.world.player or (session.world.driving.occupied and source==session.world.driving.car)): engaged=true
+	if operational() and (source==session.world.player or (session.player_in_vehicle() and source==session.player_vehicle())): engaged=true
 
 func _guard_died(_index: int) -> void:
 	var actor = actors.get(_index)
@@ -154,8 +154,8 @@ func _guard_died(_index: int) -> void:
 			_owned_loot.append(pickup)
 
 func nearest_action() -> Dictionary:
-	if ambush or not operational() or pending_cash or completed() or session.world.driving.occupied: return {}
-	return room.nearest_raid_action(session.world.player.global_position,true)
+	if ambush or not operational() or pending_cash or completed() or session.player_in_vehicle(): return {}
+	return room.nearest_raid_action(session.player_position(),true)
 
 func perform(action: Dictionary) -> bool:
 	if nearest_action().get("target","")!=action.get("target","") or action.get("target","")!="raid_loot": return false
@@ -185,7 +185,7 @@ func save_block_reason() -> String:
 
 func departed() -> void:
 	# Chamado antes que a transição padrão de sala leve o Dante para a pedreira.
-	if session.state.place_id != PLACE_ID or session.world.gameplay.health <= 0:
+	if session.state.place_id != PLACE_ID or session.player_health() <= 0:
 		cancel()
 		return
 	# Uma gangue que volta pode chamar reforços de novo, independentemente da
@@ -202,7 +202,7 @@ func departed() -> void:
 	_retry = .6
 
 func _update_ambush() -> void:
-	if session.world.gameplay.health <= 0 or session.state.region_id != "desert":
+	if session.player_health() <= 0 or session.state.region_id != "desert":
 		cancel()
 		return
 	# FullSession chama departed enquanto o token de saída da sala ainda está retido.
@@ -236,11 +236,11 @@ func _update_ambush() -> void:
 	if escaped or cleared: _secure_haul()
 
 func _secure_haul() -> void:
-	if ambush and _repeat_visit and completed() and session.world.gameplay.health > 0:
+	if ambush and _repeat_visit and completed() and session.player_health() > 0:
 		cancel()
 		session.show_message("Você escapou dos reforços da mina.")
 		return
-	if not pending_cash or completed() or session.world.gameplay.health <= 0: return
+	if not pending_cash or completed() or session.player_health() <= 0: return
 	if session.state.economy.grant_reward(STATE.RECEIPT, STATE.CASH, "Saque da mina"):
 		session.state.world_state[STATE.KEY] = {"version":1,"escaped":true}
 		preload("res://gameplay/RewardAudio.gd").play(self,"cash")

@@ -158,7 +158,7 @@ func _process(delta: float) -> void:
 	_clock += delta
 	if _clock < .3 or session == null or not session.ready_for_play: return
 	_clock = 0.0
-	var outside: bool = session.state.region_id == "desert" and session.state.place_id.is_empty() and session.world.gameplay.health > 0
+	var outside: bool = session.state.region_id == "desert" and session.state.place_id.is_empty() and session.player_health() > 0
 	_tick_missions(outside)
 	var def := scene_def(_world())
 	var spot := str(def.get("spot", ""))
@@ -170,7 +170,7 @@ func _process(delta: float) -> void:
 	if str(def.scene) == "teodoro_gate" and _chase_lost():
 		_release()
 		return
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	var anchor := _site_point(spot, Vector3.ZERO)
 	var distance := Vector2(player.x, player.z).distance_to(Vector2(anchor.x, anchor.z))
 	if is_instance_valid(actor):
@@ -194,7 +194,7 @@ func _tick_missions(outside: bool) -> void:
 	if not outside:
 		_release_raiders()
 		return
-	var near: bool = session.world.player.global_position.distance_to(RAID_CENTER) < RAID_DISTANCE
+	var near: bool = session.player_position().distance_to(RAID_CENTER) < RAID_DISTANCE
 	if raiders.is_empty():
 		if near: _spawn_raiders()
 		return
@@ -206,7 +206,7 @@ func _tick_missions(outside: bool) -> void:
 		if STATE.chain_advance(world, "finale", "gate"):
 			session.show_message("Os Cobras recuaram. Vicente seguiu na frente para a passagem norte.")
 			session.save_game()
-	elif not near and session.world.player.global_position.distance_to(RAID_CENTER) > RAID_DISTANCE * 1.6:
+	elif not near and session.player_position().distance_to(RAID_CENTER) > RAID_DISTANCE * 1.6:
 		# Saiu da briga: o ataque recomeça inteiro na volta (sem meio ataque salvo).
 		_release_raiders()
 
@@ -313,7 +313,7 @@ func _admit(def: Dictionary) -> void:
 func _face(spot: String) -> void:
 	if not is_instance_valid(actor) or not is_instance_valid(actor.visual) or actor.dead: return
 	var talking: bool = session.modal and session.dialogue_open
-	var target: Vector3 = session.world.player.global_position if talking else _face_point(spot)
+	var target: Vector3 = session.player_position() if talking else _face_point(spot)
 	var offset := target - actor.global_position
 	actor.visual.rotation.y = atan2(offset.x, offset.z)
 	actor.set_talking(talking)
@@ -327,13 +327,13 @@ func _release() -> void:
 	_actor_stage = ""
 
 func _available() -> bool:
-	return session != null and session.ready_for_play and session.state.region_id == "desert" and session.state.place_id.is_empty() and not session.modal and not session.world.driving.occupied and session.world.gameplay.health > 0 and not session.is_transition_blocked()
+	return session != null and session.ready_for_play and session.state.region_id == "desert" and session.state.place_id.is_empty() and not session.modal and not session.player_in_vehicle() and session.player_health() > 0 and not session.is_transition_blocked()
 
 func nearest_action() -> Dictionary:
 	if session == null or not session.ready_for_play or session.state.region_id != "desert" or not session.state.place_id.is_empty(): return {}
-	if session.world.driving.occupied: return _race_action()
+	if session.player_in_vehicle(): return _race_action()
 	if not _available(): return {}
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	var spot := _mission_point()
 	if not spot.is_empty() and player.distance_to(spot.point) <= float(spot.reach): return {"id": "desert_story", "target": spot.target, "label": spot.label}
 	if not is_instance_valid(actor) or actor.dead: return {}
@@ -354,7 +354,7 @@ func story_race_open(identity: String) -> bool:
 func _race_action() -> Dictionary:
 	var rival := story_race()
 	if rival.is_empty() or session.modal or session.desert == null or not is_instance_valid(session.desert.drag) or session.desert.drag.active: return {}
-	var car = session.world.driving.car
+	var car = session.player_vehicle()
 	if not is_instance_valid(car) or car.global_position.distance_to(STAGING) > RACE_REACH: return {}
 	return {"id": "desert_story", "target": "act2:race", "label": "Alinhar contra " + str(CONTACT.LOOKS[rival].name)}
 
@@ -570,7 +570,7 @@ func _say_then(rows: Array, next: Callable) -> void:
 	var lines: Array = []
 	for row in rows: lines.append({"speaker": row[0], "message": row[1]})
 	session.show_dialogue(lines, func():
-		if session.world.gameplay.health > 0 and not session.arrest_pending and not session.rescue_pending and session.state.region_id == "desert": next.call())
+		if session.player_health() > 0 and not session.arrest_pending and not session.rescue_pending and session.state.region_id == "desert": next.call())
 
 ## Flashback jogável da blitz pelos olhos do Vicente (runtime/prologue/BlitzScene.gd, a mesma noite do
 ## prólogo): a cena pausa o mundo, roda num viewport próprio e chama `next` no fim ou no pulo.
@@ -622,7 +622,7 @@ static func folder_point() -> Vector3:
 ## (BrotherFighter), e aí a conversa abre.
 func _tick_fight() -> void:
 	if not is_instance_valid(actor) or not actor is BrotherFighter or actor.down: return
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	var offset: Vector3 = player - actor.global_position
 	offset.y = 0
 	actor.chase(offset)
@@ -639,7 +639,7 @@ func _say(rows: Array, next_stage: String, extra := {}) -> void:
 ## Fim de um diálogo: só conta se Dante continua vivo, solto e no deserto.
 func _finish_step(next_stage: String, extra := {}) -> void:
 	var car: Variant = extra.get("car")
-	var alive: bool = session.world.gameplay.health > 0 and not session.arrest_pending and not session.rescue_pending and session.state.region_id == "desert"
+	var alive: bool = session.player_health() > 0 and not session.arrest_pending and not session.rescue_pending and session.state.region_id == "desert"
 	if not alive:
 		# O carro do Nonato só existe se a conversa terminou.
 		if car != null and is_instance_valid(car): car.queue_free()

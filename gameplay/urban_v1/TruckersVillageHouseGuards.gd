@@ -17,7 +17,7 @@ func configure(owner_manager, home_geometry, owner_quest) -> void:
 	if not homes.house_entered.is_connected(_entered): homes.house_entered.connect(_entered)
 
 func _entered(index: int) -> void:
-	house_entered(index,manager.session.world.player.global_position)
+	house_entered(index,manager.session.player_position())
 
 func _process(delta: float) -> void:
 	_scan-=delta
@@ -26,7 +26,7 @@ func _process(delta: float) -> void:
 	if manager.session==null or not manager.session.ready_for_play or not manager.region_active:
 		_activate(-1)
 		return
-	var point: Vector3 = manager.session.world.player.global_position
+	var point: Vector3 = manager.session.player_position()
 	var index: int = homes.house_at(point)
 	if index==0 and homes.get_meta("secret_house_authorized",false): index=-1
 	if index<0:
@@ -63,11 +63,11 @@ func _activate(index: int) -> void:
 
 func house_entered(index: int, point: Vector3) -> bool:
 	if manager.session==null or not manager.session.ready_for_play or not manager.region_active: return false
-	if manager.session.world.gameplay.health<=0 or manager.session.world.driving.occupied: return false
+	if manager.session.player_health()<=0 or manager.session.player_in_vehicle(): return false
 	# A stale door signal or arbitrary identifier cannot aggro a distant home.
 	if index<0 or index>=homes.homes.size() or homes.house_at(point)!=index: return false
 	if index==0 and homes.get_meta("secret_house_authorized",false): return false
-	if manager.session.world.player.global_position.distance_to(point)>.5: return false
+	if manager.session.player_position().distance_to(point)>.5: return false
 	_activate(index)
 	for actor in pairs.get(index,[]):
 		if not actor.dead and actor.health>0 and actor.global_position.distance_to(point)<=8:

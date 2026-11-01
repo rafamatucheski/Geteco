@@ -25,13 +25,13 @@ func configure(owner_session, owner_operation: Node = null) -> void:
 	set_process(enabled())
 
 func _available(on_foot := true) -> bool:
-	return enabled() and session!=null and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and not session.modal and not get_tree().paused and not session.is_transition_blocked() and not session.desert.busy() and not session.world.driving.is_body_transition_active() and (not on_foot or not session.world.driving.occupied) and session.world.gameplay.health>0 and not session.world.player.dead and not session.world.player.input_locked
+	return enabled() and session!=null and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and not session.modal and not get_tree().paused and not session.is_transition_blocked() and not session.desert.busy() and not session.world.driving.is_body_transition_active() and (not on_foot or not session.player_in_vehicle()) and session.player_health()>0 and not session.world.player.dead and not session.world.player.input_locked
 
 func nearest_action() -> Dictionary:
-	if not _available() or session.world.player.global_position.distance_to(CONTACT)>2.6: return {}
+	if not _available() or session.player_position().distance_to(CONTACT)>2.6: return {}
 	if _contact_actor() == null: return {}
 	if STATE.data(session.state.world_state).status=="complete": return {}
-	var ray:=PhysicsRayQueryParameters3D.create(session.world.player.global_position+Vector3.UP,CONTACT+Vector3.UP,1)
+	var ray:=PhysicsRayQueryParameters3D.create(session.player_position()+Vector3.UP,CONTACT+Vector3.UP,1)
 	if not session.world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): return {}
 	return {"id":"desert","target":"yard_job","label":"Conversar sobre o serviço da cava"}
 
@@ -112,7 +112,7 @@ func _process(delta: float) -> void:
 	_clock-=delta
 	if _clock>0: return
 	_clock=.2
-	var near: bool=session!=null and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.world.player.global_position.distance_to(DESTINATION)<95
+	var near: bool=session!=null and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.player_position().distance_to(DESTINATION)<95
 	if is_instance_valid(_markings): _markings.visible=near
 	if not near: _settled.clear(); return
 	if not is_instance_valid(_markings): _build_markings()
@@ -130,7 +130,7 @@ func _process(delta: float) -> void:
 			var carrier:=instance_from_id(int(rock.get_meta("mining_carried_by")))
 			# A restauração da frota preserva arquétipo/controlador, não metadados arbitrários.
 			# Exige hidráulica real ocupada segurando este corpo depois de save/reentrada.
-			if is_instance_valid(carrier) and carrier is CharacterBody3D and session.world.driving.occupied and session.world.driving.car==carrier:
+			if is_instance_valid(carrier) and carrier is CharacterBody3D and session.player_in_vehicle() and session.player_vehicle()==carrier:
 				var hydraulics: Node=carrier.get_node_or_null("MiningMachine")
 				if hydraulics!=null and hydraulics.cargo==rock: _carried[index]=true
 			_settled.erase(index)

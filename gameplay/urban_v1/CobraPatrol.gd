@@ -70,7 +70,7 @@ func _alert() -> void:
 	if deployed:
 		for actor in crew:
 			if is_instance_valid(actor) and not actor.dead:
-				actor.last_known = session.world.player.global_position
+				actor.last_known = session.player_position()
 				actor.alerted = true
 				actor.set_engaged(true)
 		return
@@ -101,7 +101,7 @@ func _physics_process(delta: float) -> void:
 		model.process_mode = Node.PROCESS_MODE_INHERIT if model.is_visible_in_tree() else Node.PROCESS_MODE_DISABLED
 		model.rest_in_seat(delta)
 	var gameplay = session.world.gameplay
-	if not hostile and car.global_position.distance_to(session.world.player.global_position)>120 and not session.world.production._on_screen(car.global_position,3):
+	if not hostile and car.global_position.distance_to(session.player_position())>120 and not session.world.production._on_screen(car.global_position,3):
 		if stolen: queue_free()
 		elif deployed: car.queue_free()
 		return
@@ -157,9 +157,9 @@ func _physics_process(delta: float) -> void:
 			# O antigo route_between retornava null ao escolher o mesmo cruzamento.
 			var route: Dictionary = session.world.dispatch.router.plan(car.global_position,destination,-car.global_basis.z)
 			if route.ok: pilot.set_route(route.curve)
-	pilot.hold(separation<10 and not session.world.driving.occupied)
+	pilot.hold(separation<10 and not session.player_in_vehicle())
 	pilot.tick(delta)
-	if separation<14 and absf(car.speed)<.5 and not session.world.driving.occupied:
+	if separation<14 and absf(car.speed)<.5 and not session.player_in_vehicle():
 		_deploy(1)
 		return
 	shot_clock -= delta
@@ -214,7 +214,7 @@ func _deploy(_thief_side: int) -> void:
 		actor.position = point
 		session.world.add_child(actor)
 		actor.set_meta("region_id",car.get_meta("region_id","harbor"))
-		actor.last_known = session.world.player.global_position
+		actor.last_known = session.player_position()
 		actor.alerted = true
 		actor.set_engaged(hostile)
 		crew.append(actor)

@@ -293,7 +293,7 @@ func release_all() -> void:
 		for meta in ["race_owned", "desert_road_event"]:
 			if car.has_meta(meta): car.remove_meta(meta)
 		car.engine_disabled = false
-		if not (is_instance_valid(session) and session.world.driving.car == car):
+		if not (is_instance_valid(session) and session.player_vehicle() == car):
 			car.set_physics_process(false)
 			if is_instance_valid(session): session.controller.vehicles.erase(car)
 			car.queue_free()

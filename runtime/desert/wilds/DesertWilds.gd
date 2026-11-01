@@ -132,7 +132,7 @@ func _process(delta: float) -> void:
 	if not enabled() or not _outside():
 		release_all()
 		return
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	var planar := Vector2(player.x, player.z)
 	var region: Node3D = session.controller.regions.get("desert")
 	var built_one := false
@@ -258,7 +258,7 @@ func _update_site(site: Dictionary, record: Dictionary, planar: Vector2) -> void
 				record.notified = false
 				return
 			# Uma tentativa (e um aviso de falha) por aproximação, não a cada tique.
-			if record.get("notified", false) or session.world.gameplay.health <= 0: return
+			if record.get("notified", false) or session.player_health() <= 0: return
 			record.notified = true
 			var result := claim_cave(session.state.economy, site)
 			if not result.ok:
@@ -288,7 +288,7 @@ func save_block_reason() -> String:
 ## como os cômodos da Estrada do Sal, para a troca não atrasar ao passar pela boca.
 func _cave_roofs() -> void:
 	if sites.is_empty() or not is_instance_valid(session) or not session.ready_for_play: return
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	for record in sites.values():
 		var roofs: Node3D = record.get("roofs")
 		if not is_instance_valid(roofs): continue
@@ -347,7 +347,7 @@ func _update_brother(site: Dictionary, record: Dictionary, planar: Vector2) -> v
 		car.set_meta("vicente_gift", true)
 		record.car = car
 		return
-	if not session.world.driving.occupied or session.world.driving.car != car: return
+	if not session.player_in_vehicle() or session.player_vehicle() != car: return
 	if not session.state.economy.grant_reward(LETTERS.CAR_RECEIPT, 0): return
 	car.vehicle_id = LETTERS.CAR_ID
 	var world: Dictionary = session.state.world_state
@@ -365,8 +365,8 @@ func _update_brother(site: Dictionary, record: Dictionary, planar: Vector2) -> v
 
 ## Caixa de munição das cavernas (a pé, perto da pilha de caixotes do acampamento).
 func nearest_action() -> Dictionary:
-	if sites.is_empty() or not is_instance_valid(session) or session.modal or session.world.driving.occupied: return {}
-	var player: Vector3 = session.world.player.global_position
+	if sites.is_empty() or not is_instance_valid(session) or session.modal or session.player_in_vehicle(): return {}
+	var player: Vector3 = session.player_position()
 	for site in SITES:
 		if str(site.kind) != "cave" or CAVE.garage(str(site.id)) or not sites.has(site.id): continue
 		var record: Dictionary = sites[site.id]
@@ -409,7 +409,7 @@ func _release(id: String) -> void:
 	sites.erase(id)
 	# Coyote ainda não levado volta para debaixo da lona na próxima visita.
 	var car: Variant = record.get("car")
-	if is_instance_valid(car) and not record.get("claimed", false) and not (is_instance_valid(session) and session.world.driving.car == car): car.queue_free()
+	if is_instance_valid(car) and not record.get("claimed", false) and not (is_instance_valid(session) and session.player_vehicle() == car): car.queue_free()
 	for actor in record.get("actors", []):
 		if is_instance_valid(actor):
 			actor.set_physics_process(false)

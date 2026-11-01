@@ -38,8 +38,8 @@ func _process(delta: float) -> void:
 					break
 		if is_instance_valid(car):
 			_capture(id,car)
-			var occupied: bool = car==session.world.driving.car and session.world.driving.occupied
-			var active: bool = occupied or (session.state.region_id==str(car.get_meta("region_id","harbor")) and world_visible and car.global_position.distance_to(session.world.player.global_position)<125)
+			var occupied: bool = car==session.player_vehicle() and session.player_in_vehicle()
+			var active: bool = occupied or (session.state.region_id==str(car.get_meta("region_id","harbor")) and world_visible and car.global_position.distance_to(session.player_position())<125)
 			if active==not car.get_meta("village_parked_suspended",false): continue
 			if active:
 				session.controller.region.prepare_collision_at(car.global_position)
@@ -54,7 +54,7 @@ func _process(delta: float) -> void:
 		if not record.is_empty() and record.health<=0: continue
 		var point: Vector3 = ORIGIN+SPOTS[i][1]
 		if record.has("position"): point=Vector3(record.position[0],record.position[1],record.position[2])
-		if record.get("region","harbor")!="harbor" or point.distance_to(session.world.player.global_position)>95: continue
+		if record.get("region","harbor")!="harbor" or point.distance_to(session.player_position())>95: continue
 		session.controller.region.prepare_collision_at(point)
 		car=session.controller.spawn_vehicle(SPOTS[i][0],point,float(record.get("yaw",SPOTS[i][2])))
 		if not is_instance_valid(car): continue
@@ -86,7 +86,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 		var car = cars[id]
 		if not is_instance_valid(car) or not saved.has(id): continue
 		# ProductionWorld restaura o veículo selecionado; nunca o duplica.
-		if car==session.world.driving.car: continue
+		if car==session.player_vehicle(): continue
 		car.queue_free()
 	cars.clear()
 	_scan=0

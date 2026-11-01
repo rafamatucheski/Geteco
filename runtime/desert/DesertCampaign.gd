@@ -47,13 +47,13 @@ func _process(delta: float) -> void:
 	_clock += delta
 	if _clock < .35 or session == null or not session.ready_for_play: return
 	_clock = 0.0
-	var active: bool = session.state.region_id == "desert" and session.state.place_id.is_empty() and session.world.gameplay.health>0
+	var active: bool = session.state.region_id == "desert" and session.state.place_id.is_empty() and session.player_health()>0
 	if active and not STATE.data(session.state.world_state).arrived:
 		STATE.mark(session.state.world_state,"arrived")
 		session.show_message("Maciota: deixei um quarto no Horizonte. Vicente está com a turma dele no encontro da arrancada.")
 		session.save_game()
 	for id in LOCATIONS:
-		var nearby: bool = active and session.world.player.global_position.distance_to(LOCATIONS[id]) < 85.0
+		var nearby: bool = active and session.player_position().distance_to(LOCATIONS[id]) < 85.0
 		if not nearby: retired.erase(id)
 		if is_instance_valid(session.desert.drag) and session.desert.drag.active and session.desert.drag.rival_id==id: nearby=false
 		# Durante o reencontro, Vicente espera no motel ou na capela, não no encontro.
@@ -70,7 +70,7 @@ func _process(delta: float) -> void:
 				var talking: bool = session.modal and _talking_to==id
 				actor.set_talking(talking or (not session.modal and fposmod(_elapsed+float(LOCATIONS.keys().find(id))*2.2,12.0)<3.5))
 				if talking:
-					var offset: Vector3 = session.world.player.global_position-actor.global_position
+					var offset: Vector3 = session.player_position()-actor.global_position
 					actor.visual.rotation.y = atan2(offset.x,offset.z)
 				elif id=="vicente": actor.visual.rotation.y=0.0
 				elif ROSTER.TEAM_POINTS.has(id):
@@ -82,7 +82,7 @@ func _process(delta: float) -> void:
 			actor.position = LOCATIONS[id]
 			add_child(actor)
 			actors[id] = actor
-	if active and session.world.player.global_position.distance_to(MANIFEST)<90:
+	if active and session.player_position().distance_to(MANIFEST)<90:
 		if not is_instance_valid(_manifest_visual): _build_manifest()
 	elif is_instance_valid(_manifest_visual):
 		_manifest_visual.queue_free()
@@ -113,10 +113,10 @@ func _build_manifest() -> void:
 		mesh.material_override = material
 		_manifest_visual.add_child(mesh)
 func _available() -> bool:
-	return session != null and session.ready_for_play and session.state.region_id == "desert" and not session.modal and not session.world.driving.occupied and session.world.gameplay.health>0 and not session.is_transition_blocked()
+	return session != null and session.ready_for_play and session.state.region_id == "desert" and not session.modal and not session.player_in_vehicle() and session.player_health()>0 and not session.is_transition_blocked()
 func nearest_action() -> Dictionary:
 	if not _available(): return {}
-	var point: Vector3 = session.world.player.global_position
+	var point: Vector3 = session.player_position()
 	var data := STATE.data(session.state.world_state)
 	if session.state.place_id == "desert_bank" and is_instance_valid(session.room):
 		var service: Vector3 = session.room.to_global(Vector3(-1.5,0,-1.35))
@@ -169,7 +169,7 @@ func _say(rows: Array, flag := "") -> void:
 	var lines: Array = []
 	for row in rows: lines.append({"speaker":row[0],"message":row[1]})
 	session.show_dialogue(lines,func():
-		if session.world.gameplay.health<=0 or session.state.region_id!="desert": return
+		if session.player_health()<=0 or session.state.region_id!="desert": return
 		if not flag.is_empty(): STATE.mark(session.state.world_state,flag)
 		session.save_game())
 func race_finished(result: Dictionary) -> void:

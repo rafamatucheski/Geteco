@@ -76,7 +76,7 @@ func perform(action: Dictionary) -> bool:
 	if not target.begins_with("secret:") or nearest_action().get("target","")!=target:
 		return false
 	var id := target.trim_prefix("secret:")
-	var result := SECRET.claim(session.state.world_state,session.state.economy,id,session.world.gameplay.health>0 and not session.world.player.dead)
+	var result := SECRET.claim(session.state.world_state,session.state.economy,id,session.player_health()>0 and not session.world.player.dead)
 	if not bool(result.get("ok",false)):
 		session.show_message("Não foi possível recolher agora. Libere espaço na carteira.")
 		return true

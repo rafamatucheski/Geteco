@@ -12,13 +12,13 @@ func configure(owner_session) -> void:
 func _car() -> Node3D:
 	if not is_instance_valid(session) or not session.ready_for_play: return null
 	if session.state.region_id!="desert" or not session.state.place_id.is_empty(): return null
-	if not session.world.driving.occupied: return null
-	return session.world.driving.car
+	if not session.player_in_vehicle(): return null
+	return session.player_vehicle()
 
 func nearest_action() -> Dictionary:
 	var car:=_car()
 	if car==null or car==paid_car or session.modal or session.has_position_transition(): return {}
-	if session.world.gameplay.health<=0 or car.input_locked or absf(car.speed)>.5: return {}
+	if session.player_health()<=0 or car.input_locked or absf(car.speed)>.5: return {}
 	var local:=car.global_position-PLAZA.POSITION
 	if local.x<1.0 or local.x>4.6 or local.z< -3.0 or local.z>7.5: return {}
 	if car.global_basis.z.z<.5: return {}
@@ -75,7 +75,7 @@ func _refresh() -> void:
 		if absf(local.z-barrier_z)<clearance and absf(plaza.arms[lane].rotation.z)>.1: opened[lane]=true
 		if lane==1 or (car!=_car() and (car.traffic or car.external_input)): opened[lane]=true
 	# Pedestres parados sob um braço já erguido também ficam protegidos.
-	var player: Vector3=session.world.player.global_position-PLAZA.POSITION
+	var player: Vector3=session.player_position()-PLAZA.POSITION
 	for lane in 2:
 		if absf(player.x-(2.8 if lane==0 else -2.8))<2.1 and absf(player.z-(-4.3 if lane==0 else 4.3))<1.0 and absf(plaza.arms[lane].rotation.z)>.1: opened[lane]=true
 	for lane in 2: plaza.set_open(lane,opened[lane])

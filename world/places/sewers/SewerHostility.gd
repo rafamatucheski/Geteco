@@ -46,7 +46,7 @@ func _ready() -> void:
 func active() -> bool:
 	return is_instance_valid(session) and is_instance_valid(room) and room.active \
 		and session.state.place_id == room.definition.id and not session.world.player.input_locked \
-		and session.world.gameplay.health > 0
+		and session.player_health() > 0
 
 func provoke(victim: CharacterBody3D, source: Node3D) -> void:
 	if not active() or source != session.world.player: return

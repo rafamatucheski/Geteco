@@ -33,7 +33,7 @@ func configure(owner_session) -> void:
 	ambience.configure(session,self)
 
 func operational() -> bool:
-	return LAYOUT.enabled() and is_instance_valid(session) and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.world.gameplay.health>0 and not session.world.player.dead and not session.modal and not session.world.player.input_locked and not session.has_position_transition() and not session.desert.busy()
+	return LAYOUT.enabled() and is_instance_valid(session) and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.player_health()>0 and not session.world.player.dead and not session.modal and not session.world.player.input_locked and not session.has_position_transition() and not session.desert.busy()
 
 func save_block_reason() -> String:
 	return "Afaste-se do cânion ou encerre o confronto antes de salvar." if _engaged and live_count()>0 else ""
@@ -125,7 +125,7 @@ func _admit(index: int, region: Node3D) -> void:
 
 func provoke(source: Node) -> void:
 	if not operational(): return
-	if source==session.world.player or (session.world.driving.occupied and source==session.world.driving.car): _engaged=true
+	if source==session.world.player or (session.player_in_vehicle() and source==session.player_vehicle()): _engaged=true
 
 func _actor_died(index: int) -> void:
 	if not STATE.defeat(session.state.world_state,index): return
@@ -140,13 +140,13 @@ func track_loot(pickup: Node3D) -> void:
 	if is_instance_valid(pickup): _loot.append(pickup)
 
 func nearest_action() -> Dictionary:
-	if not operational() or not is_instance_valid(_site) or session.world.driving.occupied or not session.world.player.is_on_floor(): return {}
+	if not operational() or not is_instance_valid(_site) or session.player_in_vehicle() or not session.world.player.is_on_floor(): return {}
 	var saved: Variant=session.state.world_state.get(STATE.KEY,STATE.defaults())
 	if not STATE.valid(saved) or int(saved.defeated_mask)!=STATE.FULL_MASK: return {}
 	for index in STATE.RECEIPTS.size():
 		if (int(saved.cache_mask)&(1<<index))!=0: continue
 		var point: Vector3=LAYOUT.ARMORY_POS+Vector3(0,0,index*3)
-		if session.world.player.global_position.distance_to(point)<1.8:
+		if session.player_position().distance_to(point)<1.8:
 			return {"id":"desert","target":"canyon_cache:"+str(index),"label":"Recolher AK-47 / munição" if index==0 else "Recolher granadas"}
 	return {}
 
@@ -154,7 +154,7 @@ func perform(action: Dictionary) -> bool:
 	var current := nearest_action()
 	if current.is_empty() or action.get("id")!="desert" or action.get("target")!=current.target: return false
 	var index := int(str(current.target).trim_prefix("canyon_cache:"))
-	var result := STATE.claim(session.state.world_state,session.state.economy,index,session.world.gameplay.health>0 and not session.world.player.dead)
+	var result := STATE.claim(session.state.world_state,session.state.economy,index,session.player_health()>0 and not session.world.player.dead)
 	if not result.ok:
 		session.show_message("Libere espaço no inventário para recolher o armamento.")
 		return true

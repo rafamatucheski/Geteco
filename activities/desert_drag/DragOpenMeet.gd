@@ -49,7 +49,7 @@ func ticket() -> Dictionary:
 	return {"queued":not pending.is_empty(),"position":1+heats_ahead if not pending.is_empty() else 0,
 		"number":int(registered_car.get_meta("drag_entry_number",27)) if is_instance_valid(registered_car) else 27,
 		"rival":pending,"heat":phase,"racing":track_busy(),"waiting":waiting.size(),
-		"reason":last_admission_reason,"on_foot":not session.world.driving.occupied}
+		"reason":last_admission_reason,"on_foot":not session.player_in_vehicle()}
 
 func request(identity: String, _join_queue: bool = false) -> bool:
 	if not enabled or race.active or not pending.is_empty() or not race.can_race(identity): return false
@@ -89,10 +89,10 @@ func cancel_ticket(notify := true, reason := "Inscrição na fila cancelada.") -
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(session) or not session.ready_for_play: return
 	var here: bool = enabled and session.state.region_id=="desert" and session.state.place_id.is_empty()
-	var observer: Vector3 = session.world.player.global_position
+	var observer: Vector3 = session.player_position()
 	var along: float = clampf(race._offset(observer),-160.0,1010.0)
 	here = here and observer.distance_to(race.start_point+race.direction*along)<180.0
-	if not here or session.world.gameplay.health<=0 or session.rescue_pending or session.arrest_pending:
+	if not here or session.player_health()<=0 or session.rescue_pending or session.arrest_pending:
 		clear_visit(); return
 	if session.modal or session.get_tree().paused or session.is_transition_blocked(): return
 	if session.world.gameplay.stars>0:
@@ -100,10 +100,10 @@ func _physics_process(delta: float) -> void:
 	if not pending.is_empty():
 		if not is_instance_valid(registered_car) or registered_car.health<=0 or registered_car.engine_disabled:
 			cancel_ticket(true,"Inscrição cancelada: o carro inscrito não pode correr.")
-		elif session.world.driving.occupied and session.world.driving.car!=registered_car:
+		elif session.player_in_vehicle() and session.player_vehicle()!=registered_car:
 			cancel_ticket(true,"Inscrição cancelada: você trocou de carro.")
-		elif _was_on_foot == session.world.driving.occupied:
-			_was_on_foot = not session.world.driving.occupied
+		elif _was_on_foot == session.player_in_vehicle():
+			_was_on_foot = not session.player_in_vehicle()
 			_refresh()
 	if not _healthy():
 		clear_visit(); return
@@ -195,7 +195,7 @@ func _try_resume_blocked(delta: float) -> void:
 func _healthy() -> bool:
 	for entry in heat+waiting+transit:
 		if not is_instance_valid(entry.car) or entry.car.health<=0 or entry.car.engine_disabled: return false
-		if session.world.driving.car==entry.car and session.world.driving.occupied: return false
+		if session.player_vehicle()==entry.car and session.player_in_vehicle(): return false
 	return true
 
 func _admit() -> void:
@@ -259,7 +259,7 @@ func _release_heat() -> void:
 	_refresh()
 
 func _dispatch(delta: float) -> void:
-	if not session.world.driving.occupied:
+	if not session.player_in_vehicle():
 		_set_admission_reason("Sua vez · entre no carro #27 junto ao quadro.")
 		return
 	ready_clock += delta
@@ -305,7 +305,7 @@ func _out_of_view(car: Node3D) -> bool:
 func _point_out_of_view(point: Vector3, minimum_distance: float) -> bool:
 	var camera := get_viewport().get_camera_3d()
 	if not is_instance_valid(camera): return true
-	if session.world.player.global_position.distance_to(point)<minimum_distance: return false
+	if session.player_position().distance_to(point)<minimum_distance: return false
 	return camera.is_position_behind(point) or not get_viewport().get_visible_rect().grow(80).has_point(camera.unproject_position(point))
 
 func take_opponent(identity: String):
@@ -376,8 +376,8 @@ func _advance_transit(delta: float) -> void:
 			if gap.dot(forward)>0.0 and absf(gap.dot(forward.cross(Vector3.UP)))<2.2:
 				safe_speed = minf(safe_speed,sqrt(20.0*maxf(0.0,gap.dot(forward)-7.0)))
 				if gap.dot(forward)<7.0: blocked = true
-		if session.world.driving.occupied and session.world.driving.car!=car:
-			var gap: Vector3 = session.world.driving.car.global_position-car.global_position
+		if session.player_in_vehicle() and session.player_vehicle()!=car:
+			var gap: Vector3 = session.player_vehicle().global_position-car.global_position
 			if gap.dot(forward)>0.0 and absf(gap.dot(forward.cross(Vector3.UP)))<2.4:
 				safe_speed = minf(safe_speed,sqrt(20.0*maxf(0.0,gap.dot(forward)-8.0)))
 				if gap.dot(forward)<8.0: blocked = true
@@ -420,7 +420,7 @@ func _advance_transit(delta: float) -> void:
 
 func _release_car(car: Node3D, detach := false) -> void:
 	if not is_instance_valid(car): return
-	if session.world.driving.occupied and session.world.driving.car==car:
+	if session.player_in_vehicle() and session.player_vehicle()==car:
 		car.remove_meta("race_owned")
 		car.remove_meta("open_drag_owned")
 		car.remove_meta("desert_drag_physics")
@@ -469,7 +469,7 @@ func _refresh() -> void:
 	status_layer.visible = not pending.is_empty() and not race.active
 	var instruction := "Sua vez: pare junto ao quadro" if heat.is_empty() and heats_ahead==0 else "Aguardando largada"
 	if not last_admission_reason.is_empty(): instruction = last_admission_reason
-	elif not session.world.driving.occupied: instruction = "Pode esperar a pé · carro #27 inscrito"
+	elif not session.player_in_vehicle(): instruction = "Pode esperar a pé · carro #27 inscrito"
 	status.text = "#27 · %dª posição · %s"%[1+heats_ahead,instruction]
 	changed.emit()
 

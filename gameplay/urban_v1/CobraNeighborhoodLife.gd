@@ -22,7 +22,7 @@ func _process(delta: float) -> void:
 	scan -= delta
 	if scan>0: return
 	scan = .35
-	active = session.state.region_id == "harbor" and session.state.place_id.is_empty() and session.world.player.global_position.distance_to(CENTER)<105
+	active = session.state.region_id == "harbor" and session.state.place_id.is_empty() and session.player_position().distance_to(CENTER)<105
 	var defeated: bool = session.state.campaign.cobra_status().defeated
 	for actor in guards.values()+residents.values():
 		if not is_instance_valid(actor): continue

@@ -150,7 +150,7 @@ func _outside() -> bool:
 	return session.state.region_id == "harbor" and session.state.place_id.is_empty()
 
 func _free_on_foot() -> bool:
-	return session.ready_for_play and not session.modal and not session.world.driving.occupied and session.world.gameplay.health > 0 and not session.is_transition_blocked()
+	return session.ready_for_play and not session.modal and not session.player_in_vehicle() and session.player_health() > 0 and not session.is_transition_blocked()
 
 ## Missão da cadeia em andamento (etapa aberta), a escolhida no diário, ou a despedida quando chega a hora.
 func active_id() -> String:
@@ -273,7 +273,7 @@ func on_scrapped(car) -> void:
 
 func nearest_action() -> Dictionary:
 	if session == null or not _idle() or session.state.region_id != "harbor" or not _free_on_foot(): return {}
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	var campaign := _campaign()
 	if not session.state.place_id.is_empty(): return _indoor_action(player, campaign)
 	if is_instance_valid(helena) and player.distance_to(helena.global_position) <= TALK_DISTANCE and _helena_scene in ["dock", "bank_side"]:
@@ -303,8 +303,8 @@ func _indoor_action(player: Vector3, campaign: Dictionary) -> Dictionary:
 
 func nearest_vehicle_action() -> Dictionary:
 	if session == null or not _idle() or not _outside() or _riding or not is_instance_valid(helena) or _helena_scene != "stop": return {}
-	var car = session.world.driving.car
-	if not session.world.driving.occupied or not is_instance_valid(car) or car.health <= 0 or str(car.archetype).begins_with("bike_"): return {}
+	var car = session.player_vehicle()
+	if not session.player_in_vehicle() or not is_instance_valid(car) or car.health <= 0 or str(car.archetype).begins_with("bike_"): return {}
 	if car.global_position.distance_to(helena.global_position) > 9.0 or car.horizontal_velocity.length() > 1.5: return {}
 	return _action("ride_offer", "Oferecer carona")
 
@@ -314,7 +314,7 @@ func _action(target: String, label: String) -> Dictionary:
 func perform(action: Dictionary) -> bool:
 	var target := str(action.get("target", ""))
 	if target.is_empty(): return false
-	var expected: Dictionary = nearest_vehicle_action() if session.world.driving.occupied else nearest_action()
+	var expected: Dictionary = nearest_vehicle_action() if session.player_in_vehicle() else nearest_action()
 	if expected.get("target", "") != target: return false
 	if target.begins_with("helena:"): return _talk_helena(target.trim_prefix("helena:"))
 	if target.begins_with("envelope:"): return _drop_envelope(int(target.trim_prefix("envelope:")))
@@ -338,7 +338,7 @@ func perform(action: Dictionary) -> bool:
 
 func _talk_helena(scene: String) -> bool:
 	if is_instance_valid(helena):
-		helena.face(session.world.player.global_position)
+		helena.face(session.player_position())
 		helena.set_talking(true)
 	match scene:
 		"dock":
@@ -360,7 +360,7 @@ func _talk_helena(scene: String) -> bool:
 func _say(section: String, on_done := Callable()) -> void:
 	session.show_dialogue(LINES.lines(section), func():
 		if is_instance_valid(helena): helena.set_talking(false)
-		if on_done.is_valid() and session.world.gameplay.health > 0: on_done.call())
+		if on_done.is_valid() and session.player_health() > 0: on_done.call())
 
 ## Fala curta sem parar o jogo (telefone, rádio, carona).
 func _speak(section: String, index := 0) -> void:
@@ -426,7 +426,7 @@ func _update_cobras() -> void:
 		_release_cobras()
 		return
 	var pickup: Vector3 = STATE.DEBT_CARS[2].pickup
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	if player.distance_to(pickup) > 160.0:
 		_release_cobras()
 		_cobras_called = false
@@ -468,14 +468,14 @@ func _press_choice() -> void:
 		if _advance("press", "return"): _speak("press_chose_return"))
 
 func _in_press_car() -> bool:
-	return session.world.driving.occupied and session.world.driving.car == press_car
+	return session.player_in_vehicle() and session.player_vehicle() == press_car
 
 func _update_press_car() -> void:
 	var current := stage("press")
 	if current not in ["press", "return"] or session.state.region_id != "harbor":
 		return
 	if is_instance_valid(press_car) and not press_car.is_queued_for_deletion():
-		if press_car.health <= 0 and not press_car.controlled and session.world.player.global_position.distance_to(press_car.global_position) > 80.0:
+		if press_car.health <= 0 and not press_car.controlled and session.player_position().distance_to(press_car.global_position) > 80.0:
 			# Carcaça queimada longe do jogador: um carro novo volta para a baia.
 			press_car.vehicle_id = "wrecked_" + PRESS_CAR_ID
 			press_car = null
@@ -485,7 +485,7 @@ func _update_press_car() -> void:
 		return
 	press_car = null
 	var bay: Vector3 = session.mission_world.targets.neco_bay
-	if not session.state.place_id.is_empty() or session.world.player.global_position.distance_to(bay) > 70.0: return
+	if not session.state.place_id.is_empty() or session.player_position().distance_to(bay) > 70.0: return
 	var began := STALL_WORK.begin()
 	var car = session.controller.spawn_vehicle(PRESS_CAR_MODEL, bay + Vector3.UP * .12, PI)
 	STALL_WORK.finish_slow("harbor_act1.press_car", began, 2000)
@@ -515,7 +515,7 @@ func _finish_return() -> void:
 func _update_heist(delta: float) -> void:
 	var current := stage("wash")
 	if current == "station":
-		var inside: bool = session.state.place_id == "harbor_fuel" and is_instance_valid(session.room) and session.world.gameplay.health > 0
+		var inside: bool = session.state.place_id == "harbor_fuel" and is_instance_valid(session.room) and session.player_health() > 0
 		if not inside:
 			_heist_running = false
 			_heist_spent = false
@@ -530,7 +530,7 @@ func _update_heist(delta: float) -> void:
 		if not _heist_running: return
 		_heist_left -= delta
 		if _safe_left > 0:
-			if session.world.player.global_position.distance_to(session.room.to_global(FUEL_SAFE)) > FUEL_SAFE_REACH + .4:
+			if session.player_position().distance_to(session.room.to_global(FUEL_SAFE)) > FUEL_SAFE_REACH + .4:
 				_safe_left = 0.0
 				session.show_message("Fique junto do cofre para arrombar.")
 			else:
@@ -544,7 +544,7 @@ func _update_heist(delta: float) -> void:
 			session.world.gameplay.register_crime(15, PLACES.get_definition("harbor_fuel").entry_position)
 		return
 	if current == "escape":
-		if not _outside() or session.world.gameplay.health <= 0: return
+		if not _outside() or session.player_health() <= 0: return
 		var stars: int = session.world.gameplay.stars
 		_escape_clock += delta
 		if stars > 0 and not _police_called and _escape_clock > 3.0:
@@ -637,7 +637,7 @@ func _take_folder() -> bool:
 
 func _start_ride() -> bool:
 	_riding = true
-	_ride_car = session.world.driving.car
+	_ride_car = session.player_vehicle()
 	_ride_line = 0
 	_ride_clock = 0.0
 	_release_helena()
@@ -646,8 +646,8 @@ func _start_ride() -> bool:
 
 func _update_ride(delta: float) -> void:
 	if not _riding: return
-	var car = session.world.driving.car
-	if not session.world.driving.occupied or car != _ride_car or not is_instance_valid(car) or car.health <= 0 or session.world.gameplay.stars > 0 or session.state.region_id != "harbor" or not _idle():
+	var car = session.player_vehicle()
+	if not session.player_in_vehicle() or car != _ride_car or not is_instance_valid(car) or car.health <= 0 or session.world.gameplay.stars > 0 or session.state.region_id != "harbor" or not _idle():
 		_riding = false
 		_ride_car = null
 		_speak("ride_abort")
@@ -692,7 +692,7 @@ func _offset_points(origin: Vector3, offsets: Array) -> Array:
 func _update_helena() -> void:
 	var def := scene_def() if _outside() else {}
 	var scene := str(def.get("scene", ""))
-	var player: Vector3 = session.world.player.global_position
+	var player: Vector3 = session.player_position()
 	if is_instance_valid(helena):
 		if scene != _helena_scene or player.distance_to(helena.global_position) > RELEASE_DISTANCE:
 			_release_helena()
@@ -728,9 +728,9 @@ func _release_helena() -> void:
 # --- M00: TV do terminal -----------------------------------------------------------------------------
 
 func _update_tv() -> void:
-	var near: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty() and session.world.player.global_position.distance_to(TV_POINT) < 90.0
+	var near: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty() and session.player_position().distance_to(TV_POINT) < 90.0
 	if not near:
-		if is_instance_valid(_tv) and session.world.player.global_position.distance_to(TV_POINT) > 130.0:
+		if is_instance_valid(_tv) and session.player_position().distance_to(TV_POINT) > 130.0:
 			_tv.queue_free()
 			_tv = null
 		return

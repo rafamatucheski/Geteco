@@ -147,6 +147,19 @@ var hud_prompt := ""
 var _save_block_shown := false
 var _checkpoint_retry: Timer
 
+## Fachada de leitura do jogador (item 1 de docs/analise-arquitetura-codigo-20261101.md): o resto
+## do jogo lê posição, vida e carro por aqui em vez de session.world.player/gameplay/driving.
+## Sem guarda de nulo de propósito: a cadeia antiga também quebrava com world/player nulo, e
+## a guarda custaria a cada chamada (várias são por quadro). Só leitura; escrita continua
+## pela cadeia. Os dublês de sessão dos testes repetem estes cinco métodos.
+func player_position() -> Vector3: return world.player.global_position
+func player_local_position() -> Vector3: return world.player.position
+func player_health() -> float: return world.gameplay.health
+func player_in_vehicle() -> bool: return world.driving.occupied
+## Sem tipo de retorno: o carro pode já ter sido liberado e os chamadores conferem com
+## is_instance_valid; retorno tipado acusaria "instância liberada" antes disso.
+func player_vehicle(): return world.driving.car
+
 ## Umbra (parque), Fagulha e Curitiba Cellar: entra-se empurrando a porta
 ## (WeaponShopEntrance), mas a ação Entrar/Sair de antes continua valendo; a Umbra
 ## é em primeira pessoa e o indicador da saída é o que o jogador procura lá dentro.

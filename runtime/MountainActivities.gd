@@ -31,7 +31,7 @@ func configure(owner_session) -> void:
 func can_start(requester: Node) -> bool:
 	if session == null or not session.ready_for_play or session.modal: return false
 	if session.controller.save_invalid or session.is_transition_blocked(): return false
-	if session.get_tree().paused or session.world.gameplay.health <= 0: return false
+	if session.get_tree().paused or session.player_health() <= 0: return false
 	if session.state.intro.stage != "complete" or not session.state.campaign.active_id.is_empty(): return false
 	if session.arrival != null and session.arrival.active: return false
 	if session.activities != null and not session.activities.can_rest(): return false

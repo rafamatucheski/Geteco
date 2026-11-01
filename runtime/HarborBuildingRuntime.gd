@@ -36,7 +36,7 @@ func on_rooftop() -> bool:
 	return in_building() and session.room.floor_index == int(session.room.definition.floor_count)
 
 func _blocked() -> bool:
-	return session.modal or session.is_transition_blocked() or session.world.player.input_locked or session.world.gameplay.health <= 0 or session.world.driving.occupied
+	return session.modal or session.is_transition_blocked() or session.world.player.input_locked or session.player_health() <= 0 or session.player_in_vehicle()
 
 func _find_facade(id: String) -> Node3D:
 	for candidate in get_tree().get_nodes_in_group("harbor_building_facade"):
@@ -114,7 +114,7 @@ func prepare_room(id: String, new_entry: bool) -> Node3D:
 	return staged
 
 func _preparation_owned(generation: int, region: String) -> bool:
-	return is_instance_valid(session) and session.is_inside_tree() and session.transition_generation == generation and session.state.region_id == region and session.world.gameplay.health > 0 and not session.rescue_pending and not session.arrest_pending
+	return is_instance_valid(session) and session.is_inside_tree() and session.transition_generation == generation and session.state.region_id == region and session.player_health() > 0 and not session.rescue_pending and not session.arrest_pending
 
 func _abort_preparation() -> Node3D:
 	_release_staged()
@@ -147,7 +147,7 @@ func update(delta: float) -> void:
 	if in_building():
 		if on_rooftop():
 			session.world.player.air_movement.roof = session.room.floor_room
-			var roof_local: Vector3 = session.room.to_local(session.world.player.global_position)
+			var roof_local: Vector3 = session.room.to_local(session.player_position())
 			var half: Vector2 = session.room.definition.size * .5
 			if (absf(roof_local.x) > half.x + .35 or absf(roof_local.z) > half.y + .35) and roof_local.y < session.room.floor_height(session.room.floor_index) + .1:
 				_begin_fall()
@@ -155,12 +155,12 @@ func update(delta: float) -> void:
 		if is_instance_valid(facade) and not preparing:
 			facade.set_open_amount(1.0)
 		if session.room.floor_index == 0 and not crossing and not _blocked():
-			var player_local: Vector3 = session.room.to_local(session.world.player.global_position)
+			var player_local: Vector3 = session.room.to_local(session.player_position())
 			var player_local_velocity: Vector3 = session.room.global_basis.inverse() * session.world.player.velocity
 			if absf(player_local.x-session.room.definition.entrance_local.x) < 1.05 and player_local.z >= session.room.definition.size.y * .5 + .6 and player_local_velocity.z > .2:
 				_depart()
 		return
-	if not session.state.place_id.is_empty() or session.world.driving.occupied:
+	if not session.state.place_id.is_empty() or session.player_in_vehicle():
 		if not preparing and is_instance_valid(staged): _release_staged()
 		return
 	if preparing or crossing or _blocked(): return
@@ -176,7 +176,7 @@ func update(delta: float) -> void:
 		var best := 64.0
 		for definition in definitions:
 			if definition.region != session.state.region_id: continue
-			var distance: float = session.world.player.global_position.distance_squared_to(definition.entry_position)
+			var distance: float = session.player_position().distance_squared_to(definition.entry_position)
 			if distance < best:
 				nearest = definition.id
 				best = distance
@@ -186,14 +186,14 @@ func update(delta: float) -> void:
 		else:
 			_clear_approach()
 		if nearest.is_empty():
-			if is_instance_valid(staged) and session.world.player.global_position.distance_to(staged.definition.entry_position) > 15.0: _release_staged()
+			if is_instance_valid(staged) and session.player_position().distance_to(staged.definition.entry_position) > 15.0: _release_staged()
 		elif not _door_allows(nearest):
 			if is_instance_valid(staged): _release_staged()
 		elif not is_instance_valid(staged) or staged.definition.id != nearest:
 			prepare_room(nearest, true)
 			return
 	if not is_instance_valid(staged) or selected_id != staged.definition.id or cooldown > 0.0: return
-	var local: Vector3 = staged.to_local(session.world.player.global_position)
+	var local: Vector3 = staged.to_local(session.player_position())
 	var velocity: Vector3 = staged.global_basis.inverse() * session.world.player.velocity
 	var threshold: float = staged.definition.size.y * .5
 	if absf(local.x-staged.definition.entrance_local.x) <= 1.04 and local.z < threshold - .10 and local.z > threshold - 2.2 and velocity.z < -.2:
@@ -264,7 +264,7 @@ func _begin_fall() -> void:
 	if is_instance_valid(sightline): sightline.clear()
 	falling = true
 	fall_room = session.room
-	fall_peak = session.world.player.global_position.y
+	fall_peak = session.player_position().y
 	# Mantém o telhado real no lugar até o ator pousar. O ator agora está
 	# do lado de fora, então resgate, despacho e câmera usam a posição de queda no mundo.
 	session._clear_service_npcs()
@@ -281,7 +281,7 @@ func _begin_fall() -> void:
 func _update_fall() -> void:
 	var actor = session.world.player
 	fall_peak = maxf(fall_peak,actor.global_position.y)
-	var interrupted: bool = session.world.gameplay.health <= 0 or session.rescue_pending or session.arrest_pending
+	var interrupted: bool = session.player_health() <= 0 or session.rescue_pending or session.arrest_pending
 	if not interrupted and (not actor.is_on_floor() or fall_peak-actor.global_position.y < .2): return
 	var drop: float = fall_peak-actor.global_position.y
 	falling = false
@@ -292,4 +292,4 @@ func _update_fall() -> void:
 	facade = null
 	cooldown = 1.0
 	if not interrupted:
-		if session.world.gameplay.health > 0: session.save_game()
+		if session.player_health() > 0: session.save_game()

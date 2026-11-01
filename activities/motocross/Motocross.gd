@@ -142,7 +142,7 @@ func _update_digo_vehicle(current: CharacterBody3D, id: String, key: String, par
 	if session.state.region_id != region_id or not session.state.place_id.is_empty(): return null
 	var point := parking
 	if saved.has("position"): point = Vector3(saved.position[0],saved.position[1],saved.position[2])
-	if session.world.player.position.distance_to(point) > 100: return null
+	if session.player_local_position().distance_to(point) > 100: return null
 	# A montagem do paddock também prova que o terreno de casa já chegou pelo streaming.
 	if saved.is_empty() and get_tree().get_first_node_in_group("digo_character") == null: return null
 	var car: CharacterBody3D = vehicle_script.new()
@@ -172,8 +172,8 @@ func nearest_action() -> Dictionary:
 	if session == null or not session.ready_for_play or session.modal: return {}
 	if active: return {"id":"motocross","target":"quit","label":"Desistir da corrida"}
 	if mounted: return {"id":"motocross","target":"dismount","label":"Descer da moto"}
-	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied: return {}
-	var p: Vector3 = session.world.player.position
+	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.player_in_vehicle(): return {}
+	var p: Vector3 = session.player_local_position()
 	var stealable := _nearby_stealable_bike(p)
 	if is_instance_valid(stealable):
 		return {"id":"motocross","target":"steal","label":"Pilotar moto" if stealable.get_meta("motocross_stolen",false) else "Roubar moto"}
@@ -198,8 +198,8 @@ func _nearby_stealable_bike(point: Vector3) -> CharacterBody3D:
 	return best
 
 func steal_bike(bike: CharacterBody3D) -> bool:
-	if stealing or mounted or active or session.modal or session.is_transition_blocked() or session.world.gameplay.health <= 0: return false
-	if _nearby_stealable_bike(session.world.player.position) != bike: return false
+	if stealing or mounted or active or session.modal or session.is_transition_blocked() or session.player_health() <= 0: return false
+	if _nearby_stealable_bike(session.player_local_position()) != bike: return false
 	if bike.rider.visible and not bike.get_meta("motocross_stolen",false):
 		var destination := preload("res://gameplay/VehicleCarjacking.gd").landing_point(session.world,bike,-1)
 		if not destination.is_finite(): return false
@@ -295,7 +295,7 @@ func _claim_bike(bike: CharacterBody3D) -> bool:
 func perform(target: String) -> bool:
 	if nearest_action().get("target","") != target: return false
 	match target:
-		"steal": return steal_bike(_nearby_stealable_bike(session.world.player.position))
+		"steal": return steal_bike(_nearby_stealable_bike(session.player_local_position()))
 		"quit":
 			session.menu(String(TranslationServer.translate("Desistir perde a inscrição de R$ %d")) %int(PROGRESS.LEVELS[difficulty].fee))
 			session.button("Continuar corrida",session.close_menu)
@@ -344,7 +344,7 @@ func _race_menu() -> void:
 	session.button("Voltar",_menu)
 
 func start_lesson() -> bool:
-	if mounted or active or session.modal or session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.player.position.distance_to(COURSE.ENTRY) > 8: return false
+	if mounted or active or session.modal or session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.player_in_vehicle() or session.player_local_position().distance_to(COURSE.ENTRY) > 8: return false
 	if not session.save_block_reason().is_empty():
 		session.show_message(session.save_block_reason()); return false
 	DIGO.mark_met(session.state.world_state)
@@ -382,7 +382,7 @@ func _bike_menu(level: int) -> void:
 	session.button("Voltar",_menu)
 
 func rent_bike() -> bool:
-	if mounted or active or session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.player.position.distance_to(COURSE.ENTRY) > 8: return false
+	if mounted or active or session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.player_in_vehicle() or session.player_local_position().distance_to(COURSE.ENTRY) > 8: return false
 	if not session.save_block_reason().is_empty(): session.show_message(session.save_block_reason()); return false
 	var old_wallet: Dictionary = session.state.economy.snapshot()
 	var old_progress := progress.snapshot()
@@ -402,7 +402,7 @@ func rent_bike() -> bool:
 
 func start_race(level: int) -> bool:
 	if active or mounted or level < 0 or level >= PROGRESS.LEVELS.size(): return false
-	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.player.position.distance_to(COURSE.ENTRY) > 8:
+	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.player_in_vehicle() or session.player_local_position().distance_to(COURSE.ENTRY) > 8:
 		return false
 	if not session.save_block_reason().is_empty():
 		session.show_message(session.save_block_reason()); return false
@@ -561,7 +561,7 @@ func _physics_process(delta: float) -> void:
 	if _digo_clock >= 1.0:
 		_digo_clock = 0.0
 		_update_digo_car()
-		if session.world.gameplay.health<=0 or session.world.player.position.distance_to(COURSE.ENTRY)>180:
+		if session.player_health()<=0 or session.player_local_position().distance_to(COURSE.ENTRY)>180:
 			for venue in get_tree().get_nodes_in_group("motocross_paddock"):
 				venue.replenish_parked_bikes()
 	if ambient != null: ambient.update(delta)
@@ -571,16 +571,16 @@ func _physics_process(delta: float) -> void:
 		if _clock > 1:
 			_clock = 0
 			for bike in stolen_bikes:
-				if is_instance_valid(bike) and (session.world.gameplay.health <= 0 or session.state.region_id != "harbor" or bike.position.distance_to(session.world.player.position)>220): bike.queue_free()
+				if is_instance_valid(bike) and (session.player_health() <= 0 or session.state.region_id != "harbor" or bike.position.distance_to(session.player_local_position())>220): bike.queue_free()
 			stolen_bikes = stolen_bikes.filter(func(bike): return is_instance_valid(bike) and not bike.is_queued_for_deletion())
-			if progress.data.owned and not is_instance_valid(owned_bike) and session.state.region_id == "harbor" and session.world.player.position.distance_to(COURSE.ENTRY) < 140: _park_owned()
+			if progress.data.owned and not is_instance_valid(owned_bike) and session.state.region_id == "harbor" and session.player_local_position().distance_to(COURSE.ENTRY) < 140: _park_owned()
 			_idle_board()
 		return
 	if not is_instance_valid(player_bike):
 		if active: finish(false)
 		else: _unmount_at(COURSE.ENTRY+Vector3(2,0,2))
 		return
-	if session.world.gameplay.health <= 0 or session.is_transition_blocked() or session.state.region_id != "harbor":
+	if session.player_health() <= 0 or session.is_transition_blocked() or session.state.region_id != "harbor":
 		if active: finish(false)
 		else: _unmount_at(player_bike.position+Vector3(2,0,0))
 		return
@@ -852,7 +852,7 @@ func _update_surface(delta: float) -> void:
 		for bike in get_tree().get_nodes_in_group("motocross_bikes"): bike.bind_combat(session.world.gameplay)
 		for venue in get_tree().get_nodes_in_group("motocross_scenery"):
 			var daylight: float = session.weather.atmosphere.daylight_at(session.weather.time_of_day) if session.weather != null else 1.0
-			venue.set_lighting(1.0-smoothstep(.25,.70,daylight),session.world.player.position)
+			venue.set_lighting(1.0-smoothstep(.25,.70,daylight),session.player_local_position())
 	for row in racers: row.bike.wetness = wetness
 	if ambient != null:
 		for row in ambient.rows: row.bike.wetness = wetness

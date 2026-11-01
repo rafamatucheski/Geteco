@@ -291,7 +291,7 @@ func _start_mirror() -> void:
 
 func _process(_delta: float) -> void:
 	if not is_active(): return
-	if not is_instance_valid(_room) or _room != session.room or not is_instance_valid(_player) or session.world.gameplay.health <= 0 or session.is_transition_blocked():
+	if not is_instance_valid(_room) or _room != session.room or not is_instance_valid(_player) or session.player_health() <= 0 or session.is_transition_blocked():
 		finish()
 
 func finish() -> void:
@@ -324,7 +324,7 @@ func finish() -> void:
 		_player.visual.transform = _visual_transform
 		_player.visual.physics_interpolation_mode = _visual_interpolation
 		if not _pose.is_empty(): _player._apply_pose(_pose)
-		if not _player.dead and session.world.gameplay.health > 0:
+		if not _player.dead and session.player_health() > 0:
 			_player.set_physics_process(_physics_enabled)
 		_player.reset_physics_interpolation()
 	if is_instance_valid(camera):

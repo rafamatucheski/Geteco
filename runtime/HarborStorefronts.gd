@@ -111,13 +111,13 @@ func handle_input(event: InputEvent) -> bool:
 
 func _can_open(place: String) -> bool:
 	return session != null and session.ready_for_play and session.state.place_id == place \
-		and is_instance_valid(session.room) and not session.world.driving.occupied \
-		and session.world.gameplay.health > 0 and session.world.player.global_position.distance_to(session.room.interaction_points.service) < 1.7
+		and is_instance_valid(session.room) and not session.player_in_vehicle() \
+		and session.player_health() > 0 and session.player_position().distance_to(session.room.interaction_points.service) < 1.7
 
 func _can_open_maciota() -> bool:
 	return session != null and session.ready_for_play and session.state.place_id == "maciota" \
-		and is_instance_valid(session.world.maciota_place) and not session.world.driving.occupied \
-		and session.world.gameplay.health > 0 and session.world.player.global_position.distance_to(session.world.maciota_place.interaction_points.workbench) < 2.0
+		and is_instance_valid(session.world.maciota_place) and not session.player_in_vehicle() \
+		and session.player_health() > 0 and session.player_position().distance_to(session.world.maciota_place.interaction_points.workbench) < 2.0
 
 func _valid_action(place: String) -> bool:
 	if not _can_open(place) or active_kind.is_empty():
@@ -169,7 +169,7 @@ func _finish_open() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	session.dialogue_open = false
 	session.world.player.input_locked = true
-	if is_instance_valid(session.world.driving.car): session.world.driving.car.input_locked = true
+	if is_instance_valid(session.player_vehicle()): session.world.driving.car.input_locked = true
 	if active_kind != "weapons":
 		STYLE.apply(self)
 		_refine_buttons()

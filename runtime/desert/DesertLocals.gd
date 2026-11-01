@@ -30,7 +30,7 @@ func _process(delta: float) -> void:
 	var active: bool=session.state.region_id=="desert" and session.state.place_id.is_empty()
 	var admitted:=false
 	for routine in ROUTINES:
-		var distance: float=session.world.player.global_position.distance_to(routine.a)
+		var distance: float=session.player_position().distance_to(routine.a)
 		var stored_actor = locals.get(routine.id)
 		var actor: CharacterBody3D=stored_actor if is_instance_valid(stored_actor) else null
 		if is_instance_valid(actor):

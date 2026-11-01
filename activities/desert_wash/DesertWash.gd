@@ -33,7 +33,7 @@ func _process(delta: float) -> void:
 	_proximity_clock-=delta
 	if _proximity_clock>0 or session==null: return
 	_proximity_clock=.5
-	var near: bool=session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.world.player.global_position.distance_to(COURSE.gate(6))<360
+	var near: bool=session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.player_position().distance_to(COURSE.gate(6))<360
 	if OS.is_debug_build() and Engine.get_meta("desert_wash_benchmark_disabled",false): near=false
 	if near and not is_instance_valid(markers):
 		markers=MARKERS.new()
@@ -51,7 +51,7 @@ func nearest_action() -> Dictionary:
 	if session==null or not session.ready_for_play or session.controller.save_invalid or session.state.region_id!="desert" or not session.state.place_id.is_empty(): return {}
 	if active: return {"id":"desert_wash","target":"cancel","label":"Abandonar prova do leito seco"}
 	var driving=session.world.driving
-	var p: Vector3=driving.car.global_position if driving.occupied and is_instance_valid(driving.car) else session.world.player.global_position
+	var p: Vector3=driving.car.global_position if driving.occupied and is_instance_valid(driving.car) else session.player_position()
 	if p.distance_to(COURSE.gate(0))>7.0: return {}
 	var saved:=STATE.data(session.state.world_state)
 	var label:="Prova do leito seco · 45 s · R$ 1.800"
@@ -64,7 +64,7 @@ func start_block_reason() -> String:
 	if not session.ready_for_play or session.modal or get_tree().paused or session.is_transition_blocked(): return "Encerre a atividade atual."
 	if session.state.intro.stage!="complete" or not session.state.campaign.active_id.is_empty(): return "Conclua a missão atual."
 	if session.desert.busy() or (session.activities!=null and not session.activities.can_rest()): return "Encerre a atividade atual."
-	if session.world.gameplay.health<=0 or session.rescue_pending or session.arrest_pending: return "Aguarde a recuperação."
+	if session.player_health()<=0 or session.rescue_pending or session.arrest_pending: return "Aguarde a recuperação."
 	if session.world.gameplay.stars>0: return "Despiste a polícia antes de correr."
 	if nearest_action().get("target","")!="start": return "Vá à entrada do leito seco."
 	var driving=session.world.driving
@@ -86,7 +86,7 @@ func perform(target: String) -> bool:
 	var reason:=start_block_reason()
 	if not reason.is_empty(): session.show_message(reason); return false
 	STATE.claim(session.state.world_state,session.state.economy)
-	player_car=session.world.driving.car
+	player_car=session.player_vehicle()
 	_was_locked=player_car.input_locked
 	_player_was_locked=session.world.player.input_locked
 	player_car.input_locked=true
@@ -116,9 +116,9 @@ func perform(target: String) -> bool:
 
 func _physics_process(delta: float) -> void:
 	if not active: return
-	if not is_instance_valid(player_car) or session.state.region_id!="desert" or not session.state.place_id.is_empty() or not session.world.driving.occupied or session.world.driving.car!=player_car:
+	if not is_instance_valid(player_car) or session.state.region_id!="desert" or not session.state.place_id.is_empty() or not session.player_in_vehicle() or session.player_vehicle()!=player_car:
 		cancel_attempt("leave"); return
-	if session.world.gameplay.health<=0 or session.world.player.dead or player_car.health<=0 or player_car.engine_disabled or session.rescue_pending or session.arrest_pending:
+	if session.player_health()<=0 or session.world.player.dead or player_car.health<=0 or player_car.engine_disabled or session.rescue_pending or session.arrest_pending:
 		cancel_attempt("recovery"); return
 	if session.world.gameplay.stars>0: cancel_attempt("police"); return
 	if session.modal or get_tree().paused: return
@@ -173,7 +173,7 @@ func cancel_attempt(reason: String = "cancelled") -> void:
 
 func _release() -> void:
 	if not active: return
-	var keep_locked: bool=is_instance_valid(session) and (session.modal or session.is_transition_blocked() or session.world.gameplay.health<=0)
+	var keep_locked: bool=is_instance_valid(session) and (session.modal or session.is_transition_blocked() or session.player_health()<=0)
 	if is_instance_valid(player_car) and phase=="countdown": player_car.input_locked=_was_locked or keep_locked
 	if is_instance_valid(session) and is_instance_valid(session.world.player): session.world.player.input_locked=_player_was_locked or keep_locked
 	active=false; phase=""

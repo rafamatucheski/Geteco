@@ -54,8 +54,8 @@ func _process(delta: float) -> void:
 	cooldown = maxf(0,cooldown-clock)
 	clock = 0
 	var active := false
-	if session != null and session.ready_for_play and not session.modal and not get_tree().paused and session.world.gameplay.health > 0:
-		var point: Vector3 = session.world.driving.car.position if session.world.driving.occupied else session.world.player.position
+	if session != null and session.ready_for_play and not session.modal and not get_tree().paused and session.player_health() > 0:
+		var point: Vector3 = session.player_vehicle().position if session.player_in_vehicle() else session.player_local_position()
 		active = global_position.distance_to(point) <= RANGE and available.call()
 	if not active:
 		audio.stop()

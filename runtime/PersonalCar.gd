@@ -54,19 +54,19 @@ func _rear() -> Vector3:
 func _near_trunk() -> bool:
 	var car = _car()
 	if not is_instance_valid(car) or not car.is_visible_in_tree() or car.controlled or car.external_input or car.get_meta("garage_suspended",false) or car.has_meta("awaiting_ground") or car.health<=0 or absf(car.speed)>=.2: return false
-	if session.world.player.position.distance_to(_rear())>=3.6: return false
-	var ray := PhysicsRayQueryParameters3D.create(session.world.player.global_position+Vector3.UP*.8,_rear()+Vector3.UP*.8,7)
+	if session.player_local_position().distance_to(_rear())>=3.6: return false
+	var ray := PhysicsRayQueryParameters3D.create(session.player_position()+Vector3.UP*.8,_rear()+Vector3.UP*.8,7)
 	ray.exclude = [session.world.player.get_rid(),car.get_rid()]
 	return session.world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
 
 func _near_service() -> bool:
 	if _lost(): return false
-	return session.state.place_id=="maciota" and session.world.player.position.distance_to(session.world.maciota_place.interaction_points.workbench)<2.0
+	return session.state.place_id=="maciota" and session.player_local_position().distance_to(session.world.maciota_place.interaction_points.workbench)<2.0
 
 func nearest_action() -> Dictionary:
 	if POLICE_TRUNK.nearest(session) != null:
 		return {"id":"personal_car","target":"trunk","label":"Abrir porta-malas da viatura"}
-	if not _available() or session.modal or session.world.driving.occupied or session.world.gameplay.health<=0: return {}
+	if not _available() or session.modal or session.player_in_vehicle() or session.player_health()<=0: return {}
 	# Na garagem compacta da V1 a traseira estacionada pode invadir o raio da bancada.
 	# O ponto de serviço escrito é dono dessa interação enquanto o Dante está dentro;
 	# senão o porta-malas engolia o menu de reparo/recuperação inteiro.
@@ -81,7 +81,7 @@ func perform(target: String) -> bool:
 		if police_car != null:
 			POLICE_TRUNK.open(session,police_car)
 			return true
-	_menu_health = session.world.gameplay.health
+	_menu_health = session.player_health()
 	if target=="trunk":
 		if session.state.economy.claim_monaliza_starter():
 			# Go through GameState: the garage still refuses drawing any weapon.
@@ -176,7 +176,7 @@ func _close_trunk_view() -> void:
 	_trunk_view = null
 
 func _select_slot(slot: String) -> void:
-	if not _near_trunk() or session.world.gameplay.health<_menu_health: session.close_menu(); return
+	if not _near_trunk() or session.player_health()<_menu_health: session.close_menu(); return
 	session.menu("Porta-malas · "+slot)
 	session.menu_closed = _close_trunk_view
 	session.button("Guardar arma",_set_slot.bind(slot,""))
@@ -187,7 +187,7 @@ func _select_slot(slot: String) -> void:
 	_focus_menu()
 
 func _set_slot(slot: String, id: String) -> void:
-	if not _near_trunk() or session.world.gameplay.health<=0 or session.world.gameplay.health<_menu_health: session.close_menu(); return
+	if not _near_trunk() or session.player_health()<=0 or session.player_health()<_menu_health: session.close_menu(); return
 	if session.state.economy.set_personal_slot(slot,id):
 		if not session.state.weapons_allowed(): session.state.equip_weapon("fists")
 		session.save_game()
@@ -215,7 +215,7 @@ func _service(recover: bool) -> void:
 	if _lost():
 		_notice("A Monaliza está com os Cobras, lá no norte.")
 		return
-	if not _available() or not _near_service() or session.world.driving.occupied or session.world.gameplay.health<=0 or session.world.gameplay.health<_menu_health:
+	if not _available() or not _near_service() or session.player_in_vehicle() or session.player_health()<=0 or session.player_health()<_menu_health:
 		session.close_menu()
 		return
 	var economy = session.state.economy

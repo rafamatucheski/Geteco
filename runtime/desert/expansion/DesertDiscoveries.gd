@@ -22,11 +22,11 @@ func _process(delta: float) -> void:
 			contents.visible=not STATE.collected(session.state.world_state,str(contents.get_meta("discovery_id","")))
 
 func _available() -> bool:
-	return session!=null and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and not session.modal and not get_tree().paused and not session.world.driving.occupied and session.world.gameplay.health>0 and not session.is_transition_blocked() and not session.desert.busy()
+	return session!=null and session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and not session.modal and not get_tree().paused and not session.player_in_vehicle() and session.player_health()>0 and not session.is_transition_blocked() and not session.desert.busy()
 
 func nearest_action() -> Dictionary:
 	if not _available(): return {}
-	var point: Vector3=session.world.player.global_position
+	var point: Vector3=session.player_position()
 	for site in _sites:
 		if STATE.collected(session.state.world_state,str(site.id)): continue
 		if point.distance_to(site.position)>1.7: continue
@@ -47,7 +47,7 @@ func perform(action: Dictionary) -> bool:
 	if action.get("id","")!="desert" or not str(action.get("target","")).begins_with(PREFIX): return false
 	if nearest_action()!=action: return false
 	var id:=str(action.target).trim_prefix(PREFIX)
-	var result: Dictionary=STATE.claim(session.state.world_state,session.state.economy,id,session.world.gameplay.health>0)
+	var result: Dictionary=STATE.claim(session.state.world_state,session.state.economy,id,session.player_health()>0)
 	if not bool(result.get("ok",false)):
 		session.show_message("Não foi possível recolher agora. Volte depois.")
 		return false

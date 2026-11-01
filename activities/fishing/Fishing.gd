@@ -88,7 +88,7 @@ func _outside() -> bool:
 
 func _nearest_spot() -> Dictionary:
 	if not _outside(): return {}
-	var player_position: Vector3 = session.world.player.global_position
+	var player_position: Vector3 = session.player_position()
 	var nearest: Dictionary = {}
 	var distance := 2.15
 	for spot in site.fishing_spots():
@@ -99,12 +99,12 @@ func _nearest_spot() -> Dictionary:
 	return nearest
 
 func nearest_action() -> Dictionary:
-	if not _outside() or session.controller.save_invalid or session.modal or session.world.driving.occupied or session.world.gameplay.health <= 0: return {}
+	if not _outside() or session.controller.save_invalid or session.modal or session.player_in_vehicle() or session.player_health() <= 0: return {}
 	if controls_locked(): return {}
 	var spot := _nearest_spot()
 	if not spot.is_empty(): return {"id":"fishing", "target":"fish" if active else "menu", "label":"Começar a pescar" if active else "Pescar · entrada R$ 10", "position":spot.position}
 	var entry: Vector3 = site.entry_position()
-	if session.world.player.global_position.distance_to(entry) <= 3.2:
+	if session.player_position().distance_to(entry) <= 3.2:
 		return {"id":"fishing", "target":"cancel" if active else "menu", "label":"Encerrar pescaria" if active else "Pesca e campeonatos", "position":entry}
 	return {}
 
@@ -120,8 +120,8 @@ func start_block_reason() -> String:
 	if not _outside() or session.controller.save_invalid: return "A pescaria está indisponível."
 	if active: return "A pescaria já começou."
 	if session.modal or get_tree().paused or session.is_transition_blocked(): return "Encerre a atividade atual."
-	if session.world.driving.occupied or session.world.player.input_locked: return "Aproxime-se a pé."
-	if session.world.gameplay.health <= 0 or session.world.player.dead or session.rescue_pending or session.arrest_pending: return "Aguarde a recuperação."
+	if session.player_in_vehicle() or session.world.player.input_locked: return "Aproxime-se a pé."
+	if session.player_health() <= 0 or session.world.player.dead or session.rescue_pending or session.arrest_pending: return "Aguarde a recuperação."
 	if session.world.gameplay.stars > 0: return "Despiste a polícia antes de pescar."
 	if not session.state.campaign.active_id.is_empty() or not session.activities.can_rest(): return "Conclua a atividade atual antes de pescar."
 	return ""
@@ -143,7 +143,7 @@ func open_menu() -> bool:
 	var record := Label.new()
 	record.text = String(TranslationServer.translate("Recorde: %s · %d peixes · %d/%d espécies")) % [RULES.kg(int(saved.best)), saved.catches, saved.species.size(), RULES.SPECIES.size()]
 	session.column.add_child(record)
-	if session.world.player.global_position.distance_to(site.entry_position()) <= 3.2:
+	if session.player_position().distance_to(site.entry_position()) <= 3.2:
 		session.button("Vender peixes", CATCH_ITEMS.open_stock.bind(session))
 	session.button("Voltar", session.close_menu)
 	return true
@@ -192,7 +192,7 @@ func start(selected: int) -> bool:
 	return true
 
 func take_spot() -> bool:
-	if not active or phase != "walking" or not _outside() or session.modal or session.is_transition_blocked() or session.world.driving.occupied: return false
+	if not active or phase != "walking" or not _outside() or session.modal or session.is_transition_blocked() or session.player_in_vehicle(): return false
 	var spot := _nearest_spot()
 	if spot.is_empty() or session.world.player.input_locked or not session.world.player.is_on_floor(): return false
 	var player = session.world.player
@@ -278,14 +278,14 @@ func _cast() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not active: return
-	if not _outside() or session.world.driving.occupied or session.is_transition_blocked(): cancel_attempt("transition"); return
-	if session.world.gameplay.health <= 0 or session.world.player.dead or session.rescue_pending or session.arrest_pending: cancel_attempt("recovery"); return
+	if not _outside() or session.player_in_vehicle() or session.is_transition_blocked(): cancel_attempt("transition"); return
+	if session.player_health() <= 0 or session.world.player.dead or session.rescue_pending or session.arrest_pending: cancel_attempt("recovery"); return
 	if session.world.gameplay.stars > 0: cancel_attempt("police"); return
 	if is_instance_valid(_hud): _hud.visible = not session.modal and not get_tree().paused
 	if session.modal or get_tree().paused:
 		_held = false
 		return
-	if controls_locked() and session.world.player.global_position.distance_to(_origin) > 1.0: cancel_attempt("moved"); return
+	if controls_locked() and session.player_position().distance_to(_origin) > 1.0: cancel_attempt("moved"); return
 	if phase == "walking":
 		_clock -= delta
 		if _clock <= 0: _clock = .2; _update_hud()
@@ -434,7 +434,7 @@ func _complete_landing() -> void:
 func choose_catch(action: String) -> bool:
 	if not active or phase != "caught" or action not in ["keep", "release"]: return false
 	if session.modal or get_tree().paused or not _outside() or session.is_transition_blocked(): return false
-	if session.world.gameplay.health <= 0 or session.world.player.dead: return false
+	if session.player_health() <= 0 or session.world.player.dead: return false
 	if action == "keep":
 		if not CATCH_ITEMS.store(session, current_fish):
 			_keep_available = CATCH_ITEMS.can_store(session, current_fish)
@@ -515,7 +515,7 @@ func _release() -> void:
 	var player = session.world.player
 	player.clear_combat_weapon_pose()
 	player.combat_facing = _old_facing
-	var keep_locked: bool = session.modal or session.is_transition_blocked() or session.world.gameplay.health <= 0
+	var keep_locked: bool = session.modal or session.is_transition_blocked() or session.player_health() <= 0
 	player.input_locked = _old_lock or keep_locked
 	if session.state.weapons_allowed() and session.state.owns_weapon(_old_weapon): session.state.equip_weapon(_old_weapon)
 
@@ -540,7 +540,7 @@ func _update_hud() -> void:
 	var saved: Dictionary = session.state.world_state[STATE.KEY]
 	var camera := get_viewport().get_camera_3d()
 	var rod_screen := Vector2.ZERO
-	if is_instance_valid(camera) and controls_locked(): rod_screen = camera.unproject_position(session.world.player.global_position + Vector3.UP * 1.45)
+	if is_instance_valid(camera) and controls_locked(): rod_screen = camera.unproject_position(session.player_position() + Vector3.UP * 1.45)
 	var definition := RULES.definition(str(current_fish.get("id", "")))
 	_hud.update_state({"title":RULES.TIERS[tier].name if tier >= 0 else "Pesca livre", "clock":"Vá até a margem · R$ 10 pagos" if phase == "walking" else (String(TranslationServer.translate("%d s · prêmio R$ %d")) % [ceili(remaining), RULES.TIERS[tier].prize] if tier >= 0 else "Sem limite de tempo"), "phase":phase, "detail":_message, "fight_hint":_fight_hint, "charge":_charge, "tension":fight.tension, "progress":fight.progress, "best":best, "catches":caught, "species":saved.species.size(), "tournament":tier >= 0, "ranking":RULES.ranking(best, rivals), "hint":hint, "cancel":("Volte ao balcão para encerrar" if phase == "walking" else exit_key) + " · " + pause_key, "rod_screen":rod_screen, "remaining":remaining, "prize":int(RULES.TIERS[tier].prize) if tier >= 0 else 0, "touch":touch, "action_key":use_key, "release_key":controls.hint("reload"), "keep_enabled":_keep_available, "choice_message":_choice_message, "catch_name":str(definition.get("name", "")), "catch_grams":int(current_fish.get("grams", 0)), "catch_record":_catch_record, "landing":clampf(_phase_time / 1.9, 0.0, 1.0)})
 

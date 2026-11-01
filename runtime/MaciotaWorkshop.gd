@@ -28,7 +28,7 @@ func configure(owner_session) -> void:
 	panel.closed.connect(_close_tuning)
 
 func _process(_delta: float) -> void:
-	if is_instance_valid(tuning_car) and (session.world.gameplay.health <= 0 or not _at_garage()):
+	if is_instance_valid(tuning_car) and (session.player_health() <= 0 or not _at_garage()):
 		panel.discard_and_close()
 
 func _at_garage() -> bool:
@@ -37,8 +37,8 @@ func _at_garage() -> bool:
 ## O carro do jogador que dá para preparar: parado perto da garagem (do lado de fora) ou
 ## dentro dela, inteiro e de um modelo que tem perfil mecânico. Veículo de serviço fica fora.
 func candidate_car() -> CharacterBody3D:
-	if not _at_garage() or session.world.driving.occupied: return null
-	var car: CharacterBody3D = session.world.driving.car
+	if not _at_garage() or session.player_in_vehicle(): return null
+	var car: CharacterBody3D = session.player_vehicle()
 	if not is_instance_valid(car) or car.health <= 0 or car.engine_disabled: return null
 	if not PERF.eligible(str(car.archetype)): return null
 	var inside := str(car.get_meta("garage_place","")) == PLACE

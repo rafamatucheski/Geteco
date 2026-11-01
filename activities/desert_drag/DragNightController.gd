@@ -24,11 +24,11 @@ func configure(owner_race: Node3D) -> void:
 	session=race.session
 
 func _available() -> bool:
-	return is_instance_valid(session) and session.ready_for_play and not race.active and not session.controller.save_invalid and not session.is_transition_blocked() and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.world.gameplay.health>0 and not session.rescue_pending and not session.arrest_pending
+	return is_instance_valid(session) and session.ready_for_play and not race.active and not session.controller.save_invalid and not session.is_transition_blocked() and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.player_health()>0 and not session.rescue_pending and not session.arrest_pending
 
 func _car() -> CharacterBody3D:
-	if not session.world.driving.occupied: return null
-	return session.world.driving.car as CharacterBody3D
+	if not session.player_in_vehicle(): return null
+	return session.player_vehicle() as CharacterBody3D
 
 func status() -> Dictionary:
 	var step := PROGRESS.next_pass(session.state.world_state)

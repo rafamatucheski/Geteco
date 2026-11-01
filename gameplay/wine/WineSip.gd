@@ -10,7 +10,7 @@ var start_place:=""
 func _ready() -> void:
 	name="WineSip"
 	if session!=null:
-		start_health=session.world.gameplay.health
+		start_health=session.player_health()
 		start_place=session.state.place_id
 	glass=Node3D.new(); add_child(glass)
 	_cylinder(0.025,0.025,0.17,Vector3(0,0.105,0),Color("c7cec8"))
@@ -20,7 +20,7 @@ func _ready() -> void:
 	set_process(true)
 func _process(delta: float) -> void:
 	if not is_instance_valid(player) or not player.visible or elapsed>2.0 or player.get_meta("wine_cancel_sip",false): queue_free(); return
-	if session!=null and (session.world.gameplay.health<start_health or session.is_transition_blocked() or session.world.driving.occupied or session.state.place_id!=start_place or session.state.equipped_weapon!="fists"):
+	if session!=null and (session.player_health()<start_health or session.is_transition_blocked() or session.player_in_vehicle() or session.state.place_id!=start_place or session.state.equipped_weapon!="fists"):
 		queue_free(); return
 	elapsed+=delta
 	var visual: Node3D=player.get("visual")

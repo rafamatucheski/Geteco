@@ -28,9 +28,9 @@ func _blocked(identity: String = "") -> String:
 	if _requesting: return "Aguarde a entrega do carro."
 	if not session.ready_for_play or session.is_transition_blocked() or session.controller.save_invalid: return "Aguarde o fim da atividade."
 	if race.active or not race.open_meet.pending.is_empty(): return "Encerre a prova ou saia da fila antes de trocar de carro."
-	if session.state.region_id!="desert" or not session.state.place_id.is_empty() or session.world.player.global_position.distance_to(race.staging_point)>25.0: return "Retire ou devolva o carro junto ao quadro."
-	if session.world.gameplay.health<=0 or session.world.gameplay.stars>0: return "Volte à oficina em segurança."
-	if session.world.driving.occupied or session.world.driving.is_body_transition_active(): return "Desembarque para retirar ou devolver o carro."
+	if session.state.region_id!="desert" or not session.state.place_id.is_empty() or session.player_position().distance_to(race.staging_point)>25.0: return "Retire ou devolva o carro junto ao quadro."
+	if session.player_health()<=0 or session.world.gameplay.stars>0: return "Volte à oficina em segurança."
+	if session.player_in_vehicle() or session.world.driving.is_body_transition_active(): return "Desembarque para retirar ou devolver o carro."
 	var night: Dictionary=preload("res://activities/desert_drag/DragNightProgress.gd").current(session.state.world_state)
 	# Um checkpoint devolve o empréstimo, mas uma série salva pode recuperar o modelo exato
 	# da oficina e a preparação instalada na próxima visita.
@@ -78,7 +78,7 @@ func request(identity: String = "desert_faisca") -> bool:
 	if not _blocked(identity).is_empty():
 		created.queue_free()
 		return false
-	previous_car=session.world.driving.car
+	previous_car=session.player_vehicle()
 	session.controller.capture_player_vehicle()
 	previous_vehicles=session.state.world_state.get("vehicles",[]).duplicate(true)
 	previous_region=session.state.region_id
@@ -86,7 +86,7 @@ func request(identity: String = "desert_faisca") -> bool:
 		_previous_had_pin=previous_car.has_meta("race_owned")
 		_previous_pin=previous_car.get_meta("race_owned",false)
 		previous_car.set_meta("race_owned",true)
-	return_point=session.world.player.global_position
+	return_point=session.player_position()
 	car=created
 	car.vehicle_id="drag_loaner_"+identity
 	car.set_meta("race_owned",true)
@@ -106,10 +106,10 @@ func _return_action() -> void:
 
 func return_car() -> bool:
 	if not is_instance_valid(car) or race.active or not race.open_meet.pending.is_empty(): return false
-	if session.world.driving.occupied and session.world.driving.car==car: return false
+	if session.player_in_vehicle() and session.player_vehicle()==car: return false
 	if session.world.driving.is_body_transition_active(): return false
 	prepare_save()
-	if session.world.driving.car==car:
+	if session.player_vehicle()==car:
 		session.world.driving.car=previous_car if is_instance_valid(previous_car) else null
 		if is_instance_valid(previous_car): session.world.driving._watch_car(previous_car)
 	car.queue_free()
@@ -128,7 +128,7 @@ func _release_original_pin() -> void:
 	_previous_pin=null
 
 func prepare_save() -> void:
-	if not is_instance_valid(car) or session.world.driving.car!=car: return
+	if not is_instance_valid(car) or session.player_vehicle()!=car: return
 	# A captura do mundo normalmente guarda o carro escolhido. Substitui só o empréstimo,
 	# nunca o livro de recompensas, o dinheiro, as peças possuídas nem o estado da campanha.
 	var saved := previous_vehicles.duplicate(true)
@@ -143,7 +143,7 @@ func prepare_save() -> void:
 
 func save_block_reason() -> String:
 	if _requesting: return "Aguarde a entrega do carro da oficina para salvar."
-	if is_instance_valid(car) and session.world.driving.car==car and session.world.driving.occupied and session.state.region_id!="desert":
+	if is_instance_valid(car) and session.player_vehicle()==car and session.player_in_vehicle() and session.state.region_id!="desert":
 		return "Desembarque do carro da oficina para salvar fora do deserto."
 	return ""
 
@@ -152,7 +152,7 @@ func _process(delta: float) -> void:
 	if _clock<.5: return
 	_clock=0.0
 	if not is_instance_valid(car):
-		if not is_instance_valid(session.world.driving.car) and is_instance_valid(previous_car):
+		if not is_instance_valid(session.player_vehicle()) and is_instance_valid(previous_car):
 			session.world.driving.car=previous_car
 			session.world.driving._watch_car(previous_car)
 		_release_original_pin()
@@ -161,8 +161,8 @@ func _process(delta: float) -> void:
 		set_process(false)
 		return
 	if race.active or not race.open_meet.pending.is_empty(): return
-	if session.world.driving.occupied and session.world.driving.car==car: return
-	if session.state.region_id!="desert" or session.world.player.global_position.distance_to(car.global_position)>180.0:
+	if session.player_in_vehicle() and session.player_vehicle()==car: return
+	if session.state.region_id!="desert" or session.player_position().distance_to(car.global_position)>180.0:
 		return_car()
 
 func _exit_tree() -> void:
