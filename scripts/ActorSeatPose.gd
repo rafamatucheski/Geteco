@@ -110,7 +110,7 @@ func pose_seated_limbs(feet: Dictionary, hands: Dictionary) -> void:
 	# ao último gesto de combate e o braço não chegava à mão.
 	g._elbow_previous.clear()
 	g._twist_previous.clear()
-	g._grip_fingers.clear()
+	g._combat_pose._grip_fingers.clear()
 	g._pose_delta = 1.0
 	for limb in ["Left", "Right"]:
 		var sign_side := -1.0 if limb == "Left" else 1.0
