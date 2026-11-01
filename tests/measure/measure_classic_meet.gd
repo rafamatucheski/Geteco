@@ -43,7 +43,7 @@ func run() -> void:
 	world.session.weather.weather_state=0
 	await create_timer(12).timeout
 	var settling:=Time.get_ticks_msec()
-	while "--capture-only" not in OS.get_cmdline_user_args() and world.people.size()<world.production._population_cap() and Time.get_ticks_msec()-settling<45000:
+	while "--capture-only" not in OS.get_cmdline_user_args() and world.people.size()<world.production.population_cap() and Time.get_ticks_msec()-settling<45000:
 		await create_timer(.5).timeout
 	for phase in ["day","night"]:
 		world.session.weather.time_of_day=.5 if phase=="day" else 21.0/24.0

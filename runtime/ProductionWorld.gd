@@ -1901,14 +1901,16 @@ func _update_density() -> void:
 	area_density_scale.x = move_toward(area_density_scale.x,area_target.x,.02)
 	area_density_scale.y = move_toward(area_density_scale.y,area_target.y,.02)
 
-func _population_cap() -> int:
+func population_cap() -> int:
 	var target := mini(requested_population,VC_MAX_POPULATION) if population_vc_enabled else requested_population
 	return ceili(float(target)*minf(density_scale,area_density_scale.x)-.00001)
+func _population_cap() -> int: return population_cap()
 
-func _traffic_cap() -> int:
+func traffic_cap() -> int:
 	# Os componentes de Vector2 são float32; ignora o erro de arredondamento abaixo de uma entidade nos
 	# tetos inteiros escritos (por exemplo, 40 * .8 precisa continuar 32, não 33).
 	return ceili(float(VC_TRAFFIC_TARGET if population_vc_enabled else TRAFFIC_TARGET)*minf(density_scale,area_density_scale.y)-.00001)
+func _traffic_cap() -> int: return traffic_cap()
 
 ## Tira no máximo um pedestre e um carro civil por chamada, o mais longe do jogador e fora
 ## do quadro, enquanto houver mais que o teto atual.

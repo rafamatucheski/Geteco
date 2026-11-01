@@ -148,7 +148,7 @@ func scene_load() -> Dictionary:
 		if not vehicle.traffic or vehicle.health <= 0.0: continue
 		traffic += 1
 		if vehicle.is_visible_in_tree() and current_camera.is_position_in_frustum(vehicle.global_position): visible_traffic += 1
-	return {"pedestrians":world.people.size(),"vehicles":vehicles,"traffic":traffic,"ambient_traffic":world.production._ambient_traffic_count(),"visible_traffic":visible_traffic,"traffic_cap":world.production._traffic_cap(),"pedestrian_cap":world.production._population_cap()}
+	return {"pedestrians":world.people.size(),"vehicles":vehicles,"traffic":traffic,"ambient_traffic":world.production._ambient_traffic_count(),"visible_traffic":visible_traffic,"traffic_cap":world.production.traffic_cap(),"pedestrian_cap":world.production.population_cap()}
 
 func glass_ray() -> Array:
 	car.finish_doors()

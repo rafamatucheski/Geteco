@@ -348,7 +348,7 @@ func _exit_point(record: Dictionary) -> Vector3:
 func _exit_occupant(record: Dictionary) -> bool:
 	# Carros roubados soltam os donos na multidão comum. Esses atores continuam
 	# andando visivelmente, mas ainda precisam consumir a cota de população compartilhada.
-	if _people_count() >= MAX_PEOPLE or world.people.size() >= controller._population_cap() + MAX_PEOPLE: return false
+	if _people_count() >= MAX_PEOPLE or world.people.size() >= controller.population_cap() + MAX_PEOPLE: return false
 	var point := _exit_point(record)
 	var forward: Vector3 = record.site.forward
 	if record.exit_count > 0: point -= forward * 1.4
