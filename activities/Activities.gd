@@ -106,11 +106,12 @@ func _update_hideout_gate() -> void:
 		_hideout_gate = preload("res://world/desert/DigoVehicleGate.gd").new()
 		_hideout_gate.name = "PilotHideoutGate"
 		_hideout_gate.position = TAPES.HIDEOUT_POINT
+		_hideout_gate.rotation.y = TAPES.HIDEOUT_YAW
 		session.world.add_child(_hideout_gate)
 		# Fora dos grupos do Digo: FullSession._set_digo_vehicle_gate fecharia este portão também.
 		for group in [_hideout_gate.GROUP, _hideout_gate.INTERIOR_GROUP]: _hideout_gate.remove_from_group(group)
 	if in_harbor and not _hideout_gate.has_meta("grounded") and _hideout_gate.position.distance_to(session.world.player.position) < 55:
-		var ray := PhysicsRayQueryParameters3D.create(TAPES.HIDEOUT_POINT+Vector3.UP*12,TAPES.HIDEOUT_POINT-Vector3.UP*3,1)
+		var ray := PhysicsRayQueryParameters3D.create(TAPES.HIDEOUT_GROUND_PROBE+Vector3.UP*12,TAPES.HIDEOUT_GROUND_PROBE-Vector3.UP*3,1)
 		ray.exclude = [_hideout_gate._barrier.get_rid()]
 		var hit: Dictionary = session.world.get_world_3d().direct_space_state.intersect_ray(ray)
 		if not hit.is_empty():

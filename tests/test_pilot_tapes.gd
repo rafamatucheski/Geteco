@@ -42,6 +42,23 @@ func _initialize() -> void:
 	check(journal.size() == 9 and journal[0] == "Fitas do piloto 2/10", "diário conta e lista oito dicas")
 	check(not journal.has("· " + TAPES.HINTS.pilot_tape_03) and journal.has("· " + TAPES.HINTS.pilot_tape_10), "diário só lista as que faltam")
 	check(TAPES.next_missing(TAPES.IDS.duplicate(), "harbor", Vector3.ZERO).is_empty(), "sem próxima com as dez")
+	# Portão fora da pista do drift do pátio: a barreira fechada no centro do drift cortava a área.
+	# O drift não tem traçado fixo (Motorsport.begin_drift): a "rota" é o círculo de raio radius/16
+	# em volta do centro, então a folga é medida da borda do círculo e de pontos amostrados nele.
+	var gate := Vector2(TAPES.HIDEOUT_POINT.x, TAPES.HIDEOUT_POINT.z)
+	for drift in DEFINITIONS.drifts("harbor").values():
+		var center := DEFINITIONS.at(drift.pos)
+		var radius := float(drift.radius) / 16.0
+		var edge := gate.distance_to(Vector2(center.x, center.z)) - radius
+		check(edge >= TAPES.HIDEOUT_DRIFT_CLEARANCE, "portão a %.1f m (>= 12) da área do drift %s" % [edge, drift.id])
+		var nearest := INF
+		for step in 32:
+			var angle := TAU * float(step) / 32.0
+			for ring in [0.0, .5, 1.0]:
+				var sample := Vector2(center.x, center.z) + Vector2(cos(angle), sin(angle)) * radius * float(ring)
+				nearest = minf(nearest, gate.distance_to(sample))
+		check(nearest >= TAPES.HIDEOUT_DRIFT_CLEARANCE, "portão a %.1f m de todos os pontos do drift %s" % [nearest, drift.id])
+	check(absf(TAPES.HIDEOUT_GROUND_PROBE.x - TAPES.HIDEOUT_POINT.x) < .01 and TAPES.HIDEOUT_GROUND_PROBE.z < TAPES.HIDEOUT_POINT.z, "raio do chão sai para a rua, fora da parede")
 	check(TAPES.LOCKED_MESSAGE == "Fechado. Algo aqui espera dez fitas.", "texto do portão trancado")
 
 	var economy := Economy.new()

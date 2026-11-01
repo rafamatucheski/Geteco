@@ -42,7 +42,12 @@ fora do raio do lugar, no eixo paralelo à estrada (o centro fica a ~22 m da pis
 | 9 | Deserto | Ferro-velho do Nonato | (-1036, -619) | "Entre carcaças, uma fita inteira." | Faz sentido para um piloto: peças e sucata. |
 | 10 | Deserto | Salinas Estrada do Sal | (306, -960) | "Branco que não é neve." | Paisagem mais estranha do mapa, longe de tudo. |
 
-Galpão: **Pátio dos Armazéns** (Harbor, (124, 59.5); `ActivityDefinitions.delivery_yards` "harbor_cold_storage").
+Galpão: **Pátio dos Armazéns**, baia de carga dos fundos do ColdStorage ("COLD STORAGE / 04"), Harbor
+(164.5, 35.525), yaw 180° (portão voltado para a foundry_avenue). Movido em 01/11/2026: o ponto antigo
+(124, 59.5) era o centro do drift "harbor_cold_storage". Conta da posição no comentário de
+`PilotTapes.HIDEOUT_POINT` (fachada pintada "camara-fria", 16 m × 17,5 m, vão sem folha dos fundos com
+centro em x local +2,0, parede em z=35,625). Fica a ~47 m do centro do drift (~39 m da borda do
+círculo de 8,1 m); o teste exige >= 12 m de todos os pontos amostrados do círculo.
 
 ### Como as coordenadas foram conferidas (e o que não foi)
 
@@ -58,12 +63,14 @@ Galpão: **Pátio dos Armazéns** (Harbor, (124, 59.5); `ActivityDefinitions.del
 ## Pendências
 
 1. **Passada a pé no mundo real** (acima). Teste novo com sessão real, nos moldes de `test_vicente_letters.gd`.
-2. **Galpão como lugar:** o portão existe (parte 2), mas está solto no ponto do pátio, sem parede de
-   galpão em volta nem interior atrás. **Não conferido no mundo:** (124, 59.5) é também o centro do drift
-   "harbor_cold_storage"; o portão fechado pode atrapalhar o drift e pode cruzar prédio/caixa. Rever o
-   ponto e a direção (yaw 0) numa passada a pé, encostá-lo numa fachada de armazém real, e o material
-   "steel" do deserto entrar no pré-aquecimento de Harbor se o perfil acusar compilação. Falta o interior
-   com a exposição das 10 fitas e o troféu.
+2. **Galpão como lugar:** o portão agora encosta no vão sem folha dos fundos do ColdStorage (acima),
+   fora do drift, e o aço dele é desenhado no `LateSurfacePrewarm` (roda em toda partida, Harbor
+   incluído). **Não conferido no mundo** (sem Godot na sessão de 01/11): o portão (3,3 m) é mais baixo
+   que o vão pintado (~72 % da parede), então sobra faixa escura do corredor acima dele; aberto, atrás
+   dele está a colisão do prédio (não há interior). Conferir numa passada a pé que ele não fica atrás de
+   poste/árvore da calçada da foundry_avenue e que o raio de chão (1,5 m para fora) acerta a calçada.
+   A sonda de pipelines (GETECO_PIPELINE_PROBE) não foi rodada para provar que o aço não compila mais.
+   Falta o interior com a exposição das 10 fitas e o troféu.
 3. **Carro exclusivo:** a frota não tem esportivo com faróis escamoteáveis (o mais próximo é o comentário
    de farol "deitado no capô" em `tools/fleet_fixups/detail_fleet_lamps_20261029.gd`, sem mecanismo de
    abrir/fechar). O nitro existe só nos carros do deserto (`DesertTuning` slot "nitro", `DesertDrivetrain`).
