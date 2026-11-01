@@ -208,6 +208,13 @@ func _ready() -> void:
 	rotation_shape.size = hull.size-Vector3(0,.15,0)
 	sensor_shape.size = Vector3(hull.size.x+.07,1.2,1)
 	traced = _trace_ready("spec",traced)
+	# Etapas separadas em 01/11 (Onda 3) só para caber na leitura; a ordem é a mesma de antes.
+	traced = _build_visual(specification, variant_scale, traced)
+	traced = _build_wheel_pivots(traced)
+	_build_effects(specification, traced)
+
+## Carroceria (frota assada, painéis do protótipo de dano ou genérica), libré, piloto da moto e pintura.
+func _build_visual(specification: Dictionary, variant_scale: Vector3, traced: int) -> int:
 	if damage_prototype_enabled and DAMAGE_PANELS.supports(archetype): visual = DAMAGE_PANELS.create(archetype)
 	if visual == null:
 		visual = preload("res://runtime/FleetCatalog.gd").create(archetype) if not specification.is_empty() else VISUAL.create(paint_color)
@@ -236,6 +243,10 @@ func _ready() -> void:
 	preload("res://runtime/VehicleUsage.gd").apply(visual, archetype, vehicle_id, _paint.materials)
 	add_to_group("drivable")
 	set_meta("gameplay_role","vehicle")
+	return traced
+
+## Pivôs de roda (giram) e de direção (garfo/para-lama da moto, só esterçam), assentados no chão.
+func _build_wheel_pivots(traced: int) -> int:
 	var pivots: Dictionary = {}
 	for part in visual.get_children():
 		if str(part.get_meta("coupe_damage_material_key","")) == "tail":
@@ -272,6 +283,10 @@ func _ready() -> void:
 		for pivot in wheels:
 			if not pivot.get_meta("front"):
 				_motorcycle_rear_contact = Vector3(pivot.position.x,0,pivot.position.z)
+	return traced
+
+## Efeitos, dano, amassados, peças que soltam, canhão do tanque e acessórios por modelo.
+func _build_effects(specification: Dictionary, traced: int) -> void:
 	effects = preload("res://gameplay/vehicle_effects/VehicleEffects.gd").new()
 	effects.configure(self)
 	add_child(effects)
