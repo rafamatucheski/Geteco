@@ -1,8 +1,8 @@
 """Confere uma extração para auxiliar RefCounted (estilo gameplay/GameplayCombatSound.gd).
 
 Toda linha não vazia que saiu do dono (diff contra uma revisão do Git) tem de reaparecer, na mesma
-ordem e sem sobra, no corpo dos auxiliares (do primeiro `func` que não é `_init`, com os `##` colados
-acima dele, até o fim). Normaliza só o prefixo `g.` e a anotação de tipo de `var` (`:=` vira `: T =`
+ordem e sem sobra, no corpo dos auxiliares (do primeiro `func` ou `static func` que não é `_init`,
+com os `##` e `static var` colados acima dele, até o fim). Normaliza só o prefixo `g.` e a anotação de tipo de `var` (`:=` vira `: T =`
 quando o valor passa a vir de `g.`, que é Node3D e não infere tipo).
 
 Uso: python tools/verify_extracted_lines.py <rev> <dono.gd> <auxiliar.gd> [<auxiliar.gd>...]
@@ -21,8 +21,11 @@ def norm(line: str) -> str:
 
 
 def helper_body(lines: list[str]) -> list[str]:
-    start = next(i for i, l in enumerate(lines) if l.startswith('func ') and not l.startswith('func _init('))
-    while start > 0 and lines[start - 1].startswith('##'):
+    # Auxiliar estático (só `static func`, ex.: CityNightLamps) também vale; o `##` e a `static var`
+    # colados acima do primeiro func (sem linha em branco) contam como corpo, como no dono.
+    start = next(i for i, l in enumerate(lines) if (l.startswith('func ') or l.startswith('static func '))
+                 and not l.startswith('func _init('))
+    while start > 0 and (lines[start - 1].startswith('##') or lines[start - 1].startswith('static var ')):
         start -= 1
     return [norm(l) for l in lines[start:] if l.strip()]
 
