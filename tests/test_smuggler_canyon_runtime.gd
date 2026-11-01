@@ -85,7 +85,7 @@ func run() -> void:
 	var shot_before := shots
 	await wait_seconds(1.5)
 	check(shots>shot_before and is_equal_approx(float(world.gameplay.health),health_before),"production damage honors invulnerability")
-	world.session._menu("Teste de pausa")
+	world.session.menu("Teste de pausa")
 	await wait_seconds(.4)
 	shot_before=shots
 	await wait_seconds(.7)

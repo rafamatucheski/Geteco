@@ -495,7 +495,7 @@ func _wear_outfit() -> void:
 	if not _valid_action("harbor_clothing"): return
 	var economy = session.state.economy
 	if not economy.owns_outfit(selected_outfit):
-		var result: Dictionary = economy.purchase("outfit", selected_outfit, session._transaction())
+		var result: Dictionary = economy.purchase("outfit", selected_outfit, session.transaction())
 		if not result.ok:
 			if result.reason == "insufficient_funds":
 				_set_status(String(TranslationServer.translate("Faltam R$ %d.")) % maxi(0, int(OUTFITS.OUTFITS[selected_outfit].price) - economy.balance))

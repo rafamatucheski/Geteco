@@ -47,15 +47,15 @@ func _contact_actor() -> Node3D:
 func perform(action: Dictionary) -> bool:
 	if action.is_empty() or action!=nearest_action(): return false
 	var state:=STATE.data(session.state.world_state)
-	session._menu("Serra Bruta")
+	session.menu("Serra Bruta")
 	# Entregas completas valem antes do estado pausado: o operário paga direto.
 	if STATE.ready_to_claim(session.state.world_state):
-		session._button("Receber R$ 1.800",_claim)
+		session.button("Receber R$ 1.800",_claim)
 	elif state.status in ["idle","paused"]:
-		session._button("Aceitar limpeza da cava · R$ 1.800" if state.status=="idle" else "Retomar limpeza da cava",_begin)
+		session.button("Aceitar limpeza da cava · R$ 1.800" if state.status=="idle" else "Retomar limpeza da cava",_begin)
 	else:
-		session._button("Pausar serviço · manter entregas",_pause)
-	session._button("Voltar",session.close_menu)
+		session.button("Pausar serviço · manter entregas",_pause)
+	session.button("Voltar",session.close_menu)
 	return true
 
 func _begin() -> void:

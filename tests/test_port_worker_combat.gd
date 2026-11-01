@@ -13,7 +13,7 @@ func run() -> void:
 	world.session.urban_operations.security.authorized_visit=true
 	for i in 30: await physics_frame
 	var spec: Dictionary={"id":"south_port_worker_test","kind":"dock_worker","region":"harbor","place_id":"","position":Vector3(250,.05,217),"route":[Vector3(250,.05,217),Vector3(255,.05,217),Vector3(255,.05,215),Vector3(250,.05,215)],"worker_index":4}
-	var director=world.session._routine_director()
+	var director=world.session.routine_director()
 	director.set_process(false)
 	director._spawn(spec)
 	check(director.actors.has(spec.id),"port worker admitted on clear floor")

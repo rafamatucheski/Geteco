@@ -139,7 +139,7 @@ func run() -> void:
 	check([1.73,2.65].all(func(height): return view.has_point(race.race_camera.unproject_position(race.start_point+tree_side*6.2+Vector3.UP*height))),"whole physical traffic-light countdown fits rear view")
 	check(session.blocks_driving_change() and not race.save_block_reason().is_empty(),"race owns boarding and save gates")
 	var before: float = race.countdown
-	session._menu("Pausa")
+	session.menu("Pausa")
 	await frames(15)
 	check(is_equal_approx(race.countdown,before),"modal pauses countdown")
 	session.close_menu()
@@ -351,7 +351,7 @@ func drive_race(race,car,result_action: String = "stay") -> void:
 	await check_normal_ui(true,"real finish restores ordinary HUD")
 
 func session_menu(session,title: String) -> void:
-	session._menu(title)
+	session.menu(title)
 
 func capture_ui(label: String) -> void:
 	if capture_output.is_empty(): return

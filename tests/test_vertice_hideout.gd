@@ -80,7 +80,7 @@ func run() -> void:
 	world.player.teleport(gun.position+Vector3.UP*.04)
 	var health: float = world.gameplay.health
 	world.gameplay.health = 0
-	session._collect_reward(session.room)
+	session.collect_reward(session.room)
 	check(not session.state.owns_weapon("m4a1"),"Dead player cannot collect the weapon")
 	world.gameplay.health = health
 	await frames(20)

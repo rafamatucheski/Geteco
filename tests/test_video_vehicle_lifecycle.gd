@@ -126,7 +126,7 @@ func run() -> void:
 	world.production.capture_player_vehicle()
 	check(world.production.starting_vehicle() == previous, "missing selection preserves an unrelated valid stored vehicle")
 	world.gameplay.health = 0.0
-	await world.session._respawn()
+	await world.session.respawn()
 	check(world.gameplay.health > 0.0 and not world.session.respawn_busy, "death/respawn completes and saves after selected vehicle removal")
 	check(world.player.visible and world.player.collision_mask == 7, "respawn restores walking body after vehicle removal")
 	# Probe the remaining prepared bikes without running their physics.

@@ -295,20 +295,20 @@ func _workshop() -> bool:
 		session.show_dialogue([{"speaker":"Digo","message":"Vamos correr primeiro. Complete a prova comigo, ganhando ou perdendo, e a gente prepara seu carro."}])
 		return true
 	tuning_car = _nearby_car()
-	session._menu("Digo")
+	session.menu("Digo")
 	if not PROGRESS.pending_rewards(session.state.world_state,session.state.economy.snapshot()).is_empty():
-		session._button("Receber prêmios pendentes",_claim_rewards)
+		session.button("Receber prêmios pendentes",_claim_rewards)
 	if is_instance_valid(tuning_car):
-		session._button("Preparar "+str(preload("res://runtime/FleetCatalog.gd").spec(tuning_car.archetype).get("label","carro")),_open_tuning)
+		session.button("Preparar "+str(preload("res://runtime/FleetCatalog.gd").spec(tuning_car.archetype).get("label","carro")),_open_tuning)
 		for preset in ["rua","drag","terra"]:
-			session._button("Salvar ajuste: "+preset,_preset.bind(preset,true))
-			session._button("Aplicar ajuste: "+preset,_preset.bind(preset,false))
-	else: session._button("Estacione seu carro no pátio para preparar",session.close_menu)
+			session.button("Salvar ajuste: "+preset,_preset.bind(preset,true))
+			session.button("Aplicar ajuste: "+preset,_preset.bind(preset,false))
+	else: session.button("Estacione seu carro no pátio para preparar",session.close_menu)
 	for id in CARS.IDS:
 		var spec: Dictionary = CARS.spec(id)
 		if spec.get("race_only",false): continue
-		session._button("%s · R$ %d"%[spec.label,spec.price],_buy_car.bind(id))
-	session._button("Fechar",session.close_menu)
+		session.button("%s · R$ %d"%[spec.label,spec.price],_buy_car.bind(id))
+	session.button("Fechar",session.close_menu)
 	return true
 func _claim_rewards() -> void:
 	var paid := PROGRESS.claim_rewards(session.state.world_state,session.state.economy)

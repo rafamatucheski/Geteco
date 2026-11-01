@@ -46,7 +46,7 @@ func perform(target: String) -> bool:
 	if nearest_action().get("target","") != target: return false
 	if target == PREFIX+"cache": return _collect_cache()
 	if target != PREFIX+"play" or not is_instance_valid(ui): return false
-	session._menu("Ferraduras")
+	session.menu("Ferraduras")
 	session.panel.hide()
 	session.menu_closed = _menu_closed
 	playing = true

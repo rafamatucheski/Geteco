@@ -30,7 +30,7 @@ func open_board() -> bool:
 		session.show_message("Pare o carro para ver o quadro.")
 		return false
 	if not is_instance_valid(layer): _build()
-	session._menu("Arrancadas")
+	session.menu("Arrancadas")
 	session.panel.hide()
 	session.menu_closed=dismiss
 	layer.show()
@@ -219,7 +219,7 @@ func _show_result(result: Dictionary) -> void:
 		results_layer.add_child(results)
 		results.action_requested.connect(_result_action)
 		get_viewport().size_changed.connect(_layout_results)
-	session._menu("Resultado da arrancada")
+	session.menu("Resultado da arrancada")
 	session.panel.hide()
 	session.menu_closed=_dismiss_results
 	results_layer.show()

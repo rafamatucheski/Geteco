@@ -50,7 +50,7 @@ func nearest_action(owner_session) -> Dictionary:
 func start_game(kind: String, owner_session) -> bool:
 	if kind not in ["bar_darts","bar_pool"] or nearest_action(owner_session).get("target","") != kind: return false
 	session = owner_session
-	session._menu("Dardos" if kind == "bar_darts" else "Bilhar")
+	session.menu("Dardos" if kind == "bar_darts" else "Bilhar")
 	session.panel.hide()
 	session.menu_closed = dismiss_game
 	game_ui = preload("res://world/places/bars/BarGameScreen.gd").new()

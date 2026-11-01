@@ -60,7 +60,7 @@ func run() -> void:
 	await photo("bridge-bones-and-canyon-sound")
 	await capture_bridge()
 	await check_ambient_mute()
-	world.session._menu("Teste de pausa sonora")
+	world.session.menu("Teste de pausa sonora")
 	await wait_seconds(.3)
 	check(not ambience.wind.playing and not ambience.detail.playing and not ambience.shelter.playing,"modal stops every canyon voice")
 	world.session.close_menu()

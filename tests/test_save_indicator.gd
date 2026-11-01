@@ -113,16 +113,16 @@ func check_checkpoint_policy() -> void:
 	if is_instance_valid(quest):
 		var origin: Vector3 = world.player.position
 		world.player.position = quest.TONICO_POINT
-		check(session._perform_urban_action("truckers_village_tonico"), "Tonico acceptance passes through pre-mission checkpoint")
+		check(session.perform_urban_action("truckers_village_tonico"), "Tonico acceptance passes through pre-mission checkpoint")
 		before = FileAccess.get_file_as_string(isolated.path)
 		check(not JSON.parse_string(before).world.urban_operations.truckers_village.started, "Tonico checkpoint precedes acceptance")
 		world.player.position = quest.BELT_POINT
-		check(session._perform_urban_action("truckers_village_belt"), "Tonico objective advances")
+		check(session.perform_urban_action("truckers_village_belt"), "Tonico objective advances")
 		check(not session.save_game(true) and FileAccess.get_file_as_string(isolated.path) == before, "Tonico progress cannot overwrite checkpoint")
 		world.player.position = quest.CRANK_POINT
-		check(session._perform_urban_action("truckers_village_crank"), "Tonico second objective advances")
+		check(session.perform_urban_action("truckers_village_crank"), "Tonico second objective advances")
 		world.player.position = quest.PUMP_POINT
-		check(session._perform_urban_action("truckers_village_repair"), "Tonico completion accepted")
+		check(session.perform_urban_action("truckers_village_repair"), "Tonico completion accepted")
 		check(JSON.parse_string(FileAccess.get_file_as_string(isolated.path)).world.urban_operations.truckers_village.completed, "Tonico completion publishes checkpoint")
 		world.player.position = origin
 	controller.no_save = true

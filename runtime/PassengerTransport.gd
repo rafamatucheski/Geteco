@@ -76,19 +76,19 @@ func perform(target: String) -> bool:
 	if target == "exit": request_exit(); return true
 	if target == "board":
 		if kind == "taxi" and taxis != null: return taxis.offer(car)
-		session._menu("Transporte · "+destination)
-		session._button("Embarcar",func(): session.close_menu(); _board())
-		session._button("Dispensar veículo",_dismiss)
-		session._button("Fechar",session.close_menu)
+		session.menu("Transporte · "+destination)
+		session.button("Embarcar",func(): session.close_menu(); _board())
+		session.button("Dispensar veículo",_dismiss)
+		session.button("Fechar",session.close_menu)
 		_focus()
 		return true
 	_origin_stop = _station()
 	_source = session.world.player.position
-	session._menu("Transporte")
-	session._button("Táxi",_destinations.bind("taxi"))
-	if _origin_stop < PRESENTATION.STOPS.size(): session._button("Ônibus · linha 510",_destinations.bind("bus"))
-	if is_instance_valid(car): session._button("Dispensar veículo",_dismiss)
-	session._button("Fechar",session.close_menu)
+	session.menu("Transporte")
+	session.button("Táxi",_destinations.bind("taxi"))
+	if _origin_stop < PRESENTATION.STOPS.size(): session.button("Ônibus · linha 510",_destinations.bind("bus"))
+	if is_instance_valid(car): session.button("Dispensar veículo",_dismiss)
+	session.button("Fechar",session.close_menu)
 	_focus()
 	return true
 
@@ -102,18 +102,18 @@ func _destinations(service: String) -> void:
 		session.show_message("Embarque ou dispense o veículo que já está esperando.")
 		return
 	kind = service
-	session._menu("Destino")
+	session.menu("Destino")
 	if service == "taxi":
-		session._button("Ponto de táxi · Rodoviária",_request.bind(Vector3(143,0,78.125),"Rodoviária",-1))
+		session.button("Ponto de táxi · Rodoviária",_request.bind(Vector3(143,0,78.125),"Rodoviária",-1))
 		for place in PLACES.definitions():
 			if place.region != "harbor": continue
 			var point: Vector3 = place.get("return_position",place.entry_position)
-			session._button(str(place.get("original_name",place.id)),_request.bind(point,str(place.get("original_name",place.id)),-1))
+			session.button(str(place.get("original_name",place.id)),_request.bind(point,str(place.get("original_name",place.id)),-1))
 	for index in PRESENTATION.STOPS.size():
 		if index == _origin_stop or not _stop_enabled(index): continue
 		var stop: Dictionary = PRESENTATION.STOPS[index]
-		session._button(str(stop.name),_request.bind(_stop_point(index),str(stop.name),index))
-	session._button("Fechar",session.close_menu)
+		session.button(str(stop.name),_request.bind(_stop_point(index),str(stop.name),index))
+	session.button("Fechar",session.close_menu)
 	_focus()
 
 func _focus() -> void:
@@ -217,9 +217,9 @@ func _board() -> bool:
 func request_exit() -> void:
 	if not riding or session.rescue_pending: return
 	if _blocked_exit_age >= 15:
-		session._menu("Saída bloqueada")
-		session._button("Continuar aguardando",session.close_menu)
-		session._button("Pedir resgate",session._on_death)
+		session.menu("Saída bloqueada")
+		session.button("Continuar aguardando",session.close_menu)
+		session.button("Pedir resgate",session.on_death)
 		_focus()
 		return
 	_requested_exit = true
@@ -240,7 +240,7 @@ func _physics_process(delta: float) -> void:
 	if not riding or session == null or not session.ready_for_play: return
 	if kind == "urban_bus": _tick_urban(delta); return
 	if not is_instance_valid(car):
-		session._on_death()
+		session.on_death()
 		return
 	if session.rescue_pending or session.modal: return
 	session.world.player.position = car.position
@@ -359,13 +359,13 @@ func _board_urban(bus) -> bool:
 	return true
 
 func _tick_urban(delta: float) -> void:
-	if not is_instance_valid(car): session._on_death(); return
+	if not is_instance_valid(car): session.on_death(); return
 	session.world.player.position=car.global_position
 	var urban = _urban_service()
 	if urban == null: return
 	if car.health<=0:
 		# A damaged service cannot strand a hidden player permanently.
-		session._on_death(); return
+		session.on_death(); return
 	if car.service_state!="exchange": return
 	var stop_id: int=urban.stops[car.service_stop].id
 	if not _requested_exit and stop_id!=bus_destination and _service_open(): return

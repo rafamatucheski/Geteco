@@ -447,10 +447,10 @@ func _open_vault_keypad() -> void:
 
 
 func _show_keypad() -> void:
-	if session == null or not session.has_method("_menu") or session.get("column") == null:
+	if session == null or not session.has_method("menu") or session.get("column") == null:
 		return
 	_keypad_buffer = ""
-	session._menu("Teclado")
+	session.menu("Teclado")
 	var display := Label.new()
 	display.name = "KeypadEntry"
 	display.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -472,8 +472,8 @@ func _show_keypad() -> void:
 		grid.add_child(button)
 		if first == null: first = button
 	if first != null: first.grab_focus.call_deferred()
-	if session.has_method("_button"):
-		session._button("Cancelar",session.close_menu)
+	if session.has_method("button"):
+		session.button("Cancelar",session.close_menu)
 
 
 func _keypad_press(value: String,display: Label) -> void:

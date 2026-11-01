@@ -903,8 +903,8 @@ func _refresh_session_hud() -> void:
 	var normal_hud = session.world.hud
 	if is_instance_valid(normal_hud) and normal_hud.is_inside_tree() and normal_hud.has_method("refresh_from_state"):
 		normal_hud.refresh_from_state()
-	if is_instance_valid(session.world.camera) and session.world.camera.is_inside_tree() and session.has_method("_update_world_indicator"):
-		session._update_world_indicator()
+	if is_instance_valid(session.world.camera) and session.world.camera.is_inside_tree() and session.has_method("update_world_indicator"):
+		session.update_world_indicator()
 
 func _exit_tree() -> void:
 	if active: _cleanup()

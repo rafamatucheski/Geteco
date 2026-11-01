@@ -18,7 +18,7 @@ func frames(count: int) -> void:
 
 func check_world_marker() -> void:
 	var session = world.session
-	check(session.marker.update_position == session._update_world_indicator and session.marker.process_priority > world.camera.process_priority,"marker updates after camera, outside text timer")
+	check(session.marker.update_position == session.update_world_indicator and session.marker.process_priority > world.camera.process_priority,"marker updates after camera, outside text timer")
 	check(await session.enter_place("maciota",false,"maciota"),"real Maciota room available")
 	if session.state.place_id != "maciota": return
 	session.state.intro.stage = "meet_maciota"

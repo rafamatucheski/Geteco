@@ -30,7 +30,7 @@ func run() -> void:
 		world.session.controller.region.set_focus(definition.entry_position)
 		world.player.teleport(definition.entry_position + Vector3(-1.2,.08,1.0))
 		for i in 60: await physics_frame
-		var hatch: Node3D = world.session._find_sewer_hatch(id)
+		var hatch: Node3D = world.session.find_sewer_hatch(id)
 		if is_instance_valid(hatch):
 			world.player.teleport(hatch.to_global(Vector3(0,.08,1.1)))
 			for i in 3: await physics_frame

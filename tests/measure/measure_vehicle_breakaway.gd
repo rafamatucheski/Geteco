@@ -97,7 +97,7 @@ func run() -> void:
 	await create_timer(10).timeout
 	for line in 16:
 		if not world.session.dialogue_open: break
-		world.session._advance_dialogue()
+		world.session.advance_dialogue()
 		await process_frame
 	check(not world.session.dialogue_open,"startup dialogue completed before collision scene")
 	world.camera.locked=true

@@ -229,19 +229,19 @@ func _source_context() -> Dictionary:
 	return {"region":session.state.region_id,"place":session.state.place_id,"room":session.room,"epoch":_transition_epoch}
 
 func _source_valid(token: int, context: Dictionary) -> bool:
-	return session._owns_transition(token) and context.epoch==_transition_epoch and session.world.gameplay.health>0 and not session.rescue_pending and not session.arrest_pending and session.state.region_id==context.region and session.state.place_id==context.place and session.room==context.room
+	return session.owns_transition(token) and context.epoch==_transition_epoch and session.world.gameplay.health>0 and not session.rescue_pending and not session.arrest_pending and session.state.region_id==context.region and session.state.place_id==context.place and session.room==context.room
 
 func _abort_transition(token: int, was_locked: bool, context: Dictionary) -> void:
-	if session._owns_transition(token):
+	if session.owns_transition(token):
 		await session.door_transition.fade_to(0.0,.2)
-		if session._owns_transition(token):
-			session._restore_transition_player_lock(was_locked,token)
-			session._finish_transition(token)
+		if session.owns_transition(token):
+			session.restore_transition_player_lock(was_locked,token)
+			session.finish_transition(token)
 	if context.epoch==_transition_epoch: busy = false
 
 func _ascend(target: Dictionary, back: Vector3, autosave: bool) -> bool:
 	if target.is_empty() or busy: return false
-	var token: int = session._begin_transition("service_roof_stairs")
+	var token: int = session.begin_transition("service_roof_stairs")
 	if token<0: return false
 	busy = true
 	_transition_epoch += 1
@@ -292,13 +292,13 @@ func _ascend(target: Dictionary, back: Vector3, autosave: bool) -> bool:
 	actor.teleport(destination)
 	_configure_camera()
 	session.state.world_state.harbor_service_roof = {"id":str(target.id),"place":str(target.place),"return":[back.x,back.y,back.z]}
-	session._sync_location_presentation()
+	session.sync_location_presentation()
 	await session.door_transition.fade_to(0.0,.24)
 	if not _source_valid(token,context):
 		await _abort_transition(token,was_locked,context)
 		return false
-	session._restore_transition_player_lock(was_locked,token)
-	session._finish_transition(token)
+	session.restore_transition_player_lock(was_locked,token)
+	session.finish_transition(token)
 	busy = false
 	if autosave: session.save_game()
 	return true
@@ -383,7 +383,7 @@ func _configure_camera() -> void:
 
 func _descend() -> bool:
 	if not is_active() or falling: return false
-	var token: int = session._begin_transition("service_roof_return")
+	var token: int = session.begin_transition("service_roof_return")
 	if token<0: return false
 	busy = true
 	_transition_epoch += 1
@@ -411,9 +411,9 @@ func _descend() -> bool:
 	actor.teleport(destination)
 	clear(false)
 	await session.door_transition.fade_to(0.0,.22)
-	if not session._owns_transition(token): return false
-	session._restore_transition_player_lock(was_locked,token)
-	session._finish_transition(token)
+	if not session.owns_transition(token): return false
+	session.restore_transition_player_lock(was_locked,token)
+	session.finish_transition(token)
 	busy = false
 	session.save_game()
 	return true
@@ -444,8 +444,8 @@ func _begin_fall() -> void:
 	session.world.camera.offset = session.world.camera.EXTERIOR_OFFSET
 	session.world.camera.target_size = session.saved_size
 	session.world.camera.locked = false
-	session._sync_location_presentation()
-	session._refresh_routine_context()
+	session.sync_location_presentation()
+	session.refresh_routine_context()
 	session.sync_dispatch_location()
 
 func _tick_fall() -> void:
@@ -482,4 +482,4 @@ func clear(interrupted := true) -> void:
 	owner_room = null
 	falling = false
 	_scan = 0.0
-	session._sync_location_presentation()
+	session.sync_location_presentation()

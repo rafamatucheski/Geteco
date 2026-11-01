@@ -27,7 +27,9 @@ class Session extends Node:
 	func _menu(_title: String) -> void:
 		modal = true
 		world.player.input_locked = true
+	func menu(_title: String) -> void: _menu(_title)
 	func _button(_label: String, _callback: Callable) -> void: pass
+	func button(_label: String, _callback: Callable) -> void: _button(_label, _callback)
 	func show_message(_message: String) -> void: pass
 	func close_menu() -> void:
 		modal = false

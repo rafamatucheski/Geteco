@@ -49,13 +49,13 @@ func offer(vehicle, door_side := 1) -> bool:
 	source = session.world.player.position
 	saved_traffic = vehicle.traffic; saved_brake = vehicle.brake_input
 	vehicle.traffic = false; vehicle.brake_input = true
-	session._menu("Táxi")
+	session.menu("Táxi")
 	session.menu_closed = cancel
 	if transport.car == vehicle and transport.route != null:
-		session._button("Embarcar · "+transport.destination,board_waiting)
-	else: session._button("Pegar corrida",destinations)
-	session._button("Roubar o táxi",steal)
-	session._button("Fechar",session.close_menu)
+		session.button("Embarcar · "+transport.destination,board_waiting)
+	else: session.button("Pegar corrida",destinations)
+	session.button("Roubar o táxi",steal)
+	session.button("Fechar",session.close_menu)
 	return true
 
 func board_waiting() -> void:
@@ -73,17 +73,17 @@ func cancel() -> void:
 
 func destinations() -> void:
 	if not valid_offer(): session.close_menu(); return
-	session._menu("Destino")
-	session._button("Ponto de táxi · Rodoviária",request.bind(Vector3(143,0,78.125),"Rodoviária"))
+	session.menu("Destino")
+	session.button("Ponto de táxi · Rodoviária",request.bind(Vector3(143,0,78.125),"Rodoviária"))
 	for place in PLACES.definitions():
 		if place.region != "harbor": continue
 		var title := str(place.get("original_name",place.id))
-		session._button(title,request.bind(place.get("return_position",place.entry_position),title))
+		session.button(title,request.bind(place.get("return_position",place.entry_position),title))
 	for index in preload("res://runtime/UrbanTransitPresentation.gd").STOPS.size():
 		if transport._stop_enabled(index):
 			var title: String = preload("res://runtime/UrbanTransitPresentation.gd").STOPS[index].name
-			session._button(title,request.bind(transport._stop_point(index),title))
-	session._button("Fechar",session.close_menu)
+			session.button(title,request.bind(transport._stop_point(index),title))
+	session.button("Fechar",session.close_menu)
 
 func request(point: Vector3, title: String) -> void:
 	if not valid_offer(): session.close_menu(); return

@@ -297,9 +297,9 @@ func perform(target: String) -> bool:
 	match target:
 		"steal": return steal_bike(_nearby_stealable_bike(session.world.player.position))
 		"quit":
-			session._menu(String(TranslationServer.translate("Desistir perde a inscrição de R$ %d")) %int(PROGRESS.LEVELS[difficulty].fee))
-			session._button("Continuar corrida",session.close_menu)
-			session._button("Desistir",func(): session.close_menu(); finish(false,"quit"))
+			session.menu(String(TranslationServer.translate("Desistir perde a inscrição de R$ %d")) %int(PROGRESS.LEVELS[difficulty].fee))
+			session.button("Continuar corrida",session.close_menu)
+			session.button("Desistir",func(): session.close_menu(); finish(false,"quit"))
 		"dismount": dismount()
 		"ride": _mount(owned_bike)
 		"enter": _menu()
@@ -308,40 +308,40 @@ func perform(target: String) -> bool:
 
 func _menu() -> void:
 	if DIGO.mark_met(session.state.world_state): session.save_game()
-	session._menu("Digo")
+	session.menu("Digo")
 	var met: Dictionary = DIGO.data(session.state.world_state)
 	var speech := Label.new()
 	speech.text = "Aqui eu te ensino a pilotar e organizo as corridas. Vamos pra pista?"
 	speech.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	session.column.add_child(speech)
 	SPOKEN_LINE.attach(speech, speech.text, "digo")
-	session._button("Rever aula de pilotagem · grátis" if met.lesson_completed else "Aprender a pilotar · grátis",func(): session.close_menu(); start_lesson())
-	session._button("Escolher corrida",_race_menu)
-	session._button("Treinar livremente · aluguel R$ 35",func(): _bike_menu(-1))
-	session._button("Conversar sobre o Gol e o deserto",_digo_story)
+	session.button("Rever aula de pilotagem · grátis" if met.lesson_completed else "Aprender a pilotar · grátis",func(): session.close_menu(); start_lesson())
+	session.button("Escolher corrida",_race_menu)
+	session.button("Treinar livremente · aluguel R$ 35",func(): _bike_menu(-1))
+	session.button("Conversar sobre o Gol e o deserto",_digo_story)
 	if progress.data.owned:
-		session._button("Retirar minha moto",func(): session.close_menu(); _park_owned(true))
-	session._button("Voltar",session.close_menu)
+		session.button("Retirar minha moto",func(): session.close_menu(); _park_owned(true))
+	session.button("Voltar",session.close_menu)
 
 func _digo_story() -> void:
-	session._menu("Digo")
+	session.menu("Digo")
 	var speech := Label.new()
 	speech.text = "Aquele é meu Gol quadrado 93: prata, turbo, rodas 15 e placa preta. O som você escuta de longe.\n\nAinda vamos nos encontrar numa corrida no deserto. Quero ver se você acompanha!"
 	speech.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	session.column.add_child(speech)
 	SPOKEN_LINE.attach(speech, speech.text, "digo")
-	session._button("Voltar",_menu)
+	session.button("Voltar",_menu)
 
 func _race_menu() -> void:
 	var best := float(progress.data.get("best_lap",0.0))
-	session._menu("Digo · Corridas"+(String(TranslationServer.translate(" · recorde %s")) %HUD.clock(best) if best > 0.0 else ""))
+	session.menu("Digo · Corridas"+(String(TranslationServer.translate(" · recorde %s")) %HUD.clock(best) if best > 0.0 else ""))
 	for i in PROGRESS.LEVELS.size():
 		var spec: Dictionary = PROGRESS.LEVELS[i]
-		session._button("%s · entrada R$ %d · vitória R$ %d"%[spec.name,spec.fee,int(spec.fee)+int(spec.bonus)],func():
+		session.button("%s · entrada R$ %d · vitória R$ %d"%[spec.name,spec.fee,int(spec.fee)+int(spec.bonus)],func():
 			_bike_menu(i))
 		var button := session.column.get_child(session.column.get_child_count()-1) as Button
 		if button != null: button.disabled = i > int(progress.data.unlocked) or session.state.economy.balance < int(spec.fee)
-	session._button("Voltar",_menu)
+	session.button("Voltar",_menu)
 
 func start_lesson() -> bool:
 	if mounted or active or session.modal or session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.player.position.distance_to(COURSE.ENTRY) > 8: return false
@@ -360,9 +360,9 @@ func start_lesson() -> bool:
 	return true
 
 func _bike_menu(level: int) -> void:
-	session._menu(String(TranslationServer.translate("Escolha a moto · %s")) %("Treino" if level < 0 else PROGRESS.LEVELS[level].name))
+	session.menu(String(TranslationServer.translate("Escolha a moto · %s")) %("Treino" if level < 0 else PROGRESS.LEVELS[level].name))
 	for index in MODELS.MODELS.size():
-		session._button(("✓ " if selected_model==index else "")+MODELS.caption(index),func():
+		session.button(("✓ " if selected_model==index else "")+MODELS.caption(index),func():
 			selected_model = index
 			_bike_menu(level))
 		var button := session.column.get_child(session.column.get_child_count()-1) as Button
@@ -373,13 +373,13 @@ func _bike_menu(level: int) -> void:
 		button.add_theme_color_override("font_pressed_color",MODELS.MODELS[index].color.lightened(.45))
 		if selected_model==index: button.call_deferred("grab_focus")
 	var fee := 35 if level < 0 else int(PROGRESS.LEVELS[level].fee)
-	session._button("%s · R$ %d"%["Alugar" if level < 0 else "Correr",fee],func():
+	session.button("%s · R$ %d"%["Alugar" if level < 0 else "Correr",fee],func():
 		session.close_menu()
 		if level < 0: rent_bike()
 		else: start_race(level))
 	var confirm := session.column.get_child(session.column.get_child_count()-1) as Button
 	confirm.disabled = session.state.economy.balance < fee
-	session._button("Voltar",_menu)
+	session.button("Voltar",_menu)
 
 func rent_bike() -> bool:
 	if mounted or active or session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.player.position.distance_to(COURSE.ENTRY) > 8: return false

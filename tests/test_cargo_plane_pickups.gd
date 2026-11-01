@@ -124,7 +124,7 @@ func run() -> void:
 	var old_cash_stamp := reward_stamp("cash")
 	var old_weapon_stamp := reward_stamp("weapon")
 	check(store.load_into(session.state).get("ok", false), "collected state restores into the live GameState")
-	session._collect_reward(plane)
+	session.collect_reward(plane)
 	await frames(20)
 	check(treasure_footprint_clear(plane), "save reconciliation keeps the chest footprint physically free")
 	check(await walk(plane.to_global(Vector3(.55, 0, -7.35))), "Dante crosses the former chest space after restore and reconciliation")

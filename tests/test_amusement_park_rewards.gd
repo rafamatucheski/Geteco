@@ -32,7 +32,9 @@ class TestSession extends Node:
 	func _menu(_title: String) -> void:
 		modal = true
 		world.player.input_locked = true
+	func menu(_title: String) -> void: _menu(_title)
 	func _button(_text: String, _action: Callable) -> void: pass
+	func button(_text: String, _action: Callable) -> void: _button(_text, _action)
 	func close_menu() -> void:
 		modal = false
 		world.player.input_locked = false

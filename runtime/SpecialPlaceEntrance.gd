@@ -93,7 +93,7 @@ func _update_culvert(delta: float) -> void:
 		blocked_id = ""
 		return
 	if hatch_id != CULVERT or not is_instance_valid(hatch):
-		hatch = session._find_sewer_hatch(CULVERT)
+		hatch = session.find_sewer_hatch(CULVERT)
 		hatch_id = CULVERT
 	if not is_instance_valid(hatch) or _blocked(): return
 	var local: Vector3 = hatch.to_local(player.global_position)

@@ -142,7 +142,7 @@ func run() -> void:
 	check(session.dialogue_card.size.x <= 610, "conversation caption has compact width at 720p")
 	await capture("05-conversa")
 	if "--measure-caption" in OS.get_cmdline_user_args(): await measure_caption()
-	session._advance_dialogue()
+	session.advance_dialogue()
 	await frames()
 	check(not session.dialogue_open and not world.player.input_locked, "ending dialogue restores gameplay")
 	var menu = world.pause_panel.settings

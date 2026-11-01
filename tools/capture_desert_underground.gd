@@ -28,7 +28,7 @@ func _run() -> void:
 	world.player.teleport(entry + Vector3(-1.4, 0.08, 1.6))
 	for i in 90: await physics_frame
 	await shot(id + "_rua")
-	var hatch = session._find_sewer_hatch(id)
+	var hatch = session.find_sewer_hatch(id)
 	if is_instance_valid(hatch): hatch.set_open_amount(1.0)
 	for i in 20: await physics_frame
 	await shot(id + "_aberta")

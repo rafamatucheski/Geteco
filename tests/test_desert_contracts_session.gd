@@ -47,7 +47,7 @@ func choose(prefix: String) -> bool:
 func finish_dialogue() -> void:
 	for i in 6:
 		if not world.session.dialogue_open: break
-		world.session._advance_dialogue()
+		world.session.advance_dialogue()
 	await physics_frame
 func photo(label: String) -> void:
 	if DisplayServer.get_name()=="headless": return

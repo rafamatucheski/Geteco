@@ -20,13 +20,13 @@ func open() -> bool:
 	if HONOR.pending_reward(session.state.world_state):
 		_open_reward()
 		return true
-	session._menu("Takeshi")
+	session.menu("Takeshi")
 	_label("Toyota Supra A80 · 800 m",24)
 	_label("Prepare o carro para competir no limite. Largada, trocas e nitro decidem esta prova.",20)
 	var saved := HONOR.data(session.state.world_state)
 	if float(saved.best_seconds)>0: _label(String(TranslationServer.translate("Seu recorde: %.3f s")) %float(saved.best_seconds),20)
-	session._button("Revanche" if saved.won else "Desafiar Takeshi",_request_race)
-	session._button("Voltar",session.close_menu)
+	session.button("Revanche" if saved.won else "Desafiar Takeshi",_request_race)
+	session.button("Voltar",session.close_menu)
 	return true
 
 func _request_race() -> void:
@@ -50,15 +50,15 @@ func completed(value: Dictionary) -> void:
 
 func _open_reward() -> void:
 	if not available() or not HONOR.pending_reward(session.state.world_state): return
-	session._menu("A palavra de Takeshi")
+	session.menu("A palavra de Takeshi")
 	_label("Escolha uma recompensa",25)
 	_label("Toyota Supra A80",23)
 	_label("O carro de Takeshi. A katana ficará disponível na Ammu-Nation por R$ 300.000.",19)
-	session._button("Escolher o Supra",_claim.bind("car"))
+	session.button("Escolher o Supra",_claim.bind("car"))
 	_label("Tesouro da família",23)
 	_label("Katana: golpes exclusivos e RAGE. A escolha é definitiva.",19)
-	session._button("Escolher a katana",_claim.bind("katana"))
-	session._button("Decidir depois",_decide_later)
+	session.button("Escolher a katana",_claim.bind("katana"))
+	session.button("Decidir depois",_decide_later)
 
 func _decide_later() -> void:
 	session.close_menu()

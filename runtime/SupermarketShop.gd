@@ -24,7 +24,7 @@ static func open(session) -> void:
 		existing.refresh()
 		return
 	if is_instance_valid(existing): existing.get_parent().remove_child(existing)
-	session._menu("")
+	session.menu("")
 	session.panel.hide()
 	var panel := preload("res://ui/SupermarketPanel.gd").new()
 	panel.session = session
@@ -41,10 +41,10 @@ static func buy(session, id: String) -> Dictionary:
 	if id not in STOCK and id != "armor": return {"ok":false,"reason":"unknown_item"}
 	var result: Dictionary
 	if id == "armor":
-		result = session.state.economy.purchase_body_armor(session.world.gameplay.armor,100,session._transaction())
+		result = session.state.economy.purchase_body_armor(session.world.gameplay.armor,100,session.transaction())
 		if result.ok: session.world.gameplay.armor = int(result.armor)
 	else:
-		result = session.state.economy.purchase("supply",id,session._transaction())
+		result = session.state.economy.purchase("supply",id,session.transaction())
 	var message := "Colete equipado." if id == "armor" else "Guardado no inventário."
 	if not result.ok:
 		message = {"inventory_full":"Inventário cheio.","insufficient_funds":"Dinheiro insuficiente.","protection_full":"O colete já está completo."}.get(result.reason,"Compra indisponível.")

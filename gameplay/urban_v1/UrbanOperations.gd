@@ -161,7 +161,7 @@ func _secret_state_changed() -> void:
 	if is_instance_valid(secret_file): secret_file.refresh()
 
 func _life_snapshot() -> Dictionary:
-	var routines = session._routine_director()
+	var routines = session.routine_director()
 	return {"terminal":passenger_terminal.snapshot(),"workers":routines.port_respawn.duplicate() if routines!=null else {},"loaders":port.worker_respawn.duplicate(),"guards":security._staff_respawn.duplicate()}
 
 func restore_snapshot(data: Dictionary) -> bool:
@@ -177,7 +177,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if data.has("harbor_life"):
 		var life: Dictionary = data.harbor_life
 		passenger_terminal.restore_snapshot(life.terminal)
-		var routines = session._routine_director()
+		var routines = session.routine_director()
 		if routines!=null:
 			routines.port_respawn = life.workers.duplicate()
 			for id in routines.port_respawn:

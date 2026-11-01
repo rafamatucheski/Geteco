@@ -96,7 +96,7 @@ func run() -> void:
 	await frames(280)
 	# Carrega em streaming um trabalhador autoral em movimento e então atira longe dele.
 	await place(Vector3(3900.0 / 16.0, .08, 3370.0 / 16.0 + 3.0))
-	var worker = session._routine_director().actors.get("south_port_worker_00")
+	var worker = session.routine_director().actors.get("south_port_worker_00")
 	check(is_instance_valid(worker), "authored cargo worker is physically active")
 	if is_instance_valid(worker):
 		var stock: int = worker.crate_total()
@@ -185,7 +185,7 @@ func remaining(session) -> void:
 			check(session.interact() and session.dialogue_open, "real doctor dialogue opens")
 			var completed := [false]
 			session.dialogue_done = func(): completed[0] = true
-			session._advance_dialogue()
+			session.advance_dialogue()
 			check(session.dialogue_open and session._service_menu_open, "next dialogue line preserves service ownership")
 			world.gameplay.npc_gunfire.emit(doctor.global_position + Vector3(0, 1, 2), Vector3.FORWARD, null)
 			check(not session.modal and not session.dialogue_open and not completed[0] and not session.dialogue_done.is_valid(), "threat interrupts continued doctor dialogue without completing it")
@@ -198,15 +198,15 @@ func remaining(session) -> void:
 	else: check(false, "enter hospital")
 
 func focus_test(session) -> void:
-	session._menu("First fixture menu")
-	session._button("Removed before deferred focus", func(): pass)
-	session._menu("Replacement fixture menu")
-	session._button("Current button", func(): pass)
+	session.menu("First fixture menu")
+	session.button("Removed before deferred focus", func(): pass)
+	session.menu("Replacement fixture menu")
+	session.button("Current button", func(): pass)
 	var current: Button = session.column.get_child(session.column.get_child_count() - 1)
 	await frames(3)
 	check(root.gui_get_focus_owner() == current, "same-frame replacement focuses only the live menu button")
-	session._menu("Interrupted fixture menu")
-	session._button("Closed before deferred focus", func(): pass)
+	session.menu("Interrupted fixture menu")
+	session.button("Closed before deferred focus", func(): pass)
 	var closed: Button = session.column.get_child(session.column.get_child_count() - 1)
 	session.close_menu()
 	await frames(3)
@@ -221,7 +221,7 @@ func finish() -> void:
 
 func cargo_probe(session) -> void:
 	await place(Vector3(3900.0 / 16.0, .08, 3370.0 / 16.0 + 3.0))
-	var worker = session._routine_director().actors.get("south_port_worker_00")
+	var worker = session.routine_director().actors.get("south_port_worker_00")
 	check(is_instance_valid(worker), "probe has authored cargo worker")
 	if not is_instance_valid(worker): return
 	check(shoot_away(), "probe real gunfire")

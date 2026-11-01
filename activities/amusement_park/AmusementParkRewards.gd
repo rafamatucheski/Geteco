@@ -81,16 +81,16 @@ func open_wardrobe() -> void:
 
 func _show_wardrobe() -> void:
 	var saved := STATE.data(session.state.world_state)
-	session._menu(String(TranslationServer.translate("GUARDA-ROUPA LUME · %d/6")) % saved.found.size())
+	session.menu(String(TranslationServer.translate("GUARDA-ROUPA LUME · %d/6")) % saved.found.size())
 	for id in saved.found:
 		var entry: Dictionary = STATE.ENTRIES[id]
 		var selected: bool = session.state.economy.outfit == entry.get("outfit", "") if entry.slot == "outfit" else saved[entry.slot] == id
-		session._button(str(entry.label) + (" · equipado" if selected else " · vestir"), _equip.bind(id))
+		session.button(str(entry.label) + (" · equipado" if selected else " · vestir"), _equip.bind(id))
 	if session.state.economy.outfit in ["dante_lume", "dante_midnight"]:
-		session._button("Vestir roupa original", _classic)
-	if not saved.glasses.is_empty(): session._button("Retirar óculos", _remove.bind("glasses"))
-	if not saved.mask.is_empty(): session._button("Retirar máscara", _remove.bind("mask"))
-	session._button("Voltar", session.close_menu)
+		session.button("Vestir roupa original", _classic)
+	if not saved.glasses.is_empty(): session.button("Retirar óculos", _remove.bind("glasses"))
+	if not saved.mask.is_empty(): session.button("Retirar máscara", _remove.bind("mask"))
+	session.button("Voltar", session.close_menu)
 
 func _equip(id: String) -> void:
 	if not _wardrobe_alive(): return

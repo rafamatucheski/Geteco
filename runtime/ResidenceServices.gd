@@ -83,7 +83,7 @@ func _close_presentation() -> void:
 	if is_instance_valid(session.panel) and session.panel.has_meta("modal_dock_right"): session.panel.remove_meta("modal_dock_right")
 
 func _station_menu(title: String) -> void:
-	session._menu(title)
+	session.menu(title)
 	var scroll: ScrollContainer = session.column.get_parent()
 	if _scroll_minimum == Vector2.ZERO:
 		_scroll_minimum = scroll.custom_minimum_size
@@ -170,8 +170,8 @@ func _wardrobe() -> void:
 	for item in session.state.economy.storefront("outfit"):
 		if not item.owned: continue
 		var equipped: bool = str(item.id) == session.state.economy.outfit
-		session._button(("✓ " if equipped else "")+str(item.get("name",item.get("label",item.id))),_wear.bind(str(item.id)))
-	session._button("Fechar",session.close_menu)
+		session.button(("✓ " if equipped else "")+str(item.get("name",item.get("label",item.id))),_wear.bind(str(item.id)))
+	session.button("Fechar",session.close_menu)
 	_focus()
 
 func _wear(id: String) -> void:
@@ -188,7 +188,7 @@ func _arsenal() -> void:
 	for slot in session.state.economy.PERSONAL_SLOTS:
 		var title: String = {"curta":"Curta","longa":"Longa","corpo":"Corpo a corpo","granada":"Granada"}[slot]
 		var weapon: String = str(selected.get(slot,""))
-		session._button(title+" · "+str(WEAPONS.WEAPONS.get(weapon,{}).get("label","Vazio")),_select_slot.bind(slot))
+		session.button(title+" · "+str(WEAPONS.WEAPONS.get(weapon,{}).get("label","Vazio")),_select_slot.bind(slot))
 		var button: Button = session.column.get_child(session.column.get_child_count()-1)
 		button.focus_entered.connect(presentation.preview_weapon.bind(weapon))
 		button.mouse_entered.connect(presentation.preview_weapon.bind(weapon))
@@ -196,20 +196,20 @@ func _arsenal() -> void:
 	for weapon in selected.values():
 		if not str(weapon).is_empty(): first = str(weapon); break
 	presentation.preview_weapon(first)
-	session._button("Fechar",session.close_menu)
+	session.button("Fechar",session.close_menu)
 	_focus()
 
 func _select_slot(slot: String) -> void:
 	if _station != "arsenal" or not session.state.economy.PERSONAL_SLOTS.has(slot) or not _menu_available(): return
 	_station_menu("Bancada de armas")
-	session._button("Guardar arma",_set_slot.bind(slot,""))
+	session.button("Guardar arma",_set_slot.bind(slot,""))
 	for id in session.state.economy.PERSONAL_SLOTS[slot]:
 		if session.state.economy.owns_weapon(id):
-			session._button(str(WEAPONS.WEAPONS[id].label),_weapon_menu.bind(str(id),slot))
+			session.button(str(WEAPONS.WEAPONS[id].label),_weapon_menu.bind(str(id),slot))
 			var button: Button = session.column.get_child(session.column.get_child_count()-1)
 			button.focus_entered.connect(presentation.preview_weapon.bind(str(id)))
 			button.mouse_entered.connect(presentation.preview_weapon.bind(str(id)))
-	session._button("Voltar",_arsenal)
+	session.button("Voltar",_arsenal)
 	_focus()
 
 func _weapon_menu(id: String, slot: String) -> void:
@@ -217,10 +217,10 @@ func _weapon_menu(id: String, slot: String) -> void:
 	_station_menu(str(WEAPONS.WEAPONS[id].get("short_label",id)))
 	presentation.preview_weapon(id,true)
 	var selected: bool = session.state.economy.personal_loadout().get(slot,"") == id
-	session._button("✓ Equipada" if selected else "Levar comigo",_set_slot.bind(slot,id))
-	if id in CUSTOM.CUSTOMIZABLE: session._button("Personalizar",_customize_weapon.bind(id,slot,"finish"))
-	session._button("Trocar arma",_select_slot.bind(slot))
-	session._button("Fechar",session.close_menu)
+	session.button("✓ Equipada" if selected else "Levar comigo",_set_slot.bind(slot,id))
+	if id in CUSTOM.CUSTOMIZABLE: session.button("Personalizar",_customize_weapon.bind(id,slot,"finish"))
+	session.button("Trocar arma",_select_slot.bind(slot))
+	session.button("Fechar",session.close_menu)
 	_focus()
 
 func _customize_weapon(id: String, slot: String, category: String) -> void:
@@ -263,9 +263,9 @@ func _customize_weapon(id: String, slot: String, category: String) -> void:
 	_custom_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_custom_stats.add_theme_font_size_override("font_size",15)
 	session.column.add_child(_custom_stats)
-	session._button("Instalar",_apply_custom_part)
+	session.button("Instalar",_apply_custom_part)
 	_custom_apply = session.column.get_child(session.column.get_child_count()-1)
-	session._button("Voltar",_weapon_menu.bind(id,slot))
+	session.button("Voltar",_weapon_menu.bind(id,slot))
 	_custom_back = session.column.get_child(session.column.get_child_count()-1)
 	_preview_custom_part(CUSTOM.selected(session.world.gameplay.customization,id,category))
 	_focus()
@@ -355,10 +355,10 @@ func _rest_menu() -> void:
 	if not _menu_available(): return
 	_station_menu("Descansar")
 	for minutes in [15,60,240,480]:
-		session._button("15 minutos" if minutes == 15 else String(TranslationServer.translate("%d hora%s"))%[minutes/60,"" if minutes == 60 else "s"],_rest_for.bind(minutes))
-	session._button("Até amanhecer",_rest.bind(.36))
-	session._button("Até anoitecer",_rest.bind(.84))
-	session._button("Fechar",session.close_menu)
+		session.button("15 minutos" if minutes == 15 else String(TranslationServer.translate("%d hora%s"))%[minutes/60,"" if minutes == 60 else "s"],_rest_for.bind(minutes))
+	session.button("Até amanhecer",_rest.bind(.36))
+	session.button("Até anoitecer",_rest.bind(.84))
+	session.button("Fechar",session.close_menu)
 	_focus()
 
 func _rest(target: float) -> void:
@@ -376,7 +376,7 @@ func _rest_for(minutes: int) -> void:
 	_rest_clock = Label.new()
 	_rest_clock.add_theme_font_size_override("font_size",30)
 	session.column.add_child(_rest_clock)
-	session._button("Levantar",session.close_menu)
+	session.button("Levantar",session.close_menu)
 	_rest_progress = 0.0
 	_rest_tick(0.0)
 	_rest_tween = create_tween()
@@ -402,12 +402,12 @@ func _complete_rest() -> void:
 func _fridge() -> void:
 	if not _menu_available(): return
 	_station_menu("Geladeira")
-	session._button("Comer uma refeição · +35 vida",_consume.bind("meal"))
-	session._button("Beber suco · +15 vida",_consume.bind("drink"))
+	session.button("Comer uma refeição · +35 vida",_consume.bind("meal"))
+	session.button("Beber suco · +15 vida",_consume.bind("drink"))
 	var fish := CATCH_ITEMS.carried(session)
 	for index in fish.size():
-		session._button("Cozinhar · " + str(fish[index].label), _cook_fish.bind(str(fish[index].id), CATCH_ITEMS.next_receipt(session, "cook", index)))
-	session._button("Fechar",session.close_menu)
+		session.button("Cozinhar · " + str(fish[index].label), _cook_fish.bind(str(fish[index].id), CATCH_ITEMS.next_receipt(session, "cook", index)))
+	session.button("Fechar",session.close_menu)
 	_focus()
 
 func _cook_fish(id: String, receipt: String) -> void:
@@ -456,9 +456,9 @@ func _save() -> void:
 func _home_menu() -> void:
 	if _station != "save" or not _menu_available(): return
 	_station_menu("Casa")
-	session._button("Salvar jogo", _save)
-	session._button("Caminhas e brinquedos", _cat_shop)
-	session._button("Fechar", session.close_menu)
+	session.button("Salvar jogo", _save)
+	session.button("Caminhas e brinquedos", _cat_shop)
+	session.button("Fechar", session.close_menu)
 	_focus()
 
 func _cat_shop() -> void:
@@ -476,10 +476,10 @@ func _cat_shop() -> void:
 		var full := amount >= int(item.limit)
 		var label := "%s · %d/%d" % [str(item.label), amount, int(item.limit)]
 		if not full: label += " · R$ %d" % int(item.price)
-		session._button(label, _buy_cat_furniture.bind(str(id)))
+		session.button(label, _buy_cat_furniture.bind(str(id)))
 		var button: Button = session.column.get_child(session.column.get_child_count() - 1)
 		button.disabled = full or session.state.economy.balance < int(item.price)
-	session._button("Voltar", _home_menu)
+	session.button("Voltar", _home_menu)
 	_focus()
 
 func _buy_cat_furniture(id: String) -> void:
@@ -496,16 +496,16 @@ func _chest() -> void:
 		session.close_menu()
 		session.show_message("Desbloqueie a mochila para usar o baú.")
 		return
-	session._menu("Baú")
+	session.menu("Baú")
 	var chest: Dictionary = session.activities.residence.data.chest
 	var items := storage.items()
 	for id in items:
 		if not items[id] is Dictionary or int(items[id].get("count",0)) < 1: continue
-		session._button("Guardar · "+str(items[id].get("label",id)),_transfer.bind(str(id),true))
+		session.button("Guardar · "+str(items[id].get("label",id)),_transfer.bind(str(id),true))
 	for id in chest:
 		var label: String = str(items.get(id,{}).get("label",id))
-		session._button(String(TranslationServer.translate("Retirar · %s ×%d"))%[label,int(chest[id])],_transfer.bind(str(id),false))
-	session._button("Fechar",session.close_menu)
+		session.button(String(TranslationServer.translate("Retirar · %s ×%d"))%[label,int(chest[id])],_transfer.bind(str(id),false))
+	session.button("Fechar",session.close_menu)
 	_focus()
 
 func _transfer(id: String, deposit: bool) -> void:

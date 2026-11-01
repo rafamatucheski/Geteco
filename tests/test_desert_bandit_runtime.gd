@@ -93,7 +93,7 @@ func run() -> void:
 	var shot_before := shots
 	await wait_seconds(2.2)
 	check(shots>shot_before and is_equal_approx(float(world.gameplay.health),protected_health),"real incoming projectiles respect player god-mode protection")
-	world.session._menu("Teste de pausa")
+	world.session.menu("Teste de pausa")
 	await wait_seconds(.4)
 	shot_before=shots
 	await wait_seconds(1)

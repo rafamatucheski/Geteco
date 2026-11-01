@@ -128,9 +128,9 @@ func run() -> void:
 	check(not wheel.active and is_equal_approx(Engine.time_scale,1) and not world.player.input_locked,"damage cancels wheel without leaving slow motion")
 	await key(KEY_Q,false)
 	await key(KEY_Q,true)
-	var transition: int = session._begin_transition("equipment_wheel_test")
+	var transition: int = session.begin_transition("equipment_wheel_test")
 	check(transition > 0 and not wheel.active and is_equal_approx(Engine.time_scale,1),"transition cancels before acquiring lifecycle ownership")
-	session._finish_transition(transition)
+	session.finish_transition(transition)
 	world.player.input_locked = false
 	await key(KEY_Q,false)
 	var middle := InputEventMouseButton.new()

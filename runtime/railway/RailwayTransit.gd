@@ -529,7 +529,7 @@ func _arrive(target_id: String) -> void:
 	_start_ambient_leg(target_id, "harbor_north" if target_id != "harbor_north" else "harbor_central")
 	session.world.camera.initialized = false
 	session.world.camera._process(1.0)
-	session._sync_location_presentation()
+	session.sync_location_presentation()
 	trip_finished.emit(target_id)
 	notice.emit("Estação %s. Desembarque pela plataforma." % str(destination.label))
 	session.save_game()

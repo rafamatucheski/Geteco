@@ -40,7 +40,7 @@ func walk(target: Vector3) -> bool:
 func finish_dialogue() -> void:
 	for index in 12:
 		if not world.session.dialogue_open: break
-		world.session._advance_dialogue()
+		world.session.advance_dialogue()
 		await process_frame
 	await frames(3)
 

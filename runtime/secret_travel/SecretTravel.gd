@@ -86,15 +86,15 @@ func perform() -> bool:
 	if STATE.discover(session.state.world_state,origin): session.save_game()
 	var reason:=block_reason()
 	if not reason.is_empty(): session.show_message(reason); return true
-	session._menu("Rede de passagens")
+	session.menu("Rede de passagens")
 	for id in SITES:
 		if id==origin: continue
 		var allowed: bool=_known(id)
 		if id=="desert": allowed=allowed and preload("res://world/north_gateway/NorthGatewayPolicy.gd").campaign_completed(session.state.campaign.snapshot())
-		session._button(str(SITES[id].title)+( "" if allowed else " · acesso não descoberto"),_select.bind(origin,id))
+		session.button(str(SITES[id].title)+( "" if allowed else " · acesso não descoberto"),_select.bind(origin,id))
 		var button: Button=session.column.get_child(session.column.get_child_count()-1)
 		button.disabled=not allowed
-	session._button("Voltar",session.close_menu)
+	session.button("Voltar",session.close_menu)
 	return true
 
 func _select(origin: String,id: String) -> void:

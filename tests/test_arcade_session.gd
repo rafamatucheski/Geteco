@@ -136,7 +136,7 @@ func run() -> void:
 	world.player.teleport(session.room.interaction_points.arcade_blocks+Vector3.UP*.04)
 	await frames(3)
 	check(runtime.perform("blocks"),"reopen for interruption")
-	session._menu("Teste de interrupção")
+	session.menu("Teste de interrupção")
 	check(not runtime.active and session.modal and session.panel.visible,"replacement modal closes arcade without unlocking new modal")
 	session.close_menu()
 	check(runtime.perform("blocks"),"reopen after replacement modal")

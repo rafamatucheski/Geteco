@@ -30,16 +30,19 @@ class Session extends Node:
 			child.queue_free()
 		modal = true
 		panel.show()
+	func menu(_title: String) -> void: _menu(_title)
 	func _button(label: String, action: Callable) -> void:
-		var button := Button.new()
-		button.text = label
-		button.pressed.connect(action)
-		column.add_child(button)
+		var entry := Button.new()
+		entry.text = label
+		entry.pressed.connect(action)
+		column.add_child(entry)
+	func button(label: String, action: Callable) -> void: _button(label, action)
 	func close_menu() -> void:
 		modal = false
 		panel.hide()
 	func save_game() -> bool: return true
 	func _transaction() -> String: return "isolated-special-voice"
+	func transaction() -> String: return _transaction()
 	func show_message(text: String) -> void: notice = text
 
 class Guard extends "res://gameplay/urban_v1/HarborPortSecurity.gd":
@@ -142,7 +145,7 @@ func run() -> void:
 	cemetery.free()
 	# O mesmo helper também resolve o português independente do locale da legenda.
 	settings.voice_language = "pt_BR"
-	session._menu("phone")
+	session.menu("phone")
 	var caption := Label.new()
 	session.column.add_child(caption)
 	var portuguese := SPOKEN_LINE.attach(caption, "Alô?", "dante")

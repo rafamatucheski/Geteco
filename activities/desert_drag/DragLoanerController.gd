@@ -39,7 +39,7 @@ func _blocked(identity: String = "") -> String:
 
 func open() -> bool:
 	if race.active or session.modal or not session.ready_for_play: return false
-	session._menu("Carro da oficina")
+	session.menu("Carro da oficina")
 	var label := Label.new()
 	label.text="Empréstimo gratuito. Ao carregar, você volta ao pátio com seu carro preservado."
 	label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
@@ -47,9 +47,9 @@ func open() -> bool:
 	session.column.add_child(label)
 	if not is_instance_valid(car):
 		for identity in MODELS:
-			session._button("Retirar "+str(CARS.spec(identity).label),func(): _choose(identity))
-	if is_instance_valid(car): session._button("Devolver carro da oficina",_return_action)
-	session._button("Voltar ao quadro",func(): session.close_menu(); race.board_controller.open_board())
+			session.button("Retirar "+str(CARS.spec(identity).label),func(): _choose(identity))
+	if is_instance_valid(car): session.button("Devolver carro da oficina",_return_action)
+	session.button("Voltar ao quadro",func(): session.close_menu(); race.board_controller.open_board())
 	return true
 
 func _choose(identity: String) -> void:

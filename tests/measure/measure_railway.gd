@@ -74,7 +74,7 @@ func sample(id: String) -> void:
 func prepare_station(id: String) -> bool:
 	var destination: Dictionary=preload("res://world/railway/RailwayNetwork.gd").get_station(id)
 	var point: Vector3=destination.entry
-	var token: int=world.session._begin_transition("railway_measurement")
+	var token: int=world.session.begin_transition("railway_measurement")
 	if token<0: return false
 	world.player.set_physics_process(false)
 	var region=world.production._mount_region(str(destination.region),point)
@@ -93,7 +93,7 @@ func prepare_station(id: String) -> bool:
 		world.production._commit_logical_region(str(destination.region))
 		world.camera.initialized=false
 	world.player.set_physics_process(true)
-	world.session._finish_transition(token)
+	world.session.finish_transition(token)
 	if "--railway-roof-review" in OS.get_cmdline_user_args(): frame_roof(id)
 	return clear
 

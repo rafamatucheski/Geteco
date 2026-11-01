@@ -161,7 +161,7 @@ func perform(target: String) -> bool:
 	if authorized_entry or authorized_visit:
 		_guard_notice("GUARDA: Sua passagem já está autorizada.", _talking_staff)
 		return true
-	session._menu("Portaria")
+	session.menu("Portaria")
 	for guard in _staff:
 		if is_instance_valid(guard) and guard.get("dead") != true and guard.global_position.distance_to(session.world.player.global_position) <= GUARD_RANGE:
 			_talking_staff = guard
@@ -174,8 +174,8 @@ func perform(target: String) -> bool:
 	session.column.add_child(speech)
 	var spoken := ACTOR_VOICE.speak(_talking_staff, speech.text.trim_prefix("GUARDA: "), VOICE_BINDING.resolve(_talking_staff, "guarda", "spoken_notice:gameplay/urban_v1/HarborPortSecurity.gd"), speech)
 	speech.text = str(spoken.get("message", speech.text))
-	session._button("Pagar propina · R$ 100", _pay_bribe)
-	session._button("Dar meia-volta", Callable(session, "close_menu"))
+	session.button("Pagar propina · R$ 100", _pay_bribe)
+	session.button("Dar meia-volta", Callable(session, "close_menu"))
 	return true
 
 func _pay_bribe() -> void:
@@ -183,7 +183,7 @@ func _pay_bribe() -> void:
 	if not session.modal or not is_instance_valid(_conversation_content) or not _conversation_content.is_inside_tree(): return
 	if not is_instance_valid(_talking_staff) or _talking_staff.get_meta("workplace_threatened", false): return
 	ACTOR_VOICE.stop(_talking_staff)
-	if not session.state.spend(100, "south_port_bribe:" + session._transaction()):
+	if not session.state.spend(100, "south_port_bribe:" + session.transaction()):
 		_guard_notice("GUARDA: São R$ 100. Saldo insuficiente.", _talking_staff)
 		return
 	# Guardas dentro do pátio também podem autorizar um visitante que já está lá.

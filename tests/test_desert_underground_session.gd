@@ -44,7 +44,7 @@ func run() -> void:
 	for i in 30: await physics_frame
 	world.player.teleport(entry + Vector3(0, 0.08, 0.0))
 	for i in 60: await physics_frame
-	var hatch: Node3D = session._find_sewer_hatch(id)
+	var hatch: Node3D = session.find_sewer_hatch(id)
 	check(is_instance_valid(hatch), id + ": estrutura externa carregada")
 	if not is_instance_valid(hatch): quit(1); return
 	check(hatch.name == id and is_zero_approx(hatch.open_amount), id + ": fechada e com o nome do lugar")

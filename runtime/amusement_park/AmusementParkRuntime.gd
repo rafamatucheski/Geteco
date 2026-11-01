@@ -156,7 +156,7 @@ func start_ride() -> bool:
 	if not _platform_clear(world.player.global_position):
 		session.show_message("Aguarde liberar a plataforma de embarque.")
 		return false
-	if not session.state.economy.spend(RIDE_PRICE,"coaster:"+session._transaction()):
+	if not session.state.economy.spend(RIDE_PRICE,"coaster:"+session.transaction()):
 		session.show_message("Entrada: $5. Dinheiro insuficiente.")
 		return false
 	# Persiste o débito num checkpoint no chão, antes de os saves ficarem travados pelo brinquedo.

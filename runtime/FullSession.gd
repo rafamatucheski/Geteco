@@ -296,7 +296,7 @@ const CANCEL_STEPS := {
 }
 
 ## Roda uma etapa de CANCEL_STEPS. Devolve false só quando um passo abort_if_active recusou.
-func _cancel_for(stage: StringName) -> bool:
+func cancel_for(stage: StringName) -> bool:
 	if is_instance_valid(equipment_wheel): equipment_wheel.cancel()
 	if not CANCEL_STEPS.has(stage):
 		push_error("Etapa de limpeza desconhecida: %s" % stage)
@@ -312,6 +312,7 @@ func _cancel_for(stage: StringName) -> bool:
 		system.callv(method, step[2] if step.size() > 2 else [])
 		if rule == "abort_if_active" and system.active: return false
 	return true
+func _cancel_for(stage: StringName) -> bool: return cancel_for(stage)
 
 func _cancel_system(path: String) -> Object:
 	if path.is_empty(): return self
@@ -321,7 +322,7 @@ func _cancel_system(path: String) -> Object:
 		if not is_instance_valid(system): return null
 	return system
 
-func _begin_transition(kind: String, _vehicle := false) -> int:
+func begin_transition(kind: String, _vehicle := false) -> int:
 	if not transition_kind.is_empty() or (controller != null and controller.travel_busy): return -1
 	if not _cancel_for(&"transition"): return -1
 	transition_generation += 1
@@ -330,30 +331,36 @@ func _begin_transition(kind: String, _vehicle := false) -> int:
 	# da sessão. Mantém ela ligada em toda geração, não só nas transferências de veículo.
 	vehicle_transition_busy = true
 	return transition_generation
+func _begin_transition(kind: String, _vehicle := false) -> int: return begin_transition(kind, _vehicle)
 
-func _owns_transition(token: int) -> bool:
+func owns_transition(token: int) -> bool:
 	return token > 0 and token == transition_generation and not transition_kind.is_empty()
+func _owns_transition(token: int) -> bool: return owns_transition(token)
 
-func _finish_transition(token: int) -> void:
+func finish_transition(token: int) -> void:
 	if not _owns_transition(token): return
 	transition_kind = ""
 	vehicle_transition_busy = false
+func _finish_transition(token: int) -> void: finish_transition(token)
 
-func _routine_director():
+func routine_director():
 	return world.get_node_or_null("V1RoutineDirector") if world != null else null
+func _routine_director(): return routine_director()
 
-func _refresh_routine_context() -> void:
+func refresh_routine_context() -> void:
 	var routines = _routine_director()
 	if routines != null: routines.refresh_context()
 	if urban_operations != null: urban_operations.refresh_context()
+func _refresh_routine_context() -> void: refresh_routine_context()
 
-func _sync_location_presentation() -> void:
+func sync_location_presentation() -> void:
 	if is_instance_valid(weather): weather._update()
 	prompt.text = ""
 	world.gameplay._update_visual()
 	var city_look := world.get_node_or_null("CityLook") as Node
 	if city_look != null: city_look._refresh_silhouette()
 	if world.hud.has_method("refresh_from_state"): world.hud.refresh_from_state()
+func _sync_location_presentation() -> void: sync_location_presentation()
 
 func _vehicle_transition_snapshot(car: CharacterBody3D) -> Dictionary:
 	return {
@@ -402,9 +409,10 @@ func _restore_vehicle_transition_snapshot(snapshot: Dictionary, car: CharacterBo
 	world.camera.locked = bool(snapshot.camera_locked)
 	world.camera.initialized = false
 
-func _restore_transition_player_lock(previous: bool, token: int) -> void:
+func restore_transition_player_lock(previous: bool, token: int) -> void:
 	if token != transition_generation or world.gameplay.health <= 0 or rescue_pending or arrest_pending: return
 	world.player.input_locked = previous
+func _restore_transition_player_lock(previous: bool, token: int) -> void: restore_transition_player_lock(previous, token)
 
 func _discard_place_candidate(candidate: Node3D, owned: bool) -> void:
 	if not is_instance_valid(candidate): return
@@ -1623,7 +1631,7 @@ func leave_place() -> bool:
 	save_game()
 	return true
 
-func _find_sewer_hatch(place_id := "harbor_sewer") -> Node3D:
+func find_sewer_hatch(place_id := "harbor_sewer") -> Node3D:
 	if controller == null or controller.region == null: return null
 	var target := Vector2(1182.0, 2114.0) / 16.0
 	if place_id != "harbor_sewer":
@@ -1638,6 +1646,7 @@ func _find_sewer_hatch(place_id := "harbor_sewer") -> Node3D:
 				best_distance = distance
 				best = node
 	return best
+func _find_sewer_hatch(place_id := "harbor_sewer") -> Node3D: return find_sewer_hatch(place_id)
 
 func _close_sewer_hatch_for_transition(token: int) -> void:
 	if not is_instance_valid(sewer_hatch) or not sewer_hatch.has_method("set_open_amount"): return
@@ -1735,7 +1744,7 @@ func _install_workplace_reaction(actor: Node3D, model: Node3D) -> void:
 	if reaction != null and not reaction.threat_started.is_connected(_on_workplace_threat_started):
 		reaction.threat_started.connect(_on_workplace_threat_started)
 
-func _service_threatened(npc_id := "") -> bool:
+func service_threatened(npc_id := "") -> bool:
 	if npc_id.is_empty() and is_instance_valid(static_service_actor) and static_service_actor.get_meta("workplace_threatened", false): return true
 	for actor in room_npcs:
 		if not is_instance_valid(actor) or not actor.is_visible_in_tree(): continue
@@ -1746,6 +1755,7 @@ func _service_threatened(npc_id := "") -> bool:
 		for actor in robberies._actors:
 			if is_instance_valid(actor) and not actor.guard and actor.get_meta("workplace_threatened", false): return true
 	return false
+func _service_threatened(npc_id := "") -> bool: return service_threatened(npc_id)
 
 func _on_workplace_threat_started(actor: Node3D) -> void:
 	var local_staff: bool = actor == static_service_actor or room_npcs.has(actor) or (robberies != null and robberies._actors.has(actor))
@@ -1992,12 +2002,13 @@ func interact() -> bool:
 	if activities.perform(str(action.get("target",""))): return true
 	return mission_world.perform(str(action.get("target","")))
 
-func _perform_urban_action(target: String) -> bool:
+func perform_urban_action(target: String) -> bool:
 	if urban_operations == null: return false
 	var quest = urban_operations.get("village_quest")
 	if target == "truckers_village_tonico" and is_instance_valid(quest) and not quest.data.started:
 		if not save_game(true): return false
 	return urban_operations.perform(target)
+func _perform_urban_action(target: String) -> bool: return perform_urban_action(target)
 
 func _intro_interact(id: String) -> bool:
 	if id == "maciota" and state.intro.stage == "meet_maciota" and not save_game(true): return false
@@ -2190,13 +2201,14 @@ func _input(event: InputEvent) -> void:
 		elif event.physical_keycode == KEY_F9: load_game()
 
 ## Um comando sincroniza o cinto e o acessório de arma utilizável.
-func _toggle_weapon_flashlight() -> void:
+func toggle_weapon_flashlight() -> void:
 	if world.driving.occupied: return
 	if world.gameplay.toggle_personal_lights(): return
 	var id: String = world.gameplay.equipped()
 	if not state.can_attack() or id in ["", "fists"]: return
 	if not preload("res://gameplay/WeaponCustomization.gd").installed(world.gameplay.customization, id):
 		show_message("Instale uma lanterna nesta arma na Ammu-Nation.")
+func _toggle_weapon_flashlight() -> void: toggle_weapon_flashlight()
 
 const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
 ## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
@@ -2317,7 +2329,7 @@ func _set_objective(text: String, hint := false) -> void:
 func navigation_destination() -> Dictionary:
 	return preload("res://runtime/NavigationDestination.gd").resolve(self)
 
-func _update_world_indicator() -> void:
+func update_world_indicator() -> void:
 	if upside_world != null and upside_world.busy():
 		if is_instance_valid(marker): marker.hide()
 		if is_instance_valid(arrow): arrow.hide()
@@ -2369,15 +2381,19 @@ func _update_world_indicator() -> void:
 	arrow.visible = state.place_id.is_empty() and not Rect2(40,90,1200,520).has_point(screen)
 	arrow.position = Vector2(clampf(screen.x,40,1220),clampf(screen.y,90,610))
 	arrow.rotation = (screen-Vector2(640,360)).angle()+PI/2
+func _update_world_indicator() -> void: update_world_indicator()
 
 func _menu(title: String) -> void: _menus._menu(title)
-func _button(text: String, action: Callable) -> void: _menus._button(text, action)
+func menu(title: String) -> void: _menu(title)
+func button(text: String, action: Callable) -> void: _menus._button(text, action)
+func _button(text: String, action: Callable) -> void: button(text, action)
 func _focus_menu_button(reference: WeakRef) -> void: _menus._focus_menu_button(reference)
 func close_menu() -> void: _menus.close_menu()
 func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void: _menus.show_dialogue(dialogue_lines, on_done)
 
 func interrupt_dialogue() -> void: _menus.interrupt_dialogue()
-func _advance_dialogue() -> void: _menus._advance_dialogue()
+func advance_dialogue() -> void: _menus._advance_dialogue()
+func _advance_dialogue() -> void: advance_dialogue()
 
 func _present_current_dialogue(restart_audio: bool) -> void: _menus._present_current_dialogue(restart_audio)
 
@@ -2403,7 +2419,8 @@ func _show_services_available(service: String) -> void: _menus._show_services_av
 func _show_shop(category: String) -> void: _menus._show_shop(category)
 func _show_customization() -> void: _menus._show_customization()
 func _show_saber_customization() -> void: _menus._show_saber_customization()
-func _transaction() -> String: return _menus._transaction()
+func transaction() -> String: return _menus._transaction()
+func _transaction() -> String: return transaction()
 func apply_outfit() -> void:
 	# A integração de paleta é aplicada pelo adaptador original de shader da roupa do Dante.
 	var outfit: String = state.economy.outfit
@@ -2439,7 +2456,8 @@ func show_settings() -> void: _menus.show_settings()
 func show_controls() -> void: _menus.show_controls()
 func show_map() -> void: _menus.show_map()
 func _update_reward() -> void: _rewards._update_reward()
-func _collect_reward(source: Node3D) -> void: _rewards._collect_reward(source)
+func collect_reward(source: Node3D) -> void: _rewards._collect_reward(source)
+func _collect_reward(source: Node3D) -> void: collect_reward(source)
 func _refresh_reward_feedback() -> void: _rewards._refresh_reward_feedback()
 ## M06-C "Turno da noite" (VerticeNightShift), filho da Vértice em PortLogistics.
 func _vertice_night() -> Node:
@@ -2476,8 +2494,11 @@ func _exit_tree() -> void:
 	if is_instance_valid(death_presentation): death_presentation.queue_free()
 
 
-func _on_arrest() -> void: await _recovery._on_arrest()
+func on_arrest() -> void: await _recovery._on_arrest()
+func _on_arrest() -> void: await on_arrest()
 
-func _on_death() -> void: await _recovery._on_death()
+func on_death() -> void: await _recovery._on_death()
+func _on_death() -> void: await on_death()
 
 func _respawn() -> void: await _recovery._respawn()
+func respawn() -> void: await _respawn()

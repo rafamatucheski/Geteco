@@ -126,7 +126,7 @@ func run() -> void:
 	for entry in race.racers:
 		check(entry.car.collision_layer!=0 and entry.car.collision_mask!=0,"physical collision retained: "+str(entry.name))
 	var before_menu: float = race.countdown
-	session._menu("Pausa da prova")
+	session.menu("Pausa da prova")
 	await frames(30)
 	check(race.active and is_equal_approx(float(race.countdown),before_menu),"modal pauses countdown without cancelling race")
 	check(car.input_locked and race.racers.all(func(e): return absf(float(e.car.speed))<.01 and is_zero_approx(float(e.car.steer_input))),"modal keeps player locked and all six rivals stopped without residual steering")
@@ -137,7 +137,7 @@ func run() -> void:
 		await drive_race(race,car)
 	else:
 		var elapsed_before: float = race.racers[6].run.elapsed
-		session._menu("Pausa após a largada")
+		session.menu("Pausa após a largada")
 		await frames(30)
 		check(race.active and is_equal_approx(float(race.racers[6].run.elapsed),elapsed_before),"modal during live race pauses time without false-start failure")
 		session.close_menu()

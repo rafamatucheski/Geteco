@@ -78,7 +78,7 @@ func run() -> void:
 		# Safe abort and immediate retry prove countdown unlocks normal vehicle input.
 		if race.save_block_reason().is_empty(): fail("Active race did not block save")
 		var count_before: float=race.countdown
-		world.session._menu("Pausa")
+		world.session.menu("Pausa")
 		for i in 12: await physics_frame
 		if not is_equal_approx(count_before,race.countdown): fail("Modal failed to pause countdown")
 		world.session.close_menu()
@@ -88,7 +88,7 @@ func run() -> void:
 		while race.active and race.phase=="countdown": await physics_frame
 		if not race.active: fail("Countdown failed")
 		var elapsed_before: float=race.elapsed
-		world.session._menu("Pausa")
+		world.session.menu("Pausa")
 		for i in 12: await physics_frame
 		if not is_equal_approx(elapsed_before,race.elapsed): fail("Modal failed to pause running clock")
 		world.session.close_menu()

@@ -66,7 +66,7 @@ func run() -> void:
 	world.player.teleport(session.room.interaction_points.police + Vector3(0,.06,.9))
 	await frames(3)
 	check(session.services.perform("police"),"mission officer remains available for dialogue")
-	while session.dialogue_open: session._advance_dialogue()
+	while session.dialogue_open: session.advance_dialogue()
 	check(await session.leave_place(),"leave precinct")
 	session.state.equip_weapon("pistol")
 	await frames(30)

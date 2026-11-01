@@ -49,7 +49,7 @@ func run() -> void:
 		session.controller.region.set_focus(access)
 		world.player.teleport(access + Vector3(-1.0, 0.08, 0.0))
 		for i in 30: await physics_frame
-		var hatch: Node3D = session._find_sewer_hatch(id)
+		var hatch: Node3D = session.find_sewer_hatch(id)
 		check(is_instance_valid(hatch), id + ": tampa carregada na calçada")
 		if not is_instance_valid(hatch): continue
 		check(hatch.name == id and is_zero_approx(hatch.open_amount), id + ": tampa fechada e com o nome do lugar")

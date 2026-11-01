@@ -173,11 +173,11 @@ func run() -> void:
 	session.state.equip_weapon("pistol")
 	await settle(2)
 	session.notice_time = 0
-	session._toggle_weapon_flashlight()
+	session.toggle_weapon_flashlight()
 	check(session.notice_time > 0 and "Ammu-Nation" in session.notice.text, "Lanterna ausente mostra o aviso")
 	gameplay.customization["pistol"] = {"owned": true, "installed": true, "owned_parts": [], "parts": {}}
 	gameplay.visual_id = "@rebuild"
-	session._toggle_weapon_flashlight()
+	session.toggle_weapon_flashlight()
 	await settle(3)
 	check(gameplay.flashlight_enabled and gameplay.flashlight.visible, "Lanterna instalada acende")
 

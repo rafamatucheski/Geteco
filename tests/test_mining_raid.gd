@@ -96,7 +96,7 @@ func _fight_and_take_bag(prove_damage: bool) -> bool:
 		check(not world.player.input_locked and not raid.save_block_reason().is_empty(), "combat keeps controls and blocks unsafe saving")
 		await photo("raid-real-incoming-damage")
 		world.gameplay.toggle_god_mode()
-		world.session._menu("Pausa da validação")
+		world.session.menu("Pausa da validação")
 		await wait_seconds(.45)
 		var before_pause := shots
 		var paused_positions: Dictionary = {}

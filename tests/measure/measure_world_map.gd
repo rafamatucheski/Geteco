@@ -210,7 +210,7 @@ func run() -> void:
 		if baseline.reload()!=OK: fail("WORLD_MAP baseline could not load: "+baseline_path); return
 		results.baseline_path=baseline_path; results.phase="baseline_open"; save_results()
 		var baseline_began := Time.get_ticks_usec()
-		world.session._menu("Mapa")
+		world.session.menu("Mapa")
 		var old_map=baseline.new(); old_map.controller=world.session.controller
 		world.hud.add_child(old_map); world.session.panel.hide(); world.session.menu_closed=old_map.queue_free
 		results.baseline_open_ms=float(Time.get_ticks_usec()-baseline_began)/1000.0; save_results()

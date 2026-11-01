@@ -1554,7 +1554,7 @@ func _commit_logical_region(next_region: String) -> void:
 	if is_instance_valid(urban_transit): urban_transit.on_region_changed()
 	if session != null:
 		session.sync_dispatch_location()
-		session._refresh_routine_context()
+		session.refresh_routine_context()
 		if is_instance_valid(session.weather): session.weather._update()
 	if is_instance_valid(world_audio) and world_audio.has_method("on_region_changed"):
 		world_audio.on_region_changed(previous,next_region)
@@ -2479,7 +2479,7 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 		session.show_message("Destino ocupado ou sem solo. Viagem não realizada.")
 		return
 	# Quem para na viagem fica no registro da sessão (FullSession.CANCEL_STEPS, etapa "travel").
-	session._cancel_for(&"travel")
+	session.cancel_for(&"travel")
 	world.gameplay.on_region_changed()
 	world.gameplay.emergency.reset_region()
 	# A viagem rápida descarrega a população. Travessias lógicas de costura cidade/montanha

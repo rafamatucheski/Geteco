@@ -191,7 +191,7 @@ func perform(target: Variant) -> bool:
 
 func _open_home_purchase(home: String) -> void:
 	var quote := residence.quote(home)
-	session._menu("Comprar casa")
+	session.menu("Comprar casa")
 	var scroll: ScrollContainer = session.column.get_parent()
 	var previous_minimum := scroll.custom_minimum_size
 	var previous_horizontal := scroll.horizontal_scroll_mode
@@ -214,14 +214,14 @@ func _open_home_purchase(home: String) -> void:
 		credit.text = String(TranslationServer.translate("Troca da casa atual · R$ %d")) %int(quote.refund)
 		credit.add_theme_font_size_override("font_size",14)
 		session.column.add_child(credit)
-	session._button(String(TranslationServer.translate("Comprar · R$ %d")) %int(quote.get("due",0)),func():
+	session.button(String(TranslationServer.translate("Comprar · R$ %d")) %int(quote.get("due",0)),func():
 		session.close_menu()
 		if residence.buy(home):
 			REWARD_AUDIO.play(self,"achievement")
 			_commit()
 			session.show_message("Casa adquirida.")
 		else: session.show_message("Compra indisponível ou saldo insuficiente."))
-	session._button("Cancelar",session.close_menu)
+	session.button("Cancelar",session.close_menu)
 
 func _phone_position(id: String) -> Vector3:
 	var spec: Dictionary = Definitions.races(session.state.region_id)[id]
@@ -234,14 +234,14 @@ func _open_race_phone(action: String) -> void:
 	var id := action.get_slice(":",1)
 	var spec: Dictionary = Definitions.races(session.state.region_id)[id]
 	if _phones.has(id): _phones[id].silence()
-	session._menu(str(spec.name))
+	session.menu(str(spec.name))
 	var details := Label.new()
 	details.text = "%s · Prêmio R$ %d"%[spec.length_label,int(spec.reward)]
 	session.column.add_child(details)
-	session._button("Entrar na corrida",func():
+	session.button("Entrar na corrida",func():
 		session.close_menu()
 		if nearest_action().get("target","") == action: _start_motorsport(action))
-	session._button("Desligar",session.close_menu)
+	session.button("Desligar",session.close_menu)
 
 func can_enter_home(id: String) -> bool:
 	return not Definitions.HOMES.PROPERTIES.has(id) or residence.can_enter(id)

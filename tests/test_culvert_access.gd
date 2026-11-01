@@ -56,7 +56,7 @@ func run() -> void:
 	world.player.automatic_direction = Vector3.ZERO
 	world.production.region.prepare_collision_at(entry)
 	await frames(60)
-	var hatch: Node3D = session._find_sewer_hatch(ID)
+	var hatch: Node3D = session.find_sewer_hatch(ID)
 	check(is_instance_valid(hatch),"exterior streamed")
 	if not is_instance_valid(hatch): quit(1); return
 	var inward: Vector3 = -hatch.global_basis.z

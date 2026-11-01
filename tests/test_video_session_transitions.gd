@@ -82,7 +82,7 @@ func _run() -> void:
 		check(session.nearest().get("id", "") != "exit", "bank walk-up exit offers no E action")
 		session.prompt.text = "E  Conversar"
 		world.gameplay.health = 0
-		session._on_death()
+		session.on_death()
 		check(session.prompt.text.is_empty() and session.nearest().is_empty(), "death clears interaction prompt immediately")
 		for _i in 600:
 			await physics_frame

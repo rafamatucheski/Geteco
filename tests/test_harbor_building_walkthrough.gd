@@ -255,7 +255,7 @@ func run() -> void:
 					var receipt_before: bool = world.session.state.world_state.rewards.has(point.reward.id)
 					var receipts_before: Dictionary = world.session.state.economy.snapshot().transactions
 					world.player.teleport(point.position+Vector3.UP*.04)
-					world.session._collect_reward(room)
+					world.session.collect_reward(room)
 					collected_id = str(point.reward.id)
 					collected_amount = int(point.reward.amount)
 					check(world.session.state.world_state.rewards.has(collected_id),label+" cash receipt")
@@ -265,7 +265,7 @@ func run() -> void:
 						if str(receipt_id).begins_with("reward:achievement:") and not receipts_before.has(receipt_id): extra_achievements += int(receipts_after[receipt_id].amount)
 					check(world.session.state.economy.balance==balance_before+(0 if receipt_before else collected_amount)+extra_achievements,label+" exact cash plus recorded achievements")
 					var balance_after: int = world.session.state.economy.balance
-					world.session._collect_reward(room)
+					world.session.collect_reward(room)
 					check(world.session.state.economy.balance==balance_after,label+" no duplicate cash")
 			await photo(label+"-floor-"+str(index))
 		check(room.is_rooftop() and not world.camera.locked,label+" rooftop exterior camera")

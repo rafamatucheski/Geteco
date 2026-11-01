@@ -80,7 +80,7 @@ func open(identity: String = "") -> bool:
 	# A saved registration never resumes by itself after loading a checkpoint.
 	if _armed.is_empty() and not PROGRESS.data(session.state.world_state).current.is_empty(): PROGRESS.cancel(session.state.world_state); session.save_game()
 	elif paid>0: session.save_game()
-	session._menu("Desafios dos rivais")
+	session.menu("Desafios dos rivais")
 	session.panel.hide()
 	session.menu_closed=dismiss
 	layer.show()

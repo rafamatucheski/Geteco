@@ -118,10 +118,10 @@ func perform(target: String) -> bool:
 	target = target.trim_prefix("truckers_village_")
 	match target:
 		"counter":
-			session._menu("Posto do Tonico")
-			session._button("Comprar bebida · R$ 20 · +25 vida",_counter_action.bind("buy_drink"))
-			session._button("Assaltar caixa",_counter_action.bind("rob_register"))
-			session._button("Voltar",session.close_menu)
+			session.menu("Posto do Tonico")
+			session.button("Comprar bebida · R$ 20 · +25 vida",_counter_action.bind("buy_drink"))
+			session.button("Assaltar caixa",_counter_action.bind("rob_register"))
+			session.button("Voltar",session.close_menu)
 			_compact_counter_menu()
 		"tonico":
 			if data.completed:

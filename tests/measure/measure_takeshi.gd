@@ -19,7 +19,7 @@ func finish_list_dialogue(session) -> bool:
 	# da missão. Uma missão ativa nunca pode contornar a proteção normal de save.
 	var advances := 0
 	while session.dialogue_open and advances<40:
-		session._advance_dialogue()
+		session.advance_dialogue()
 		advances += 1
 	return not session.dialogue_open and session.state.campaign.has_progress("cobra_finale") and session.state.campaign.active_id.is_empty()
 

@@ -82,7 +82,7 @@ func run() -> void:
 		if session.desert.nearest_action().get("target", "") == "vicente": break
 	check(session.desert.nearest_action().get("target", "") == "vicente", "conversa com Vicente oferecida (%s)" % session.desert.nearest_action().get("target", "nenhuma"))
 	check(session.desert.perform(session.desert.nearest_action()) and session.dialogue_open, "conversa do encontro abre")
-	for i in 3: session._advance_dialogue()
+	for i in 3: session.advance_dialogue()
 	await photo("01-encontro")
 	await die()
 	check(STATE.stage(session.state.world_state) == "" and not STORY.data(session.state.world_state).met_vicente, "morte no meio da conversa não avança a missão")
@@ -103,7 +103,7 @@ func run() -> void:
 	check(CONTRACT.valid(session.state.world_state, session.state.economy._data), "save do deserto válido na etapa do motel")
 	# --- Prisão: a etapa fica ---
 	world.gameplay.stars = 1
-	session._on_arrest()
+	session.on_arrest()
 	check(await wait_recovered(session), "custódia termina")
 	check(STATE.stage(session.state.world_state) == "motel", "prisão não perde a etapa")
 	check(session.save_game(), "checkpoint gravado depois da prisão")
@@ -266,7 +266,7 @@ func ready_world() -> bool:
 	if not check(world.get("session") != null and world.session.ready_for_play, "sessão real carregou"): return false
 	for i in 12:
 		if not world.session.dialogue_open: break
-		world.session._advance_dialogue()
+		world.session.advance_dialogue()
 	if world.session.modal: world.session.close_menu()
 	return true
 
@@ -348,7 +348,7 @@ func close_dialogue() -> int:
 	var count := 0
 	for i in 40:
 		if not world.session.dialogue_open: break
-		world.session._advance_dialogue()
+		world.session.advance_dialogue()
 		count += 1
 		await process_frame
 	return count
@@ -565,7 +565,7 @@ func story_race(identity: String) -> Dictionary:
 	var exit_deadline := Time.get_ticks_msec() + 20000
 	while world.driving.occupied and Time.get_ticks_msec() < exit_deadline:
 		# O painel de resultado da arrancada é um menu: o jogador fecha antes de sair do carro.
-		if session.dialogue_open: session._advance_dialogue()
+		if session.dialogue_open: session.advance_dialogue()
 		elif session.modal: session.close_menu()
 		if not world.driving.is_body_transition_active() and is_instance_valid(world.driving.car) and absf(float(world.driving.car.speed)) < .5: world.driving.leave()
 		await frames(30)

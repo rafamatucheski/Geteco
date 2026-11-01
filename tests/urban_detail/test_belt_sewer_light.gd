@@ -56,7 +56,7 @@ func run() -> void:
 		world.session.controller.region.set_focus(definition.entry_position)
 		world.player.teleport(definition.entry_position+Vector3(-1.2,.08,1.0))
 		await settle(60)
-		var hatch: Node3D = world.session._find_sewer_hatch(id)
+		var hatch: Node3D = world.session.find_sewer_hatch(id)
 		if is_instance_valid(hatch):
 			world.player.teleport(hatch.to_global(Vector3(0,.08,1.1)))
 			await settle(3)
@@ -77,9 +77,9 @@ func run() -> void:
 		world.gameplay.state.equip_weapon("pistol")
 		await settle()
 		check(world.gameplay.belt_flashlight.lamp.is_visible_in_tree(), "light remains with pistol " + id)
-		world.session._toggle_weapon_flashlight()
+		world.session.toggle_weapon_flashlight()
 		check(not world.gameplay.belt_flashlight.enabled, "session input switches belt off " + id)
-		world.session._toggle_weapon_flashlight()
+		world.session.toggle_weapon_flashlight()
 		world.gameplay.state.equip_weapon("fists")
 		# Ambas possuídas: o comando compartilhado precisa chegar também ao acessório da arma.
 		world.gameplay.state.equip_weapon("pistol")

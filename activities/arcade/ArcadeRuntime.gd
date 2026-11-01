@@ -43,7 +43,7 @@ func perform(id: String) -> bool:
 		ui = preload("res://activities/arcade/ArcadeScreen.gd").new()
 		ui.adapter = self
 		add_child(ui)
-	session._menu(TITLES[id])
+	session.menu(TITLES[id])
 	session.panel.hide()
 	session.menu_closed = dismiss
 	cabinet = id

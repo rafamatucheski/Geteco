@@ -50,7 +50,7 @@ func _run() -> void:
 	session.controller.region.set_focus(access)
 	world.player.teleport(access + Vector3(-1.0, 0.08, 0.0))
 	for i in 12: await physics_frame
-	var hatch: Node3D = session._find_sewer_hatch()
+	var hatch: Node3D = session.find_sewer_hatch()
 	check(is_instance_valid(hatch), "production hatch streamed at the street access")
 	if not is_instance_valid(hatch): quit(1); return
 	if args.has("--diagnose-nearby"): _diagnose_nearby(hatch.global_position)

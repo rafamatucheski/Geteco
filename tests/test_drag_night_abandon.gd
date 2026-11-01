@@ -22,6 +22,7 @@ class SessionDouble extends Node:
 	var saved_world := {}
 	func is_transition_blocked() -> bool: return false
 	func _menu(_title: String) -> void: modal=true
+	func menu(_title: String) -> void: _menu(_title)
 	func save_game() -> bool:
 		if not race.open_meet.pending.is_empty(): return false
 		saves+=1

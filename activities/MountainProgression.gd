@@ -82,25 +82,25 @@ func stats() -> Dictionary:
 
 func show_services() -> void:
 	if not _at_counter(): return
-	session._menu("Ski")
+	session.menu("Ski")
 	if data.rental:
-		session._button("Devolver equipamento",func():
+		session.button("Devolver equipamento",func():
 			if not _at_counter(): session.close_menu(); return
 			_stop(); data.rental=false; data.equipment=false
 			session.apply_outfit(); session.close_menu(); _commit())
 		if not data.equipment:
-			session._button("Retirar skis e bastões",func():
+			session.button("Retirar skis e bastões",func():
 				if not _at_counter(): session.close_menu(); return
 				data.equipment=true; session.close_menu(); _commit())
 		# Trocar de traje no balcão não cobra de novo: a locação é do equipamento.
 		for suit in SUITS:
 			if suit == suit_outfit(): continue
-			session._button("Trocar para o traje %s" % SUITS[suit],func():
+			session.button("Trocar para o traje %s" % SUITS[suit],func():
 				if not _at_counter() or not data.rental: session.close_menu(); return
 				data.suit=suit; session.apply_outfit(); session.close_menu(); _commit())
 	else:
 		for suit in SUITS:
-			session._button("Alugar traje %s, skis e bastões · R$ 250" % SUITS[suit],func():
+			session.button("Alugar traje %s, skis e bastões · R$ 250" % SUITS[suit],func():
 				if not _at_counter() or data.rental: session.close_menu(); return
 				session.close_menu()
 				if not _open(): session.show_message("Locação: 08:00 às 18:00."); return
@@ -108,7 +108,7 @@ func show_services() -> void:
 				if not session.state.economy.spend(250,"ski_rental:%d"%serial): session.show_message("Saldo insuficiente."); return
 				data.rental_serial=serial; data.rental=true; data.equipment=true; data.suit=suit
 				session.apply_outfit(); _commit())
-	session._button("Fechar",session.close_menu)
+	session.button("Fechar",session.close_menu)
 	for child in session.column.get_children():
 		if child is Button:
 			child.grab_focus.call_deferred()

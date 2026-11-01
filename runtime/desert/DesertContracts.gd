@@ -52,20 +52,20 @@ func perform(action: Dictionary) -> bool:
 func open_contact(contact: String) -> bool:
 	if contact not in ["bia","raul"] or not _available(): return false
 	var state:=STATE.data(session.state.world_state)
-	session._menu("Bia" if contact=="bia" else "Raul")
-	session._button("Conversar",func():
+	session.menu("Bia" if contact=="bia" else "Raul")
+	session.button("Conversar",func():
 		session.close_menu()
 		session.desert.story.perform(contact,false))
 	for id in TITLES:
 		var step:=int(state[id])
 		var definition:=step_definition(id,step)
 		if definition.get("contact","")==contact:
-			session._button(str(definition.label),_choose.bind(id,step))
+			session.button(str(definition.label),_choose.bind(id,step))
 		elif step>0 and step<int(STATE.LAST[id]) and state.active!=id:
-			session._button("Acompanhar: "+str(TITLES[id]),_track.bind(id))
-	if not str(state.active).is_empty(): session._button("Acompanhar história principal",_track.bind(""))
+			session.button("Acompanhar: "+str(TITLES[id]),_track.bind(id))
+	if not str(state.active).is_empty(): session.button("Acompanhar história principal",_track.bind(""))
 	if is_instance_valid(session.desert.extras): session.desert.extras.append_tracking_buttons()
-	session._button("Voltar",session.close_menu)
+	session.button("Voltar",session.close_menu)
 	return true
 
 func _track(id: String) -> void:
