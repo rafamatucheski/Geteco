@@ -607,10 +607,6 @@ func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_s
 	# BodyFlight emite o Foley de chão no contato real, antes da restituição.
 
 
-func play_body_thud(point: Vector3, strength: float) -> void:
-	CONTACT_AUDIO.play_contact(self, null, point, lerpf(1.0, 6.0, clampf(strength, 0, 1)), "flesh")
-
-
 func play_prop_hit(point: Vector3, family: String, speed: float) -> void:
 	CONTACT_AUDIO.play_contact(self, null, point, speed, family, "prop|" + str(Vector3i((point * 2.0).round())))
 
