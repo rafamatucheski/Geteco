@@ -79,5 +79,11 @@ recibo — viagem é repetível e um recibo por bilhete encheria `MAX_OPAQUE_REC
   e painel de horário com texto na estação — exigem modelagem; ficam para quem tiver o editor.
 - Civis esperando/embarcando na plataforma (etapa 2 do plano) e som de anúncio gravado
   (hoje o anúncio é texto via `show_message`).
-- Sem reembolso se a viagem for cancelada por morte/prisão no meio (bilhete já usado).
+- Reembolso (`RailwayFares.refund`/`settle`, `Economy.refund_fee`): morte ou prisão no meio da
+  viagem devolvem o bilhete daquele embarque uma única vez (o bilhete é liquidado antes do crédito,
+  então dois eventos não dobram), com o aviso "Reembolso do trem: R$ N devolvidos." e sem o
+  "RECEBIDO" central (refund_fee não emite `money_gained`). Chegada liquida o bilhete: sem
+  reembolso. Carregar save e sair para o menu são recusados em viagem (`is_transition_blocked`);
+  se a cena cair mesmo assim, `_exit_tree` cancela sem reembolso, porque o save não tem o débito
+  (save bloqueado durante a viagem) e o estado em memória é descartado.
 - Decidir se a viagem rápida deve custar mais/menos que a viagem de trem (hoje igual).

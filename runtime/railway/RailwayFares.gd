@@ -34,4 +34,20 @@ static func buy(wallet, from_id: String, to_id: String, trip_serial: int, ticket
 			"reason": "Saldo insuficiente: o bilhete custa R$ %d." % price}
 	ticket["paid_key"] = key
 	ticket["amount"] = price
+	ticket["settled"] = false
 	return {"ok": true, "charged": price, "fare": price, "reason": ""}
+
+## Chegada ao destino: o bilhete foi usado e não pode mais ser devolvido.
+static func settle(ticket: Dictionary) -> void:
+	if ticket.has("paid_key"): ticket["settled"] = true
+
+## Viagem interrompida antes de chegar (morte, prisão): devolve o bilhete daquele embarque uma
+## única vez. `settled` vira true antes do crédito, então um segundo evento no mesmo quadro (morte
+## e prisão juntas, _exit_tree depois do cancelamento) encontra o bilhete já liquidado.
+## Devolve o valor creditado (0 quando não havia o que devolver).
+static func refund(wallet, ticket: Dictionary) -> int:
+	if not ticket.has("paid_key") or bool(ticket.get("settled", true)): return 0
+	var amount := int(ticket.get("amount", 0))
+	ticket["settled"] = true
+	if amount <= 0 or wallet == null or not wallet.refund_fee(amount): return 0
+	return amount

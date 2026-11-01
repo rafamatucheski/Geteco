@@ -521,6 +521,7 @@ func _arrive(target_id: String) -> void:
 	session.controller._commit_logical_region(str(destination.region))
 	if session.garage_rewards != null: session.garage_rewards.on_location_changed()
 	session.sync_dispatch_location()
+	FARES.settle(_ticket)
 	riding = false
 	landing = false
 	_boarding = false
@@ -571,10 +572,17 @@ func _restore_passenger() -> void:
 	if session.world.gameplay.health > 0: session.state.equip_weapon(str(_saved.weapon))
 	_saved.clear()
 
-func cancel_for_transition() -> void:
+func cancel_for_transition(refund_ticket := true) -> void:
 	# Morte/prisão chama isto para toda transição, incluindo portas sem relação.
 	# Só solta o estado e o fade de fato pertencentes a um fluxo ferroviário ativo.
 	if not busy() and _saved.is_empty(): return
+	# O save fica bloqueado durante a viagem (save_block_reason), então o débito do embarque só
+	# existe na memória: morte e prisão devolvem o bilhete para o resgate não salvar a perda.
+	# Carregar save e sair para o menu são recusados em viagem (is_transition_blocked); se a cena
+	# cair mesmo assim (_exit_tree), o estado em memória é descartado e não há o que devolver.
+	if refund_ticket and (riding or landing or _boarding) and session != null and session.state != null:
+		var refunded := FARES.refund(session.state.economy, _ticket)
+		if refunded > 0: notice.emit("Reembolso do trem: R$ %d devolvidos." % refunded)
 	var owns_fade := _boarding
 	_generation += 1
 	close_station_menu()
@@ -628,5 +636,5 @@ func _rolling_audio() -> AudioStreamWAV:
 func _exit_tree() -> void:
 	_generation += 1
 	if is_instance_valid(session) and is_instance_valid(session.world) and is_instance_valid(session.world.player) and is_instance_valid(session.world.camera):
-		cancel_for_transition()
+		cancel_for_transition(false)
 	if is_instance_valid(train): train.queue_free()

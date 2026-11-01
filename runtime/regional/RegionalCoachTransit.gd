@@ -241,9 +241,9 @@ func _arrive(target_id: String) -> void:
 	session.save_game()
 	if is_instance_valid(session.door_transition): await session.door_transition.fade_to(0.0, .25)
 
-func cancel_for_transition() -> void:
+func cancel_for_transition(refund_ticket := true) -> void:
 	var owned_fade := riding or landing or _boarding
-	super.cancel_for_transition()
+	super.cancel_for_transition(refund_ticket)
 	_release_coach()
 	if owned_fade and is_instance_valid(session.door_transition): session.door_transition.clear()
 

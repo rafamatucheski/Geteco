@@ -242,6 +242,15 @@ func charge_fee(amount: int) -> bool:
 	_data.balance -= amount
 	return true
 
+## Devolução de uma taxa cobrada por charge_fee nesta sessão (bilhete de trem interrompido).
+## Não emite money_gained de propósito: o aviso central "RECEBIDO" e o som de caixa tratariam o
+## estorno como ganho, e o jogador só está recuperando o que acabou de pagar.
+func refund_fee(amount: int) -> bool:
+	if cheat_infinite_money: return true
+	if amount <= 0 or int(_data.balance) > LIMIT - amount: return false
+	_data.balance += amount
+	return true
+
 ## Prisão: a polícia leva a munição que o jogador carrega (pente, reserva e munição nos bolsos
 ## e na mochila). As armas ficam, porque o recibo de compra e o de recompensa exigem a arma no
 ## save; porta-malas e bolsa largada no chão também ficam. Devolve quantos tiros saíram.
