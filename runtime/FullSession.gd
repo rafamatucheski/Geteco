@@ -533,7 +533,7 @@ func _process_traced(delta: float) -> void:
 	if is_instance_valid(world.driving.car) and is_instance_valid(world.driving.car.equipment): world.driving.car.equipment.set_input_enabled(not modal)
 	if not modal and not world.driving.occupied and not get_tree().paused and (building_social == null or not building_social.blocks_gameplay_input()):
 		var aim: Vector3 = world.gameplay.aim_from_screen(world.camera.aim_screen_position())
-		var controls = GameInput
+		var controls = get_node("/root/GameInput")
 		if controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx():
 			aim = controls.aim_target_3d(world.player,world.camera,delta)
 			# A intimidação no assalto e todo consumidor de mira sem tiro leem o mesmo
@@ -597,7 +597,7 @@ func _process_traced(delta: float) -> void:
 	if not modal and (prompt_input_action == "vehicle_interact" or action.get("id","") in ["port_container","railway","regional_coach","fishing","building_social"]):
 		var caption: String = str(action.get("label", "")).strip_edges()
 		if prompt_input_action == "vehicle_interact" and caption.is_empty(): caption = "Descer" if action.get("id", "") == "enter" else "Subir"
-		prompt.text = GameInput.hint(prompt_input_action)+"  "+caption
+		prompt.text = get_node("/root/GameInput").hint(prompt_input_action)+"  "+caption
 		hud_prompt = caption
 
 func _set_objective(text: String, hint := false) -> void:

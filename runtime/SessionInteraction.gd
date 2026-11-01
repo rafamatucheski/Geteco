@@ -295,7 +295,7 @@ func _intro_interact(id: String) -> bool:
 
 func _input(event: InputEvent) -> void:
 	if g.world.player != null and g.world.player.get_meta("developer_free_flight",false): return
-	GameInput.observe_event(event)
+	g.get_node("/root/GameInput").observe_event(event)
 	if is_instance_valid(g.equipment_wheel) and g.equipment_wheel.active:
 		g.equipment_wheel.handle_input(event)
 		g.get_viewport().set_input_as_handled()
@@ -356,11 +356,11 @@ func _input(event: InputEvent) -> void:
 	if g.police_motor_pool != null and g.police_motor_pool.blocks_input(): return
 	if not g.rebinding_action.is_empty():
 		if event is InputEventKey and event.pressed and not event.echo:
-			var controls = GameInput
+			var controls = g.get_node("/root/GameInput")
 			if event.keycode != KEY_ESCAPE:
 				var error: String = controls.rebind(g.rebinding_action,event)
 				if not error.is_empty(): g.show_message(error); g.get_viewport().set_input_as_handled(); return
-				V2Settings.save_settings()
+				g.get_node("/root/V2Settings").save_settings()
 			g.rebinding_action = ""
 			controls.remapping = false
 			g.show_controls()

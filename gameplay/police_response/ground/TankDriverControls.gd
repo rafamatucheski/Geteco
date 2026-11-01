@@ -37,7 +37,7 @@ func active_gameplay() -> Node3D:
 	if not driving.occupied or driving.car != vehicle or driving.is_body_transition_active(): return null
 	if driving.has_method("_external_transition_blocked") and driving._external_transition_blocked(): return null
 	if not gameplay.enabled or gameplay.health <= 0 or gameplay.state == null or not gameplay.state.weapons_allowed(): return null
-	var controls := GameInput
+	var controls := get_node_or_null("/root/GameInput")
 	if controls != null and controls.remapping: return null
 	return gameplay as Node3D
 
@@ -47,7 +47,7 @@ func _physics_process(delta: float) -> void:
 	if gameplay == null or not is_instance_valid(vehicle.tank_cannon): return
 	var camera := vehicle.get_viewport().get_camera_3d()
 	if camera == null: _reticle.hide(); return
-	var controls := GameInput
+	var controls := get_node_or_null("/root/GameInput")
 	if controls != null and (controls.using_gamepad or not controls.touch_aim.is_zero_approx()):
 		_aim = controls.aim_target_3d(vehicle, camera, delta, false)
 		_aim.y = vehicle.global_position.y + 1.0

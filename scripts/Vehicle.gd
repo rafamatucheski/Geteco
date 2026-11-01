@@ -645,7 +645,7 @@ var _handbrake_held := false
 func _drive_player(delta: float) -> void:
 	_handling_frame = false
 	if handling != null and controlled and not external_input and not input_locked and not engine_disabled and health > 0:
-		var game_input := GameInput
+		var game_input := get_node("/root/GameInput")
 		var axis: Vector2 = game_input.vehicle_input()
 		if manual_wheelie != null: axis.x *= manual_wheelie.steering_scale()
 		var handbrake := Input.is_action_pressed("handbrake")
@@ -675,7 +675,7 @@ func _drive_player(delta: float) -> void:
 		steer_input = 0
 		brake_input = input_locked
 		if controlled and not input_locked:
-			var axis: Vector2 = GameInput.vehicle_input()
+			var axis: Vector2 = get_node("/root/GameInput").vehicle_input()
 			if hydraulics != null and hydraulics.captures_input(): axis = Vector2.ZERO
 			throttle_input = axis.y
 			steer_input = -axis.x

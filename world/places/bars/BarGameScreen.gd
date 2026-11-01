@@ -130,7 +130,7 @@ func _process(delta: float) -> void:
 		game.step(delta)
 	var title := "Dardos" if game.kind == "bar_darts" else "Bilhar"
 	heading.text = "%s · %d pontos · %d/%d%s"%[title,game.score,game.shots,9 if game.kind == "bar_darts" else 10," · Fim" if game.finished else (" · Pausado" if paused else "")]
-	var controls := GameInput
+	var controls := get_node_or_null("/root/GameInput")
 	var action := "Ação"
 	if controls != null: action = str(controls.prompt("interact"))
 	hint.text = ("Mova a mira; a cruz sobe e desce sozinha, lance quando ela passar no ponto. %s: lançar. 9 dardos."%action if game.kind == "bar_darts" else "Esquerda/direita: mira (toque para ajuste fino) · cima/baixo: força · %s: tacada. 6 bolas, 10 tacadas, branca na caçapa tira %d."%[action,game.SCRATCH_PENALTY])+"  "+game.status

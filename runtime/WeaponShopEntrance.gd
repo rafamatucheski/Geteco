@@ -80,7 +80,7 @@ func _movement_intent(player: CharacterBody3D) -> Vector3:
 	# move_and_slide remove a velocidade para dentro numa porta fechada. Lê o movimento
 	# pretendido em vez disso, usando a mesma base de câmera e controles remapeados do Actor.
 	if player.controlled_automatically: return player.automatic_direction
-	var axis: Vector2 = GameInput.movement()
+	var axis: Vector2 = get_node("/root/GameInput").movement()
 	var right: Vector3 = session.world.camera.global_basis.x
 	var back: Vector3 = session.world.camera.global_basis.z
 	right.y = 0.0

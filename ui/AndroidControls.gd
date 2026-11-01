@@ -28,7 +28,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	controls = GameInput
+	controls = get_node("/root/GameInput")
 	controls.set_meta("touch_controls_active", true)
 	var recorder := preload("res://runtime/FrameStallRecorder.gd").new()
 	recorder.world = world

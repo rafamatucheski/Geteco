@@ -261,7 +261,7 @@ func _rebuild() -> void:
 		# "Punho" também nomeia um acessório de arma na tabela de tradução.
 		if page == 0 and id == "fists": slot_label = _text("PUNHO", "FISTS")
 		entries.append({"id": id, "label": label, "slot_label": slot_label, "detail": detail, "role": role, "stats": stats, "variant_index": cursor, "variant_count": available.size(), "icon": ICONS.get_icon(icon_id), "enabled": enabled, "count_label": count_label})
-	var controls := GameInput
+	var controls := get_node("/root/GameInput")
 	var subcycle := _text("Rolagem / ← →: variar item · ↑ ↓: categoria", "Scroll / ← →: cycle item · ↑ ↓: category")
 	if controls.using_gamepad: subcycle = _text("← →: variar item · Analógico direito / ↑ ↓: categoria", "← →: cycle item · Right stick / ↑ ↓: category")
 	view.configure_view(entries, selected, page, {"hold": controls.hint("weapon_wheel"), "switch": controls.hint("interact"), "cancel": controls.hint("pause_game"), "subcycle": subcycle})
