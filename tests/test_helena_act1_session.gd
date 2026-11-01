@@ -38,7 +38,7 @@ func _finish_dialogue() -> void:
 	var session = world.session
 	for _i in 40:
 		if not session.dialogue_open: return
-		session._advance_dialogue()
+		session.advance_dialogue()
 		await frames(2)
 
 func _run() -> void:

@@ -62,7 +62,7 @@ func review(race) -> void:
 	if not race.start_return_pass("digo"): push_error("Scenery race failed: "+race.start_block_reason()); quit(1); await process_frame; return
 	if reference.is_empty() and temporal and race.phase=="preparing":
 		var pose: Transform3D=race.player_car.global_transform
-		world.session._menu("Pausa")
+		world.session.menu("Pausa")
 		await create_timer(.2).timeout
 		if not race.player_car.global_transform.is_equal_approx(pose) or not is_zero_approx(race.elapsed): failures.append("pause moved car during preparation")
 		world.session.close_menu()

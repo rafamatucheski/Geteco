@@ -51,8 +51,10 @@ class SessionFixture extends Node:
 	var room: Node3D
 	var wine: WineFixture
 	func _owns_transition(expected: int) -> bool: return expected == owner_token and expected > 0
+	func owns_transition(expected: int) -> bool: return _owns_transition(expected)
 	func _finish_transition(expected: int) -> void:
 		if _owns_transition(expected): owner_token = 0; transition_kind = ""; finishes += 1
+	func finish_transition(expected: int) -> void: _finish_transition(expected)
 	func position_clear(point: Vector3) -> bool: return clear_point and (not permitted_point.is_finite() or point.distance_to(permitted_point)<.01)
 
 func _initialize() -> void: run.call_deferred()

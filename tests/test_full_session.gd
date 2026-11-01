@@ -34,7 +34,7 @@ func run() -> void:
 		world.player.teleport(world.maciota_place.interaction_points[id]+Vector3.UP*.05)
 		await settle()
 		check(session.interact(),"Physical intro interaction: "+id)
-		while session.dialogue_open: session._advance_dialogue()
+		while session.dialogue_open: session.advance_dialogue()
 	check(state.intro.stage == "complete","Intro completed through real interactions")
 	var restored = load("res://runtime/GameState.gd").new()
 	check(restored.restore_snapshot(state.snapshot()),"Integrated state roundtrip")
@@ -63,7 +63,7 @@ func run() -> void:
 					break
 			check(approached,"Solid-free approach to "+npc.id)
 			check(approached and session.services.perform(npc.id),"Original dialogue: "+npc.id)
-			while session.dialogue_open: session._advance_dialogue()
+			while session.dialogue_open: session.advance_dialogue()
 		if place == "harbor_hospital":
 			world.gameplay.health = 40
 			world.player.teleport(session.room.to_global(session.services.HOSPITAL_PICKUP)+Vector3.UP*.05)

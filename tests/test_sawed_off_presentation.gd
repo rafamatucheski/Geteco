@@ -97,10 +97,10 @@ func _test_moving_parts() -> void:
 		var detail_rest := details.global_position
 		var pistol_pose = POSE.new()
 		gameplay._pose_frame = pistol_pose.update("pistol", DT, false, true, 0.765, false, false, 0.0)
-		gameplay._update_weapon_parts("pistol")
+		gameplay.update_weapon_parts("pistol")
 		check(slide.position.distance_to(slide_rest) > 0.03 and (details.global_position - detail_rest).is_equal_approx(slide.position - slide_rest), "reload pose moves slide and sights through actual gameplay hook")
 		gameplay._pose_frame = {"slide": 0.0}
-		gameplay._update_weapon_parts("pistol")
+		gameplay.update_weapon_parts("pistol")
 		check(slide.position.is_equal_approx(slide_rest), "pistol slide returns to battery")
 	gun.free()
 	gun = Node3D.new()
@@ -113,10 +113,10 @@ func _test_moving_parts() -> void:
 		var rest := magazine.transform
 		gameplay._reload_total = 1.0
 		gameplay.reload_timer = 0.76
-		gameplay._update_weapon_parts("ak47")
+		gameplay.update_weapon_parts("ak47")
 		check(not magazine.visible, "empty AK magazine leaves the gun during reload")
 		gameplay.reload_timer = 0.0
-		gameplay._update_weapon_parts("ak47")
+		gameplay.update_weapon_parts("ak47")
 		check(magazine.visible and magazine.transform.is_equal_approx(rest), "loaded AK magazine returns to its seat")
 	gun.free()
 	gameplay.free()

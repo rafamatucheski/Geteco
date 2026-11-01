@@ -74,7 +74,7 @@ func run() -> void:
 	game.state = bundle.state
 	# Fixture de resposta, não um atalho de escalada disponível para crimes do jogador.
 	game.crime_points = 420
-	game._update_stars()
+	game.update_stars()
 	game.register_crime(1, observed, "reported")
 	check(game.stars == 6 and not game.police_force_authorized(), "six stars alone do not authorize shots")
 	game.register_crime(1, observed, "police_assault")

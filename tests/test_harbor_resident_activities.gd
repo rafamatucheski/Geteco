@@ -38,6 +38,7 @@ class Gameplay extends Node3D:
 	func equipped() -> String: return weapon
 	func weapon_data(id: String) -> Dictionary: return {"is_melee":id == "fists"}
 	func _aim_direction() -> Vector3: return direction
+	func aim_direction() -> Vector3: return _aim_direction()
 	func report_observed_crime(amount: int, point: Vector3, kind: String, victim: Node3D = null) -> bool:
 		return police_case.observe(amount, point, kind, victim)
 	func register_crime(amount: int, _point: Vector3, _kind: String, _testimony: Dictionary = {}) -> void:

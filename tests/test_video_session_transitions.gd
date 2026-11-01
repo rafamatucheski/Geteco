@@ -41,7 +41,7 @@ func _run() -> void:
 	check(weather.precipitation.emitting and weather.precipitation.visible, "outdoor rain active")
 	state.grant_weapon("pistol")
 	state.equip_weapon("pistol")
-	world.gameplay._update_visual()
+	world.gameplay.update_visual()
 	world.hud.refresh_from_state()
 	session.prompt.text = "E  Entrar"
 	if await session.enter_place("maciota", false):
@@ -82,7 +82,7 @@ func _run() -> void:
 		check(session.nearest().get("id", "") != "exit", "bank walk-up exit offers no E action")
 		session.prompt.text = "E  Conversar"
 		world.gameplay.health = 0
-		session._on_death()
+		session.on_death()
 		check(session.prompt.text.is_empty() and session.nearest().is_empty(), "death clears interaction prompt immediately")
 		for _i in 600:
 			await physics_frame

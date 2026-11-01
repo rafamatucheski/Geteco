@@ -156,7 +156,7 @@ func purchase_flow() -> void:
 	check(session.panel.size.x <= 380 and session.panel.size.y <= 260,"trade-in card stays compact")
 	check(session.column.get_child(session.column.get_child_count()-1).get_global_rect().end.y <= session.column.get_parent().get_global_rect().end.y,"trade-in cancel button fully visible")
 	await photo("purchase-trade")
-	session._menu("Teste de restauração")
+	session.menu("Teste de restauração")
 	check(session.column.get_parent().custom_minimum_size==minimum,"replacement menu restores scroll constraints")
 	session.close_menu()
 

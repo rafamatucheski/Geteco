@@ -85,7 +85,7 @@ func finish_dialogue(session) -> String:
 		# coluna do menu de serviço continua escondida e não contém mais este texto.
 		if is_instance_valid(session.dialogue_card): spoken.append(session.dialogue_card.message.text)
 		count += 1
-		session._advance_dialogue()
+		session.advance_dialogue()
 	return "\n".join(spoken)
 
 func install_post_race_prefix(session) -> bool:
@@ -267,9 +267,9 @@ func run() -> void:
 	check(await session.arrival._walk(world.player,reward_point),"house cash reward is reachable on the floor")
 	await capture_frame("takeshi-room-depth")
 	await settle(3)
-	session._collect_reward(room)
+	session.collect_reward(room)
 	check(session.state.world_state.rewards.has("cobra_leader_house_cash_01") and session.state.economy.balance == balance+1800,"house's useful reward grants its authored R$1200")
-	session._collect_reward(room)
+	session.collect_reward(room)
 	check(session.state.economy.balance == balance+1800,"house reward cannot repeat on the same visit")
 	session.garage_rewards._sync()
 	check(session.garage_rewards.snapshot().vehicles.has("cobra_boss_ironback"),"finale authorizes the Ironback reward in Maciota's garage")

@@ -14,7 +14,7 @@ func verify_revision() -> void:
 	var saved_health: float = gameplay.health
 	var saved_armor: float = gameplay.armor
 	gameplay.god_mode = false
-	gameplay._sync_god_mode()
+	gameplay.sync_god_mode()
 	gameplay.health = 100.0
 	gameplay.armor = 0.0
 	gameplay.rage.restore(0.0)
@@ -36,7 +36,7 @@ func verify_revision() -> void:
 	gameplay.health = saved_health
 	gameplay.armor = saved_armor
 	gameplay.god_mode = true
-	gameplay._sync_god_mode()
+	gameplay.sync_god_mode()
 	gameplay.clear_loot()
 	if is_instance_valid(target): target.queue_free()
 	await frames(4)

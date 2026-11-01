@@ -47,7 +47,7 @@ func run() -> void:
 	# Rajada de 20 tiros pela lateral, como no vídeo, e mais 3 s de física.
 	for shot in 20:
 		var from := car.global_position + Vector3(-6, 1.0, randf_range(-1.5, 1.5))
-		combat._damage_bullet(car, 25.0, null, from, from + Vector3(12, -.4, 0))
+		combat.damage_bullet(car, 25.0, null, from, from + Vector3(12, -.4, 0))
 		await physics_frame
 		lowest = minf(lowest, car.global_position.y)
 	for tick in 180:

@@ -68,7 +68,7 @@ func run() -> void:
 		fail("No physically clear four-person landing zone near the actual player")
 		return
 	gameplay.crime_points = 60
-	gameplay._update_stars()
+	gameplay.update_stars()
 	gameplay.report_contact(anchor)
 	if not director.launch_helicopter(zone):
 		fail("Aerial response could not launch")

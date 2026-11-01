@@ -44,7 +44,7 @@ func run() -> void:
 	var gate: Node3D = mx._course_gate()
 	check(gate != null and gate.raised and mx.racers[1].bike.get_node_or_null("RiderTag") != null,"grade de largada sobe e rivais recebem etiqueta")
 	var intro_before: float = mx.start_shot.elapsed
-	session._menu("Pausa da montagem")
+	session.menu("Pausa da montagem")
 	await frames(20)
 	check(mx.start_shot.elapsed==intro_before and mx.countdown==3,"menu pausa montagem e contagem de largada")
 	session.close_menu()
@@ -62,7 +62,7 @@ func run() -> void:
 	rival.crash(.7)
 	check(rival.health < 100 and rival.crash_state=="fallen","rival cai e sofre dano real")
 	var time_before: float = mx.elapsed
-	session._menu("Pausa da prova")
+	session.menu("Pausa da prova")
 	await frames(30)
 	check(is_equal_approx(mx.elapsed,time_before),"menu suspende cronômetro da prova")
 	session.close_menu()

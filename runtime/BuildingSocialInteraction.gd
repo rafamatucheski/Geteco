@@ -67,7 +67,7 @@ func open(resident: Node3D) -> bool:
 	if active or _release_guard or not _can_open() or not _accessible(resident, TALK_DISTANCE): return false
 	if not resident.begin_social(session.world.player): return false
 	_mouse_mode = Input.mouse_mode
-	session._menu("")
+	session.menu("")
 	session.panel.hide()
 	active = true
 	target = resident

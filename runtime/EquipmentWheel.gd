@@ -51,7 +51,7 @@ func _context_valid() -> bool:
 	if not is_instance_valid(session.world) or not is_instance_valid(session.world.gameplay) or not is_instance_valid(session.world.player): return false
 	if get_tree().paused or session.modal or session.is_transition_blocked(): return false
 	if session.world.gameplay.health <= 0 or session.world.driving.occupied: return false
-	if not session.world.gameplay._free_play_ok() or session.world.gameplay.police_surrendering(): return false
+	if not session.world.gameplay.free_play_ok() or session.world.gameplay.police_surrendering(): return false
 	if session.world.player.get_meta("developer_free_flight", false): return false
 	if session.world.player.get_meta("player_air_busy", false): return false
 	if session.skate != null and session.skate.controls_locked(): return false

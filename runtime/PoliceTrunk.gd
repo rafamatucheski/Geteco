@@ -37,17 +37,17 @@ static func taken(session, car, item: String) -> bool:
 
 static func open(session, car) -> void:
 	if not accessible(session,car): session.close_menu(); return
-	session._menu("Porta-malas · Viatura")
+	session.menu("Porta-malas · Viatura")
 	var id := weapon(car)
 	if not taken(session,car,"weapon"):
 		var label: String = session.state.economy.Weapons.WEAPONS[id].label
 		if session.state.economy.owns_weapon(id): label += " · Munição"
-		session._button("Recolher "+label,func(): collect(session,car,"weapon"); open(session,car))
+		session.button("Recolher "+label,func(): collect(session,car,"weapon"); open(session,car))
 	if not taken(session,car,"armor"):
-		session._button("Recolher colete",func(): collect(session,car,"armor"); open(session,car))
+		session.button("Recolher colete",func(): collect(session,car,"armor"); open(session,car))
 	if taken(session,car,"weapon") and taken(session,car,"armor"):
-		session._button("Vazio",session.close_menu)
-	session._button("Fechar",session.close_menu)
+		session.button("Vazio",session.close_menu)
+	session.button("Fechar",session.close_menu)
 
 static func collect(session, car, item: String) -> bool:
 	if not accessible(session,car) or item not in ["weapon","armor"] or taken(session,car,item): return false

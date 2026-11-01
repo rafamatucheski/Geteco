@@ -70,11 +70,11 @@ func run() -> void:
 	var ray := PhysicsRayQueryParameters3D.create(guest.global_position + Vector3(0,1,-.9), guest.global_position + Vector3.UP, 3)
 	var hit: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(ray)
 	check(hit.get("collider") == guest, "Physical bullet ray hits the visitor capsule")
-	if hit.get("collider") == guest: world.gameplay._damage(hit.collider, 30.0, world.player)
+	if hit.get("collider") == guest: world.gameplay.damage(hit.collider, 30.0, world.player)
 	check(guest.health == 70.0 and guest.frightened, "Combat damage injures visitor and triggers flight")
 	check(cemetery.trip_phase == "returning" and cemetery.cases["test:physical"].phase == "morgue", "Violence interrupts burial without losing deceased")
 	check(cemetery.keeper.frightened and cemetery.storyteller.frightened, "Residents react to assault")
-	world.gameplay._damage(guest, 100.0, world.player)
+	world.gameplay.damage(guest, 100.0, world.player)
 	check(guest.dead and guest.health == 0 and guest.collision_layer == 0, "Visitor can die through gameplay damage")
 	check(guest.is_in_group("v2_damageable"), "Visitor participates in physical damage discovery")
 	var dead_position: Vector3 = guest.global_position
@@ -88,10 +88,10 @@ func run() -> void:
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://evidence/cemetery-npcs-interrupted-0928.png")
 	var worker = cemetery.mortician
-	world.gameplay._damage(worker, 200.0, world.player)
+	world.gameplay.damage(worker, 200.0, world.player)
 	check(worker.dead, "Funeral worker is mortal")
 	var keeper = cemetery.keeper
-	world.gameplay._damage(keeper, 200.0, world.player)
+	world.gameplay.damage(keeper, 200.0, world.player)
 	check(keeper.dead and cemetery.nearest_action().is_empty(), "Dead keeper cannot offer dialogue")
 	world.gameplay.weapon_fired.emit("pistol", cemetery.storyteller.global_position)
 	check(cemetery.storyteller.frightened, "Gunfire is connected to civilian response")

@@ -220,4 +220,4 @@ func _physics_process(delta: float) -> void:
 		var ray := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP * 0.5, actor.global_position + Vector3.UP, 1)
 		if not get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): continue
 		# Tique de fogo a cada 0,5 s: fonte contínua, denuncia a mesma vítima uma vez por janela (Gameplay._crime_due).
-		manager.gameplay._damage(actor, 5 * intensity, source if is_instance_valid(source) else null, true)
+		manager.gameplay.damage(actor, 5 * intensity, source if is_instance_valid(source) else null, true)

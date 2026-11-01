@@ -57,7 +57,7 @@ func dispatch_contract() -> void:
 	check(RULES.response_variant(3,controller._active_police()) != "motorcycle","one motorcycle cap survives escalation")
 	# Seed maximum response explicitly; ordinary reports no longer create it.
 	game.crime_points = 420
-	game._update_stars()
+	game.update_stars()
 	game.register_crime(1,game.last_known)
 	var tactical: RefCounted = controller.dispatch_police_to(game.last_known)
 	check(tactical != null and tactical.variant == "tactical","army crew precedes armored support")

@@ -96,10 +96,10 @@ func run() -> void:
 	gameplay.clear_loot()
 	var pickup: Node3D = gameplay.spawn_loot("cash","",300,Vector3.ZERO)
 	gameplay.player.position = Vector3(0,4,0)
-	gameplay._update_loot(.1)
+	gameplay.update_loot(.1)
 	check(gameplay.state.economy.balance == 0, "cash cannot be collected from another floor")
 	gameplay.player.position = Vector3.ZERO
-	gameplay._update_loot(.1)
+	gameplay.update_loot(.1)
 	check(gameplay.state.economy.balance == 300 and pickup.consumed and gameplay._loot.is_empty(), "contact collects cash and removes the active pickup")
 	check(not gameplay._grant_loot(pickup) and gameplay.state.economy.balance == 300, "duplicate collection cannot pay twice")
 	check(gameplay.state.economy.snapshot().transactions.is_empty(), "recurring cash never grows permanent receipt history")
@@ -114,9 +114,9 @@ func run() -> void:
 	for amount in [-1,0,4,301]: check(not restored.economy.collect_loose_cash(amount), "reject invalid cash amount %d" % amount)
 	gameplay.state.economy._data.balance = gameplay.state.economy.LIMIT
 	var full: Node3D = gameplay.spawn_loot("cash","",5,Vector3.ZERO)
-	gameplay._update_loot(.1)
+	gameplay.update_loot(.1)
 	check(not full.consumed and not full.cash_credited, "full wallet leaves cash collectable")
-	gameplay._update_loot(36)
+	gameplay.update_loot(36)
 	check(gameplay._loot.is_empty(), "uncollected cash expires")
 	for place in ["maciota","harbor_garage"]:
 		gameplay.state.set_location("harbor",place)

@@ -67,7 +67,7 @@ func review(race) -> void:
 			var pose: Transform3D=car.global_transform
 			var time: float=race.elapsed
 			var progress: float=entry.return_progress
-			session._menu("Pausa")
+			session.menu("Pausa")
 			recording=false
 			await create_timer(.3).timeout
 			check(car.global_transform.is_equal_approx(pose) and is_equal_approx(race.elapsed,time) and is_equal_approx(entry.return_progress,progress),"pause freezes physical turn and race clock")

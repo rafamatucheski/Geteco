@@ -49,7 +49,7 @@ func setup_snapshot(reason: String) -> Dictionary:
 		if not is_instance_valid(person): continue
 		if person.dead: dead += 1
 		else: live += 1
-	var snapshot := {"reason":reason,"elapsed_s":float(Time.get_ticks_msec()-setup_started_msec)/1000.0,"population":world.people.size(),"live":live,"dead":dead,"requested":world.production.requested_population,"effective_cap":world.production._population_cap(),"density":world.production.density_scale,"pending_jobs":world.production._population_jobs.duplicate(),"production_ready":world.production.ready_for_play,"loaded_save":world.production.loaded_save,"save_invalid":world.production.save_invalid,"place":world.production.state.place_id,"cars":world.production.vehicles.size()}
+	var snapshot := {"reason":reason,"elapsed_s":float(Time.get_ticks_msec()-setup_started_msec)/1000.0,"population":world.people.size(),"live":live,"dead":dead,"requested":world.production.requested_population,"effective_cap":world.production.population_cap(),"density":world.production.density_scale,"pending_jobs":world.production._population_jobs.duplicate(),"production_ready":world.production.ready_for_play,"loaded_save":world.production.loaded_save,"save_invalid":world.production.save_invalid,"place":world.production.state.place_id,"cars":world.production.vehicles.size()}
 	if is_instance_valid(world.player):
 		snapshot.player = {"position":world.player.global_position,"dead":world.player.dead,"visible":world.player.visible,"physics":world.player.is_physics_processing(),"protected_during_setup":guarded_player!=null}
 	if is_instance_valid(world.gameplay): snapshot.gameplay = {"health":world.gameplay.health,"stars":world.gameplay.stars}

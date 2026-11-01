@@ -73,7 +73,7 @@ func run() -> void:
 	Input.action_press("aim")
 	await frames(60)
 	await shot("06_lanterna_desligada")
-	session._toggle_weapon_flashlight()
+	session.toggle_weapon_flashlight()
 	await frames(20)
 	await shot("07_lanterna_ligada")
 	Input.action_release("aim")

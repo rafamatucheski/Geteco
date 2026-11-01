@@ -767,7 +767,7 @@ func _recover_ride() -> void:
 	elif not session.rescue_pending and not session.respawn_busy:
 		session.rescue_camera_heading = session.world.camera.heading
 		session.rescue_camera_size = session.world.camera.target_size
-		await session._respawn()
+		await session.respawn()
 	if not is_inside_tree() or not is_instance_valid(session.world.player): return
 	if is_instance_valid(old_car): old_car.queue_free()
 	_spawn_encounter()

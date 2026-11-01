@@ -79,7 +79,7 @@ func run() -> void:
 			var treasure: Dictionary = session.room.reward_points[0]
 			world.player.teleport(treasure.position + Vector3.UP*.08)
 			await settle(3)
-			session._collect_reward(session.room)
+			session.collect_reward(session.room)
 			check(session.state.world_state.rewards.has("santa_mare_hidden_chest_01"),"Chest grants its treasure once")
 			check(treasure.visual.consumed,"Collected treasure starts its absorption")
 			await create_timer(.35).timeout

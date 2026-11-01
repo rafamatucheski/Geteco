@@ -93,7 +93,7 @@ func capture(label: String) -> void:
 func finish_dialogue() -> void:
 	for i in 80:
 		if not world.session.dialogue_open: break
-		world.session._advance_dialogue()
+		world.session.advance_dialogue()
 		await physics_frame
 
 func walk(point: Vector3, seconds := 12.0, stop_for_debrief := false, direct := false) -> bool:

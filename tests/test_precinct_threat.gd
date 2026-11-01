@@ -35,8 +35,8 @@ func run() -> void:
 	for actor in session.room_npcs:
 		var hp: float = actor.health
 		actor.receive_damage(10000,world.player)
-		gameplay._damage(actor,10000,world.player)
-		gameplay._damage(actor,10000,world.player,true)
+		gameplay.damage(actor,10000,world.player)
+		gameplay.damage(actor,10000,world.player,true)
 		check(not actor.dead and actor.health == hp,"resident survives direct, combat and continuous damage: " + str(actor.get_meta("interior_npc_id")))
 	session.state.grant_weapon("pistol")
 	session.state.add_ammo("pistol",100)
@@ -66,7 +66,7 @@ func run() -> void:
 	world.player.teleport(session.room.interaction_points.police + Vector3(0,.06,.9))
 	await frames(3)
 	check(session.services.perform("police"),"mission officer remains available for dialogue")
-	while session.dialogue_open: session._advance_dialogue()
+	while session.dialogue_open: session.advance_dialogue()
 	check(await session.leave_place(),"leave precinct")
 	session.state.equip_weapon("pistol")
 	await frames(30)

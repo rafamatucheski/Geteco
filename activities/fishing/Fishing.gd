@@ -130,22 +130,22 @@ func open_menu() -> bool:
 	var reason := start_block_reason()
 	if not reason.is_empty(): session.show_message(reason); return false
 	if nearest_action().get("target", "") != "menu": return false
-	session._menu("Pesque-pague · Lago Sereno")
+	session.menu("Pesque-pague · Lago Sereno")
 	var label := Label.new()
 	label.text = "Entrada: R$ 10 por pescaria · Vara e isca incluídas\nCampeonatos: vence o maior peixe individual; empate não premia.\nA inscrição é cobrada ao começar e não é devolvida ao sair."
 	label.add_theme_font_size_override("font_size", 15)
 	session.column.add_child(label)
-	session._button("Pesca livre · R$ 10", _choose.bind(-1))
+	session.button("Pesca livre · R$ 10", _choose.bind(-1))
 	for index in RULES.TIERS.size():
 		var spec: Dictionary = RULES.TIERS[index]
-		session._button(String(TranslationServer.translate("%s · %d s · prêmio R$ %d")) % [spec.name, spec.seconds, spec.prize], _choose.bind(index))
+		session.button(String(TranslationServer.translate("%s · %d s · prêmio R$ %d")) % [spec.name, spec.seconds, spec.prize], _choose.bind(index))
 	var saved := snapshot()
 	var record := Label.new()
 	record.text = String(TranslationServer.translate("Recorde: %s · %d peixes · %d/%d espécies")) % [RULES.kg(int(saved.best)), saved.catches, saved.species.size(), RULES.SPECIES.size()]
 	session.column.add_child(record)
 	if session.world.player.global_position.distance_to(site.entry_position()) <= 3.2:
-		session._button("Vender peixes", CATCH_ITEMS.open_stock.bind(session))
-	session._button("Voltar", session.close_menu)
+		session.button("Vender peixes", CATCH_ITEMS.open_stock.bind(session))
+	session.button("Voltar", session.close_menu)
 	return true
 
 func _choose(selected: int) -> void:

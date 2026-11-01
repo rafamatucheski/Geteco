@@ -40,15 +40,15 @@ func run() -> void:
 	print("VEHICLE_GLASS rays side=", not side.is_empty(), " front=", not front.is_empty())
 	await _views(camera, output, "0-intacto")
 	if not side.is_empty():
-		combat._damage_bullet(car, 10.0, combat, side[0], side[1])
+		combat.damage_bullet(car, 10.0, combat, side[0], side[1])
 		for decal: Decal in car.find_children(GLASS.CRACK_NAME, "Decal", true, false):
 			print("VEHICLE_GLASS marca ", decal.global_position, " normal ", decal.global_basis.y, " tamanho ", decal.size, " visível ", decal.is_visible_in_tree(), " camadas ", decal.cull_mask)
 		print("VEHICLE_GLASS tiro ", GLASS.owner_for(car).contact(side[0], side[1]).get("point"))
 		await _views(camera, output, "1-lado-um-tiro")
-		combat._damage_bullet(car, 10.0, combat, side[0], side[1].lerp(side[0], .02) + Vector3(0, .05, .05))
+		combat.damage_bullet(car, 10.0, combat, side[0], side[1].lerp(side[0], .02) + Vector3(0, .05, .05))
 		await _views(camera, output, "2-lado-dois-tiros")
 	if not front.is_empty():
-		combat._damage_bullet(car, 10.0, combat, front[0], front[1])
+		combat.damage_bullet(car, 10.0, combat, front[0], front[1])
 		await _views(camera, output, "3-frente-um-tiro")
 	print("VEHICLE_GLASS_CAPTURE ", output)
 	quit()

@@ -459,11 +459,11 @@ func _release_cobras() -> void:
 # --- M04-B: prensa ou devolver ----------------------------------------------------------------------
 
 func _press_choice() -> void:
-	session._menu("O carro raspado")
-	session._button("Mandar para a prensa", func():
+	session.menu("O carro raspado")
+	session.button("Mandar para a prensa", func():
 		session.close_menu()
 		if _advance("press", "press"): _speak("press_chose_press"))
-	session._button("Devolver ao cliente do Maciota", func():
+	session.button("Devolver ao cliente do Maciota", func():
 		session.close_menu()
 		if _advance("press", "return"): _speak("press_chose_return"))
 

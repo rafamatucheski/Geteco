@@ -45,7 +45,7 @@ func open(identity: String = "") -> bool:
 	if not is_instance_valid(layer): _build()
 	var paid := PROGRESS.claim_rewards(session.state.world_state,session.state.economy)
 	if paid>0: session.save_game()
-	session._menu("Noite de Acerto")
+	session.menu("Noite de Acerto")
 	session.panel.hide()
 	session.menu_closed=dismiss
 	layer.show()

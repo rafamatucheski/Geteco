@@ -128,7 +128,7 @@ func skeleton_checks() -> void:
 	actor.set_combat_weapon_mount(gp.gun, KATANA.GRIP)
 	var step := func() -> void:
 		gp._update_combat_clip(DT)
-		gp._update_weapon_pose(DT)
+		gp.update_weapon_pose(DT)
 		await physics_frame
 	check(gp._sword_locomotion_clips(), "biblioteca tem Great Sword Idle, Walk e Run")
 	for state in [["parado", 0.0, actor.SWORD_IDLE % "gs"], ["andando", 3.5, actor.SWORD_WALK % "gs"], ["correndo", 6.5, actor.SWORD_RUN % "gs"]]:

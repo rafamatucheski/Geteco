@@ -595,12 +595,12 @@ func purchase() -> void:
 	var id: String = stock[selection]
 	var message := ""
 	if id == "armor":
-		if not session.state.economy.spend(500, "body_armor:" + session._transaction()): message = "DINHEIRO INSUFICIENTE"
+		if not session.state.economy.spend(500, "body_armor:" + session.transaction()): message = "DINHEIRO INSUFICIENTE"
 		else:
 			session.world.gameplay.armor = 100
 			message = "COLETE EQUIPADO"
 	else:
-		var result: Dictionary = session.state.economy.purchase("weapon", id, session._transaction())
+		var result: Dictionary = session.state.economy.purchase("weapon", id, session.transaction())
 		if result.ok:
 			message = "COMPRA REALIZADA" if session.state.equip_weapon(id) else "COMPRA REALIZADA · ARMA GUARDADA NO PORTA-MALAS"
 		else: message = _reason(result.reason)
@@ -618,7 +618,7 @@ func purchase_ammo() -> void:
 		refresh("RESERVA DE MUNIÇÃO CHEIA")
 		return
 	var before: Dictionary = economy.snapshot()
-	if not economy.spend(price, "ammunition:" + session._transaction()):
+	if not economy.spend(price, "ammunition:" + session.transaction()):
 		refresh("DINHEIRO INSUFICIENTE")
 		return
 	if not economy.add_ammo(id, rounds):
@@ -630,7 +630,7 @@ func purchase_ammo() -> void:
 
 func purchase_lockpick() -> void:
 	if not active: return
-	var result: Dictionary = session.state.economy.purchase("supply","lockpick",session._transaction())
+	var result: Dictionary = session.state.economy.purchase("supply","lockpick",session.transaction())
 	if result.ok: session.save_game()
 	refresh("LOCKPICK COMPRADO" if result.ok else _reason(result.reason))
 

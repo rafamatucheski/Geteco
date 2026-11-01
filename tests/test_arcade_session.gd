@@ -88,7 +88,7 @@ func run() -> void:
 		var arcade = session.arcade
 		check(arcade.active and session.modal and world.player.input_locked,id+" modal owns controls")
 		check(not session.save_block_reason().is_empty(),id+" live round not saved")
-		check(not world.gameplay._free_play_ok(),id+" real combat blocked")
+		check(not world.gameplay.free_play_ok(),id+" real combat blocked")
 		await press("ui_accept")
 		check(arcade.ui.playing,id+" Enter starts round")
 		await frames(5)
@@ -136,7 +136,7 @@ func run() -> void:
 	world.player.teleport(session.room.interaction_points.arcade_blocks+Vector3.UP*.04)
 	await frames(3)
 	check(runtime.perform("blocks"),"reopen for interruption")
-	session._menu("Teste de interrupção")
+	session.menu("Teste de interrupção")
 	check(not runtime.active and session.modal and session.panel.visible,"replacement modal closes arcade without unlocking new modal")
 	session.close_menu()
 	check(runtime.perform("blocks"),"reopen after replacement modal")

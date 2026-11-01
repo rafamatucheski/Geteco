@@ -54,7 +54,7 @@ func _process(delta: float) -> void:
 			retired[routine.id]=true
 		if not active or distance>150: retired.erase(routine.id)
 		if not active or distance>75 or retired.has(routine.id) or admitted: continue
-		if session.world.people.size()>=session.controller._population_cap(): continue
+		if session.world.people.size()>=session.controller.population_cap(): continue
 		# Espera só o chão do deserto, não o enfeite fatiado (DesertRegion.surfaces_idle): com
 		# is_streaming_idle(), a 60 fps (padrão) o morador podia esperar ~27 s perto da arrancada (e1fad702).
 		var ground: Node3D=session.controller.region

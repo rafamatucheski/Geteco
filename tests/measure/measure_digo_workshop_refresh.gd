@@ -195,7 +195,7 @@ func _show_case(variant: String) -> void:
 	if _stationary_case:
 		car.input_locked = true
 		return
-	session._menu("Digo")
+	session.menu("Digo")
 	session.panel.hide()
 	session.desert.tuning_car = car
 	session.desert._workshop_site = "town"

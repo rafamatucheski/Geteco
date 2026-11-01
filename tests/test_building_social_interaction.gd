@@ -94,6 +94,7 @@ class Session extends Node:
 		world.player.input_locked = true
 		panel.show()
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	func menu(_title: String) -> void: _menu(_title)
 	func close_menu() -> void:
 		if menu_closed.is_valid(): menu_closed.call()
 		menu_closed = Callable()

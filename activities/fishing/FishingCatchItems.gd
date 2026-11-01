@@ -113,7 +113,7 @@ static func cook(session, id: String, receipt: String) -> bool:
 
 static func open_stock(session) -> void:
 	if not _at_counter(session): session.show_message("Aproxime-se do balcão do Lago Sereno."); return
-	session._menu("Vender peixes")
+	session.menu("Vender peixes")
 	var rows := carried(session)
 	var wallet := Label.new()
 	wallet.text = "R$ %d" % session.state.economy.balance
@@ -124,10 +124,10 @@ static func open_stock(session) -> void:
 		session.column.add_child(empty)
 	for index in rows.size():
 		var row: Dictionary = rows[index]
-		session._button("Vender · %s · R$ %d" % [row.label, row.price], _sell_from_menu.bind(session, row.id, next_receipt(session, "sale", index)))
+		session.button("Vender · %s · R$ %d" % [row.label, row.price], _sell_from_menu.bind(session, row.id, next_receipt(session, "sale", index)))
 		var button: Button = session.column.get_child(session.column.get_child_count() - 1)
 		button.disabled = int(session.state.economy._data.balance) > session.state.economy.LIMIT - int(row.price)
-	session._button("Fechar", session.close_menu)
+	session.button("Fechar", session.close_menu)
 
 static func _sell_from_menu(session, id: String, receipt: String) -> void:
 	var ok := sell(session, id, receipt)

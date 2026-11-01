@@ -95,7 +95,7 @@ static func _desert_open(session) -> bool:
 static func open_menu(session, resident: Node) -> void:
 	var gameplay = session.world.gameplay
 	var quest: Dictionary = FORGE.quest(session.state.world_state)
-	session._menu("Forja da Serra · Seu Bento")
+	session.menu("Forja da Serra · Seu Bento")
 	var owned := 0
 	for id in FORGE.BLADES:
 		if not session.state.owns_weapon(id): continue
@@ -104,14 +104,14 @@ static func open_menu(session, resident: Node) -> void:
 		if str(quest.stage) == "done": tracks.append("legendary")
 		for track in tracks:
 			var offer: Dictionary = FORGE.offer(gameplay.customization, str(quest.stage), id, track)
-			session._button(_label(gameplay.customization, id, track, offer), func(): _buy(session, resident, id, track))
+			session.button(_label(gameplay.customization, id, track, offer), func(): _buy(session, resident, id, track))
 	if owned == 0:
-		session._button("Traga uma faca, um machado ou a katana", session.close_menu)
+		session.button("Traga uma faca, um machado ou a katana", session.close_menu)
 	match str(quest.stage):
-		"met": session._button("Perguntar sobre aço lendário", func(): _clue(session, resident, quest))
-		"seek_hermit": session._button("Aço lendário: procure o Mestre Aurélio, no norte da serra", session.close_menu)
-		"seek_miner": session._button("Aço lendário: busque o minério do Tião, no deserto", session.close_menu)
-	session._button("Sair", session.close_menu)
+		"met": session.button("Perguntar sobre aço lendário", func(): _clue(session, resident, quest))
+		"seek_hermit": session.button("Aço lendário: procure o Mestre Aurélio, no norte da serra", session.close_menu)
+		"seek_miner": session.button("Aço lendário: busque o minério do Tião, no deserto", session.close_menu)
+	session.button("Sair", session.close_menu)
 
 static func _label(customization: Dictionary, id: String, track: String, offer: Dictionary) -> String:
 	var blade := String(TranslationServer.translate(FORGE.LABELS[id]))

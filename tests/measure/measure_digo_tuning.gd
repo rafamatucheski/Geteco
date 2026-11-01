@@ -184,7 +184,7 @@ func _show_case(variant: String) -> void:
 	var car: CharacterBody3D = world.driving.car
 	var parts: Dictionary = TUNED.duplicate(true) if variant == "live_tuned" else {}
 	ADAPTER.attach(car,parts)
-	session._menu("Digo")
+	session.menu("Digo")
 	session.panel.hide()
 	if variant.begins_with("legacy"):
 		session.desert.workshop_drive.close_service_view()

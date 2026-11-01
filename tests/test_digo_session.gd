@@ -63,7 +63,7 @@ func run() -> void:
 	check(mx.mounted and not mx.active and mx.lesson != null and not world.player.visible,"lesson gives control of a real bike")
 	check(session.state.economy.balance == balance and mx.progress.data.rental_serial == 0,"first lesson requires no balance and creates no rental debit")
 	check(not mx.start_lesson() and not mx.start_race(0),"nested lesson and race cannot create duplicate bikes")
-	session._menu("Pausa da aula")
+	session.menu("Pausa da aula")
 	for i in 3: await physics_frame
 	var parked: Vector3 = mx.player_bike.position
 	Input.action_press("move_up")

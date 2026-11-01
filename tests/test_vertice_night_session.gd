@@ -95,7 +95,7 @@ func run() -> void:
 	check(await session.interact(), "abre o arquivo")
 	for i in 40:
 		if not session.dialogue_open: break
-		session._advance_dialogue()
+		session.advance_dialogue()
 		await process_frame
 	var state: Dictionary = session.state.world_state[NIGHT.KEY]
 	check(state.stage == "escaping" and state.route == "stealth" and not night.alarm, "página no bolso, rota escondida, sem alarme")

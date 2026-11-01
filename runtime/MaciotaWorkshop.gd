@@ -53,18 +53,18 @@ static var _disabled := OS.get_cmdline_user_args().has("--no-maciota-workshop")
 func open_menu() -> bool:
 	if _disabled: return false
 	tuning_car = candidate_car()
-	session._menu("Mecânico")
+	session.menu("Mecânico")
 	if is_instance_valid(tuning_car):
-		session._button("Preparar "+str(FLEET.spec(tuning_car.archetype).get("label","carro")),_open_tuning)
+		session.button("Preparar "+str(FLEET.spec(tuning_car.archetype).get("label","carro")),_open_tuning)
 		for preset in PRESETS:
-			session._button("Salvar ajuste: "+preset,_preset.bind(preset,true))
-			session._button("Aplicar ajuste: "+preset,_preset.bind(preset,false))
+			session.button("Salvar ajuste: "+preset,_preset.bind(preset,true))
+			session.button("Aplicar ajuste: "+preset,_preset.bind(preset,false))
 	else:
-		session._button("Deixe seu carro perto da garagem para preparar",session.close_menu)
-	session._button("Cuidar da Monaliza",func():
+		session.button("Deixe seu carro perto da garagem para preparar",session.close_menu)
+	session.button("Cuidar da Monaliza",func():
 		session.close_menu()
 		session.show_services("garage"))
-	session._button("Fechar",session.close_menu)
+	session.button("Fechar",session.close_menu)
 	return true
 
 func _race_wins() -> int:

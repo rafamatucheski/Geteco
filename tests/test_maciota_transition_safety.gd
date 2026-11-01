@@ -91,9 +91,9 @@ func _run() -> void:
 		if not is_instance_valid(body): continue
 		check(PROTECTION.is_protected(resident) and PROTECTION.is_protected(body), resident.name+" e corpo herdam proteção")
 		check(not resident.has_method("receive_damage") and not body.has_method("receive_damage"), resident.name+" permanece sem rotina de dano")
-		gameplay._damage(resident, 1000.0, player)
-		gameplay._damage(body, 1000.0, external_source)
-		gameplay._damage(body, 1000.0, external_source, true)
+		gameplay.damage(resident, 1000.0, player)
+		gameplay.damage(body, 1000.0, external_source)
+		gameplay.damage(body, 1000.0, external_source, true)
 		gameplay.explode(body.global_position+Vector3.UP*.85, 2.0, 1000.0, external_source, false)
 		await frames(3)
 		check(is_instance_valid(resident) and not resident.is_queued_for_deletion() and is_instance_valid(body) and body.collision_layer == 2 and PROTECTION.is_protected(body), resident.name+" conserva corpo protegido após dano direto, contínuo e explosão externa")

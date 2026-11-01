@@ -73,7 +73,7 @@ func access(id: String) -> void:
 	if id == "santa_mare_hold":
 		check(is_instance_valid(helper.hatch) and helper.hatch.open_amount > .95,id+" actual hatch opens nearby")
 	if id == "harbor_sewer":
-		var hatch: Node3D = session._find_sewer_hatch()
+		var hatch: Node3D = session.find_sewer_hatch()
 		check(is_instance_valid(hatch) and is_zero_approx(hatch.open_amount),"sewer stays closed nearby")
 		world.player.teleport(door+Vector3(0,.15,.3))
 		await frames(30)

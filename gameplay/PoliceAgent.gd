@@ -15,7 +15,7 @@ const TIER_HEALTH := [100.0, 115.0, 95.0, 110.0, 130.0]
 ## e os policiais de farda (inclusive os de biotipo robusto) não usam essas placas.
 const TIER_ARMOR := [0.0, 0.0, 80.0, 0.0, 110.0]
 ## Colete macio de quem não tem placa (farda, FBI por baixo do terno, motociclista). Só a bala passa
-## por ele (Gameplay._damage_bullet -> scale_bullet_damage); explosão, fogo, soco e carro não. Segura bem
+## por ele (Gameplay.damage_bullet -> scale_bullet_damage); explosão, fogo, soco e carro não. Segura bem
 ## munição de mão e pouco a de fuzil/chumbo, por isso a pistola cai mais que a AK. À queima-roupa, no
 ## tronco: farda 100 = pistola 6 tiros (17 cada), AK 3 (33,6); patamar 1 (115) e FBI (110) = 7 e 4.
 ## Pernas e braços contam como corpo (a zona é só cabeça × resto).
@@ -518,7 +518,7 @@ func _sync_wound_pose() -> void:
 	var limp := clampf((WOUNDED_RATIO - health / maxf(max_health, 1.0)) / WOUNDED_RATIO * 1.6, 0.0, 1.0) if not dead else 0.0
 	if visual.has_method("set_wound_pose"): visual.set_wound_pose(limp, bend)
 
-## Zona da bala, chamada por Gameplay._damage_bullet antes de receive_damage. `hit_point` infinito
+## Zona da bala, chamada por Gameplay.damage_bullet antes de receive_damage. `hit_point` infinito
 ## (chamada sem raio) conta como corpo; `weapon` vazio conta como fuzil (o colete segura menos).
 func scale_bullet_damage(amount: float, hit_point: Vector3, weapon: Dictionary) -> float:
 	if dead or not is_finite(amount) or amount <= 0.0: return amount

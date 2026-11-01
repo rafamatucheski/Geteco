@@ -33,6 +33,6 @@ static func fire(gameplay, shooter: CharacterBody3D, model: Node3D, target: Node
 	if is_instance_valid(gameplay.effects):
 		gameplay.effects.muzzle_smoke(origin, direction)
 		gameplay.effects.weapon_shot(weapon_id, model.weapon.global_position, direction, 1)
-	gameplay._sound(weapon_id, origin)
+	gameplay.sound(weapon_id, origin)
 	gameplay.npc_gunfire.emit(origin, direction, shooter)
 	return true

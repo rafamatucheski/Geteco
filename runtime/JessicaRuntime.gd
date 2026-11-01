@@ -163,9 +163,9 @@ func perform(target: String) -> bool:
 	match target:
 		"exit":
 			if _blocked_exit_age >= 15:
-				session._menu("Saída bloqueada")
-				session._button("Continuar aguardando",session.close_menu)
-				session._button("Pedir resgate",session._on_death)
+				session.menu("Saída bloqueada")
+				session.button("Continuar aguardando",session.close_menu)
+				session.button("Pedir resgate",session.on_death)
 				return true
 			var cancelled := cancel_attempt("requested_exit")
 			if cancelled: session.mission_world.cancel_attempt("requested_exit")
@@ -568,7 +568,7 @@ func _route_finished() -> bool:
 
 func _tick_ride(delta: float) -> void:
 	if not is_instance_valid(car):
-		session._on_death()
+		session.on_death()
 		return
 	if session.rescue_pending or session.arrest_pending or session.world.gameplay.health <= 0:
 		driver.tick(delta,true)

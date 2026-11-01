@@ -69,7 +69,7 @@ func run() -> void:
 	var spoken := 0
 	while session.dialogue_open and spoken < 10:
 		spoken += 1
-		session._advance_dialogue()
+		session.advance_dialogue()
 	check(spoken == 5 and arrival.phase == "tour_board", "recognition, police photograph and invitation advance to passenger boarding")
 	check(arrival.flags.get("harbor_arrival_contact_met",false), "terminal meeting persists independently of the old police/phone chain")
 	check(preload("res://runtime/Arrival.gd").validate_snapshot(arrival.snapshot()), "physical flow produces valid save")

@@ -121,7 +121,8 @@ class FakeGameplay extends Node:
 	func respawn() -> void:
 		recorder._note("respawn")
 		health = 100.0
-	func _update_visual() -> void: recorder._note("_update_visual")
+	func update_visual() -> void: recorder._note("update_visual")
+	func _update_visual() -> void: update_visual()
 
 class FakeHud extends Node:
 	var recorder: Recorder
@@ -275,7 +276,7 @@ func check_death() -> void:
 	# Morte durante a prisão: _on_death tira a prisão antes de desmontar embarques.
 	session.arrest_pending = true
 	systems.passenger_transport.riding = true
-	session._on_death()
+	session.on_death()
 	check_sequence("morte: mesmos sistemas, mesma ordem, mesmo estado em volta", [
 		"upside_world.cancel(death, false) @AT",
 		"fishing.cancel_attempt(Pesca interrompida.) @AT",
@@ -305,11 +306,11 @@ func check_death() -> void:
 	])
 	# Segunda morte com o resgate em curso: só a ilusão é cancelada (antes do guarda).
 	session.world.player.input_locked = true
-	session._on_death()
+	session.on_death()
 	check_sequence("morte repetida no resgate só cancela a ilusão", ["upside_world.cancel(death, false) @DLR"])
 	# Sem passageiro embarcado o freio não é chamado.
 	reset_state()
-	session._on_death()
+	session.on_death()
 	var braked := session.journal.any(func(entry: String): return entry.begins_with("passenger_transport."))
 	session.journal.clear()
 	check(not braked, "morte a pé não freia o transporte de passageiros")
@@ -317,7 +318,7 @@ func check_death() -> void:
 func check_arrest() -> void:
 	reset_state()
 	systems.passenger_transport.riding = true
-	session._on_arrest()
+	session.on_arrest()
 	check_sequence("prisão: mesmos sistemas, mesma ordem, mesmo estado em volta", [
 		"upside_world.cancel(arrest) @T",
 		"amusement_park.leave() @LAT",
@@ -339,11 +340,11 @@ func check_arrest() -> void:
 		"session.arrest_presentation @LA",
 		"session.respawn @LA",
 	])
-	session._on_arrest()
+	session.on_arrest()
 	check_sequence("prisão repetida não cancela nada", [])
 	reset_state()
 	session.rescue_pending = true
-	session._on_arrest()
+	session.on_arrest()
 	check_sequence("prisão durante o resgate não cancela nada", [])
 
 func check_rescue() -> void:
@@ -352,7 +353,7 @@ func check_rescue() -> void:
 	session.world.gameplay.health = 0
 	session.world.player.input_locked = true
 	session.real_respawn = true
-	await session._respawn()
+	await session.respawn()
 	check_sequence("resgate: mesmos sistemas, mesma ordem, mesmo estado em volta", [
 		"upside_world.cancel(rescue, false) @DLRT",
 		# _begin_transition("rescue")
@@ -375,7 +376,7 @@ func check_rescue() -> void:
 		"cold.recover_after_rescue() @LRT",
 		"wine.recover() @LRT",
 		"player.teleport(v) @LRT",
-		"gameplay._update_visual() @LR",
+		"gameplay.update_visual() @LR",
 		"hud.refresh_from_state() @LR",
 		"session.close_menu() @L",
 		"session.save_game() @L",
@@ -384,13 +385,13 @@ func check_rescue() -> void:
 	reset_state()
 	session.respawn_busy = true
 	session.real_respawn = true
-	await session._respawn()
+	await session.respawn()
 	check_sequence("resgate em curso só cancela a ilusão", ["upside_world.cancel(rescue, false) @T"])
 
 func check_transition() -> void:
 	reset_state()
 	var generation: int = session.transition_generation
-	var token: int = session._begin_transition("test")
+	var token: int = session.begin_transition("test")
 	check_sequence("transição: fliperama, pesca, mirante, parque e serra", [
 		"arcade.close() @T",
 		"fishing.cancel_attempt(Pesca encerrada.) @T",
@@ -399,12 +400,12 @@ func check_transition() -> void:
 		"mountain_activities.cancel_attempt() @T",
 	])
 	check(token == generation + 1 and session.transition_kind == "test", "transição aceita ganha a vez")
-	session._finish_transition(token)
+	session.finish_transition(token)
 	reset_state()
 	systems.amusement_park.active = true
 	systems.amusement_park.stay_active = true
 	generation = session.transition_generation
-	token = session._begin_transition("test")
+	token = session.begin_transition("test")
 	check_sequence("parque que não solta o jogador recusa antes da serra", [
 		"arcade.close() @T",
 		"fishing.cancel_attempt(Pesca encerrada.) @T",
@@ -414,11 +415,11 @@ func check_transition() -> void:
 	check(token == -1 and session.transition_generation == generation and session.transition_kind.is_empty(), "parque preso não consome a geração")
 	reset_state()
 	session.transition_kind = "other"
-	check(session._begin_transition("test") == -1, "transição ocupada é recusada")
+	check(session.begin_transition("test") == -1, "transição ocupada é recusada")
 	check_sequence("transição ocupada não cancela nada", [])
 	reset_state()
 	session.controller.travel_busy = true
-	check(session._begin_transition("test") == -1, "viagem em curso recusa a transição")
+	check(session.begin_transition("test") == -1, "viagem em curso recusa a transição")
 	check_sequence("viagem em curso não cancela nada", [])
 
 ## Cada recusa do carregar vem depois de pesca, mirante e parque: um carregar recusado já
@@ -525,7 +526,7 @@ func stub_scene(path: String, node_name: String) -> PackedScene:
 ## na classe de verdade de cada sistema (renomear um método quebra aqui, não no meio do jogo).
 func check_registry() -> void:
 	var constants: Dictionary = (load(SESSION_PATH) as Script).get_script_constant_map()
-	if not check(session.has_method("_cancel_for") and constants.has("CANCEL_STEPS"), "registro de limpeza existe na sessão"): return
+	if not check(session.has_method("cancel_for") and constants.has("CANCEL_STEPS"), "registro de limpeza existe na sessão"): return
 	var steps: Dictionary = constants.CANCEL_STEPS
 	var stages: Array = steps.keys().map(func(stage): return String(stage))
 	stages.sort()
@@ -571,7 +572,7 @@ func script_has_method(script: Script, method: String) -> bool:
 ## e o código da viagem é conferido no texto (a etapa fica depois do teste de solo, antes da
 ## troca de região, e nenhuma das chamadas antigas sobrou ali).
 func check_travel() -> void:
-	if not session.has_method("_cancel_for"): return
+	if not session.has_method("cancel_for"): return
 	var full := [
 		"armored_transport.suspend_for_travel() @T",
 		"passenger_transport.cancel_for_transition() @T",
@@ -588,22 +589,22 @@ func check_travel() -> void:
 	session.state.campaign.active_id = "jessica_bank"
 	session.world.player.input_locked = false
 	systems.mission_world.unlock_on_cancel = false
-	check(session._cancel_for(&"travel"), "viagem não aborta")
+	check(session.cancel_for(&"travel"), "viagem não aborta")
 	check_sequence("viagem no assalto da Jessica encerra a missão antes dela", full)
 	reset_state()
-	session._cancel_for(&"travel")
+	session.cancel_for(&"travel")
 	check_sequence("viagem fora do assalto não mexe na missão", full.filter(func(entry: String): return not entry.begins_with("mission_world.")))
 	reset_state()
 	session.state.campaign.active_id = "jessica_bank"
 	session.jessica = null
-	session._cancel_for(&"travel")
+	session.cancel_for(&"travel")
 	check_sequence("sem Jessica a missão do assalto não é encerrada pela viagem", full.filter(func(entry: String): return not entry.begins_with("mission_world.") and not entry.begins_with("jessica.")))
 	session.jessica = systems.jessica
 	systems.mission_world.unlock_on_cancel = true
 	var source := FileAccess.get_file_as_string(WORLD_PATH)
 	var start := source.find("func _travel_checked(")
 	var body := source.substr(start, source.find("\nfunc ", start + 1) - start)
-	var stage_at := body.find("session._cancel_for(&\"travel\")")
+	var stage_at := body.find("session.cancel_for(&\"travel\")")
 	check(stage_at > body.find("Destino ocupado ou sem solo") and stage_at < body.find("world.gameplay.on_region_changed()"), "viagem chama a etapa depois do teste de solo e antes da troca de região")
 	var leftovers: Array[String] = []
 	for call in ["suspend_for_travel", "cancel_for_transition", "cancel_attempt", "cancel_press_delivery", "release_all", "dismiss_all"]:

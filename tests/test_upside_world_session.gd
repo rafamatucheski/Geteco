@@ -109,7 +109,7 @@ func approach() -> bool:
 	if not world.session.state.place_id.is_empty() or runtime.busy(): return false
 	# A preparação realoca entre áreas distantes. Segura o portão real de residência para que
 	# o streaming não volte o foco para o ponto antigo do jogador enquanto o piso novo carrega.
-	var gate: int = world.session._begin_transition("upside_fixture_approach")
+	var gate: int = world.session.begin_transition("upside_fixture_approach")
 	if not check(gate > 0,"isolated approach fixture owns its streaming transition"): return false
 	var physics_enabled: bool = world.player.is_physics_processing()
 	world.player.set_physics_process(false)
@@ -120,11 +120,11 @@ func approach() -> bool:
 	await physics_frame
 	if not check(world.session.position_clear(point),"park fixture approach has floor and capsule clearance"):
 		world.player.set_physics_process(physics_enabled)
-		world.session._finish_transition(gate)
+		world.session.finish_transition(gate)
 		return false
 	world.player.teleport(point)
 	world.player.set_physics_process(physics_enabled)
-	world.session._finish_transition(gate)
+	world.session.finish_transition(gate)
 	world.camera.initialized = false
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO

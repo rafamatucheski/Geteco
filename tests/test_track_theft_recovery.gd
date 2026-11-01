@@ -90,29 +90,29 @@ func desert_case() -> void:
 	var progress: Dictionary = story.STATE.data(world.session.state.world_state).duplicate(true)
 	if not check(story.actors.has("vicente") and crew.members.size()>0,"story participants and crew exist at the real meet"): return
 	var vicente = story.actors.vicente
-	world.gameplay._damage(vicente,200,world.player)
+	world.gameplay.damage(vicente,200,world.player)
 	check(vicente.dead and vicente.health==0 and vicente.collision_layer==0,"production damage can kill Vicente at the track")
 	var member = crew.members.values()[0]
-	world.gameplay._damage(member,200,world.player)
+	world.gameplay.damage(member,200,world.player)
 	check(member.dead,"production damage can kill the formerly protected entourage")
 	var everyone_dead := true
 	for actor in story.actors.values():
-		world.gameplay._damage(actor,200,world.player)
+		world.gameplay.damage(actor,200,world.player)
 		everyone_dead = everyone_dead and actor.dead
 	for actor in crew.members.values():
-		world.gameplay._damage(actor,200,world.player)
+		world.gameplay.damage(actor,200,world.player)
 		everyone_dead = everyone_dead and actor.dead
 	check(everyone_dead,"all present meet contacts, crew and guests can die")
 	var takeshi = world.session.desert.drag.takeshi_meet
 	if check(is_instance_valid(takeshi.actor),"optional Takeshi encounter exists"):
-		world.gameplay._damage(takeshi.actor,200,world.player)
+		world.gameplay.damage(takeshi.actor,200,world.player)
 		check(takeshi.actor.dead,"Takeshi at the strip also accepts lethal damage")
 	var spectators := get_nodes_in_group("desert_drag_strip_spectator")
 	var spectator_slot: Node3D
 	if not spectators.is_empty():
 		var spectator = spectators[0]
 		spectator_slot = spectator.get_parent()
-		world.gameplay._damage(spectator,200,world.player)
+		world.gameplay.damage(spectator,200,world.player)
 		check(spectator.dead,"strip spectators accept production lethal damage")
 	await frames(30)
 	check(story.nearest_action().get("target","")!="vicente" and crew.retired.size()>0,"dead participants cannot converse and remain retired for this visit")
@@ -141,7 +141,7 @@ func desert_case() -> void:
 			damaged_display = candidate
 			break
 	if check(is_instance_valid(damaged_display),"another parked car is available for weapon damage"):
-		world.gameplay._damage(damaged_display,20,world.player)
+		world.gameplay.damage(damaged_display,20,world.player)
 		await frames(3)
 		check(is_instance_valid(damaged_display.activated) and damaged_display.activated.health<damaged_display.activated.max_health,"production weapon damage activates and damages the parked car")
 	await photo("stolen-meet-car")

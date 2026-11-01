@@ -70,7 +70,7 @@ func run() -> void:
 	var ammo_before: Dictionary = economy.get_ammo("pistol")
 	var before_arrest: int = economy.balance
 	world.gameplay.stars = 1
-	session._on_arrest()
+	session.on_arrest()
 	check(await wait_recovered(session), "custódia termina")
 	var precinct: Dictionary = PLACES.get_definition(PENALTY.PRECINCT)
 	check(planar_distance(world.player.global_position, precinct.return_position) < 3.0, "sai pela porta da delegacia (%.1f m)" % planar_distance(world.player.global_position, precinct.return_position))

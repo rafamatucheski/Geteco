@@ -67,9 +67,9 @@ func stop_tracking() -> void:
 func append_tracking_buttons() -> void:
 	var state:=preload("res://runtime/desert/community/DesertCommunityState.gd").data(session.state.world_state)
 	if state.step>0 and state.step<5 and not state.active:
-		session._button("Acompanhar: Água para Santa Lua",_track_water)
+		session.button("Acompanhar: Água para Santa Lua",_track_water)
 	if not objective().is_empty():
-		session._button("Acompanhar história principal",_track_story)
+		session.button("Acompanhar história principal",_track_story)
 
 func _track_water() -> void:
 	session.close_menu()

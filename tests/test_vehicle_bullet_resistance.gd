@@ -21,21 +21,21 @@ func _initialize() -> void:
 		var shots := 0
 		while car.health > 0.0 and shots < 100:
 			for pellet in int(data.get("pellets", 1)):
-				gameplay._damage_bullet(car, float(data.damage), shooter)
+				gameplay.damage_bullet(car, float(data.damage), shooter)
 			shots += 1
 			if shots == 3:
 				check(car.health > 90.0, id + ": three shots preserve over half the hull")
 		check(shots >= 7 and shots < 100, id + ": resists sustained fire but remains destructible")
 		print("VEHICLE_BULLETS ", id, " shots=", shots)
 	car.health = 180.0
-	gameplay._damage(car, 70.0, shooter)
+	gameplay.damage(car, 70.0, shooter)
 	check(is_equal_approx(car.health, 110.0), "non-ballistic damage remains unchanged")
 	car.health = 180.0
 	car.damage_resistance = 0.4
-	gameplay._damage_bullet(car, 100.0, shooter)
+	gameplay.damage_bullet(car, 100.0, shooter)
 	check(is_equal_approx(car.health, 174.0), "tank armor stacks with hull resistance")
 	car.set_meta("invulnerable", true)
-	gameplay._damage_bullet(car, 10000.0, shooter)
+	gameplay.damage_bullet(car, 10000.0, shooter)
 	check(is_equal_approx(car.health, 174.0), "protected vehicle remains invulnerable")
 	car.free()
 	shooter.free()

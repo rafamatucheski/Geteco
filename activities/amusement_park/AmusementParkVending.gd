@@ -56,15 +56,15 @@ func remaining(machine: String, item: String) -> int:
 func open(machine: String) -> bool:
 	if not _available(machine,opened == machine): return false
 	opened = machine
-	session._menu("%s · R$ %d" % [MACHINES[machine].name,session.state.economy.balance])
+	session.menu("%s · R$ %d" % [MACHINES[machine].name,session.state.economy.balance])
 	session.menu_closed = func(): opened = ""
 	for item: String in MACHINES[machine].items:
 		var amount := remaining(machine,item)
 		var token := offer_token(machine,item)
 		var label: String = GRID.spec(item).label
 		var text := String(TranslationServer.translate("%s · R$ %d · %d disponíveis")) % [label,ECONOMY.SUPPLIES[item].price,amount] if amount > 0 else label+" · Esgotado"
-		session._button(text,func(): buy(machine,item,token))
-	session._button("Fechar",session.close_menu)
+		session.button(text,func(): buy(machine,item,token))
+	session.button("Fechar",session.close_menu)
 	return true
 
 func buy(machine: String, item: String, token: String) -> Dictionary:

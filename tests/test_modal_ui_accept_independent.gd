@@ -55,8 +55,8 @@ func send_controller_accept() -> void:
 
 func open_probe_modal() -> void:
 	modal_activated = false
-	session._menu("Validação independente")
-	session._button("Confirmar", func():
+	session.menu("Validação independente")
+	session.button("Confirmar", func():
 		modal_activated = true
 		session.close_menu()
 	)
@@ -64,7 +64,7 @@ func open_probe_modal() -> void:
 
 func ensure_rescued() -> void:
 	if session.rescue_pending and not session.respawn_busy:
-		session._respawn()
+		session.respawn()
 	await wait_until(func(): return not session.rescue_pending and not session.respawn_busy, 300)
 
 func open_rescue() -> bool:

@@ -100,7 +100,7 @@ func run() -> void:
 		await hold(.2)
 		await capture("staging-%d"%cycle)
 		if cycle==0:
-			session._menu("Pausa")
+			session.menu("Pausa")
 			await hold(.2)
 			await capture("pause")
 			session.close_menu()

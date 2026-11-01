@@ -111,9 +111,9 @@ func target_position() -> Vector3:
 
 func show_journal() -> void:
 	if session == null: return
-	session._menu("Atividades da montanha")
+	session.menu("Atividades da montanha")
 	if busy():
-		session._button("Cancelar tentativa", func():
+		session.button("Cancelar tentativa", func():
 			cancel_attempt()
 			session.close_menu()
 			session.save_game())
@@ -121,8 +121,8 @@ func show_journal() -> void:
 		for key in TITLES:
 			if not components.has(key): continue
 			var chosen := str(key)
-			session._button(str(TITLES[key]), _track.bind(chosen))
-	session._button("Fechar", session.close_menu)
+			session.button(str(TITLES[key]), _track.bind(chosen))
+	session.button("Fechar", session.close_menu)
 
 func _track(key: String) -> void:
 	tracked = key

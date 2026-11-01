@@ -165,7 +165,7 @@ func validate_life() -> void:
 
 func capture_motion() -> void:
 	# A fixture de história concluída pode abrir o telefonema real do desfecho.
-	while world.session.dialogue_open: world.session._advance_dialogue()
+	while world.session.dialogue_open: world.session.advance_dialogue()
 	world.player.teleport(Vector3(476,.1,102))
 	await create_timer(2).timeout
 	world.player.controlled_automatically=true

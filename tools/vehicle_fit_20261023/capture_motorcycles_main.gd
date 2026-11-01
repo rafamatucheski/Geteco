@@ -151,7 +151,7 @@ func run() -> void:
 		for i in 8: await process_frame
 		check(bike.global_transform.is_equal_approx(paused_pose),"pause holds motorcycle still")
 		paused = false
-		world.session._menu("Wheelie integration")
+		world.session.menu("Wheelie integration")
 		await frames(3)
 		check(bike.manual_wheelie.pitch == 0,"modal menu clears street wheelie")
 		world.session.close_menu()

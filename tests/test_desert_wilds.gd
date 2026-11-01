@@ -239,7 +239,7 @@ func brother(wilds: Node3D, site: Dictionary, record: Dictionary) -> void:
 func close_dialogue() -> void:
 	for i in 12:
 		if not world.session.dialogue_open: break
-		world.session._advance_dialogue()
+		world.session.advance_dialogue()
 	for i in 2: await process_frame
 
 func finish(code: int) -> void:

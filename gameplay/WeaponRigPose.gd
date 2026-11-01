@@ -971,7 +971,7 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 			# Revólver, não escopeta: antes caía no caso da 12 e ia duas vezes ao cinto
 			# como quem enfia cartucho no tubo. Aqui: tambor para a esquerda, cano para
 			# cima para ejetar, UMA ida ao cinto pelo carregador rápido, cano para baixo
-			# para encaixar, fecha. A abertura do tambor é de `Gameplay._update_weapon_parts`.
+			# para encaixar, fecha. A abertura do tambor é de `Gameplay.update_weapon_parts`.
 			var eject := smoothstep(0.08, 0.20, t) * (1.0 - smoothstep(0.30, 0.40, t))
 			var engine_load_value := smoothstep(0.52, 0.62, t) * (1.0 - smoothstep(0.78, 0.88, t))
 			# No encaixe o revólver vem para junto do peito, quase na horizontal: cano
@@ -983,7 +983,7 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 			var fetch := smoothstep(0.32, 0.44, t) * (1.0 - smoothstep(0.46, 0.58, t))
 			left = cylinder.lerp(belt, fetch)
 			# Fecha o tambor com um golpe de pulso (o "flick" de cinema), no mesmo
-			# instante em que `Gameplay._update_weapon_parts` recolhe o tambor.
+			# instante em que `Gameplay.update_weapon_parts` recolhe o tambor.
 			var flick := _pulse(t, 0.80, 0.08)
 			accents = {"roll": 0.30 * flick, "pitch": 0.06 * flick, "kick": Vector3(0.012, 0.01, 0) * flick, "left": Vector3.ZERO}
 		"shotgun", "shotgun_auto", "hunting_rifle":

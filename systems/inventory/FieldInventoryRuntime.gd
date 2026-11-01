@@ -79,7 +79,7 @@ func can_edit(container: String) -> bool:
 func open(at_trunk := false) -> void:
 	if session.is_transition_blocked() or session.world.driving.occupied or session.world.gameplay.health<=0: return
 	if at_trunk and not trunk_access(): return
-	session._menu("Bagagem")
+	session.menu("Bagagem")
 	session.panel.hide()
 	session.menu_closed=dismiss
 	ui.trunk_visible=at_trunk

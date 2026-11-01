@@ -60,11 +60,11 @@ func run() -> void:
 	if not check(is_instance_valid(vicente),"Vicente is present at the new meeting place"): finish(); return
 	check(vicente.global_position.distance_to(LAYOUT.drag_vicente_point())<.5,"campaign Vicente uses the new venue")
 	var vicente_point: Vector3 = vicente.global_position
-	world.gameplay._damage(vicente,10000.0,world.player)
+	world.gameplay.damage(vicente,10000.0,world.player)
 	await frames(2)
 	check(is_instance_valid(vicente) and not vicente.is_queued_for_deletion() and vicente.collision_layer!=0,"production damage preserves Vicente and his physical body")
 	for member in get_nodes_in_group("desert_drag_crew"):
-		world.gameplay._damage(member,10000.0,world.player)
+		world.gameplay.damage(member,10000.0,world.player)
 	check(get_nodes_in_group("desert_drag_crew").size()==7,"crew remains present after production damage")
 	await overview()
 	await approach(vicente.global_position+Vector3(0,.08,1.2))
@@ -77,7 +77,7 @@ func run() -> void:
 	check(ducked,"conversation reduces surrounding sound while dialogue is open")
 	for i in 12:
 		if not session.dialogue_open: break
-		session._advance_dialogue()
+		session.advance_dialogue()
 	# Desde 20/10 a conversa do encontro é a primeira etapa de "Oito anos" (runtime/desert/act2):
 	# met_vicente só vem na capela, e Vicente vai esperar no Motel Oásis.
 	check(not session.modal and preload("res://runtime/desert/act2/VicenteAct2State.gd").stage(session.state.world_state)=="motel","completed conversation starts the reunion mission")
@@ -88,7 +88,7 @@ func run() -> void:
 		check(session.desert.story.perform("jessica",false),"Jessica can be approached beside her team")
 		for i in 12:
 			if not session.dialogue_open: break
-			session._advance_dialogue()
+			session.advance_dialogue()
 		check(not session.state.world_state.get("desert_story",{}).get("jessica_met",false),"casual Jessica conversation does not bypass the race story milestone")
 		await photo("jessica-gameplay")
 		await approach(vicente_point+Vector3(0,.08,1.2))
@@ -104,7 +104,7 @@ func run() -> void:
 		check(routine.actor.global_position.distance_to(paused_at)<.04,"Digo stays with the player during conversation")
 		for i in 12:
 			if not session.dialogue_open: break
-			session._advance_dialogue()
+			session.advance_dialogue()
 		await frames(30)
 		check(not routine.diagnostics().talking and not session.modal,"Digo returns to his routine after dialogue")
 		await photo("digo-gameplay")
@@ -119,7 +119,7 @@ func run() -> void:
 	# nesta primeira volta. Termina-o antes de testar a reentrada calma no encontro.
 	for i in 12:
 		if not session.dialogue_open: break
-		session._advance_dialogue()
+		session.advance_dialogue()
 	check(world.production.travel("desert",at),"ordinary return to the meet admitted")
 	await settle()
 	for i in 1500:
@@ -143,7 +143,7 @@ func check_service(session,routine) -> void:
 	check(session.desert.perform(session.desert.nearest_action()) and session.modal,"unlocked Digo opens preparation service at the meet")
 	for i in 12:
 		if not session.dialogue_open: break
-		session._advance_dialogue()
+		session.advance_dialogue()
 	check(session.desert.tuning_car==car,"new workshop selects the nearby player's car")
 	session.close_menu()
 	await frames(20)

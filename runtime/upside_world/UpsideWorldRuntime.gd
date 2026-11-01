@@ -43,7 +43,7 @@ func exploring() -> bool: return active and state.active and not _admitting and 
 func token() -> int: return _token
 func owns(expected: int) -> bool:
 	if expected<=0 or expected!=_token or not busy() or not is_instance_valid(session): return false
-	if not _released: return session._owns_transition(expected)
+	if not _released: return session.owns_transition(expected)
 	# O token da ilusão passa para uma saída registrada por vez.
 	# Nunca pode agir como licença incondicional depois que outro dono chega.
 	var generation: int = session.transition_generation
@@ -81,7 +81,7 @@ func try_start() -> bool:
 		"automatic":world.player.controlled_automatically,"automatic_direction":world.player.automatic_direction,
 		"physics":world.player.is_physics_processing(),"layer":world.player.collision_layer,"mask":world.player.collision_mask,
 		"weapon":session.state.equipped_weapon,"health":world.gameplay.health}
-	_token=session._begin_transition("upside_world")
+	_token=session.begin_transition("upside_world")
 	if _token<0:
 		_admitting=false; _saved.clear(); return false
 	active=true
@@ -158,7 +158,7 @@ func _process(delta: float) -> void:
 		_request_return()
 
 func _still_owns_scene() -> bool:
-	return is_instance_valid(session) and is_instance_valid(world) and session._owns_transition(_token) and session.room==_entry_room and session.state.place_id==STATE.PLACE and session.state.region_id=="harbor" and world.gameplay.health>0 and not session.rescue_pending and not session.arrest_pending and not world.driving.occupied
+	return is_instance_valid(session) and is_instance_valid(world) and session.owns_transition(_token) and session.room==_entry_room and session.state.place_id==STATE.PLACE and session.state.region_id=="harbor" and world.gameplay.health>0 and not session.rescue_pending and not session.arrest_pending and not world.driving.occupied
 
 func _tick_view(delta: float) -> void:
 	if not is_instance_valid(view): return
@@ -244,7 +244,7 @@ func release_for_return(expected: int) -> bool:
 	_released=true
 	_handoff_generation=session.transition_generation
 	_return_generation=_handoff_generation+1
-	session._finish_transition(expected)
+	session.finish_transition(expected)
 	return true
 
 func prepare_departure_retry(expected: int) -> bool:
@@ -275,7 +275,7 @@ func finish_return(expected: int) -> bool:
 func cancel(reason := "", restore_player := true) -> void:
 	if _finishing: return
 	_finishing=true
-	var ours: bool=is_instance_valid(session) and _token>0 and session._owns_transition(_token)
+	var ours: bool=is_instance_valid(session) and _token>0 and session.owns_transition(_token)
 	var living: bool=is_instance_valid(world) and world.gameplay.health>0 and not session.rescue_pending and not session.arrest_pending
 	if ours and living and restore_player and _saved.has("point"):
 		var point := _safe_room_point()
@@ -289,7 +289,7 @@ func cancel(reason := "", restore_player := true) -> void:
 			return
 	if busy() or state.pending_entry!=0: set_meta("end_reason",reason)
 	_restore_presentation(ours,ours and living)
-	if ours: session._finish_transition(_token)
+	if ours: session.finish_transition(_token)
 	active=false; _admitting=false; _returning=false; _released=false
 	state.cancel()
 	_clear_owned_assets()

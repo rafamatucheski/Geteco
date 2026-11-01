@@ -132,21 +132,21 @@ func use_stairs() -> bool:
 	if nearest_action().get("id","") != "building_stairs": return false
 	if floor_index == 0: return await change_floor(1)
 	if is_rooftop(): return await change_floor(floor_index-1)
-	session._menu(String(TranslationServer.translate("Escada · %dº andar"))%floor_index)
+	session.menu(String(TranslationServer.translate("Escada · %dº andar"))%floor_index)
 	var upper := floor_index+1
 	var lower := floor_index-1
-	session._button("Subir à cobertura" if upper == int(definition.floor_count) else String(TranslationServer.translate("Subir ao %dº andar"))%upper,func():
+	session.button("Subir à cobertura" if upper == int(definition.floor_count) else String(TranslationServer.translate("Subir ao %dº andar"))%upper,func():
 		session.close_menu()
 		change_floor(upper))
-	session._button("Descer ao térreo" if lower == 0 else String(TranslationServer.translate("Descer ao %dº andar"))%lower,func():
+	session.button("Descer ao térreo" if lower == 0 else String(TranslationServer.translate("Descer ao %dº andar"))%lower,func():
 		session.close_menu()
 		change_floor(lower))
-	session._button("Voltar",session.close_menu)
+	session.button("Voltar",session.close_menu)
 	return true
 
 func change_floor(next_index: int) -> bool:
 	if nearest_action().get("id","") != "building_stairs" or next_index < 0 or next_index > int(definition.floor_count) or absi(next_index-floor_index) != 1: return false
-	var token: int = session._begin_transition("building_stairs")
+	var token: int = session.begin_transition("building_stairs")
 	if token < 0: return false
 	var actor = session.world.player
 	var was_locked: bool = actor.input_locked
@@ -195,8 +195,8 @@ func change_floor(next_index: int) -> bool:
 		await _abort_stairs(token,was_locked)
 		return false
 	await session.door_transition.fade_to(0.0,.20)
-	session._restore_transition_player_lock(was_locked,token)
-	session._finish_transition(token)
+	session.restore_transition_player_lock(was_locked,token)
+	session.finish_transition(token)
 	session.save_game()
 	return true
 
@@ -213,14 +213,14 @@ func _update_camera() -> void:
 	session.world.camera._process(1.0)
 
 func _owns_floor_transition(token: int) -> bool:
-	return is_instance_valid(session) and session._owns_transition(token) and session.room == self and session.world.gameplay.health > 0
+	return is_instance_valid(session) and session.owns_transition(token) and session.room == self and session.world.gameplay.health > 0
 
 func _abort_stairs(token: int,was_locked: bool) -> void:
 	# Um resgate que pegou o token também é dono da cortina e do bloqueio de ator.
-	if not is_instance_valid(session) or not session._owns_transition(token): return
+	if not is_instance_valid(session) or not session.owns_transition(token): return
 	await session.door_transition.fade_to(0.0,.20)
-	session._restore_transition_player_lock(was_locked,token)
-	session._finish_transition(token)
+	session.restore_transition_player_lock(was_locked,token)
+	session.finish_transition(token)
 
 func is_floor_clear(point: Vector3,radius := .32) -> bool:
 	var local_point := point-Vector3.UP*floor_height(floor_index)

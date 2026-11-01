@@ -51,7 +51,7 @@ func run() -> void:
 	check(is_instance_valid(cemetery.keeper), "Real cemetery keeper activates")
 	if failures: await finish(world); return
 	var keeper = cemetery.keeper
-	world.gameplay._damage(keeper, 200.0, null)
+	world.gameplay.damage(keeper, 200.0, null)
 	check(keeper.dead and cemetery.deaths.has("keeper"), "Keeper death is recorded by real combat")
 	var emergency = world.gameplay.emergency
 	var collected := false

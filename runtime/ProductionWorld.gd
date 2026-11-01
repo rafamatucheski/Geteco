@@ -1554,7 +1554,7 @@ func _commit_logical_region(next_region: String) -> void:
 	if is_instance_valid(urban_transit): urban_transit.on_region_changed()
 	if session != null:
 		session.sync_dispatch_location()
-		session._refresh_routine_context()
+		session.refresh_routine_context()
 		if is_instance_valid(session.weather): session.weather._update()
 	if is_instance_valid(world_audio) and world_audio.has_method("on_region_changed"):
 		world_audio.on_region_changed(previous,next_region)
@@ -1901,14 +1901,16 @@ func _update_density() -> void:
 	area_density_scale.x = move_toward(area_density_scale.x,area_target.x,.02)
 	area_density_scale.y = move_toward(area_density_scale.y,area_target.y,.02)
 
-func _population_cap() -> int:
+func population_cap() -> int:
 	var target := mini(requested_population,VC_MAX_POPULATION) if population_vc_enabled else requested_population
 	return ceili(float(target)*minf(density_scale,area_density_scale.x)-.00001)
+func _population_cap() -> int: return population_cap()
 
-func _traffic_cap() -> int:
+func traffic_cap() -> int:
 	# Os componentes de Vector2 são float32; ignora o erro de arredondamento abaixo de uma entidade nos
 	# tetos inteiros escritos (por exemplo, 40 * .8 precisa continuar 32, não 33).
 	return ceili(float(VC_TRAFFIC_TARGET if population_vc_enabled else TRAFFIC_TARGET)*minf(density_scale,area_density_scale.y)-.00001)
+func _traffic_cap() -> int: return traffic_cap()
 
 ## Tira no máximo um pedestre e um carro civil por chamada, o mais longe do jogador e fora
 ## do quadro, enquanto houver mais que o teto atual.
@@ -2479,7 +2481,7 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 		session.show_message("Destino ocupado ou sem solo. Viagem não realizada.")
 		return
 	# Quem para na viagem fica no registro da sessão (FullSession.CANCEL_STEPS, etapa "travel").
-	session._cancel_for(&"travel")
+	session.cancel_for(&"travel")
 	world.gameplay.on_region_changed()
 	world.gameplay.emergency.reset_region()
 	# A viagem rápida descarrega a população. Travessias lógicas de costura cidade/montanha

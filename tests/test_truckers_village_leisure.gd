@@ -46,6 +46,7 @@ class Session extends RefCounted:
 		modal = true
 		world.player.input_locked = true
 		panel.show()
+	func menu(_title: String) -> void: _menu(_title)
 	func close_menu() -> void:
 		if menu_closed.is_valid():
 			menu_closed.call()

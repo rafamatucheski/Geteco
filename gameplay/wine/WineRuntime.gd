@@ -37,7 +37,7 @@ func _available() -> bool:
 
 func _near(target: String) -> bool:
 	if not _available() or session.state.place_id!=PLACE or not is_instance_valid(session.room): return false
-	if session.has_method("_service_threatened") and session._service_threatened(): return false
+	if session.has_method("service_threatened") and session.service_threatened(): return false
 	var key := "luisa" if target=="luisa" else "service"
 	if not session.room.interaction_points.has(key): return false
 	return session.world.player.global_position.distance_to(session.room.interaction_points[key])<1.85
@@ -62,7 +62,7 @@ func open_bag() -> void:
 	if not _available(): return
 	_open(false)
 func _open(shop: bool) -> void:
-	session._menu("Curitiba Cellar" if shop else "Vinhos")
+	session.menu("Curitiba Cellar" if shop else "Vinhos")
 	session.panel.hide()
 	session.menu_closed=dismiss
 	opened_health=float(session.world.gameplay.health)

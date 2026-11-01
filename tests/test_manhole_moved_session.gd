@@ -60,7 +60,7 @@ func run() -> void:
 		world.player.automatic_direction = Vector3.ZERO
 	world.player.teleport(entry + Vector3(-0.8, 0.08, 0.0) if area == "harbor" else entry + Vector3(0, 0.08, 0))
 	for i in 60: await physics_frame
-	var hatch: Node3D = session._find_sewer_hatch(id)
+	var hatch: Node3D = session.find_sewer_hatch(id)
 	check(is_instance_valid(hatch), id + ": estrutura carregada no lugar novo")
 	if not is_instance_valid(hatch): quit(1); return
 	check(Vector2(hatch.global_position.x - target.x, hatch.global_position.z - target.y).length() < 0.05, id + ": estrutura na posição editada")

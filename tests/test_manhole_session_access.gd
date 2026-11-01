@@ -26,7 +26,7 @@ func drive_lid(id: String, direction: float) -> void:
 	# O observador fica longe desta rota, não na frente do carro.
 	world.player.teleport(at+Vector3(0, .1, 20))
 	await frames(40)
-	var hatch: Node3D = world.session._find_sewer_hatch(id)
+	var hatch: Node3D = world.session.find_sewer_hatch(id)
 	check(is_instance_valid(hatch) and is_zero_approx(hatch.open_amount), id+": tampa real fechada")
 	var car = preload("res://scripts/Vehicle.gd").new()
 	car.archetype = "sport_coupe"

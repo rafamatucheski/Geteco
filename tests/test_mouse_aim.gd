@@ -59,7 +59,7 @@ func run() -> void:
 		check(point.distance_to(manual) < 0.001, "Cursor at NPC height %s remains fully manual" % height)
 		if height != 1.0:
 			check(planar(point).distance_to(planar(first.position)) > 0.1, "No correction toward NPC centre at height %s" % height)
-	var origin := aim._muzzle_world_position()
+	var origin := aim.muzzle_world_position()
 	var manual_target := aim.aim_from_screen(camera.unproject_position(first.position + Vector3.UP))
 	var direction := manual_target - origin
 	direction.y = 0.0

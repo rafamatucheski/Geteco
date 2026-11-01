@@ -78,14 +78,14 @@ func run() -> void:
 	check(session.dialogue_open, "Nelson tells Greek history through dialogue")
 	await photo("04-nelson-story")
 	for line in 4:
-		if session.dialogue_open: session._advance_dialogue()
+		if session.dialogue_open: session.advance_dialogue()
 	if session.modal: session.close_menu()
 	check(await walk(session.room.to_global(Vector3(1.7, .04, -1.1))), "walk around counter toward office")
 	check(await walk(session.room.interaction_points.luisa + Vector3.UP * .04), "Luisa's office has an unobstructed approach")
 	check(session.wine.perform("luisa") and session.dialogue_open, "Luisa has financial-office conversation")
 	await photo("05-luisa-financial")
 	for line in 4:
-		if session.dialogue_open: session._advance_dialogue()
+		if session.dialogue_open: session.advance_dialogue()
 	if session.modal: session.close_menu()
 	check(await walk(session.room.to_global(Vector3(1.7, .04, -1.1))), "leave office around furniture")
 	check(await walk(session.room.to_global(Vector3(0, .04, 3.5))), "clear central circulation returns toward entry")

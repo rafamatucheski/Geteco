@@ -19,7 +19,7 @@ func use_target(key: String) -> void:
 	world.player.teleport(world.maciota_place.interaction_points[key] + Vector3.UP * .05)
 	await settle()
 	check(world.session.interact(), "Interaction " + key)
-	while world.session.dialogue_open: world.session._advance_dialogue()
+	while world.session.dialogue_open: world.session.advance_dialogue()
 
 func run() -> void:
 	world = load("res://Main.tscn").instantiate()

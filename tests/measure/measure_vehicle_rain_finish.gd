@@ -148,7 +148,7 @@ func scene_load() -> Dictionary:
 		if not vehicle.traffic or vehicle.health <= 0.0: continue
 		traffic += 1
 		if vehicle.is_visible_in_tree() and current_camera.is_position_in_frustum(vehicle.global_position): visible_traffic += 1
-	return {"pedestrians":world.people.size(),"vehicles":vehicles,"traffic":traffic,"ambient_traffic":world.production._ambient_traffic_count(),"visible_traffic":visible_traffic,"traffic_cap":world.production._traffic_cap(),"pedestrian_cap":world.production._population_cap()}
+	return {"pedestrians":world.people.size(),"vehicles":vehicles,"traffic":traffic,"ambient_traffic":world.production._ambient_traffic_count(),"visible_traffic":visible_traffic,"traffic_cap":world.production.traffic_cap(),"pedestrian_cap":world.production.population_cap()}
 
 func glass_ray() -> Array:
 	car.finish_doors()
@@ -235,7 +235,7 @@ func record_sequence() -> void:
 		if elapsed >= 16.0 and phase == 1: set_weather(2,1.0,.45); phase = 2; events.append({"time":elapsed,"event":"storm"})
 		if shots < 3 and elapsed >= 22.0+shots*2.0:
 			var before := rain_state()
-			world.gameplay._damage_bullet(car,10.0,null,ray[0],ray[1])
+			world.gameplay.damage_bullet(car,10.0,null,ray[0],ray[1])
 			shots += 1
 			events.append({"time":elapsed,"event":"glass-shot","number":shots,"before":before,"after":rain_state()})
 		if elapsed >= 30.0 and moving_start < 0.0:

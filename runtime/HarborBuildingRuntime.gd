@@ -251,7 +251,7 @@ func _floor_changed(index: int, rooftop: bool) -> void:
 	camera._process(0.0)
 	sightline.configure(session.room.definition,index,rooftop)
 	session._update_reward()
-	session._sync_location_presentation()
+	session.sync_location_presentation()
 
 func _clear_approach() -> void:
 	if is_instance_valid(session) and is_instance_valid(session.world.camera):
@@ -274,9 +274,9 @@ func _begin_fall() -> void:
 	session.world.camera.locked = false
 	session.world.camera.offset = session.world.camera.EXTERIOR_OFFSET
 	session.world.camera.target_size = session.saved_size
-	session._sync_location_presentation()
+	session.sync_location_presentation()
 	session.sync_dispatch_location()
-	session._refresh_routine_context()
+	session.refresh_routine_context()
 
 func _update_fall() -> void:
 	var actor = session.world.player

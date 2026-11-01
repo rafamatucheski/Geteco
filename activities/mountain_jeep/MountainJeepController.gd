@@ -116,14 +116,14 @@ func perform(target: Variant) -> bool:
 	return true
 
 func _show_briefing() -> void:
-	session._menu("Trilha dos Pinheiros")
+	session.menu("Trilha dos Pinheiros")
 	var instructions := Label.new()
 	instructions.text = String(TranslationServer.translate("Contra o relógio · %d s\n\nFique parado durante a contagem de 3 segundos.\nAo largar, siga o marcador até o próximo portão.\nPasse ENTRE os postes, em ordem e no sentido da trilha.\nComplete todos os portões antes de o tempo acabar.\n\nSair da trilha por 2 segundos ou sair do jipe encerra a prova.")) % int(COURSE.TIME_LIMIT)
 	instructions.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	instructions.custom_minimum_size=Vector2(540,220)
 	session.column.add_child(instructions)
-	session._button("Iniciar contagem",_start_attempt)
-	session._button("Voltar",session.close_menu)
+	session.button("Iniciar contagem",_start_attempt)
+	session.button("Voltar",session.close_menu)
 
 func _start_attempt() -> bool:
 	session.close_menu()

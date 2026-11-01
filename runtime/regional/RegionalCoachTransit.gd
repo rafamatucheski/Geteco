@@ -145,7 +145,7 @@ func _physics_process(delta: float) -> void:
 		_arrive(destination_id)
 		return
 	if train.health <= 0:
-		session._on_death()
+		session.on_death()
 		return
 	train.advance(delta)
 	distance = train.route_distance
@@ -235,7 +235,7 @@ func _arrive(target_id: String) -> void:
 	_release_coach()
 	session.world.camera.initialized = false
 	session.world.camera._process(1.0)
-	session._sync_location_presentation()
+	session.sync_location_presentation()
 	trip_finished.emit(target_id)
 	notice.emit(str(destination.label))
 	session.save_game()

@@ -33,7 +33,9 @@ class Session extends RefCounted:
 	func save_game(): saves+=1
 	func save_block_reason(): return "crime" if world.gameplay.crime>0 else ""
 	func _menu(_title): modal=true; buttons.clear()
+	func menu(_title): return _menu(_title)
 	func _button(label,action): buttons.append({"label":label,"action":action})
+	func button(label,action): return _button(label, action)
 	func close_menu(): modal=false
 var failures: Array[String] = []
 var checks := 0

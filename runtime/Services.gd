@@ -109,7 +109,7 @@ func _npc_points() -> Dictionary:
 	if not definition is Dictionary: return result
 	for npc in definition.get("npcs",[]):
 		if not Dialogue.PEOPLE.has(npc.get("id","")): continue
-		if definition.id in preload("res://world/places/sewers/SewerNetwork.gd").ids() and session._service_threatened(str(npc.id)): continue
+		if definition.id in preload("res://world/places/sewers/SewerNetwork.gd").ids() and session.service_threatened(str(npc.id)): continue
 		var point: Variant = npc.get("local_position")
 		if session.room.interaction_points.has(npc.id): point=session.room.to_local(session.room.interaction_points[npc.id])
 		if point is Vector3: result[npc.id]=point

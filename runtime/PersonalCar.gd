@@ -149,15 +149,15 @@ func _open_trunk() -> void:
 	if session.field_inventory != null:
 		session.field_inventory.open(true)
 		return
-	session._menu("Porta-malas · Monaliza")
+	session.menu("Porta-malas · Monaliza")
 	session.menu_closed = _close_trunk_view
 	var economy = session.state.economy
 	var slots: Dictionary = economy.personal_loadout()
 	for slot in economy.PERSONAL_SLOTS:
 		var selected: String = str(slots.get(slot,""))
 		var title: String = {"curta":"Curta","longa":"Longa","corpo":"Corpo a corpo","granada":"Granada"}[slot]
-		session._button(title+" · "+str(WEAPONS.WEAPONS.get(selected,{}).get("label","Vazio")),_select_slot.bind(slot))
-	session._button("Fechar",session.close_menu)
+		session.button(title+" · "+str(WEAPONS.WEAPONS.get(selected,{}).get("label","Vazio")),_select_slot.bind(slot))
+	session.button("Fechar",session.close_menu)
 	_focus_menu()
 	_show_trunk_view(slots)
 
@@ -177,13 +177,13 @@ func _close_trunk_view() -> void:
 
 func _select_slot(slot: String) -> void:
 	if not _near_trunk() or session.world.gameplay.health<_menu_health: session.close_menu(); return
-	session._menu("Porta-malas · "+slot)
+	session.menu("Porta-malas · "+slot)
 	session.menu_closed = _close_trunk_view
-	session._button("Guardar arma",_set_slot.bind(slot,""))
+	session.button("Guardar arma",_set_slot.bind(slot,""))
 	for id in session.state.economy.PERSONAL_SLOTS[slot]:
 		if not session.state.economy.owns_weapon(id): continue
-		session._button(str(WEAPONS.WEAPONS[id].label),_set_slot.bind(slot,id))
-	session._button("Voltar",_open_trunk)
+		session.button(str(WEAPONS.WEAPONS[id].label),_set_slot.bind(slot,id))
+	session.button("Voltar",_open_trunk)
 	_focus_menu()
 
 func _set_slot(slot: String, id: String) -> void:
@@ -195,10 +195,10 @@ func _set_slot(slot: String, id: String) -> void:
 
 func _open_service() -> void:
 	if session.storefronts != null and session.storefronts.open_maciota_service(): return
-	session._menu("Monaliza")
-	session._button("Reparar · R$ 50",_service.bind(false))
-	session._button("Recuperar à baia · R$ 50",_service.bind(true))
-	session._button("Fechar",session.close_menu)
+	session.menu("Monaliza")
+	session.button("Reparar · R$ 50",_service.bind(false))
+	session.button("Recuperar à baia · R$ 50",_service.bind(true))
+	session.button("Fechar",session.close_menu)
 	_focus_menu()
 
 func _focus_menu() -> void:
@@ -244,7 +244,7 @@ func _service(recover: bool) -> void:
 			car.vehicle_id=ID
 			car.paint_color=Color.html(record.paint)
 			garage.cars[ID]=car
-	if not economy.spend(FEES,session._transaction()): return
+	if not economy.spend(FEES,session.transaction()): return
 	if recover:
 		car.place(point,-PI)
 		car.set_meta("garage_reward",true)

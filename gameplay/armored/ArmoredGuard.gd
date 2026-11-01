@@ -165,7 +165,7 @@ func player_is_aiming_at_me() -> bool:
 	if not gameplay.aiming or convoy.session.state.equipped_weapon in ["", "fists"]: return false
 	var offset: Vector3 = global_position - convoy.session.world.player.global_position
 	offset.y = 0
-	var aim: Vector3 = gameplay._aim_direction()
+	var aim: Vector3 = gameplay.aim_direction()
 	return aim.normalized().dot(offset.normalized()) > .94 and can_see_player()
 
 func _physics_process(delta: float) -> void:

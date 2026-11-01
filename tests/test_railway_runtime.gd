@@ -123,7 +123,7 @@ func run() -> void:
 	world.session.mission_world._update_aftermath()
 	for index in 16:
 		if not world.session.dialogue_open: break
-		world.session._advance_dialogue()
+		world.session.advance_dialogue()
 		await process_frame
 	check(not world.session.dialogue_open and not world.session.modal, "final campaign conversation completes before station admission")
 	check(await ride("desert_copper", true, false), "fast travel reaches unlocked desert station")

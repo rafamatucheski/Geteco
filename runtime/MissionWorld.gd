@@ -197,8 +197,8 @@ func perform(id: String) -> bool:
 	if id=="race_start":
 		var subject: Node3D = session.world.driving.car if session.world.driving.occupied else session.world.player
 		if not race_phone_available() or subject.position.distance_to(race_phone_position()) > preload("res://activities/RacePhone.gd").RANGE: return false
-		session._menu("Corrida dos Cobras")
-		session._button("Entrar na corrida",func():
+		session.menu("Corrida dos Cobras")
+		session.button("Entrar na corrida",func():
 			session.close_menu()
 			if not _can_start_race():
 				session.show_message("Pare com um carro ou caminhonete junto ao telefone.")
@@ -213,7 +213,7 @@ func perform(id: String) -> bool:
 			if _event("race_started","ashbend_start",{"race_vehicle_id":car.vehicle_id,"race_position":Vector2(car.position.x,car.position.z),"race_course":2}):
 				session.show_message("Seis carros · Vença até as docas! · 3")
 			else: street_race.rollback())
-		session._button("Desligar",session.close_menu)
+		session.button("Desligar",session.close_menu)
 		return true
 	if id == "travel":
 		return session.regional_coach != null and session.regional_coach.try_interact()

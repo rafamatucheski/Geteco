@@ -158,7 +158,7 @@ func run() -> void:
 		var chest := crew.global_position+Vector3.UP
 		var hit := world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(chest+Vector3.FORWARD*3,chest+Vector3.BACK,7))
 		check(hit.get("collider") == crew,"visible crew slot %d has a hittable body" % slot)
-		if hit.get("collider") == crew: world.gameplay._damage_bullet(hit.collider,200,world.player)
+		if hit.get("collider") == crew: world.gameplay.damage_bullet(hit.collider,200,world.player)
 		check(crew.dead and crew.health == 0,"normal bullet damage can kill crew slot %d, including escorts" % slot)
 	print("ARMORED_GUARD_RESULT checks=", checks, " failures=", failures.size())
 	world.free()

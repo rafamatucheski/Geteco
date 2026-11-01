@@ -51,7 +51,7 @@ func run() -> void:
 	reticle._process(0.0)
 	check(reticle.visible and reticle.position.distance_to(world.camera.unproject_position(reticle.world_point)) < 0.1, "Visible reticle projects the firing path")
 	check(world.camera._desired_lead(world.player.global_position, false).length() > 2.0, "Exterior camera looks ahead when aiming stationary")
-	var origin: Vector3 = gameplay._muzzle_world_position()
+	var origin: Vector3 = gameplay.muzzle_world_position()
 	var line: Vector3 = gameplay.aim_point - origin
 	line.y = 0
 	line = line.normalized()

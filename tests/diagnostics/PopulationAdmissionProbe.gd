@@ -113,7 +113,7 @@ func _state() -> Dictionary:
 	var idle := true
 	for region in world.production.regions.values():
 		if is_instance_valid(region) and (not region.is_streaming_idle() or not region._retiring.is_empty()): idle = false
-	return {"engine_usec": Time.get_ticks_usec(), "point": str(world.player.global_position), "people": world.people.size(), "requested_population": world.production.requested_population, "population_cap": world.production._population_cap(), "density_scale": world.production.density_scale, "ambient_traffic": world.production._ambient_traffic_count(), "traffic_cap": world.production._traffic_cap(), "slots": world.production.population_layout.slots.size(), "streaming_idle": idle, "focused": DisplayServer.window_is_focused()}
+	return {"engine_usec": Time.get_ticks_usec(), "point": str(world.player.global_position), "people": world.people.size(), "requested_population": world.production.requested_population, "population_cap": world.production.population_cap(), "density_scale": world.production.density_scale, "ambient_traffic": world.production._ambient_traffic_count(), "traffic_cap": world.production.traffic_cap(), "slots": world.production.population_layout.slots.size(), "streaming_idle": idle, "focused": DisplayServer.window_is_focused()}
 
 func _timed(row: Dictionary, stage: String, began: int) -> void:
 	row.timings_usec[stage] = Time.get_ticks_usec() - began

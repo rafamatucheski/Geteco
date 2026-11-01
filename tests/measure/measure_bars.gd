@@ -75,7 +75,7 @@ func run() -> void:
 				verify(await session.interact(), game_id + " start via real interaction")
 				verify(room.game_active and session.modal and world.player.input_locked, game_id + " owns controls")
 				verify(not session.save_block_reason().is_empty(), game_id + " save blocked during round")
-				verify(not world.gameplay._free_play_ok(), game_id + " real combat blocked")
+				verify(not world.gameplay.free_play_ok(), game_id + " real combat blocked")
 				if not room.game_active: continue
 				world.player.controlled_automatically = false
 				for i in 4: await physics_frame
@@ -92,7 +92,7 @@ func run() -> void:
 				verify(not paused, game_id + " cancel does not pause world")
 				world.player.controlled_automatically = true
 				verify(room.start_game(game_id, session), game_id + " reopen for menu interruption")
-				session._menu("Teste")
+				session.menu("Teste")
 				verify(not room.game_active and session.modal and world.player.input_locked, game_id + " replacement modal retains controls")
 				session.close_menu()
 				verify(await walk(room.to_global(Vector3(room.to_local(target).x,0,aisle_z)), 5), game_id + " return down games aisle")

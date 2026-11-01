@@ -74,7 +74,7 @@ func run() -> void:
 	check(opponent.get_node("DragRivalDriver").get_meta("character_identity")=="rauhz","Rauhz sits in his own Focus")
 	check(race.racers[1].drive.spec.id=="rauhz_focus_mk1","rival races with actual Focus engine")
 	await capture("final-grid")
-	session._menu("Pausa")
+	session.menu("Pausa")
 	check(session.modal,"final accepts pause")
 	session.close_menu()
 	var photographed := false

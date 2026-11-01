@@ -153,7 +153,7 @@ func _open_service() -> void:
 	if not is_instance_valid(car) or session.state.place_id != PLACE: return
 	session.desert._workshop_site = "town"
 	session.desert.tuning_car = car
-	session._menu("Digo")
+	session.menu("Digo")
 	session.desert._open_tuning()
 
 func write_snapshot() -> void:

@@ -95,7 +95,7 @@ func _nearby_armed_player() -> bool:
 func _player_aiming_at_us() -> bool:
 	if not _weapon_visible() or gameplay.get("aim_active") != true or not _visible_player(12.0): return false
 	if gameplay.weapon_data(str(gameplay.equipped())).get("is_melee", false): return false
-	var direction: Vector3 = gameplay._aim_direction()
+	var direction: Vector3 = gameplay.aim_direction()
 	var offset: Vector3 = actor.global_position - gameplay.player.global_position
 	return direction.normalized().dot(offset.normalized()) > .94
 

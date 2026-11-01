@@ -68,8 +68,8 @@ func run() -> void:
 	gameplay._clear_melee_action()
 	gameplay.cooldown = 0.0
 	gameplay.reload_timer = 0.0
-	gameplay._update_weapon_pose(0.0)
-	gameplay._update_visual()
+	gameplay.update_weapon_pose(0.0)
+	gameplay.update_visual()
 	var origin: Vector3 = world.player.global_position + Vector3.UP * 1.05
 	var aim: Vector3 = origin + Vector3.FORWARD * 4.0
 	gameplay.aim_point = aim
@@ -104,7 +104,7 @@ func run() -> void:
 	await frames(3)
 	feedback = gameplay.melee_feedback()
 	check(feedback.blocked and not feedback.in_range, "solid wall blocks melee feedback")
-	gameplay._melee(origin, Vector3.FORWARD, data, "bat")
+	gameplay.melee(origin, Vector3.FORWARD, data, "bat")
 	check(aligned.hits == 0 and nearer.hits == 0, "melee does not damage a target through the wall")
 	wall.collision_layer = 0
 	aligned.collision_layer = 0
@@ -117,20 +117,20 @@ func run() -> void:
 	var window: float = float(gameplay._melee_action.window)
 	gameplay._rig_pose.action_age = maxf(0.0, contact - 0.10)
 	gameplay.aim_point = origin + Vector3.RIGHT * 4.0
-	gameplay._update_aim(0.0)
+	gameplay.update_aim(0.0)
 	check((gameplay._melee_action.direction as Vector3).dot(Vector3.RIGHT) > 0.99, "preparation follows a deliberate aim correction")
 	gameplay.aim_point = aim
 	gameplay._rig_pose.action_age = contact
-	gameplay._update_aim(0.0)
+	gameplay.update_aim(0.0)
 	gameplay.aim_point = origin + Vector3.RIGHT * 4.0
-	gameplay._update_aim(0.0)
+	gameplay.update_aim(0.0)
 	check(gameplay._melee_direction().dot(Vector3.FORWARD) > 0.99, "active contact keeps the committed direction")
 	check(float(world.player.get_meta("melee_movement_scale")) < 1.0, "commitment applies the weapon movement reduction")
 	await frames(2)
 	feedback = gameplay.melee_feedback()
 	check((feedback.direction as Vector3).dot(Vector3.FORWARD) > 0.99, "feedback follows committed contact rather than the moved cursor")
 	gameplay._rig_pose.action_age = contact + window + 0.02
-	gameplay._update_aim(0.0)
+	gameplay.update_aim(0.0)
 	check(gameplay._melee_direction().dot(Vector3.RIGHT) > 0.99, "recovery releases the committed direction")
 	check(is_equal_approx(float(world.player.get_meta("melee_movement_scale")), 1.0), "recovery restores normal movement")
 
@@ -142,16 +142,16 @@ func run() -> void:
 	gameplay.fire_at(aim)
 	gameplay._pending_contact.clear()
 	gameplay.cooldown = 0.0
-	gameplay._update_melee_buffer()
+	gameplay.update_melee_buffer()
 	check(gameplay._attack_serial == serial + 1 and gameplay._melee_buffer.is_empty(), "repeated early clicks consume exactly one buffered attack")
-	gameplay._update_melee_buffer()
+	gameplay.update_melee_buffer()
 	check(gameplay._attack_serial == serial + 1, "empty buffer cannot replay its attack")
 
 	gameplay.cooldown = 0.10
 	gameplay.fire_at(aim)
 	check(not gameplay._melee_buffer.is_empty(), "garage scenario starts with an actual queued click")
 	state.set_location("harbor", "maciota")
-	gameplay._update_aim(0.0)
+	gameplay.update_aim(0.0)
 	check(gameplay._melee_buffer.is_empty() and gameplay._pending_contact.is_empty(), "garage cancels queued and pending melee contacts")
 	check(not gameplay.melee_feedback_active() and not gameplay.fire_at(aim), "garage blocks melee feedback and attacks")
 	check(state.owns_weapon("bat"), "garage cancellation preserves inventory")
@@ -167,7 +167,7 @@ func run() -> void:
 	paused = false
 	serial = gameplay._attack_serial
 	gameplay.cooldown = 0.0
-	gameplay._update_melee_buffer()
+	gameplay.update_melee_buffer()
 	check(gameplay._attack_serial == serial, "unpausing cannot execute the discarded click")
 	Input.action_release("aim")
 	gameplay._clear_melee_action()

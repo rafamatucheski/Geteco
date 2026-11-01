@@ -37,7 +37,7 @@ func frames(count: int) -> void:
 func close_dialogue() -> void:
 	for i in 12:
 		if not session.dialogue_open: break
-		session._advance_dialogue()
+		session.advance_dialogue()
 	await frames(2)
 
 func stage() -> String:

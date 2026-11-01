@@ -10,7 +10,7 @@ extends Node
 ## poucos depois da cortina. GETECO_TRAFFIC_DRIVERS=0 desliga (A/B); GETECO_TRAFFIC_DRIVERS_MAX muda
 ## o teto (padrão 8).
 ##
-## Tiro: Gameplay._damage_bullet chama `bullet_hit`. Se a linha do tiro passa pelo tronco do motorista,
+## Tiro: Gameplay.damage_bullet chama `bullet_hit`. Se a linha do tiro passa pelo tronco do motorista,
 ## ele morre (cai sobre o volante e o carro para), se fere (curva de dor e o carro segue) ou, com o
 ## carro devagar, sai e foge (vira Actor civil ao lado da porta e a reação dos civis assume).
 const CARJACKING := preload("res://gameplay/VehicleCarjacking.gd")
@@ -228,7 +228,7 @@ func _take(car: Node) -> int:
 	_release(id)
 	return identity
 
-## Chamado por Gameplay._damage_bullet para cada tiro que acerta um veículo.
+## Chamado por Gameplay.damage_bullet para cada tiro que acerta um veículo.
 static func bullet_hit(owner_world: Node, car: Node, shot_from: Vector3, shot_to: Vector3, source: Node) -> void:
 	var pool = of(owner_world)
 	if pool == null or not is_instance_valid(car) or not shot_from.is_finite() or not shot_to.is_finite(): return
