@@ -41,6 +41,8 @@ static var _dummy_camera: Camera3D
 static var _dummy_planes: Array[Plane] = []
 var _steering: RefCounted
 var _lod_delta := 0.0
+## Velocidade pedida neste passo físico, passada de _tick_intent ao condutor do _stall_physics_tick.
+var _intent_speed := 0.0
 ## Consulta de chuva do guarda-chuva, uma vez por segundo (escalonada pela identidade).
 var _umbrella_clock := 0.0
 var outfit_id := "dante_classic"
@@ -337,6 +339,17 @@ func _stall_physics_tick(delta: float) -> void:
 	if dummy_enabled and _can_walk_as_dummy():
 		_walk_as_dummy(delta)
 		return
+	var direction := _tick_intent(delta)
+	var target_speed := _intent_speed
+	_tick_move(delta, direction, target_speed, lod_scale, rage_speed)
+	# _tick_move sai antes do fim só quando a queda do salto matou o jogador (after_move): aí não há pose.
+	if dead and air_movement != null: return
+	_tick_pose(delta, direction, target_speed)
+
+## Etapa da intenção: direção pedida (automática, controle com a câmera ou rota da calçada com desvio),
+## esqui, embriaguez, contenção da polícia e passo de mira. Devolve a direção; a velocidade fica em
+## `_intent_speed` (o mesmo passo físico, sem alocar).
+func _tick_intent(delta: float) -> Vector3:
 	var direction := Vector3.ZERO
 	var target_speed := speed
 	if controlled_automatically:
@@ -399,6 +412,11 @@ func _stall_physics_tick(delta: float) -> void:
 			var combat_speed := lerpf(2.3, 2.4 if alignment < 0.0 else 3.2, absf(alignment))
 			target_speed = minf(target_speed, combat_speed)
 	if is_player: target_speed *= float(get_meta("developer_speed_multiplier", 1.0))
+	_intent_speed = target_speed
+	return direction
+
+## Etapa do deslocamento: velocidade varrida, salto/queda, degrau e move_and_slide.
+func _tick_move(delta: float, direction: Vector3, target_speed: float, lod_scale: float, rage_speed: float) -> void:
 	move_intent = direction
 	velocity.x = direction.x * target_speed * lod_scale
 	velocity.z = direction.z * target_speed * lod_scale
@@ -424,6 +442,9 @@ func _stall_physics_tick(delta: float) -> void:
 	if lod_scale != 1.0:
 		velocity.x /= lod_scale
 		velocity.z /= lod_scale
+
+## Etapa da apresentação: distância andada, rumo do visual e a pose (locomoção, golpe, arma).
+func _tick_pose(delta: float, direction: Vector3, target_speed: float) -> void:
 	var displacement := global_position - last_position
 	displacement.y = 0
 	travelled += displacement.length()
