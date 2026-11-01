@@ -23,6 +23,10 @@ var _prewarm: PREWARM = PREWARM.new(self)
 ## em 01/11 (Onda 3): o estado e o sinal logical_region_changed ficam aqui; cada função antiga delega.
 const RESIDENCY := preload("res://runtime/ProductionResidency.gd")
 var _residency: RESIDENCY = RESIDENCY.new(self)
+## Carga do mundo (corpo de build() em etapas, início e --play-at) separada em 01/11 (Onda 3): o estado
+## fica aqui; build() e cada função antiga delegam em uma linha, com `await` onde esperam quadro.
+const BUILD := preload("res://runtime/ProductionBuild.gd")
+var _build: BUILD = BUILD.new(self)
 const DESERT_POPULATION := preload("res://runtime/desert/DesertPopulation.gd")
 const DESERT_SOCIAL_ACTOR := preload("res://runtime/desert/DesertSocialActor.gd")
 var _desert_social_slots: Array[Dictionary] = DESERT_POPULATION.slots()
@@ -176,327 +180,7 @@ func save_block_text() -> String:
 	var reason := String(TranslationServer.translate(save_invalid_reason if not save_invalid_reason.is_empty() else "um sistema não restaurou o save"))
 	return String(TranslationServer.translate("Salvamento desligado nesta sessão (%s). O arquivo do save no disco foi preservado sem mudanças.")) % reason
 
-func build() -> void:
-	var diagnostic_build := SESSION_OPS.begin(self, "world", "startup")
-	var startup_traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
-	no_save = "--no-save" in OS.get_cmdline_user_args()
-	var launch = get_node_or_null("/root/V2Launch")
-	if launch != null: store.path = launch.selected_path
-	if world.has_meta("menu_save_path"): store.path = str(world.get_meta("menu_save_path"))
-	if not no_save or world.has_meta("menu_save_path"):
-		var result: Dictionary = store.load_into(state)
-		if result.get("invalid",false): block_saving("o save escolhido não passou na validação")
-		loaded_save = result.get("ok",false)
-	# O menu pode ler uma jornada, mas nunca pode persistir mudanças feitas na prévia.
-	if world.has_meta("menu_preview"): no_save = true
-	# "Jogar aqui" do editor de mundo: Dante nasce no ponto pedido, sem gravar nada.
-	play_at_request = _play_at_argument()
-	if not play_at_request.is_empty():
-		no_save = true
-		# Direto nos campos: set_location consulta world.player, que ainda não existe.
-		state.region_id = str(play_at_request.region)
-		state.place_id = ""
-		state.world_state["pedestrian"] = {"region":play_at_request.region,"position":[play_at_request.point.x,0.0,play_at_request.point.z]}
-	state.world = world
-	# O menu já abriu a tela de carregamento na raiz; o mundo a adota. Início direto
-	# (testes, --no-save pelo menu) cria a sua.
-	var curtain = CURTAIN.existing(get_tree())
-	if curtain != null: curtain.reparent(world)
-	else:
-		curtain = CURTAIN.new()
-		curtain.stage_only = world.has_meta("menu_preview")
-		curtain.variant = CURTAIN.variant_for(state.region_id)
-		SESSION_OPS.attach(world, curtain, self, diagnostic_build)
-	curtain.set_stage(.12, "Montando " + ("a serra" if state.region_id == "mountain" else "o deserto" if state.region_id == "desert" else "o porto") + "…")
-	if not world.has_meta("menu_preview"): _request_fleet_scenes_early()
-	await curtain.prepare_presentation()
-	PIPELINE_PROBE.stage("curtain")
-	if world.has_meta("menu_preview"):
-		await _hold_fleet_scenes_incremental()
-	environment = WorldEnvironment.new()
-	environment.environment = Environment.new()
-	environment.environment.background_mode = Environment.BG_COLOR
-	environment.environment.background_color = Color("829da6")
-	environment.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.environment.ambient_light_color = Color("c0d0e2")
-	environment.environment.ambient_light_energy = .65
-	environment.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	SESSION_OPS.attach(world, environment, self, diagnostic_build)
-	# Brilho escolhido pelo jogador (Configurações > Vídeo), aplicado agora e a cada mudança.
-	var player_settings := get_node_or_null("/root/V2Settings")
-	if player_settings != null:
-		player_settings.apply_environment(environment.environment)
-		player_settings.applied.connect(_apply_player_settings)
-	sun = DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-52,-30,0)
-	sun.light_color = Color("fffdf5")
-	sun.light_energy = 1.6
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 55 if sun_shadow_near_enabled else 110
-	if player_settings != null and sun_shadow_near_enabled: sun.directional_shadow_max_distance = player_settings.shadow_distance_metres()
-	if sun_shadow_splits < 4:
-		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if sun_shadow_splits >= 2 else DirectionalLight3D.SHADOW_ORTHOGONAL
-	if sun_shadow_tune:
-		sun.directional_shadow_split_1 = SUN_SHADOW_SPLIT_2_CASCADES if sun_shadow_splits == 2 else SUN_SHADOW_SPLITS.x
-		sun.directional_shadow_split_2 = SUN_SHADOW_SPLITS.y
-		sun.directional_shadow_split_3 = SUN_SHADOW_SPLITS.z
-		sun.directional_shadow_fade_start = SUN_SHADOW_FADE_START
-	SESSION_OPS.attach(world, sun, self, diagnostic_build)
-	world.maciota_place = SESSION_OPS.instantiate(preload("res://world/maciota/MaciotaPlace.gd"), self)
-	world.maciota_place.exterior_origin = preload("res://world/maciota/MaciotaPlace.gd").INDUSTRIAL_ORIGIN
-	world.maciota_place.interior_origin = Vector3(0,0,-2000)
-	SESSION_OPS.attach(world, world.maciota_place, self, diagnostic_build)
-	await get_tree().process_frame
-	# Escolhe a célula salva/pedida pelo jogador antes de o _ready montar qualquer geometria.
-	# Antes montávamos primeiro o spawn padrão da região e depois o jogávamos fora.
-	var first_focus := Vector3.INF if _eager_preparation_for_benchmark() else _startup_focus_hint()
-	var initial_region := _build_region(state.region_id,first_focus)
-	if not await _prepare_geography(initial_region): return
-	_region_cache[state.region_id] = initial_region
-	region = _mount_region(state.region_id,first_focus)
-	var startup_position := _startup_position()
-	region.set_focus(startup_position,true)
-	world.street = region
-	_refresh_route_consumers()
-	await get_tree().process_frame
-	PIPELINE_PROBE.stage("region_mount")
-	world.player = ACTOR.new()
-	world.player.is_player = true
-	world.player.name = "Dante"
-	if world.has_meta("menu_preview"): world.player.controlled_automatically = true
-	world.player.position = startup_position
-	region.set_focus(world.player.position)
-	SESSION_OPS.attach(world, world.player, self, diagnostic_build)
-	_update_physical_residency(world.player.position)
-	world.camera = SESSION_OPS.instantiate(preload("res://scripts/CameraRig.gd"), self)
-	world.camera.target = world.player
-	SESSION_OPS.attach(world, world.camera, self, diagnostic_build)
-	world.player.camera = world.camera
-	world._build_hud()
-	world.driving = SESSION_OPS.instantiate(preload("res://scripts/Driving.gd"), self)
-	world.driving.world = world
-	SESSION_OPS.attach(world, world.driving, self, diagnostic_build)
-	world.driving.car.vehicle_id = "player_coupe"
-	world.driving.car.set_meta("region_id",state.region_id)
-	vehicles.append(world.driving.car)
-	world.traffic = Node3D.new()
-	SESSION_OPS.attach(world, world.traffic, self, diagnostic_build)
-	world.gameplay = SESSION_OPS.instantiate(preload("res://gameplay/Gameplay.gd"), self)
-	world.gameplay.configure(world,world.player,world.camera,state)
-	SESSION_OPS.attach(world, world.gameplay, self, diagnostic_build)
-	civilian_reactions = SESSION_OPS.instantiate(preload("res://gameplay/civilian_reactions/CivilianReactionDirector.gd"), self)
-	civilian_reactions.name = "CivilianReactionDirector"
-	civilian_reactions.configure(world,world.gameplay)
-	SESSION_OPS.attach(world, civilian_reactions, self, diagnostic_build)
-	if preload("res://gameplay/traffic/TrafficDriverPool.gd").enabled():
-		traffic_drivers = SESSION_OPS.instantiate(preload("res://gameplay/traffic/TrafficDriverPool.gd"), self)
-		traffic_drivers.name = "TrafficDriverPool"
-		traffic_drivers.configure(world)
-		SESSION_OPS.attach(world, traffic_drivers, self, diagnostic_build)
-	if not world.get_meta("skip_dispatch",false) and not "--no-dispatch" in OS.get_cmdline_user_args():
-		world.dispatch = SESSION_OPS.instantiate(preload("res://gameplay/dispatch/DispatchController.gd"), self)
-		world.dispatch.configure(world,world.gameplay,traffic_routes)
-		SESSION_OPS.attach(world, world.dispatch, self, diagnostic_build)
-		world.dispatch.set_enabled(true)
-		world.dispatch.set_physics_process(false)
-	if not world.get_meta("skip_traffic_yield",false) and not "--no-traffic-yield" in OS.get_cmdline_user_args():
-		world.traffic_yield = SESSION_OPS.instantiate(preload("res://gameplay/traffic_yield/TrafficYieldController.gd"), self)
-		world.traffic_yield.configure(world,traffic_routes)
-		SESSION_OPS.attach(world, world.traffic_yield, self, diagnostic_build)
-		world.traffic_yield.set_physics_process(false)
-	world.session = SESSION_OPS.instantiate(preload("res://runtime/FullSession.gd"), self)
-	world.session.world = world
-	world.session.controller = self
-	world.session.incremental_startup = true
-	SESSION_OPS.attach(world, world.session, self, diagnostic_build)
-	PIPELINE_PROBE.stage("gameplay_nodes")
-	if not world.session.startup_complete: await world.session.startup_finished
-	PIPELINE_PROBE.stage("session_startup")
-	session = world.session
-	if "--parking-baseline" not in OS.get_cmdline_user_args():
-		roadside_parking = SESSION_OPS.instantiate(preload("res://runtime/RoadsideParking.gd"), self)
-		roadside_parking.configure(world,self)
-		SESSION_OPS.attach(world, roadside_parking, self, diagnostic_build)
-	var v1_routines = SESSION_OPS.instantiate(preload("res://gameplay/routines_v1/RoutineDirector.gd"), self)
-	v1_routines.configure(world,session,self)
-	SESSION_OPS.attach(world, v1_routines, self, diagnostic_build)
-	urban_transit = SESSION_OPS.instantiate(preload("res://runtime/UrbanTransitPresentation.gd"), self)
-	urban_transit.configure(self)
-	SESSION_OPS.attach(world, urban_transit, self, diagnostic_build)
-	var saved_vehicle := starting_vehicle()
-	if not saved_vehicle.is_empty() and saved_vehicle.get("was_driven",false) and saved_vehicle.region == state.region_id and state.place_id.is_empty():
-		region.set_focus(Vector3(saved_vehicle.position[0],saved_vehicle.position[1],saved_vehicle.position[2]))
-	if session.cold != null and not saved_vehicle.is_empty() and saved_vehicle.region == state.region_id:
-		session.cold.prepare_collision_at(Vector3(saved_vehicle.position[0],saved_vehicle.position[1],saved_vehicle.position[2]))
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("--population="): requested_population = clampi(arg.split("=")[1].to_int(),0,MAX_POPULATION)
-	curtain.set_stage(.3, "Assentando o terreno…")
-	for i in 12: await get_tree().physics_frame
-	await _prewarm_regions(curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	curtain.set_stage(.84, "Acendendo a cidade…")
-	var road_point := nearest_road(world.player.position)
-	# O cupê protótipo antes usava a faixa de circulação mais próxima. Depois
-	# da mudança da oficina isso punha um carro padrão novo atravessado nas duas
-	# chegadas guiadas. Veículos salvos mantêm a própria restauração abaixo; só o
-	# padrão não salvo ganha uma pose de estacionamento apoiada fora da rua no pátio de carga.
-	var default_car_parked := false
-	if saved_vehicle.is_empty() and state.region_id == "harbor":
-		for offset in [Vector3(-18.5,.12,6.3),Vector3(-20,.12,7.0),Vector3(-18.5,.12,4.9)]:
-			var parking: Vector3 = world.maciota_place.exterior_origin+offset
-			if not vehicle_position_clear(world.driving.car,parking,0.0): continue
-			world.driving.car.place(parking,0.0)
-			default_car_parked = true
-			break
-	if not default_car_parked: world.driving.car.place(road_point+Vector3.UP*.12,road_yaw(road_point))
-	_restore_player_vehicle()
-	# Um checkpoint a pé remoto pode escolher uma rua fora dos chunks iniciais
-	# (por exemplo, a rodovia acima da pedreira). O carro inicial não salvo precisa pedir
-	# o chão antes de a física começar, como fazem os veículos distantes restaurados.
-	if saved_vehicle.is_empty() and not vehicle_position_clear(world.driving.car,world.driving.car.position,world.driving.car.rotation.y):
-		world.driving.car.set_meta("awaiting_ground",true)
-		world.driving.car.set_physics_process(false)
-	# O clima precisa existir antes de o mundo ser marcado ready_for_play: o
-	# ambiente/sol começam nos padrões crus definidos em build() acima
-	# (uma cor de céu pálida e chapada), e é o Weather._ready() que os ajusta para
-	# a hora do dia/estação salva. Criá-lo depois de ready_for_play deixava uma
-	# janela de quadros em que o jogador já via e podia andar pelo
-	# mundo com esse visual padrão cru, que parecia uma cena gelada e lavada
-	# até o Weather alcançar.
-	var weather = SESSION_OPS.instantiate(preload("res://runtime/Weather.gd"), self)
-	weather.controller = self
-	SESSION_OPS.attach(world, weather, self, diagnostic_build)
-	session.weather = weather
-	var city_look = SESSION_OPS.instantiate(preload("res://world/city_look/CityLook.gd"), self)
-	city_look.controller = self
-	SESSION_OPS.attach(world, city_look, self, diagnostic_build)
-	var street_physics = SESSION_OPS.instantiate(preload("res://gameplay/street_physics/StreetPhysics.gd"), self)
-	street_physics.controller = self
-	SESSION_OPS.attach(world, street_physics, self, diagnostic_build)
-	var rain_puddles = SESSION_OPS.instantiate(preload("res://world/rain/RainPuddles3D.gd"), self)
-	rain_puddles.controller = self
-	SESSION_OPS.attach(world, rain_puddles, self, diagnostic_build)
-	var wildlife = SESSION_OPS.instantiate(preload("res://gameplay/wildlife/MountainWildlife.gd"), self)
-	wildlife.controller = self
-	SESSION_OPS.attach(world, wildlife, self, diagnostic_build)
-	var roadside = SESSION_OPS.instantiate(preload("res://world/mountain_detail/MountainRoadside3D.gd"), self)
-	roadside.controller = self
-	SESSION_OPS.attach(world, roadside, self, diagnostic_build)
-	var grass = SESSION_OPS.instantiate(preload("res://world/mountain_detail/MountainGrass3D.gd"), self)
-	grass.controller = self
-	SESSION_OPS.attach(world, grass, self, diagnostic_build)
-	PIPELINE_PROBE.stage("session_systems")
-	# Depois do Weather, do CityLook e da StreetPhysics: chuva (RainPrewarm.late; antes saía sem fazer nada),
-	# efeitos de rua (StreetEffectsPrewarm), reações, interior do carro e combate. Em paralelo como os de
-	# _prewarm_regions (GETECO_PREWARM_PARALLEL, ligado por padrão desde 24/10; =0 volta à série).
-	var late_steps: Array[String] = ["street_fx", "reaction_visuals", "vehicle_interior", "combat_effects", "late_surfaces"]
-	if preload("res://runtime/RainPrewarm.gd").late: late_steps.push_front("rain")
-	if OS.get_environment("GETECO_PREWARM_PARALLEL") != "0":
-		var pending: Array[int] = [late_steps.size()]
-		for step in late_steps: _prewarm_lane([step], pending, curtain)
-		if not await _await_lanes(pending): return
-		PIPELINE_PROBE.stage("late_parallel_draws")
-	else:
-		for step in late_steps:
-			await _draw_prewarm_step(step, curtain)
-			if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-			PIPELINE_PROBE.stage(step)
-	_install_world_edits()
-	# Estações de tubo e rodoviária montadas sob a cortina (depois das edições, que as movem): montadas ao
-	# chegar perto custavam 84-140 ms num quadro (teleporte de aquecimento do benchmark, 16/10).
-	if is_instance_valid(urban_transit):
-		await urban_transit.prepare_startup_stations()
-		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	# Linha 510 montada aqui, depois das edições do mundo (mexem nas estações) e antes de
-	# `ready_for_play`: montada no primeiro tique jogável, custava ~100 ms (pico de
-	# 140–195 ms em `urban.physics` em todas as rotas do benchmark de 16/10).
-	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.urban_service):
-		await urban_transit.urban_service.prepare_startup()
-		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	# Mar em volta das ilhas e chão-base para a vista de longe (world/shape/WorldSea.gd): ~1,5 s de
-	# montagem em fatias de 5 ms, sempre sob a cortina; GETECO_WORLD_SEA=0 desliga.
-	if WORLD_SEA.enabled() and not is_instance_valid(world_sea):
-		var sea_began := STALL_WORK.begin()
-		world_sea = WORLD_SEA.new()
-		world_sea.configure(self)
-		world.add_child(world_sea)
-		await world_sea.build_sliced(get_tree())
-		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-		STALL_WORK.finish("startup.world_sea", sea_began)
-		await world_sea.prewarm(world, curtain)
-		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-		PIPELINE_PROBE.stage("world_sea")
-	# O mirante costeiro monta seus modelos em fatias desde o _ready da sessão (antes, ~11 s num quadro
-	# só, 16/10); num carregamento rápido elas ainda podem estar correndo, e cairiam no jogo.
-	while is_instance_valid(session) and session.coastal_lookout != null and session.coastal_lookout.is_preparing():
-		await get_tree().process_frame
-		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	PIPELINE_PROBE.stage("world_edits_and_transit")
-	ready_for_play = true
-	curtain.set_stage(.93, "Levando você ao ponto salvo…")
-	await session.restore_location()
-	if not play_at_request.is_empty(): await _place_at_request()
-	set_population(requested_population)
-	world_audio = _audio()
-	SESSION_OPS.attach(world, world_audio, self, diagnostic_build)
-	_update_chairlift_schedule()
-	curtain.set_stage(.97, "Finalizando…")
-	# O GarageRewards admite um motorista salvo de forma assíncrona a partir de restore_location.
-	# A animação de corpo dele é dona da entrada até terminar; travar a sessão cedo
-	# faria o Driving cancelar essa restauração no próximo quadro de física.
-	while _startup_driver_pending():
-		await get_tree().physics_frame
-	var restored_session_ready: bool = session.ready_for_play
-	var restored_player_automatic: bool = world.player.controlled_automatically
-	var restored_player_direction: Vector3 = world.player.automatic_direction
-	var restored_car: CharacterBody3D = world.driving.car
-	var restored_car_lock: bool = restored_car.input_locked
-	session.ready_for_play = false
-	world.player.controlled_automatically = true
-	world.player.automatic_direction = Vector3.ZERO
-	restored_car.input_locked = true
-	PIPELINE_PROBE.stage("restore_location")
-	startup_streaming_settled = await _settle_startup()
-	if not startup_streaming_settled:
-		push_warning("Startup streaming still has pending work after its settling budget; runtime streaming will continue.")
-	PIPELINE_PROBE.stage("settle_startup")
-	# Antes do terminal: assim o JIT fica neste span em qualquer local de início.
-	_prewarm_route_jit()
-	# O jogador já está no ponto salvo: estações próximas na árvore ainda sob a cortina (só recolocadas).
-	if is_instance_valid(urban_transit): urban_transit.refresh(true)
-	# A primeira resolução de rota em C# precisa terminar enquanto a cortina de partida é dona da entrada.
-	# Reaproveita a curva real do terminal depois; mantém o custo no trace de carregamento.
-	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.terminal_operations):
-		urban_transit.terminal_operations.prepare_startup_route()
-		await urban_transit.terminal_operations.prepare_startup_passenger_meshes()
-		urban_transit.terminal_operations.prepare_startup_build()
-		await get_tree().process_frame
-	if is_instance_valid(roadside_parking) and not world.has_meta("menu_preview"):
-		roadside_parking.initialize_nearby()
-		await get_tree().physics_frame
-	# Pedidos da busca antecipada já vêm prontos do começo da carga; espera no máximo mais 3 s.
-	var prefetch_traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
-	await preload("res://runtime/BackgroundRegionPreparation.gd").prefetch_collect(get_tree(), Time.get_ticks_msec() + 3000)
-	_trace_cost("startup:background_prefetch",prefetch_traced)
-	preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").release_hidden()
-	PIPELINE_PROBE.stage("before_lift")
-	if not world.has_meta("menu_preview"): await curtain.lift()
-	PIPELINE_PROBE.stage("curtain_lift")
-	session.ready_for_play = restored_session_ready
-	world.player.controlled_automatically = restored_player_automatic
-	world.player.automatic_direction = restored_player_direction
-	if is_instance_valid(restored_car): restored_car.input_locked = restored_car_lock
-	_trace_cost("startup:prepared",startup_traced)
-	SESSION_OPS.finish(diagnostic_build)
-	if world.has_meta("menu_preview"):
-		await world.get_meta("menu_preview").hold_world(world)
-		if world.is_queued_for_deletion(): return
-	session.arrival.start_or_resume(loaded_save or "--skip-arrival" in OS.get_cmdline_user_args() or world.get_meta("skip_arrival",false))
-	if is_instance_valid(world.dispatch):
-		session.sync_dispatch_location()
-		world.dispatch.set_physics_process(true)
-	if is_instance_valid(world.traffic_yield): world.traffic_yield.set_physics_process(true)
-	if is_instance_valid(background_preparation): background_preparation.set_process(true)
+func build() -> void: await _build.run()
 
 func _prewarm_regions(curtain: CanvasLayer = null) -> void: await _prewarm._prewarm_regions(curtain)
 
@@ -532,46 +216,11 @@ func _request_fleet_scenes_early() -> void: _prewarm._request_fleet_scenes_early
 
 func _retain_fleet_paths(paths: Array[String], retained: Array[Resource]) -> void: await _prewarm._retain_fleet_paths(paths, retained)
 
-func _startup_driver_pending() -> bool:
-	if world.driving.is_body_transition_active(): return true
-	for car in vehicles:
-		if is_instance_valid(car) and car.get_meta("garage_driver_pending", false): return true
-	return false
+func _startup_driver_pending() -> bool: return _build._startup_driver_pending()
 
-func _settle_startup() -> bool:
-	# Termina o streaming do destino e as primeiras atualizações de áudio/física antes do fade.
-	# A admissão pode legitimamente deixar trabalho distante pendente; mantém a espera limitada.
-	var stable_frames := 0
-	for frame in 240:
-		await get_tree().process_frame
-		var idle := true
-		for resident in regions.values():
-			if is_instance_valid(resident) and not resident.is_streaming_idle(): idle = false
-		stable_frames = stable_frames + 1 if idle else 0
-		if stable_frames >= 8: return true
-	return false
+func _settle_startup() -> bool: return await _build._settle_startup()
 
-func _prepare_geography(candidate: Node3D) -> bool:
-	if candidate == null: return false
-	# Um worker é dono de uma região fora da árvore. Nenhuma mutação na árvore de cena nem
-	# consumidor do jogo pode acessar os dicionários mutáveis dela até a tarefa ter sido unida.
-	# A renderização dummy mantém o caminho sequencial dos testes de contrato.
-	if DisplayServer.get_name() == "headless":
-		candidate.prepare_data()
-		return true
-	_geography_candidate = candidate
-	_geography_task = WorkerThreadPool.add_task(candidate.prepare_data,false,"Loading region geography")
-	while not WorkerThreadPool.is_task_completed(_geography_task):
-		await get_tree().process_frame
-	WorkerThreadPool.wait_for_task_completion(_geography_task)
-	_geography_task = -1
-	var usable: bool = is_instance_valid(world) and world.is_inside_tree() and not world.is_queued_for_deletion()
-	if usable and candidate.has_method("prepare_presentation_incremental"):
-		await candidate.prepare_presentation_incremental(get_tree(), world)
-		usable = is_instance_valid(world) and world.is_inside_tree() and not world.is_queued_for_deletion()
-	_geography_candidate = null
-	if not usable and is_instance_valid(candidate): candidate.free()
-	return usable
+func _prepare_geography(candidate: Node3D) -> bool: return await _build._prepare_geography(candidate)
 
 func _exit_tree() -> void:
 	if _geography_task >= 0:
@@ -585,100 +234,19 @@ func _exit_tree() -> void:
 	if is_instance_valid(_parked_connection) and _parked_connection.get_parent() == null: _parked_connection.free()
 	_parked_connection = null
 
-## Lugares montados pela sessão (Vértice, Torque...) só recebem as edições do editor de mundo
-## por observação da árvore; sem linhas desses lugares no documento nada é instalado.
-func _install_world_edits() -> void:
-	var document: Dictionary = Engine.get_meta("geteco_world_edit_document",{})
-	if document.is_empty(): document = preload("res://world/editing/WorldEditData.gd").read_document().document
-	if not document.is_empty(): preload("res://world/editing/WorldSessionEdits.gd").install(get_tree(),world,document)
+func _install_world_edits() -> void: _build._install_world_edits()
 
 ## `--play-at=região,x,z` (só com --no-save). Devolve {} se ausente ou inválido.
 var play_at_request: Dictionary = {}
-static func _play_at_argument() -> Dictionary:
-	for argument in OS.get_cmdline_user_args():
-		if not argument.begins_with("--play-at="): continue
-		var parts := argument.trim_prefix("--play-at=").split(",")
-		if parts.size() != 3 or parts[0] not in ["harbor","mountain","desert"] or not parts[1].is_valid_float() or not parts[2].is_valid_float(): return {}
-		return {"region":parts[0],"point":Vector3(parts[1].to_float(),0.0,parts[2].to_float())}
-	return {}
+static func _play_at_argument() -> Dictionary: return BUILD._play_at_argument()
 
-## A altura só existe depois que a região está montada: grava no ponto de retomada do pedestre.
-func _resolve_play_at() -> void:
-	var point: Vector3 = play_at_request.point
-	var ground := 0.0
-	if region.get("terrain") != null: ground = region.terrain.surface_height_at(Vector2(point.x,point.z))
-	elif state.region_id == "desert": ground = region._ground_height(Vector2(point.x,point.z))
-	state.world_state["pedestrian"] = {"region":play_at_request.region,"position":[point.x,ground+.08,point.z]}
+func _resolve_play_at() -> void: _build._resolve_play_at()
 
-## O ponto escolhido no editor pode cair dentro de uma peça (ou de um prédio): procura o chão livre
-## mais próximo, em anéis de até 8 m. Em cada coluna escolhe, entre as superfícies que um raio
-## atravessa, a mais próxima do chão da região (não o telhado de cima).
-func _place_at_request() -> void:
-	var wanted: Vector3 = play_at_request.point
-	region.set_focus(wanted)
-	if session.cold != null: session.cold.prepare_collision_at(wanted)
-	for i in 4: await get_tree().physics_frame
-	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
-	for ring in [0.0,1.5,3.0,4.5,6.0,8.0]:
-		for step in (1 if ring == 0.0 else 8):
-			var offset: Vector3 = Vector3(cos(TAU*step/8.0),0,sin(TAU*step/8.0))*ring
-			var column: Vector3 = wanted+offset
-			var nominal := 0.0
-			if region.get("terrain") != null: nominal = region.terrain.surface_height_at(Vector2(column.x,column.z))
-			elif state.region_id == "desert": nominal = region._ground_height(Vector2(column.x,column.z))
-			var best := Vector3.INF
-			var excluded: Array[RID] = []
-			for layer in 8:
-				var query := PhysicsRayQueryParameters3D.create(Vector3(column.x,400,column.z),Vector3(column.x,-100,column.z),1)
-				query.exclude = excluded
-				var hit: Dictionary = space.intersect_ray(query)
-				if hit.is_empty(): break
-				excluded.append(hit.rid)
-				if not best.is_finite() or absf(hit.position.y-nominal) < absf(best.y-nominal): best = hit.position
-			if not best.is_finite(): continue
-			var point: Vector3 = best+Vector3.UP*.08
-			if session.position_clear(point):
-				world.player.teleport(point)
-				return
+func _place_at_request() -> void: await _build._place_at_request()
 
-func _startup_focus_hint() -> Vector3:
-	if not play_at_request.is_empty(): return play_at_request.point
-	if not state.place_id.is_empty(): return Vector3.INF
-	var vehicle := starting_vehicle()
-	if not vehicle.is_empty() and vehicle.get("was_driven",false) and vehicle.get("region","") == state.region_id:
-		var position: Array = vehicle.get("position",[])
-		if position.size() == 3: return Vector3(float(position[0]),float(position[1]),float(position[2]))
-	var pedestrian: Dictionary = state.world_state.get("pedestrian",{})
-	var coordinates: Array = pedestrian.get("position",[])
-	if pedestrian.get("region","") == state.region_id and coordinates.size() == 3:
-		var point := Vector3(float(coordinates[0]),float(coordinates[1]),float(coordinates[2]))
-		if state.region_id == "desert": return preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").restore_point(point,state.world_state)
-		if state.region_id == "harbor": return preload("res://world/railway/RailwayNetwork.gd").restore_harbor_pedestrian(point)
-		return point
-	return Vector3.INF
+func _startup_focus_hint() -> Vector3: return _build._startup_focus_hint()
 
-func _startup_position() -> Vector3:
-	if not play_at_request.is_empty(): _resolve_play_at()
-	# Monta e enquadra o destino salvo desde o primeiro quadro renderizado. A
-	# encenação antiga com o Maciota primeiro expunha chunks pálidos de terreno/prédio não carregados
-	# por vários segundos antes de restore_location teletransportar o Dante para o save.
-	var fallback: Vector3 = world.maciota_place.exterior_return+Vector3(0,.08,2) if state.region_id == "harbor" else region.spawn_position+Vector3.UP*.08
-	if not state.place_id.is_empty(): return fallback
-	var saved_vehicle := starting_vehicle()
-	if not saved_vehicle.is_empty() and saved_vehicle.get("was_driven",false) and saved_vehicle.get("region","") == state.region_id:
-		var vehicle_position: Array = saved_vehicle.get("position",[])
-		if vehicle_position.size() == 3:
-			return Vector3(float(vehicle_position[0]),float(vehicle_position[1]),float(vehicle_position[2]))
-	var pedestrian: Dictionary = state.world_state.get("pedestrian",{})
-	var coordinates: Array = pedestrian.get("position",[])
-	if pedestrian.get("region","") == state.region_id and coordinates.size() == 3:
-		var point:=Vector3(float(coordinates[0]),float(coordinates[1]),float(coordinates[2]))
-		if state.region_id=="desert":
-			var restored:=preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").restore_point(point,state.world_state)
-			if restored!=point: return restored+Vector3.UP*.08
-		if state.region_id == "harbor": return preload("res://world/railway/RailwayNetwork.gd").restore_harbor_pedestrian(point)
-		return point
-	return fallback
+func _startup_position() -> Vector3: return _build._startup_position()
 
 func _audio() -> Node:
 	var audio = preload("res://audio/WorldAudio.gd").new()
