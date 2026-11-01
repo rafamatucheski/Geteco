@@ -55,6 +55,8 @@ var _npc_gunfire: NPC_GUNFIRE = NPC_GUNFIRE.new(self)
 ## Onda 2 (01/11, docs/plano-divisao-arquivos-grandes-20261101.md): mesmo padrão, estado e sinais aqui.
 const ARSENAL_RULES := preload("res://gameplay/GameplayArsenal.gd")
 var _arsenal: ARSENAL_RULES = ARSENAL_RULES.new(self)
+const KATANA_RULES := preload("res://gameplay/GameplayKatana.gd")
+var _katana_blade: KATANA_RULES = KATANA_RULES.new(self)
 var _cash_rng := RandomNumberGenerator.new()
 ## Mixagem de combate (ver `_hearing_gain_db`). Volumes da V1: recarga -5 dB
 ## (`Player._reload_audio`), explosão +3 dB (`Bullet._trigger_explosion`). O
@@ -519,53 +521,13 @@ func _build_socket() -> void:
 	gun.top_level = true
 	_build_back_katana()
 
-## Katana presa nas costas: o modelo vai no osso da coluna e aparece quando a arma não está na mão.
-## Cabo no ombro direito (−X), lâmina descendo até o quadril esquerdo (+X); a ponta fica em −Z do modelo.
-## Posição e rumo estimados pelo esqueleto, não medidos na tela: conferir no jogo.
-func _build_back_katana() -> void:
-	var skeleton := player.find_child("Skeleton3D", true, false) as Skeleton3D
-	if skeleton == null or skeleton.find_bone("Spine02") < 0 or skeleton.find_bone("RightHand") < 0: return
-	back_katana = _katana_on_bone(skeleton, "Spine02", "BackKatana")
-	back_katana.transform = BACK_KATANA_LOCAL
-	hand_katana = _katana_on_bone(skeleton, "RightHand", "SheathHandKatana")
-	if skeleton.find_bone("LeftForeArm") < 0: return
-	var forearm := BoneAttachment3D.new()
-	forearm.bone_name = "LeftForeArm"
-	skeleton.add_child(forearm)
-	hand_shield = Node3D.new()
-	hand_shield.name = "HandShield"
-	forearm.add_child(hand_shield)
-	SWORD_SHIELD_MODEL.build_shield(hand_shield)
-	hand_shield.transform = SHIELD_FOREARM_LOCAL
-	hand_shield.visible = false
+func _build_back_katana() -> void: _katana_blade._build_back_katana()
 
-func _katana_on_bone(skeleton: Skeleton3D, bone: String, node_name: String) -> Node3D:
-	var attachment := BoneAttachment3D.new()
-	attachment.bone_name = bone
-	skeleton.add_child(attachment)
-	var katana := Node3D.new()
-	katana.name = node_name
-	attachment.add_child(katana)
-	KATANA_MODEL.build(katana, false, Color("68cfff"))
-	if FORGE.legendary(customization, "katana"): preload("res://gameplay/WeaponAttachmentVisuals.gd").legendary(katana, "katana")
-	katana.visible = false
-	return katana
+func _katana_on_bone(skeleton: Skeleton3D, bone: String, node_name: String) -> Node3D: return _katana_blade._katana_on_bone(skeleton, bone, node_name)
 
 func buy_forge_upgrade(id: String, track: String, quest_stage: String) -> Dictionary: return _arsenal.buy_forge_upgrade(id, track, quest_stage)
 
-## Remonta a lâmina na mão no próximo quadro e as katanas das costas/bainha agora.
-func refresh_blade_visuals() -> void:
-	visual_id = "@rebuild"
-	for katana: Node3D in [back_katana, hand_katana]:
-		if not is_instance_valid(katana): continue
-		var shown := katana.visible
-		for child in katana.get_children():
-			katana.remove_child(child)
-			child.free()
-		if katana.has_meta("forge_legendary"): katana.remove_meta("forge_legendary")
-		KATANA_MODEL.build(katana, false, Color("68cfff"))
-		if FORGE.legendary(customization, "katana"): preload("res://gameplay/WeaponAttachmentVisuals.gd").legendary(katana, "katana")
-		katana.visible = shown
+func refresh_blade_visuals() -> void: _katana_blade.refresh_blade_visuals()
 
 func equipped() -> String:
 	return String(state.equipped_weapon) if state != null else ""
@@ -631,19 +593,9 @@ func _stall_physics_tick(delta: float) -> void:
 func update_visual() -> void: _weapon_visuals._update_visual()
 func _update_visual() -> void: update_visual()
 
-func katana_style() -> Dictionary:
-	var honor: Dictionary = state.world_state.get("takeshi", {}) if state != null else {}
-	return {"saber": bool(honor.get("saber_unlocked", false)), "color": Color.from_string(str(honor.get("saber_color", "68cfffff")), Color("68cfff"))}
+func katana_style() -> Dictionary: return _katana_blade.katana_style()
 
-func _update_saber_audio() -> void:
-	if not is_instance_valid(_saber_hum): return
-	var should_play: bool = equipped() == "katana" and gun.visible and katana_style().saber
-	if should_play:
-		_saber_hum.global_position = player.global_position + Vector3.UP
-		if not _saber_hum.playing:
-			_saber_hum.stream = KATANA_AUDIO.stream("hum")
-			_saber_hum.play()
-	elif _saber_hum.playing: _saber_hum.stop()
+func _update_saber_audio() -> void: _katana_blade._update_saber_audio()
 
 func _mount_flashlight() -> void: _weapon_visuals._mount_flashlight()
 
@@ -856,24 +808,7 @@ func _update_combat_clip(delta: float) -> void:
 		player.combat_clip = _clip_name
 		player.combat_clip_time = time
 
-## Sacar (katana guardada → mão) e guardar (mão → costas) com os clipes do Mixamo. Só dispara na troca
-## de arma; sem o clipe na biblioteca, a troca segue instantânea.
-func _update_back_katana(id: String) -> void:
-	if id != _sheath_last_id and _sheath_last_id != "":
-		if id == "katana": _start_sheath("draw")
-		elif _sheath_last_id == "katana": _start_sheath("holster")
-		_weapon_switch_sound(_sheath_last_id, id)
-	_sheath_last_id = id
-	if hand_shield != null and is_instance_valid(player): hand_shield.visible = id == "sword_shield" and not bool(player.get("dead"))
-	if back_katana == null or not is_instance_valid(player): return
-	var carried: bool = state != null and bool(state.owns_weapon("katana")) and not bool(player.get("dead"))
-	var moving: bool = _sheath_clip != ""
-	# O Actor leva COMBAT_BLEND (0,08 s) para passar da locomoção ao clipe: no início do saque a mão ainda
-	# não chegou às costas, então a espada só troca de lugar depois disso.
-	var in_hand: bool = moving and not (_sheath_kind == "draw" and _sheath_age < SHEATH_HANDOFF)
-	# Durante o clipe a espada está na mão; fora dele, nas costas ou na pose de combate.
-	back_katana.visible = carried and ((id != "katana" and not moving) or (moving and not in_hand))
-	if hand_katana != null: hand_katana.visible = carried and in_hand
+func _update_back_katana(id: String) -> void: _katana_blade._update_back_katana(id)
 
 ## A katana usa o clipe da greatsword do Mixamo ("Sheath A Great Sword 1"): ele parte da guarda de duas
 ## mãos e termina com a espada nas costas. Guardar toca para frente; sacar toca ao contrário e termina
@@ -930,99 +865,19 @@ const HAND_KATANA_GUARD := Transform3D(Vector3(0.4451, -0.8449, -0.2967), Vector
 ## atrás, o fio fica para fora (0,10 contra "para baixo").
 const HAND_KATANA_HELD := Transform3D(Vector3(0.1447, 0.3949, -0.9073), Vector3(0.4451, -0.8449, -0.2967), Vector3(-0.8837, -0.3609, -0.2980), Vector3.ZERO)
 
-func _sword_locomotion_clips() -> bool:
-	return is_instance_valid(player) and player.has_method("has_sword_locomotion") and player.has_sword_locomotion()
+func _sword_locomotion_clips() -> bool: return _katana_blade._sword_locomotion_clips()
 
-func _start_sheath(kind: String) -> void:
-	if not is_instance_valid(player) or not "animation" in player or player.animation == null: return
-	var clip := "mixsword/sheathe_greatsword"
-	if not player.animation.has_animation(clip):
-		clip = "mixsword/withdraw_katana" if kind == "draw" else "mixsword/sheathe_katana"
-		if not player.animation.has_animation(clip): return
-	_sheath_kind = kind
-	_sheath_clip = clip
-	_sheath_length = SHEATH_DRAW_DURATION if kind == "draw" else SHEATH_HOLSTER_DURATION
-	_sheath_age = 0.0
+func _start_sheath(kind: String) -> void: _katana_blade._start_sheath(kind)
 
-func _update_sheath(delta: float) -> void:
-	if _sheath_clip == "": return
-	if not is_instance_valid(player) or bool(player.get("dead")) or not attack_allowed():
-		_end_sheath()
-		return
-	_sheath_age += delta
-	if _sheath_age >= _sheath_length:
-		_end_sheath()
-		return
-	if "combat_clip" in player:
-		var clip_length: float = player.animation.get_animation(_sheath_clip).length
-		var progress := clampf(_sheath_age / _sheath_length, 0.0, 1.0)
-		# Só o clipe da greatsword vai ao contrário ao sacar; os de reserva já têm o sentido certo.
-		if _sheath_kind == "draw" and _sheath_clip.ends_with("sheathe_greatsword"):
-			# Primeiro alcança o cabo nas costas durante a mistura do Actor; depois puxa a lâmina.
-			progress = 1.0 - clampf((_sheath_age - SHEATH_HANDOFF) / (_sheath_length - SHEATH_HANDOFF), 0.0, 1.0)
-		player.combat_clip = _sheath_clip
-		player.combat_clip_time = clip_length * progress
-		# O IK da arma seguinte não pode sobrescrever os braços do clipe de sacar/guardar.
-		# Mantém também as pernas de locomoção quando o jogador troca de arma andando.
-		_pose_frame = {"visible": false, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_HELD}
-		# "combat_clip" só existe em Actor.gd, que também define set_combat_weapon_pose: chamada direta.
-		player.set_combat_weapon_pose("katana", _pose_frame)
-		# A pegada gira junto com o clipe: guarda (lâmina à frente) no início, posição das costas no fim.
-		if hand_katana != null and _sheath_clip.ends_with("sheathe_greatsword"):
-			# As medidas autoradas têm quatro casas decimais: normalize antes do slerp.
-			hand_katana.transform = HAND_KATANA_HELD.orthonormalized().interpolate_with(HAND_KATANA_SHEATHED.orthonormalized(), progress)
+func _update_sheath(delta: float) -> void: _katana_blade._update_sheath(delta)
 
-func _end_sheath() -> void:
-	_sheath_clip = ""
-	_sheath_kind = ""
-	if is_instance_valid(player) and "combat_clip" in player and str(player.combat_clip).begins_with("mixsword/"):
-		player.combat_clip = ""
+func _end_sheath() -> void: _katana_blade._end_sheath()
 
-func _play_katana_clip(id := "katana") -> void:
-	if not is_instance_valid(player): return
-	var attacks: Array = SHIELD_ATTACKS if id == "sword_shield" else KATANA_ATTACKS
-	_shield_kicking = id == "sword_shield" and shield_block
-	if _shield_kicking: attacks = [SHIELD_KICK]
-	else: _katana_combo = (_katana_combo + 1) % 3
-	_katana_attack_clock = _combat_clock
-	# Cicla mesmo com cliques deliberados: os cortes de volta têm trajetórias próprias
-	# de mão/lâmina, em vez de inverter ou acelerar o mesmo clipe.
-	_cancel_combat_clip()
-	_clip_name = ""
-	_clip_start = 0.05
-	_clip_end = 1.25
-	_clip_rate = 1.7
-	_clip_age = 0.0
-	_clip_weapon = id
-	var attack: Array = attacks[0] if _shield_kicking else attacks[_katana_combo % attacks.size()]
-	if "animation" in player and player.animation != null and player.animation.has_animation(attack[0]):
-		_clip_name = attack[0]
-		_clip_start = float(attack[1])
-		_clip_end = float(attack[3])
-		_clip_rate = SHIELD_ATTACK_RATE if id == "sword_shield" else KATANA_ATTACK_RATE
-	_aim_hold = 0.8
-	if not _pending_swing.is_empty(): _pending_swing.time = _katana_contact_time() - 0.05
+func _play_katana_clip(id := "katana") -> void: _katana_blade._play_katana_clip(id)
 
-func request_rage() -> bool:
-	# Teclado, controle e HUD compartilham as checagens de contexto e o retorno.
-	if not is_instance_valid(rage) or not rage.unlocked() or not free_play_ok() or get_tree().paused: return false
-	if rage.activate(): return true
-	if rage.active: return true
-	if equipped() != "katana":
-		message.emit("Equipe a katana para ativar o RAGE.")
-	elif rage.charge < RAGE.CAPACITY:
-		message.emit(String(TranslationServer.translate("RAGE: %d%%. Receba dano de combate para carregar.")) % floori(rage.charge))
-	else:
-		message.emit("RAGE indisponível nesta situação.")
-	return true
+func request_rage() -> bool: return _katana_blade.request_rage()
 
-func _katana_contact_time() -> float:
-	var shield := _clip_weapon == "sword_shield"
-	if shield and _clip_name == SHIELD_KICK[0]: return (float(SHIELD_KICK[2]) - float(SHIELD_KICK[1])) / SHIELD_ATTACK_RATE
-	var attacks: Array = SHIELD_ATTACKS if shield else KATANA_ATTACKS
-	var attack: Array = attacks[maxi(_katana_combo, 0) % attacks.size()]
-	if _clip_name == attack[0]: return (float(attack[2]) - float(attack[1])) / (SHIELD_ATTACK_RATE if shield else KATANA_ATTACK_RATE)
-	return preload("res://gameplay/KatanaMoveset.gd").CONTACT[maxi(_katana_combo,0)]
+func _katana_contact_time() -> float: return _katana_blade._katana_contact_time()
 
 ## Coice de arma de fogo com o `recoil` e a velocidade de retorno de `WeaponPoseData.PROFILES`.
 func _update_recoil(delta: float) -> void:
