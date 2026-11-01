@@ -1481,15 +1481,6 @@ static func _texture_walls(chunk: Node3D) -> void:
 	preload("res://world/city_look/HarborFacadeTones.gd").apply(chunk)
 
 
-static func _inside_building_node(node: Node) -> bool:
-	var parent := node.get_parent()
-	while parent != null:
-		if parent is UrbanBuildingBase: return true
-		parent = parent.get_parent()
-	return false
-
-
-
 ## O piso das quadras é gerado com triângulos em sentido anti-horário vistos
 ## de cima: a câmera vê o VERSO, e o Godot inverte a normal do verso. O chão
 ## das quadras apontava para baixo — zero de sol, zero de sombra (medido: a
