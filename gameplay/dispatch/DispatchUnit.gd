@@ -16,6 +16,13 @@ const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const TANK_WEAPON := preload("res://gameplay/police_response/ground/PoliceTankWeapon.gd")
 const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## Blocos separados em 01/11 (docs/plano-divisao-arquivos-grandes-20261101.md, Onda 2). São só
+## funções estáticas que recebem esta unidade: guardar um auxiliar com `var g` faria ciclo de
+## referência entre dois RefCounted. O estado continua todo aqui.
+const SUSPENSION := preload("res://gameplay/dispatch/DispatchUnitSuspension.gd")
+const POLICE_CREW := preload("res://gameplay/dispatch/DispatchUnitPoliceCrew.gd")
+const SERVICE := preload("res://gameplay/dispatch/DispatchUnitService.gd")
+const DEPARTURE := preload("res://gameplay/dispatch/DispatchUnitDeparture.gd")
 ## Viatura parada sem acostamento planejado: estaciona depois disto no ramo de parada (era 3 s).
 const PARK_SETTLE_SECONDS := 1.0
 ## Estacionada e parada: a equipe começa a descer depois disto (era 0,6 s).
@@ -293,129 +300,13 @@ func _set_siren(on: bool) -> void:
 
 # --- Suspensão distante ------------------------------------------------------
 
-## Distante do jogador o veículo congela, some da vista e sai da colisão para
-## não virar obstáculo invisível. Depois de SUSPEND_RECYCLE_SECONDS é liberado.
-func _tick_suspension(delta: float) -> bool:
-	var distance: float = controller.distance_to_player(vehicle.global_position)
-	if not suspended:
-		if distance <= RULES.SUSPEND_DISTANCE: return false
-		if _outrun(distance):
-			# Deixada para trás numa perseguição: some fora da vista e libera a vaga para uma
-			# nova nascer à frente. Congelada, ela segurava a vaga por até 45 s.
-			controller.recycle_outrun(self)
-			return true
-		suspended = true
-		suspended_for = 0.0
-		_resume_clear_time = 0.0
-		_saved_layer = vehicle.collision_layer
-		_saved_mask = vehicle.collision_mask
-		_saved_physics = vehicle.is_physics_processing()
-		if is_instance_valid(vehicle.damage_look): vehicle.damage_look.suspend_for_dispatch()
-		else:
-			vehicle.collision_layer = 0
-			vehicle.collision_mask = 0
-		vehicle.velocity = Vector3.ZERO
-		vehicle.speed = 0.0
-		vehicle.set_physics_process(false)
-		vehicle.hide()
-		_suspend_bodies()
-		controller.emit_dispatch_event("unit_suspended", {"unit": self})
-		return true
-	suspended_for += delta
-	if _outrun(distance):
-		# Suspensa numa pausa do contato e a perseguição voltou com ela longe: recicla agora,
-		# em vez de segurar a vaga até os 45 s.
-		controller.recycle_outrun(self)
-		return true
-	var traced := TRACE.begin()
-	var resume_clear: bool = distance <= RULES.RESUME_DISTANCE and controller.footprint_clear(vehicle, vehicle.global_position, vehicle.rotation.y) and _bodies_clear()
-	TRACE.end("unit.resume_check", traced)
-	if resume_clear:
-		# Corpos estáticos recém-carregados entram no servidor de física no fim do
-		# quadro. Exigir espaço livre por uma janela curta impede retomar sobre um
-		# sólido que ainda não apareceu na primeira consulta do streaming.
-		_resume_clear_time += delta
-	else:
-		_resume_clear_time = 0.0
-	if _resume_clear_time >= 0.12:
-		suspended = false
-		if is_instance_valid(vehicle.damage_look): vehicle.damage_look.resume_from_dispatch()
-		else:
-			vehicle.collision_layer = _saved_layer
-			vehicle.collision_mask = _saved_mask
-			vehicle.set_physics_process(_saved_physics)
-		vehicle.show()
-		_resume_bodies()
-		controller.emit_dispatch_event("unit_resumed", {"unit": self})
-		return false
-	if suspended_for >= RULES.SUSPEND_RECYCLE_SECONDS:
-		finish("suspended_too_long")
-	return true
-
-## Viatura em perseguição ativa (contato recente), sem equipe a pé, longe e fora da vista.
-func _outrun(distance: float) -> bool:
-	if not PURSUIT.enabled or not is_police() or state != "enroute" or variant == "tank": return false
-	if not officers.is_empty() or controller.gameplay.stars <= 0: return false
-	if controller.gameplay.contact_age > PURSUIT.RECYCLE_CONTACT_AGE: return false
-	# Longe também da última posição conhecida: quem está na área da busca fica (suspensa, como
-	# antes). Sem isto, perder o contato longe dela reciclava as viaturas da busca e as novas,
-	# que nascem perto dela, eram recicladas de novo (ciclo de criação de veículos).
-	# Só na busca (contato perdido): com contato vivo a última posição é o próprio alvo, alguns metros
-	# atrás dele, e a viatura deixada para trás ficaria "perto" dela (o laboratório pegou isso).
-	if controller.gameplay.contact_age > 1.0 and controller.gameplay.last_known_valid and _flat(vehicle.global_position, controller.gameplay.last_known) <= RULES.SUSPEND_DISTANCE: return false
-	return distance > RULES.SUSPEND_DISTANCE and controller.is_unseen(vehicle.global_position)
-
-## Policiais e socorristas a pé saem da física junto com a viatura: sem camada,
-## sem máscara, sem processamento e sem vista.
-func _suspend_bodies() -> void:
-	_suspended_bodies.clear()
-	var bodies: Array = officers.duplicate()
-	if crew != null: bodies.append(crew)
-	for body in bodies:
-		if not is_instance_valid(body): continue
-		var body_state := {"body":body,"layer":body.collision_layer,"mask":body.collision_mask,
-			"physics":body.is_physics_processing(),"owner":null}
-		_suspended_bodies[body.get_instance_id()] = body_state
-		var motion: Node = body.get_node_or_null("BodyFlight3D")
-		if is_instance_valid(motion) and motion.has_method("suspend_for_dispatch"):
-			motion.suspend_for_dispatch(body_state)
-		body.collision_layer = 0
-		body.collision_mask = 0
-		body.velocity = Vector3.ZERO
-		body.set_physics_process(false)
-		body.hide()
-
-## Cada pessoa viva precisa de cápsula livre no ponto onde ficou; senão a
-## unidade inteira continua suspensa em vez de sobrepor um sólido novo.
-func _bodies_clear() -> bool:
-	for body_state in _suspended_bodies.values():
-		# As referências podem ter sido liberadas por um efeito filho enquanto a unidade dormia.
-		var body: Variant = body_state.body
-		if not is_instance_valid(body) or body.is_queued_for_deletion() or body.dead: continue
-		var exclude: Array[RID] = [vehicle.get_rid(), body.get_rid()]
-		var motion: Node = body_state.owner.get_ref() if body_state.owner != null else null
-		if is_instance_valid(motion):
-			if not motion.suspension_clear(exclude): return false
-		elif int(body_state.layer) != 0 and not controller.capsule_clear(body.global_position, exclude): return false
-	return true
-
-func _resume_bodies() -> void:
-	for body_state in _suspended_bodies.values():
-		var body: Variant = body_state.body
-		if not is_instance_valid(body) or body.is_queued_for_deletion(): continue
-		var motion: Node = body_state.owner.get_ref() if body_state.owner != null else null
-		# A dead actor must release a paused child owner too; it cannot tick itself.
-		if is_instance_valid(motion): motion.resume_from_dispatch()
-		if body.dead:
-			# Preserva o estado de colisão da morte; mantém o cadáver para o agente funerário.
-			body.set_physics_process(false)
-			body.show()
-			continue
-		body.collision_layer = int(body_state.layer)
-		body.collision_mask = int(body_state.mask)
-		body.set_physics_process(bool(body_state.physics))
-		body.show()
-	_suspended_bodies.clear()
+## Distante do jogador o veículo congela, some da vista e sai da colisão (reciclada se ficou para trás
+## numa perseguição): corpo em DispatchUnitSuspension.gd (delegação de uma linha; mesmo nome e padrões).
+func _tick_suspension(delta: float) -> bool: return SUSPENSION._tick_suspension(self, delta)
+func _outrun(distance: float) -> bool: return SUSPENSION._outrun(self, distance)
+func _suspend_bodies() -> void: SUSPENSION._suspend_bodies(self)
+func _bodies_clear() -> bool: return SUSPENSION._bodies_clear(self)
+func _resume_bodies() -> void: SUSPENSION._resume_bodies(self)
 
 # --- Veículo destruído --------------------------------------------------------
 
@@ -989,425 +880,38 @@ func on_overtake_state(next: String, reason: String) -> void:
 	if next in ["holding_oncoming", "recovering", "returning"]:
 		controller.emit_dispatch_event("overtake_state", {"unit": self, "state": next, "reason": reason})
 
-func _police_parked(delta: float) -> void:
-	driver.hold(true)
-	driver.tick(delta)
-	var moving_target := _target()
-	if variant != "tank" and _target_in_car(moving_target) and _target_velocity(moving_target).length() > 3.0 and controller.gameplay.contact_age < 1.0:
-		stop_planner.reset()
-		_park_reset()
-		_plan_clock = 0.0
-		_since_plan = PURSUIT.REPLAN_MAX
-		_set_state("enroute")
-		return
-	if variant == "tank" and controller.gameplay.stars > 0:
-		var target := _target()
-		_sync_gameplay_caps(controller.gameplay)
-		var surrendering: bool = _gameplay_has_surrender and controller.gameplay.police_surrendering()
-		if not surrendering:
-			_vehicle_combat(delta,target)
-			if target != null and vehicle.global_position.distance_to(target.global_position) > 25.0: _set_state("enroute")
-			return
-	if driver.pending_recovery():
-		_set_state("enroute")
-		return
-	if state_age < (CREW_EXIT_DELAY if quick_exit else 0.6) or not driver.settled(): return
-	# Porta ainda em preparo fatiado: descer agora terminaria o recorte (dezenas de ms) num quadro só.
-	# O controlador prioriza esta viatura; passado DOOR_WARM_WAIT desce mesmo assim (reserva antiga).
-	if quick_exit and not _doors_ready() and state_age < DOOR_WARM_WAIT: return
-	if crew_remaining <= 0 and officers.is_empty():
-		_police_crew_depleted()
-		return
-	if _deploy_police_crew():
-		_set_siren(false)
-		_set_state("working")
-		return
-	# Continua bloqueando enquanto não há saída/vaga segura disponível.
-	if crew_remaining <= 0: return
-	if controller.gameplay.contact_age < 1.0 and _target_velocity(_target()).length() > 3.0 and _target_in_car(_target()):
-		_set_state("enroute")
-	elif state_age > 8.0:
-		_set_state("enroute")
-
-func _doors_ready() -> bool:
-	if not is_instance_valid(vehicle) or vehicle.get_meta("dispatch_doors_warmed", false): return true
-	# Moto, buggy e afins não têm folha para recortar.
-	return vehicle.has_method("boarding_class") and vehicle.boarding_class() in ["open", "bus"]
-
-func _deploy_police_crew() -> bool:
-	# Com 0 estrelas a averiguação usa o limite de 1 estrela (FOOT_LIMIT[0] é 0: a equipe nunca descia).
-	var limit: int = RULES.FOOT_LIMIT[clampi(maxi(controller.gameplay.stars, 1), 0, 6)]
-	var free_slots: int = mini(mini(crew_remaining, limit - controller.foot_officer_count()), RULES.OFFICERS_DEPLOY_BURST)
-	var deployed := false
-	# Pontos já usados nas levas anteriores (o camburão desce de 2 em 2): quem desceu ainda está
-	# saindo de dentro do casco e não ocupa o ponto na consulta física, então os 6 saíam do mesmo lugar.
-	var taken: Array[Vector3] = []
-	for point in _exit_points:
-		taken.append(vehicle.to_global(point))
-	var traced := TRACE.begin()
-	for index in maxi(0, free_slots):
-		var exit: Dictionary = controller.exit_point(vehicle, taken, false)
-		if exit.is_empty(): break
-		_exit_points.append(vehicle.to_local(exit.point))
-		taken.append(exit.point)
-		var officer: CharacterBody3D = controller.spawn_officer(self, exit.point, float(exit.side))
-		_restore_seated_durability(officer)
-		officers.append(officer)
-		crew_remaining -= 1
-		deployed = true
-	_sync_motorcycle_rider()
-	TRACE.end("crew.deploy_police", traced, {"free_slots": free_slots})
-	return deployed
-
-func _police_working(delta: float) -> void:
-	driver.hold(true)
-	driver.tick(delta)
-	officers = officers.filter(func(o): return is_instance_valid(o) and not o.dead)
-	_exit_wait -= delta
-	if crew_remaining > 0 and _exit_wait <= 0.0 and driver.settled():
-		_exit_wait = .5
-		_deploy_police_crew()
-	if officers.is_empty():
-		# A dupla que desceu caiu. Sem ninguém a bordo a viatura não repõe policiais
-		# (o orçamento de despacho só se gasta com viaturas novas); se sobrou
-		# alguém dentro, volta à perseguição.
-		if crew_remaining <= 0: _police_crew_depleted()
-		else: _set_state("enroute")
-		return
-	var target := _target()
-	if _target_in_car(target) and _target_velocity(target).length() > 4.0 and vehicle.global_position.distance_to(target.global_position) > 30.0 and controller.gameplay.contact_age < 2.0:
-		_begin_recall(true)
-
-func _police_crew_depleted() -> void:
-	controller.emit_dispatch_event("crew_depleted", {"unit": self})
-	# Não sobrou ninguém para dirigir. Mantém um carro estacionado roubável, recicla só fora de vista.
-	vehicle.set_external_driver(false)
-	vehicle.speed = 0.0
-	vehicle.horizontal_velocity = Vector3.ZERO
-	vehicle.velocity.x = 0.0
-	vehicle.velocity.z = 0.0
-	vehicle.remove_meta("dispatch_unit")
-	vehicle.player_damage_attribution = true
-	finish("crew_depleted")
-
-func _begin_recall(resume: bool) -> void:
-	resume_pursuit = resume
-	_recall_age = 0.0
-	officers = officers.filter(func(o): return is_instance_valid(o) and not o.dead)
-	for officer in officers: officer.begin_return(vehicle)
-	_set_state("recall")
-
-func _police_recall(delta: float) -> void:
-	# Um alvo a pé que volta durante o recolhimento ainda é confrontado por esta mesma
-	# equipe; não termina o embarque para logo recriar os policiais.
-	var target := _target()
-	if resume_pursuit and controller.gameplay.stars > 0 and target != null and not _target_in_car(target) and controller.gameplay.contact_age < 1.0:
-		for officer in officers:
-			if is_instance_valid(officer) and not officer.dead: officer.resume_combat()
-		_set_state("working")
-		return
-	_recall_age += delta
-	driver.hold(true)
-	driver.tick(delta)
-	for officer in officers.duplicate():
-		if not is_instance_valid(officer) or officer.dead:
-			officers.erase(officer)
-	if _recall_age > 30.0 and controller.is_unseen(vehicle.global_position):
-		# Prazo esgotado: quem não chegou é liberado fora da vista, sem sumir na frente do jogador.
-		for officer in officers:
-			if is_instance_valid(officer) and controller.is_unseen(officer.global_position): officer.queue_free()
-		officers = officers.filter(func(o): return is_instance_valid(o) and not o.is_queued_for_deletion())
-	if officers.is_empty() or _recall_age > 90.0:
-		for officer in officers:
-			if is_instance_valid(officer): officer.queue_free()
-		officers.clear()
-		if resume_pursuit and controller.gameplay.stars > 0:
-			if crew_remaining <= 0:
-				_police_crew_depleted()
-				return
-			_set_siren(true)
-			_set_state("enroute")
-		else:
-			_begin_departure()
-
-func on_officer_boarded(officer: CharacterBody3D) -> void:
-	if not is_instance_valid(officer) or officer.dead or not officers.has(officer): return
-	_seated_durability.append({"health":officer.health,"armor":officer.armor})
-	officers.erase(officer)
-	crew_remaining = mini(crew_capacity, crew_remaining + 1)
-	if is_instance_valid(officer): officer.queue_free()
-	controller.emit_dispatch_event("officer_boarded", {"unit": self})
-
-func _restore_seated_durability(officer: CharacterBody3D) -> void:
-	if _seated_durability.is_empty(): return
-	var saved: Dictionary = _seated_durability.pop_front()
-	officer.health = clampf(float(saved.health), 0.0, officer.max_health)
-	officer.armor = clampf(float(saved.armor), 0.0, officer.max_armor)
-	officer.durability_changed.emit(officer.health,officer.max_health,officer.armor,officer.max_armor)
+## Equipe da polícia (estacionada, desembarque, a pé, recolhimento, embarque): corpo em
+## DispatchUnitPoliceCrew.gd (delegação de uma linha; mesmo nome e padrões; testes chamam várias).
+func _police_parked(delta: float) -> void: POLICE_CREW._police_parked(self, delta)
+func _doors_ready() -> bool: return POLICE_CREW._doors_ready(self)
+func _deploy_police_crew() -> bool: return POLICE_CREW._deploy_police_crew(self)
+func _police_working(delta: float) -> void: POLICE_CREW._police_working(self, delta)
+func _police_crew_depleted() -> void: POLICE_CREW._police_crew_depleted(self)
+func _begin_recall(resume: bool) -> void: POLICE_CREW._begin_recall(self, resume)
+func _police_recall(delta: float) -> void: POLICE_CREW._police_recall(self, delta)
+func on_officer_boarded(officer: CharacterBody3D) -> void: POLICE_CREW.on_officer_boarded(self, officer)
+func _restore_seated_durability(officer: CharacterBody3D) -> void: POLICE_CREW._restore_seated_durability(self, officer)
 
 # --- Serviços de emergência ---------------------------------------------------
 
-func _tick_service(delta: float) -> void:
-	match state:
-		"enroute": _service_enroute(delta)
-		"parked": _service_parked(delta)
-		"working": _service_working(delta)
-		"departing": _tick_departing(delta)
-
-func incident_valid() -> bool:
-	var emergency: Node3D = controller.gameplay.emergency
-	if emergency == null or not emergency.incidents.has(incident_id): return false
-	var record: Dictionary = emergency.incidents[incident_id]
-	var current: Variant = record.get("actor")
-	if not is_instance_valid(current) or current != actor or current.is_queued_for_deletion(): return false
-	if service == "fire" and "intensity" in actor and actor.intensity <= 0.0: return false
-	# Paciente que morreu vira ocorrência de legista: quem veio como paramédico não a atende.
-	if record.role != service: return false
-	if service == "medic" and actor.get("dead") == true: return false
-	return true
-
-func _service_enroute(delta: float) -> void:
-	if not is_instance_valid(actor):
-		controller.emit_dispatch_event("incident_invalid", {"unit": self})
-		_begin_departure()
-		return
-	_check_clock -= delta
-	if _check_clock <= 0.0:
-		_check_clock = 0.5
-		if not incident_valid():
-			controller.emit_dispatch_event("incident_invalid", {"unit": self})
-			_begin_departure()
-			return
-		if age > RULES.UNANSWERED_SECONDS:
-			controller.emit_dispatch_event("response_timeout", {"unit": self})
-			_begin_departure()
-			return
-	# Recuperação de ultrapassagem sem progresso: encerra o atendimento antes do prazo de 120 s.
-	var stall_cause := _recovery_stall_cause()
-	if stall_cause != "":
-		_end_assignment_for_recovery(stall_cause)
-		return
-	var flat := Vector2(vehicle.global_position.x - actor.global_position.x, vehicle.global_position.z - actor.global_position.z).length()
-	var at_end: bool = driver.at_route_end()
-	if stop_planner.curve != null or flat <= RULES.FOOT_RANGE+20.0:
-		driver.hold(driver.pending_recovery())
-		if stop_planner.tick(self,actor.global_position,delta):
-			_park_reset()
-			vehicle.set_meta("dispatch_needs_room",false)
-			_set_state("parked")
-		else: _park_pending(delta)
-	elif at_end:
-		# A rua termina longe demais para a equipe seguir a pé: sem acesso.
-		controller.emit_dispatch_event("no_road_access", {"unit": self, "gap": flat})
-		_begin_departure()
-		return
-	else:
-		_park_reset()
-		driver.hold(false)
-	driver.tick(delta)
-
-func _service_parked(delta: float) -> void:
-	driver.hold(true)
-	driver.tick(delta)
-	_set_siren(false)
-	if not incident_valid():
-		_begin_departure()
-		return
-	if driver.pending_recovery():
-		# Recuperação de ultrapassagem pendente: nada de desembarcar a equipe.
-		_set_state("enroute")
-		return
-	if state_age < 0.6 or not driver.settled(): return
-	# O Responder original volta ao lado direito; a saída é sempre por ele.
-	var nobody: Array[Vector3] = []
-	var exit: Dictionary = controller.exit_point(vehicle, nobody, true)
-	if exit.is_empty():
-		_exit_wait += delta
-		if _exit_wait > 8.0:
-			controller.emit_dispatch_event("no_exit", {"unit": self})
-			_begin_departure()
-		return
-	crew = controller.spawn_responder(self, exit.point)
-	controller.claim_incident(self)
-	_set_state("working")
-
-func _service_working(delta: float) -> void:
-	driver.hold(true)
-	driver.tick(delta)
-	# A fuga não pode ser convertida em retorno por perda da fonte da ocorrência.
-	if service == "mortician" and is_instance_valid(crew) and not crew.dead and crew.mode == "flee": return
-	# Se a entidade fonte saiu da árvore, não deixe a unidade depender do próximo
-	# scan do EmergencyManager ou de uma referência já liberada no Responder.
-	if not is_instance_valid(actor) or actor.is_queued_for_deletion():
-		# Uma vez só. Com a equipe ainda a pé `_begin_departure` mantém o estado "working"
-		# (ela volta andando): repetido a cada quadro físico, reemitia o evento (centenas por
-		# atendimento, esvaziando o registro de 64), zerava `crew.age` sem parar e escondia
-		# equipe morta ou presa, que nunca chegava aos testes abaixo. Depois da primeira
-		# detecção valem só o teste de equipe e o prazo total do atendimento.
-		if not _actor_loss_handled:
-			_actor_loss_handled = true
-			controller.emit_dispatch_event("incident_invalid", {"unit": self, "reason": "actor_removed"})
-			_begin_departure()
-			return
-	if not is_instance_valid(crew) or crew.dead:
-		controller.emit_dispatch_event("crew_lost", {"unit": self})
-		# Solta a ocorrência enquanto `crew` ainda identifica o dono do registro.
-		_release_incident()
-		crew = null
-		_begin_departure()
-		return
-	if not retasked and _patient_changed(): _retask()
-	if state_age > RULES.MAX_INCIDENT_SECONDS:
-		controller.emit_dispatch_event("incident_abandoned", {"unit": self})
-		_release_incident()
-		if is_instance_valid(crew): crew.queue_free()
-		crew = null
-		_begin_departure()
-
-func _patient_changed() -> bool:
-	if service != "medic" or not is_instance_valid(actor): return false
-	var record: Dictionary = controller.gameplay.emergency.incidents.get(incident_id, {})
-	if record.is_empty(): return false
-	return record.role != "medic" or actor.get("dead") == true
-
-## O paciente morreu durante o atendimento: o paramédico para e volta, a
-## ocorrência passa a legista e fica livre para a viatura dele.
-func _retask() -> void:
-	retasked = true
-	controller.emit_dispatch_event("patient_died", {"unit": self})
-	controller.gameplay.emergency.report_injury(actor, true)
-	_release_incident()
-	crew.mode = "return"
-	crew.age = 0.0
-
-## Chamado pela ponte quando o Responder termina (ou expira) e pede liberação.
-func on_crew_released(released: CharacterBody3D) -> void:
-	if released != crew: return
-	if released.mode == "flee":
-		_release_incident()
-		released.queue_free()
-		crew = null
-		controller.emit_dispatch_event("crew_fled", {"unit": self})
-		if not is_instance_valid(vehicle): finish("vehicle_lost")
-		elif wrecked: finish("wrecked")
-		else: _begin_departure()
-		return
-	var door: Vector3 = vehicle.to_global(Vector3(vehicle.half_width + 0.8, 0.0, 0.0))
-	var aboard: bool = released.global_position.distance_to(door) < 2.5 and absf(vehicle.speed) < 0.6
-	if not aboard and not vehicle.health <= 0.0:
-		# Prazo do Responder venceu longe da viatura: continua voltando a pé.
-		released.age = 0.0
-		released.mode = "return"
-		return
-	released.queue_free()
-	crew = null
-	controller.emit_dispatch_event("crew_boarded", {"unit": self})
-	if wrecked: finish("wrecked")
-	else: _begin_departure()
+## Atendimento de ambulância, bombeiro e legista: corpo em DispatchUnitService.gd (delegação de uma
+## linha; mesmo nome e padrões; on_crew_released é chamado pela ponte quando o Responder termina).
+func _tick_service(delta: float) -> void: SERVICE._tick_service(self, delta)
+func incident_valid() -> bool: return SERVICE.incident_valid(self)
+func _service_enroute(delta: float) -> void: SERVICE._service_enroute(self, delta)
+func _service_parked(delta: float) -> void: SERVICE._service_parked(self, delta)
+func _service_working(delta: float) -> void: SERVICE._service_working(self, delta)
+func _patient_changed() -> bool: return SERVICE._patient_changed(self)
+func _retask() -> void: SERVICE._retask(self)
+func on_crew_released(released: CharacterBody3D) -> void: SERVICE.on_crew_released(self, released)
 
 # --- Partida -----------------------------------------------------------------
 
-func _begin_departure() -> void:
-	stop_planner.reset()
-	if is_instance_valid(vehicle): vehicle.set_meta("dispatch_needs_room",true)
-	if is_police() and driver != null: _calm_driving()
-	if is_police() and crew_remaining <= 0 and officers.is_empty():
-		_police_crew_depleted()
-		return
-	_release_incident()
-	_set_siren(false)
-	_departure_clock = 0.0
-	_stranded = 0.0
-	stranded_age = 0.0
-	stranded = false
-	if is_instance_valid(crew):
-		# Equipe ainda a pé: cancelamento. Volta à viatura e a viatura só parte com ela.
-		crew.mode = "return"
-		crew.age = 0.0
-		if state != "working": _set_state("working")
-		return
-	if not officers.is_empty():
-		_begin_recall(false)
-		return
-	_set_state("departing")
-	driver.hold(false)
-	# Redirecionamento com o veículo em jogo: recuperação física (para e volta à
-	# faixa com curva validada), nunca descarte que o deixe atravessado.
-	driver.cancel_overtaking("departure")
-	_plan_departure()
-
-func _plan_departure() -> void:
-	var player_position: Vector3 = controller.player_position()
-	var heading: Vector3 = -vehicle.global_basis.z
-	var traced := TRACE.begin()
-	var result: Dictionary = controller.router.plan_departure(vehicle.global_position, player_position, RULES.RECYCLE_DISTANCE + 25.0, heading)
-	TRACE.end("router.plan_departure", traced)
-	if result.ok:
-		var departure: Curve3D = stop_planner.departure_curve(vehicle,result.curve)
-		driver.set_route(departure)
-		if departure==null: controller.emit_dispatch_event("departure_merge_blocked",{"unit":self})
-		_stranded = 0.0
-	else:
-		driver.set_route(null)
-		_stranded += 1.0
-		controller.emit_dispatch_event("departure_blocked", {"unit": self, "reason": result.reason})
-
-func _tick_departing(delta: float) -> void:
-	_departure_clock += delta
-	driver.hold(driver.route == null)
-	driver.tick(delta)
-	if _departure_origin==Vector3.INF: _departure_origin=vehicle.global_position
-	var departure_progress := vehicle.global_position.distance_to(_departure_origin)
-	if departure_progress>_departure_best+3:
-		_departure_best=departure_progress
-		_departure_anchor=vehicle.global_position
-		_departure_stall=0
-		_retirement=0
-		vehicle.fade_traffic_retirement(0)
-	elif absf(vehicle.speed)<.6: _departure_stall+=delta
-	_escape_retry-=delta
-	if _departure_stall>6 and _escape_retry<=0 and driver.route!=null and not driver.pending_recovery():
-		_escape_retry=2
-		var escape: Curve3D=preload("res://gameplay/TrafficEscapePlanner.gd").plan(vehicle,driver.route)
-		if escape!=null:
-			driver.discard_overtaking("departure_escape")
-			driver.set_route(escape)
-			vehicle.set_meta("dispatch_escape_active",true)
-			controller.emit_dispatch_event("departure_escape",{"unit":self})
-	if vehicle.get_meta("dispatch_escape_active",false) and driver.route!=null and driver.offset>=float(driver.route.get_meta("traffic_escape_until",0)):
-		vehicle.remove_meta("dispatch_escape_active")
-	# Uma resposta partindo e desocupada pode ser aposentada à vista como último recurso,
-	# como pedido: o casco sólido fica até o fim do fade curto.
-	if _departure_stall>=28 or _departure_clock>=45:
-		_retirement+=delta
-		driver.hold(true)
-		vehicle.fade_traffic_retirement(minf(1,_retirement))
-		if _retirement>=1:
-			finish("departure_escape_removed")
-			return
-	var unseen: bool = controller.is_unseen(vehicle.global_position)
-	var distance: float = controller.distance_to_player(vehicle.global_position)
-	if unseen and distance > RULES.RECYCLE_DISTANCE:
-		finish("left")
-		return
-	# Partida travada por recuperação física que não sai (faixa contrária, motor bloqueado,
-	# rota nula): sem isto a viatura ocuparia a vaga de unidade até `departure_timeout`.
-	# A recuperação continua enquanto ela existir; só a REMOÇÃO IMEDIATA acontece, e
-	# apenas fora da vista, para não sumir na frente do jogador.
-	if _recovery_blocked(): stranded_age += delta
-	else: stranded_age = 0.0
-	stranded = stranded_age >= RULES.STRANDED_SLOT_SECONDS
-	if stranded_age >= RULES.STRANDED_REMOVAL_SECONDS and unseen and distance > 25.0:
-		controller.emit_dispatch_event("recovery_stranded", {"unit": self, "status": driver.stop_status(), "reason": driver.overtake.unresolved_reason if driver.overtake.unresolved else driver.overtake.last_reason, "needs": driver.overtake.exit_condition()})
-		finish("recovery_stranded")
-		return
-	if driver.route == null or driver.at_route_end():
-		_stranded += delta
-		if _stranded >= 3.0:
-			_stranded = 0.0
-			_plan_departure()
-	if _departure_clock > 180.0 and distance > 25.0 and unseen:
-		finish("departure_timeout")
+## Partida (soltar a ocorrência, esperar a equipe, rota de saída, fuga de travamento, remoção):
+## corpo em DispatchUnitDeparture.gd (delegação de uma linha; mesmo nome e padrões).
+func _begin_departure() -> void: DEPARTURE._begin_departure(self)
+func _plan_departure() -> void: DEPARTURE._plan_departure(self)
+func _tick_departing(delta: float) -> void: DEPARTURE._tick_departing(self, delta)
 
 # --- Rotas -------------------------------------------------------------------
 
