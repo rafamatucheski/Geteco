@@ -413,27 +413,14 @@ func _physics_process(delta: float) -> void:
 
 func _stall_physics_tick(delta: float) -> void:
 	# Spans (22/10): quadros com vehicle.physics de 8–11 ms num carro só e nenhum trecho interno nomeado.
-	var stage := STALL_WORK.begin()
-	if controlled and not external_input and (not _traffic_retirement_meshes.is_empty() or _retire_sunk > 0.0): fade_traffic_retirement(0)
-	if traffic_escape!=null and (controlled or not traffic): traffic_escape.tick(self,delta)
-	# Limpa também durante o recuo, controle do jogador e repouso; nenhum trabalho de geometria quando vazio.
-	if not _clearing_junctions.is_empty(): _clear_departed_junctions()
-	STALL_WORK.finish_slow("vehicle.pre_tick", stage, 2000, self)
-	stage = STALL_WORK.begin()
-	var removed := health <= 0.0 and _tick_wreck(delta)
-	STALL_WORK.finish_slow("vehicle.wreck_lifetime", stage, 5000, self)
-	if removed: return
-	stage = STALL_WORK.begin()
-	var resting := _is_resting()
-	STALL_WORK.finish_slow("vehicle.resting", stage, 5000, self)
-	if resting:
-		if traffic_rails != null and traffic_rails.active: traffic_rails.wake(self)
-		return
+	# Etapas separadas em 01/11 (Onda 3) só para caber na leitura; a ordem é a mesma de antes e só
+	# entram 3 chamadas a mais por passo executado (1 nos pulados pelo LOD), todas no próprio veículo.
+	if _physics_prelude(delta): return
 	var rail_drive := false
 	var rail_wake := false
 	if TRAFFIC_RAILS.enabled and traffic_rails == null and traffic and get_meta("ambient_traffic",false):
 		traffic_rails = TRAFFIC_RAILS.new()
-	stage = STALL_WORK.begin()
+	var stage := STALL_WORK.begin()
 	# O trilho segue a mesma cadência do LOD: o passo executado cobre os pulados. Avaliar o trilho
 	# todo passo (motorista, sensores e vizinhos em n²) custou ~4 ms com 37 carros no benchmark F
 	# (2026-10-13), mais que o LOD antigo que ele substituía. Dano e contato acordam com wake().
@@ -464,17 +451,7 @@ func _stall_physics_tick(delta: float) -> void:
 	else:
 		_drive_player(delta)
 	STALL_WORK.finish_slow("vehicle.drive", stage, 5000, self)
-	if rail_drive:
-		var rail_previous := global_position
-		stage = STALL_WORK.begin()
-		var advanced: bool = traffic_rails.advance(self,delta)
-		STALL_WORK.finish_slow("vehicle.rails_advance", stage, 2000, self)
-		if advanced:
-			var rail_motion := global_position-rail_previous
-			rail_motion.y = 0.0
-			distance_travelled += rail_motion.length()
-			_tick_motion_presentation(delta,rail_motion,horizontal_velocity,-global_basis.z)
-			return
+	if rail_drive and _physics_rail_advance(delta): return
 	# Trânsito parado em fila "dorme": sem move_and_slide nem consulta de giro. Em
 	# engarrafamento, carros encostados custavam 60–98 ms por quadro somados (2026-09-23).
 	if traffic and health > 0 and absf(speed) < 0.05 and horizontal_velocity.length_squared() < 0.0025 and is_on_floor():
@@ -485,6 +462,52 @@ func _stall_physics_tick(delta: float) -> void:
 	var impact_speed := absf(speed)
 	var impact_direction := signf(speed)
 	var forward := -global_basis.z
+	var incoming_velocity := _physics_move(delta, lod, forward)
+	var motion := _physics_contacts(delta, previous, impact_speed, impact_direction, forward, incoming_velocity)
+	stage = STALL_WORK.begin()
+	STREET.vehicle_post_move(self,incoming_velocity,delta)
+	STALL_WORK.finish_slow("vehicle.street_post", stage, 5000, self)
+	if manual_wheelie != null: _tick_motorcycle_wheelie(delta)
+	_tick_motion_presentation(delta,motion,incoming_velocity,forward)
+
+## Antes de dirigir: aposentadoria, fuga, cruzamentos já deixados, vida da carcaça e repouso.
+## true = o passo acaba aqui (carcaça removida ou veículo parado sem nada a simular).
+func _physics_prelude(delta: float) -> bool:
+	var stage := STALL_WORK.begin()
+	if controlled and not external_input and (not _traffic_retirement_meshes.is_empty() or _retire_sunk > 0.0): fade_traffic_retirement(0)
+	if traffic_escape!=null and (controlled or not traffic): traffic_escape.tick(self,delta)
+	# Limpa também durante o recuo, controle do jogador e repouso; nenhum trabalho de geometria quando vazio.
+	if not _clearing_junctions.is_empty(): _clear_departed_junctions()
+	STALL_WORK.finish_slow("vehicle.pre_tick", stage, 2000, self)
+	stage = STALL_WORK.begin()
+	var removed := health <= 0.0 and _tick_wreck(delta)
+	STALL_WORK.finish_slow("vehicle.wreck_lifetime", stage, 5000, self)
+	if removed: return true
+	stage = STALL_WORK.begin()
+	var resting := _is_resting()
+	STALL_WORK.finish_slow("vehicle.resting", stage, 5000, self)
+	if resting:
+		if traffic_rails != null and traffic_rails.active: traffic_rails.wake(self)
+		return true
+	return false
+
+## Trilho do trânsito: true quando o trilho já moveu o carro neste passo (sem move_and_slide).
+func _physics_rail_advance(delta: float) -> bool:
+	var rail_previous := global_position
+	var stage := STALL_WORK.begin()
+	var advanced: bool = traffic_rails.advance(self,delta)
+	STALL_WORK.finish_slow("vehicle.rails_advance", stage, 2000, self)
+	if advanced:
+		var rail_motion := global_position-rail_previous
+		rail_motion.y = 0.0
+		distance_travelled += rail_motion.length()
+		_tick_motion_presentation(delta,rail_motion,horizontal_velocity,-global_basis.z)
+		return true
+	return false
+
+## Velocidade do passo, física de rua antes de mover, apoio do deserto e move_and_slide.
+## Devolve a velocidade horizontal de chegada (antes do LOD), que contatos e efeitos usam.
+func _physics_move(delta: float, lod: float, forward: Vector3) -> Vector3:
 	if not _handling_frame:
 		var traction := .9 if controlled and brake_input and absf(speed)>5 else 9.0
 		horizontal_velocity = horizontal_velocity.lerp(forward*speed,1.0-exp(-traction*delta))
@@ -497,7 +520,7 @@ func _stall_physics_tick(delta: float) -> void:
 	velocity.y = 0.0 if is_on_floor() and not has_meta("mining_released_load") else velocity.y-20.0*delta
 	# Física de rua: atropelamento e mobília derrubável antes de mover (o carro
 	# atravessa o que cedeu); batida carro x carro e deslize depois.
-	stage = STALL_WORK.begin()
+	var stage := STALL_WORK.begin()
 	STREET.vehicle_pre_move(self,delta)
 	STALL_WORK.finish_slow("vehicle.street_pre", stage, 5000, self)
 	var incoming_velocity := Vector3(velocity.x,0,velocity.z)
@@ -520,7 +543,11 @@ func _stall_physics_tick(delta: float) -> void:
 	if lod != 1.0:
 		velocity.x /= lod
 		velocity.z /= lod
-	stage = STALL_WORK.begin()
+	return incoming_velocity
+
+## Depois de mover: distância, parede, atropelamento e dano de batida em parede. Devolve o movimento.
+func _physics_contacts(delta: float, previous: Vector3, impact_speed: float, impact_direction: float, forward: Vector3, incoming_velocity: Vector3) -> Vector3:
+	var stage := STALL_WORK.begin()
 	var motion := global_position-previous
 	motion.y = 0
 	distance_travelled += motion.length()
@@ -558,11 +585,7 @@ func _stall_physics_tick(delta: float) -> void:
 					break
 			receive_impact(minf((impact_speed-absf(speed))*WALL_DAMAGE_PER_SPEED, max_health*WALL_DAMAGE_MAX_RATIO), local_pt, null, closing_speed, local_inward, horizontal_velocity)
 	STALL_WORK.finish_slow("vehicle.contacts", stage, 5000, self)
-	stage = STALL_WORK.begin()
-	STREET.vehicle_post_move(self,incoming_velocity,delta)
-	STALL_WORK.finish_slow("vehicle.street_post", stage, 5000, self)
-	if manual_wheelie != null: _tick_motorcycle_wheelie(delta)
-	_tick_motion_presentation(delta,motion,incoming_velocity,forward)
+	return motion
 
 func _tick_motion_presentation(delta: float, motion: Vector3, incoming_velocity: Vector3, forward: Vector3) -> void:
 	var stage := STALL_WORK.begin()
