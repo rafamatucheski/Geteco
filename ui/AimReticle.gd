@@ -45,7 +45,7 @@ func _process(_delta: float) -> void:
 	if blocked != bool(feedback.blocked):
 		blocked = feedback.blocked
 		queue_redraw()
-	var controls := get_node_or_null("/root/GameInput")
+	var controls := GameInput
 	var pointer_aim: bool = controls == null or (not controls.using_gamepad and not controls.get_meta("touch_controls_active",false) and controls.touch_aim.is_zero_approx())
 	visible = pointer_aim or not camera.is_position_behind(world_point)
 	if not visible: return

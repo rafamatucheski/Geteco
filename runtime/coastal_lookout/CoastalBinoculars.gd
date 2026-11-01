@@ -88,7 +88,7 @@ func enter() -> bool:
 	overlay = OVERLAY.new()
 	overlay.controller = self
 	add_child(overlay)
-	var controls = get_node_or_null("/root/GameInput")
+	var controls = GameInput
 	var touch: bool = OS.has_feature("android") or (controls != null and controls.get_meta("touch_controls_active",false))
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if touch else Input.MOUSE_MODE_CAPTURED
 	set_process(true)
@@ -140,7 +140,7 @@ func _process(delta: float) -> void:
 	if _interrupted():
 		leave()
 		return
-	var controls = get_node_or_null("/root/GameInput")
+	var controls = GameInput
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if controls != null:
 		if controls.using_gamepad:

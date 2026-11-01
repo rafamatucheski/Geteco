@@ -19,6 +19,8 @@ var curtain: CanvasLayer
 var held_nodes: Array[Dictionary] = []
 var hidden_layers: Array[CanvasLayer] = []
 var reveal: Tween
+# Cortina de progresso do mundo, guardada para o _process do menu não procurá-la por nome todo quadro.
+var _world_progress: Node
 
 func install(source: Control) -> void:
 	menu = source
@@ -147,7 +149,9 @@ func _hold_always_nodes(node: Node) -> void:
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(curtain) or not is_instance_valid(world): return
-	var progress = world.get_node_or_null("LoadingCurtain")
+	if not is_instance_valid(_world_progress) or _world_progress.get_parent() != world:
+		_world_progress = world.get_node_or_null("LoadingCurtain")
+	var progress = _world_progress
 	if progress != null:
 		curtain.set_stage(progress._target, progress.stage_message if not is_ready else "Pronto")
 
