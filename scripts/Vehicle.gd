@@ -16,6 +16,9 @@ const WHEELIE := preload("res://gameplay/MotorcycleWheelie.gd")
 const DESERT_GROUND := preload("res://gameplay/desert_cars/DesertVehicleGround.gd")
 const HYDRAULICS := preload("res://gameplay/lowrider/LowriderHydraulics.gd")
 const TRAFFIC_RAILS := preload("res://gameplay/traffic/TrafficRails.gd")
+## Auxiliares separados em 01/11 (Onda 3); o estado continua aqui e cada função antiga delega.
+const MOTORCYCLE_RIDER := preload("res://scripts/VehicleMotorcycleRider.gd")
+var _rider: MOTORCYCLE_RIDER = MOTORCYCLE_RIDER.new(self)
 var traffic_rails: RefCounted
 var _traffic_rail_drive := false
 const MAX_SPEED := 15.0 * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
@@ -669,87 +672,11 @@ func reset_motorcycle_wheelie() -> void:
 	manual_wheelie.reset()
 	if is_instance_valid(visual): visual.transform = _motorcycle_visual_rest
 
-func _tick_motorcycle_wheelie(delta: float) -> void:
-	var eligible := controlled and not traffic and not external_input and not input_locked and not engine_disabled and health > 0 and not has_meta("crash_stun")
-	var previous_pitch: float = manual_wheelie.pitch
-	if not eligible and previous_pitch == 0: return
-	var controls := get_node_or_null("/root/GameInput")
-	eligible = eligible and (controls == null or not controls.remapping)
-	manual_wheelie.step(delta,eligible and Input.is_action_pressed("motorcycle_wheelie"),eligible,is_on_floor(),speed,throttle_input,brake_input or is_on_wall())
-	if manual_wheelie.pitch == previous_pitch: return
-	visual.transform = Transform3D(Basis(Vector3.RIGHT,manual_wheelie.pitch),WHEELIE.rear_pivot_offset(manual_wheelie.pitch,_motorcycle_rear_contact))*_motorcycle_visual_rest
+func _tick_motorcycle_wheelie(delta: float) -> void: _rider._tick_motorcycle_wheelie(delta)
 
-func _bind_motorcycle_rider() -> void:
-	if not archetype.begins_with("bike_"): return
-	_motorcycle_seat = visual.get_meta("motorcycle_seat", _motorcycle_seat)
-	# As motos preparadas da V1 trazem o piloto embutido em malhas irmãs. Separa só a
-	# paleta/acessórios escritos do piloto, uma vez, antes da pintura e da troca de pai das rodas.
-	for child in visual.get_children():
-		if not child is MeshInstance3D: continue
-		var part := child as MeshInstance3D
-		# A moto agrupada (RedesignedFleet) guarda o piloto numa malha própria marcada pelo bake:
-		# as cores viram cor de vértice e a paleta original não aparece mais no material.
-		if part.get_meta("motorcycle_rider", false):
-			_motorcycle_rider_parts.append(part)
-			part.visible = traffic
-			continue
-		# Idem para as manoplas: uma malha por lado, com o lado em metadado; o wheel_center
-		# que elas trazem as leva ao pivô de direção logo abaixo, em _ready.
-		if part.has_meta("motorcycle_grip"):
-			_motorcycle_grips[str(part.get_meta("motorcycle_grip"))] = part
-			continue
-		var material: Material = part.material_override if part.material_override else part.mesh.surface_get_material(0)
-		if not material is StandardMaterial3D: continue
-		var color: String = material.albedo_color.to_html(false)
-		var center: Vector3 = (part.transform * part.mesh.get_aabb()).get_center()
-		if color == "161b20" and part.get_meta("wheel_spins", true) == false and center.y > .85 and absf(center.x) > .25:
-			_motorcycle_grips["Left" if center.x < 0 else "Right"] = part
-		if part.has_meta("wheel_center"): continue
-		var body := color in ["41454d", "253043", "181b20", "cf5058", "101d29"]
-		var helmet_z := -.23 if archetype == "bike_sport" else .01
-		var helmet_stud := color == "b5c4ce" and absf(center.x) < .14 and center.y > 1.3 and absf(center.z - helmet_z) < .03
-		var stripe_z := .212 if archetype == "bike_sport" else .332
-		var jacket_stripe := color in ["d4dce0", "b5c4ce", "f1ede5"] and absf(center.x) < .02 and center.y > .95 and absf(center.z - stripe_z) < .02
-		if not body and not helmet_stud and not jacket_stripe: continue
-		_motorcycle_rider_parts.append(part)
-		part.visible = traffic
-		if color == "253043" and absf(center.x) < .01:
-			_motorcycle_seat = center - Vector3(0, .95, 0)
-	# Mantém chassi/manoplas escritos, trocando só a pessoa embutida obsoleta.
-	# O bake offline da frota ainda precisa da geometria escrita original.
-	if not is_inside_tree(): return
-	for part in _motorcycle_rider_parts:
-		part.get_parent().remove_child(part)
-		part.queue_free()
-	_motorcycle_rider_parts.clear()
-	# Appearance must not consume traffic/gameplay RNG (paint, routes, encounters).
-	var identity := posmod(vehicle_id.hash() if not vehicle_id.is_empty() else str(get_instance_id()).hash(),100000)
-	var rider := preload("res://assets/civilians/TrafficMotorcyclist.gd").create(self,identity)
-	visual.add_child(rider)
-	rider.visible = traffic
-	_motorcycle_rider_parts.append(rider)
+func _bind_motorcycle_rider() -> void: _rider._bind_motorcycle_rider()
 
-func motorcycle_handholds() -> Dictionary:
-	var holds := {}
-	for side in _motorcycle_grips:
-		var part: MeshInstance3D = _motorcycle_grips[side]
-		if not is_instance_valid(part): continue
-		# A malha já é filha do pivô de direção. Segue a apresentação real dela,
-		# incluindo esterço e yaw do veículo, sem outra varredura da cena.
-		var sign_side := -1.0 if side == "Left" else 1.0
-		var palm_basis: Basis = part.get_parent().global_basis.orthonormalized() * Basis(Vector3.BACK, -sign_side * PI * .5)
-		holds[side] = Transform3D(palm_basis, part.to_global(part.mesh.get_aabb().get_center()))
-	if not holds.is_empty():
-		if archetype == "bike_sport":
-			holds["lean_multiplier"] = 1.8
-			holds["lean_min"] = 0.5
-		elif archetype == "bike_urban":
-			holds["lean_multiplier"] = 0.5
-			holds["lean_min"] = 0.1
-		else: # cruiser or default
-			holds["lean_multiplier"] = 0.5
-			holds["lean_min"] = 0.2
-	return holds
+func motorcycle_handholds() -> Dictionary: return _rider.motorcycle_handholds()
 
 ## A held burnout is distinct from a moving skid or a normal launch.
 func burnout_strength() -> float:
